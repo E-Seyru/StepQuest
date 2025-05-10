@@ -1,7 +1,8 @@
 // Purpose: Main UI coordinator, handles switching between major panels/screens.
 // Filepath: Assets/Scripts/UI/UIManager.cs
-using UnityEngine;
 // using System.Collections.Generic; // Potential dependency for managing panels
+using TMPro;
+using UnityEngine;
 
 public class UIManager : MonoBehaviour
 {
@@ -19,6 +20,28 @@ public class UIManager : MonoBehaviour
     // TODO: Store the currently active panel
     // private GameObject currentActivePanel;
 
+    public static UIManager Instance { get; private set; }
+
+
+    [SerializeField] private TextMeshProUGUI pasDuJour;
+    [SerializeField] private TextMeshProUGUI pasTotaux;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            //  DontDestroyOnLoad(gameObject); // Keep this instance across scenes
+        }
+        else
+        {
+            Destroy(gameObject); // Destroy duplicate instance
+        }
+
+        UpdateTodaysStepsDisplay(0);
+        UpdateTotalPlayerStepsDisplay(0);
+
+    }
     void Start()
     {
         // TODO: Ensure all panels are initially hidden except the default one (e.g., MapPanel)
@@ -37,12 +60,27 @@ public class UIManager : MonoBehaviour
         Debug.Log($"UIManager: Showing panel {panelToShow?.name} (Placeholder)");
     }
 
-    // TODO: Add specific methods for showing each panel (called by Nav bar or other UI elements)
-    // public void ShowMapPanel() { ShowPanel(mapPanel); }
-    // public void ShowCharacterPanel() { ShowPanel(characterPanel); }
-    // ... etc.
+    public void UpdateTotalPlayerStepsDisplay(long steps)
+    {
+        if (pasTotaux != null)
+        {
+            pasTotaux.text = $"Pas depuis la création de l'application : {steps}";
+        }
+        else
+        {
+            Debug.LogError("UIManager: pasTotaux TextMeshProUGUI reference is not set.");
+        }
+    }
 
-    // TODO: Add methods for showing/hiding popups or modal dialogs
-    // public void ShowNotification(string message) { ... }
-    // public void ShowConfirmationDialog(string message, System.Action onConfirm) { ... }
+    public void UpdateTodaysStepsDisplay(long steps)
+    {
+        if (pasDuJour != null)
+        {
+            pasDuJour.text = $"Nombre de pas aujourd'hui : {steps}";
+        }
+        else
+        {
+            Debug.LogError("UIManager: pasDuJour TextMeshProUGUI reference is not set.");
+        }
+    }
 }
