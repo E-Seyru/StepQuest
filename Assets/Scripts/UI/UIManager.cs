@@ -64,7 +64,7 @@ public class UIManager : MonoBehaviour
     {
         if (pasTotaux != null)
         {
-            pasTotaux.text = $"Pas depuis la création de l'application : {steps}";
+            pasTotaux.text = $"{steps}";
         }
         else
         {
@@ -76,7 +76,7 @@ public class UIManager : MonoBehaviour
     {
         if (pasDuJour != null)
         {
-            pasDuJour.text = $"Nombre de pas aujourd'hui : {steps}";
+            pasDuJour.text = $"{steps}";
         }
         else
         {
