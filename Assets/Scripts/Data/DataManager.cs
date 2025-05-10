@@ -24,6 +24,11 @@ public class DataManager : MonoBehaviour
 
     private void InitializeManager()
     {
+
+        UnityEngine.Debug.Log("DataManager: Calling SQLitePCL.Batteries_V2.Init()"); // Log pour vérifier
+        SQLitePCL.Batteries_V2.Init();
+        UnityEngine.Debug.Log("DataManager: SQLitePCL.Batteries_V2.Init() called.");
+
         _localDatabase = new LocalDatabase();
         _localDatabase.InitializeDatabase(); // Prépare la connexion et la table
 
