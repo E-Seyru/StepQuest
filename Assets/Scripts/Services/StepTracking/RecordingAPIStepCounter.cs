@@ -9,10 +9,10 @@ public class RecordingAPIStepCounter : MonoBehaviour
 
     public long CurrentTodaysStepsFromAPI { get; private set; } = 0;
 
-
-    private float stepUpdateInterval = 5.0f;
-    private bool isPluginInitialized = false;
-    private bool isLoadingData = true; // Gardons cela pour la logique d'initialisation du plugin
+    private float stepUpdateInterval = 5.0f; // Intervalle pour les mises à jour périodiques
+    private bool isPluginClassInitialized = false; // Pour la classe Java
+    private bool isStepTrackingLogicActive = false; // Si la logique de comptage principale est active
+    private bool isLoadingInitialData = true; // Pour attendre DataManager
 
     public static RecordingAPIStepCounter Instance { get; private set; }
 
@@ -28,243 +28,237 @@ public class RecordingAPIStepCounter : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-        // Le chargement des données se fera après que DataManager soit prêt.
     }
 
     void Start()
     {
-        StartCoroutine(InitializeAfterDataManagerReady());
+        StartCoroutine(InitializeStepTrackingSequence());
     }
 
-    IEnumerator InitializeAfterDataManagerReady()
+    IEnumerator InitializeStepTrackingSequence()
     {
-        // Attendre que DataManager et CurrentPlayerData soient initialisés
-        yield return null;
-
+        // 1. Attendre DataManager
+        yield return null; // Assurer qu'on est pas dans le même frame que Awake de DataManager
         while (DataManager.Instance == null || DataManager.Instance.CurrentPlayerData == null)
         {
-            Debug.LogWarning("RecordingAPIStepCounter: Waiting for DataManager and CurrentPlayerData to be ready...");
+            Debug.LogWarning("RecordingAPIStepCounter: Waiting for DataManager to be ready...");
             yield return new WaitForSeconds(0.5f);
         }
+        isLoadingInitialData = false; // DataManager est prêt, les données initiales (Total, LastKnown) sont chargées
+        Logger.LogInfo("RecordingAPIStepCounter: DataManager ready.");
+        UpdateInitialUIDisplay(); // Mettre à jour l'UI avec les données chargées par DataManager
 
-        LoadStepDataFromDataManager(); // Charger nos données de pas spécifiques
-
-        isLoadingData = false;
-
-        if (UIManager.Instance != null && DataManager.Instance != null && DataManager.Instance.CurrentPlayerData != null)
+        // 2. Initialiser la classe du plugin Java
+        InitializePluginClass();
+        if (!isPluginClassInitialized)
         {
-            UIManager.Instance.UpdateTodaysStepsDisplay(CurrentTodaysStepsFromAPI); // CurrentTodaysStepsFromAPI sera 0 au début
-            UIManager.Instance.UpdateTotalPlayerStepsDisplay(DataManager.Instance.CurrentPlayerData.TotalPlayerSteps);
-            Logger.LogInfo("RecordingAPIStepCounter: Initial UI update sent.");
+            Logger.LogError("RecordingAPIStepCounter: Plugin class could not be initialized. Step tracking will not function.");
+            UpdatePermissionDeniedUI();
+            yield break; // Arrêter la séquence
+        }
 
+        // 3. Vérifier et demander la permission
+        bool permissionGranted = stepPluginClass.CallStatic<bool>("hasActivityRecognitionPermission");
+        if (!permissionGranted)
+        {
+            Logger.LogInfo("RecordingAPIStepCounter: Permission not yet granted. Requesting...");
+            stepPluginClass.CallStatic("requestActivityRecognitionPermission");
 
-            InitializePluginAndSubscribe();
+            // Attendre activement la réponse à la demande de permission
+            float timeWaited = 0f;
+            float maxWaitTime = 30f; // Attendre max 30s
+            while (!stepPluginClass.CallStatic<bool>("hasActivityRecognitionPermission") && timeWaited < maxWaitTime)
+            {
+                Logger.LogInfo("RecordingAPIStepCounter: Waiting for permission grant...");
+                yield return new WaitForSeconds(1.0f);
+                timeWaited += 1.0f;
+            }
+            permissionGranted = stepPluginClass.CallStatic<bool>("hasActivityRecognitionPermission");
+        }
+
+        if (permissionGranted)
+        {
+            Logger.LogInfo("RecordingAPIStepCounter: Permission is GRANTED.");
+            // 4. S'abonner à l'API Recording et faire une première lecture
+            stepPluginClass.CallStatic("subscribeToSteps"); // Java va maintenant s'abonner car permission OK
+            yield return new WaitForSeconds(0.5f); // Petit délai pour que l'abonnement prenne effet
+
+            Logger.LogInfo("RecordingAPIStepCounter: Requesting initial read from API.");
+            stepPluginClass.CallStatic("readTodaysStepData");
+            yield return new WaitForSeconds(1.5f); // Délai pour que la lecture API se termine et que la variable Java soit mise à jour
+
+            FetchStoredStepsFromPlugin(); // Met à jour CurrentTodaysStepsFromAPI
+            UpdateTotalPlayerStepsAndSave(); // Met à jour DataManager et sauvegarde
+            UpdateLiveUIDisplay(); // Met à jour l'UI avec les nouvelles données API
+
+            // 5. Démarrer la coroutine de mise à jour périodique
+            isStepTrackingLogicActive = true;
             StartCoroutine(PeriodicStepCheckCoroutine());
         }
-
-        void LoadStepDataFromDataManager()
+        else
         {
-
-            if (DataManager.Instance != null && DataManager.Instance.CurrentPlayerData != null)
-            {
-                Logger.LogInfo($"RecordingAPIStepCounter: DataManager is ready. Initial TotalPlayerSteps: {DataManager.Instance.CurrentPlayerData.TotalPlayerSteps}, Initial LastKnownDaily: {DataManager.Instance.CurrentPlayerData.LastKnownDailyStepsForDeltaCalc}");
-            }
-            else
-            {
-                // Ce cas ne devrait pas arriver grâce à la boucle d'attente, mais par sécurité :
-                Logger.LogError("RecordingAPIStepCounter: DataManager or CurrentPlayerData is unexpectedly null during LoadStepData. Defaults will effectively be used from a new PlayerData instance if DataManager failed to load.");
-
-            }
+            Logger.LogWarning("RecordingAPIStepCounter: Permission DENIED or timed out. API Step tracking will not function.");
+            UpdatePermissionDeniedUI();
+            // Afficher un message à l'utilisateur pour qu'il active la permission manuellement
         }
+    }
 
-        void InitializePluginAndSubscribe()
+    void InitializePluginClass()
+    {
+        if (isPluginClassInitialized) return;
+        Logger.LogInfo($"RecordingAPIStepCounter: Attempting to initialize StepPlugin class: {fullPluginClassName}");
+        try
         {
-            if (isPluginInitialized) return;
-            if (isLoadingData) // MODIFIÉ - Cette vérification est toujours pertinente
-            {
-                Debug.LogWarning("RecordingAPIStepCounter: Still waiting for initial data load (from DataManager), delaying plugin initialization.");
-                return;
-            }
-
-            Logger.LogInfo($"RecordingAPIStepCounter: Attempting to initialize StepPlugin: {fullPluginClassName}");
-            try
-            {
-                stepPluginClass = new AndroidJavaClass(fullPluginClassName);
-                isPluginInitialized = true;
-            }
-            catch (AndroidJavaException e)
-            {
-                Logger.LogError($"RecordingAPIStepCounter: Failed to initialize AndroidJavaClass for {fullPluginClassName}. Exception: {e}");
-                stepPluginClass = null;
-                isPluginInitialized = false;
-                return;
-            }
-
-            if (stepPluginClass != null)
-            {
-                Logger.LogInfo($"RecordingAPIStepCounter: {fullPluginClassName} class found successfully.");
-                Logger.LogInfo("RecordingAPIStepCounter: Calling subscribeToSteps (will check/request permission)...");
-                stepPluginClass.CallStatic("subscribeToSteps");
-            }
-            else
-            {
-                Logger.LogError($"RecordingAPIStepCounter: {fullPluginClassName} class NOT found! Plugin will not function.");
-                isPluginInitialized = false;
-            }
+            stepPluginClass = new AndroidJavaClass(fullPluginClassName);
+            isPluginClassInitialized = true;
+            Logger.LogInfo($"RecordingAPIStepCounter: {fullPluginClassName} class found successfully.");
         }
-
-        IEnumerator PeriodicStepCheckCoroutine()
+        catch (AndroidJavaException e)
         {
-            while (!isPluginInitialized || isLoadingData)
-            {
-                if (isLoadingData)
-                    Debug.LogWarning("RecordingAPIStepCounter: Periodic check waiting for initial data load from DataManager...");
-                else if (!isPluginInitialized)
-                    Debug.LogWarning("RecordingAPIStepCounter: Periodic check waiting for plugin initialization...");
-
-                yield return new WaitForSeconds(1.0f);
-                if (!isPluginInitialized && !isLoadingData)
-                {
-                    InitializePluginAndSubscribe();
-                }
-            }
-
-            Logger.LogInfo("RecordingAPIStepCounter: Starting periodic step checks.");
-            yield return new WaitForSeconds(1.0f);
-
-            while (true)
-            {
-                if (isPluginInitialized && stepPluginClass != null)
-                {
-                    RequestStepReadFromPlugin();
-                    yield return new WaitForSeconds(0.7f);
-                    FetchStoredStepsFromPlugin();
-                    UpdateTotalPlayerStepsAndSave();
-                    UIManager.Instance.UpdateTotalPlayerStepsDisplay(DataManager.Instance.CurrentPlayerData.TotalPlayerSteps);
-                    UIManager.Instance.UpdateTodaysStepsDisplay(CurrentTodaysStepsFromAPI);
-                    // MODIFIÉ - Log pour utiliser les données de DataManager
-                    Logger.LogInfo($"[API Steps Today: {CurrentTodaysStepsFromAPI}] -- [Total Game Steps: {DataManager.Instance.CurrentPlayerData.TotalPlayerSteps}]");
-                }
-                else
-                {
-                    Logger.LogWarning("RecordingAPIStepCounter: StepPlugin not initialized, skipping periodic check.");
-                    if (!isLoadingData) InitializePluginAndSubscribe();
-                }
-                yield return new WaitForSeconds(Mathf.Max(0.1f, stepUpdateInterval - 0.7f));
-            }
+            Logger.LogError($"RecordingAPIStepCounter: Failed to initialize AndroidJavaClass for {fullPluginClassName}. Exception: {e}");
+            stepPluginClass = null;
+            isPluginClassInitialized = false;
         }
+    }
 
-        void RequestStepReadFromPlugin()
+    void LoadStepDataFromDataManager() // Appelée indirectement via DataManager.Awake()
+    {
+        // Cette fonction est moins pertinente maintenant car DataManager charge ses propres données.
+        // L'important est que DataManager.Instance.CurrentPlayerData soit prêt.
+        if (DataManager.Instance != null && DataManager.Instance.CurrentPlayerData != null)
         {
-            if (stepPluginClass == null)
-            {
-                Logger.LogError("RecordingAPIStepCounter: StepPlugin class is null in RequestStepReadFromPlugin.");
-                return;
-            }
+            Logger.LogInfo($"RecordingAPIStepCounter: Data access ready. Initial TotalPlayerSteps: {DataManager.Instance.CurrentPlayerData.TotalPlayerSteps}, Initial LastKnownDaily: {DataManager.Instance.CurrentPlayerData.LastKnownDailyStepsForDeltaCalc}");
+        }
+    }
 
-            bool hasPermission = stepPluginClass.CallStatic<bool>("hasActivityRecognitionPermission");
-            if (hasPermission)
+    IEnumerator PeriodicStepCheckCoroutine()
+    {
+        Logger.LogInfo("RecordingAPIStepCounter: Starting periodic step checks.");
+        // Pas besoin d'attente initiale ici, la première lecture a déjà été faite.
+
+        while (isStepTrackingLogicActive) // Continue tant que la logique principale est active
+        {
+            if (isPluginClassInitialized && stepPluginClass != null && stepPluginClass.CallStatic<bool>("hasActivityRecognitionPermission"))
             {
                 stepPluginClass.CallStatic("readTodaysStepData");
+                yield return new WaitForSeconds(0.7f); // Délai pour la lecture API
+                FetchStoredStepsFromPlugin();
+                UpdateTotalPlayerStepsAndSave();
+                UpdateLiveUIDisplay(); // Mettre à jour l'UI à chaque cycle
             }
             else
             {
-                Logger.LogWarning("RecordingAPIStepCounter: Permission DENIED. Attempting to request permission via subscribe call.");
-                stepPluginClass.CallStatic("subscribeToSteps");
+                Logger.LogWarning("RecordingAPIStepCounter: Plugin not ready or permission lost, skipping periodic check.");
+                isStepTrackingLogicActive = false; // Arrêter la coroutine si la permission est perdue
+                UpdatePermissionDeniedUI();
+                // Il faudrait un mécanisme pour retenter la demande de permission ou informer l'utilisateur
             }
+            yield return new WaitForSeconds(Mathf.Max(0.1f, stepUpdateInterval - 0.7f));
         }
-
-        void FetchStoredStepsFromPlugin()
-        {
-            if (stepPluginClass == null)
-            {
-                Logger.LogError("RecordingAPIStepCounter: StepPlugin class is null in FetchStoredStepsFromPlugin.");
-                return;
-            }
-
-            bool hasPermission = stepPluginClass.CallStatic<bool>("hasActivityRecognitionPermission");
-            if (hasPermission)
-            {
-                long stepsFromPlugin = stepPluginClass.CallStatic<long>("getStoredTodaysSteps");
-                CurrentTodaysStepsFromAPI = stepsFromPlugin;
-            }
-            else
-            {
-                Logger.LogWarning("RecordingAPIStepCounter: Permission not granted when trying to fetch stored steps.");
-            }
-        }
-
-        void UpdateTotalPlayerStepsAndSave()
-        {
-            // MODIFIÉ - S'assurer que DataManager est prêt avant toute modification
-            if (DataManager.Instance == null || DataManager.Instance.CurrentPlayerData == null)
-            {
-                Logger.LogError("RecordingAPIStepCounter: DataManager or CurrentPlayerData is null. Cannot update/save step data!");
-                return;
-            }
-            // La vérification isLoadingData n'est plus nécessaire ici car elle bloque la coroutine PeriodicStepCheckCoroutine
-
-            if (CurrentTodaysStepsFromAPI < 0)
-            {
-                Logger.LogWarning($"RecordingAPIStepCounter: Invalid CurrentTodaysStepsFromAPI: {CurrentTodaysStepsFromAPI}. Not updating total.");
-                return;
-            }
-
-            long newStepsThisUpdateCycle;
-            // MODIFIÉ - Utiliser DataManager.Instance.CurrentPlayerData.LastKnownDailyStepsForDeltaCalc
-            long localLastKnownDaily = DataManager.Instance.CurrentPlayerData.LastKnownDailyStepsForDeltaCalc;
-
-            if (CurrentTodaysStepsFromAPI < localLastKnownDaily)
-            {
-                newStepsThisUpdateCycle = CurrentTodaysStepsFromAPI;
-                Logger.LogInfo($"RecordingAPIStepCounter: New day or step reset. New steps for today: {newStepsThisUpdateCycle}");
-            }
-            else
-            {
-                newStepsThisUpdateCycle = CurrentTodaysStepsFromAPI - localLastKnownDaily;
-            }
-
-            bool dataChanged = false;
-            if (newStepsThisUpdateCycle > 0)
-            {
-                // MODIFIÉ - Mettre à jour DataManager.Instance.CurrentPlayerData.TotalPlayerSteps
-                DataManager.Instance.CurrentPlayerData.TotalPlayerSteps += newStepsThisUpdateCycle;
-                Logger.LogInfo($"RecordingAPIStepCounter: Added {newStepsThisUpdateCycle} to TotalPlayerSteps. New Total: {DataManager.Instance.CurrentPlayerData.TotalPlayerSteps}");
-                dataChanged = true;
-            }
-
-            // MODIFIÉ - Mettre à jour DataManager.Instance.CurrentPlayerData.LastKnownDailyStepsForDeltaCalc
-            if (localLastKnownDaily != CurrentTodaysStepsFromAPI)
-            {
-                DataManager.Instance.CurrentPlayerData.LastKnownDailyStepsForDeltaCalc = CurrentTodaysStepsFromAPI;
-                dataChanged = true;
-            }
-
-            if (dataChanged)
-            {
-                // MODIFIÉ - DataManager s'occupe déjà de vérifier s'il est null dans sa propre méthode SaveGame.
-                // On appelle directement la sauvegarde.
-                Logger.LogInfo($"RecordingAPIStepCounter: Saving to DataManager - Total: {DataManager.Instance.CurrentPlayerData.TotalPlayerSteps}, LastDaily: {DataManager.Instance.CurrentPlayerData.LastKnownDailyStepsForDeltaCalc}");
-                DataManager.Instance.SaveGame(); // AJOUTÉ - Appel à la sauvegarde via DataManager
-            }
-        }
-
+        Logger.LogInfo("RecordingAPIStepCounter: Periodic step checks stopped.");
     }
-    public long GetCurrentTodaysStepsFromAPI() // Reste pareil
+
+    void FetchStoredStepsFromPlugin()
+    {
+        if (!isPluginClassInitialized || stepPluginClass == null) return;
+
+        CurrentTodaysStepsFromAPI = stepPluginClass.CallStatic<long>("getStoredTodaysSteps");
+        // Logger.LogInfo($"Fetched API Steps: {CurrentTodaysStepsFromAPI}"); // Peut être verbeux
+    }
+
+    void UpdateTotalPlayerStepsAndSave()
+    {
+        if (isLoadingInitialData || DataManager.Instance == null || DataManager.Instance.CurrentPlayerData == null)
+        {
+            Logger.LogWarning("RecordingAPIStepCounter: DataManager not ready, cannot update/save steps.");
+            return;
+        }
+
+        if (CurrentTodaysStepsFromAPI < 0)
+        {
+            Logger.LogWarning($"RecordingAPIStepCounter: Invalid CurrentTodaysStepsFromAPI: {CurrentTodaysStepsFromAPI}. Not updating total.");
+            return;
+        }
+
+        long localLastKnownDaily = DataManager.Instance.CurrentPlayerData.LastKnownDailyStepsForDeltaCalc;
+        long newStepsThisUpdateCycle;
+
+        if (CurrentTodaysStepsFromAPI < localLastKnownDaily) // Reset de jour ou de l'API
+        {
+            newStepsThisUpdateCycle = CurrentTodaysStepsFromAPI;
+            Logger.LogInfo($"Step Reset/New Day (API): New API steps for today: {newStepsThisUpdateCycle}");
+        }
+        else
+        {
+            newStepsThisUpdateCycle = CurrentTodaysStepsFromAPI - localLastKnownDaily;
+        }
+
+        bool dataChanged = false;
+        if (newStepsThisUpdateCycle > 0)
+        {
+            DataManager.Instance.CurrentPlayerData.TotalPlayerSteps += newStepsThisUpdateCycle;
+            Logger.LogInfo($"Added {newStepsThisUpdateCycle} steps from API. New Total: {DataManager.Instance.CurrentPlayerData.TotalPlayerSteps}");
+            dataChanged = true;
+        }
+
+        if (localLastKnownDaily != CurrentTodaysStepsFromAPI)
+        {
+            DataManager.Instance.CurrentPlayerData.LastKnownDailyStepsForDeltaCalc = CurrentTodaysStepsFromAPI;
+            dataChanged = true; // Marquer que les données ont changé même si TotalPlayerSteps n'a pas bougé
+        }
+
+        if (dataChanged)
+        {
+            // Logger.LogInfo($"Saving to DataManager - Total: {DataManager.Instance.CurrentPlayerData.TotalPlayerSteps}, LastDaily: {DataManager.Instance.CurrentPlayerData.LastKnownDailyStepsForDeltaCalc}");
+            DataManager.Instance.SaveGame();
+        }
+    }
+
+    // --- Méthodes de mise à jour UI ---
+    void UpdateInitialUIDisplay()
+    {
+        if (UIManager.Instance != null && DataManager.Instance != null && DataManager.Instance.CurrentPlayerData != null)
+        {
+            UIManager.Instance.UpdateTodaysStepsDisplay(0); // Au tout début, l'API du jour est 0
+            UIManager.Instance.UpdateTotalPlayerStepsDisplay(DataManager.Instance.CurrentPlayerData.TotalPlayerSteps);
+        }
+    }
+
+    void UpdateLiveUIDisplay()
+    {
+        if (UIManager.Instance != null && DataManager.Instance != null && DataManager.Instance.CurrentPlayerData != null)
+        {
+            UIManager.Instance.UpdateTodaysStepsDisplay(CurrentTodaysStepsFromAPI);
+            UIManager.Instance.UpdateTotalPlayerStepsDisplay(DataManager.Instance.CurrentPlayerData.TotalPlayerSteps);
+            // Logger.LogInfo($"UI Updated: API Today: {CurrentTodaysStepsFromAPI}, Total: {DataManager.Instance.CurrentPlayerData.TotalPlayerSteps}");
+        }
+    }
+
+    void UpdatePermissionDeniedUI()
+    {
+        if (UIManager.Instance != null)
+        {
+            // Vous pourriez vouloir un texte spécifique pour cela dans UIManager
+            // UIManager.Instance.UpdateTodaysStepsDisplay("N/A (Permission)");
+            // UIManager.Instance.UpdateTotalPlayerStepsDisplay(DataManager.Instance.CurrentPlayerData.TotalPlayerSteps); // Le total reste
+            Debug.LogWarning("UI should reflect permission denied state.");
+        }
+    }
+
+
+    // --- Getters Publics ---
+    public long GetCurrentTodaysStepsFromAPI()
     {
         return CurrentTodaysStepsFromAPI;
     }
 
-    public long GetTotalPlayerSteps() // MODIFIÉ pour lire depuis DataManager
+    public long GetTotalPlayerSteps()
     {
         if (DataManager.Instance != null && DataManager.Instance.CurrentPlayerData != null)
         {
             return DataManager.Instance.CurrentPlayerData.TotalPlayerSteps;
         }
-        Logger.LogWarning("RecordingAPIStepCounter: GetTotalPlayerSteps called but DataManager or CurrentPlayerData is not ready. Returning 0.");
+        Logger.LogWarning("GetTotalPlayerSteps: DataManager not ready. Returning 0.");
         return 0;
     }
-
-    public void InitializeService() { } // Gardé pour la compatibilité avec l'interface potentielle
-    public int GetSteps(System.DateTime start, System.DateTime end) { return (int)CurrentTodaysStepsFromAPI; } // Gardé
 }
