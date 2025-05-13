@@ -1,51 +1,35 @@
-// Purpose: Data structure representing the player's core state.
 // Filepath: Assets/Scripts/Data/Models/PlayerData.cs
-using SQLite;
+using SQLite; // Si vous utilisez SQLite-net pour la persistance
+using System;
 
-[System.Serializable] // Make it serializable for saving/loading
+[Serializable]
 public class PlayerData
 {
-    // TODO: Define player stats (allocated base stats, current HP)
-    // public int CurrentHP;
-    // public Dictionary<string, int> BaseStats; // e.g., {"Strength": 10, "Stamina": 5}
+    [PrimaryKey, AutoIncrement] // Si vous utilisez SQLite-net
+    public int Id { get; set; }
 
-    // TODO: Store current location ID or name
+    public long TotalPlayerSteps; // Anciennement TotalPlayerStepsInGame, on garde ce nom pour la compatibilité
 
-    [PrimaryKey, AutoIncrement]
-    public int Id { get; set; } // Unique identifier for the player data entry
-    public long TotalPlayerSteps; // Total steps accumulated by the game    
-    public long LastKnownDailyStepsForDeltaCalc; // Steps from the API for today
+    // Anciennement LastKnownDailyStepsForDeltaCalc ou LastApiTodaysStepsValue
+    // On le renomme pour plus de clarté par rapport au nouveau plan,
+    // même si le plan simplifié ne le persiste plus de cette manière.
+    // Pour l'instant, on le garde au cas où, mais il sera moins central.
+    // On pourrait le supprimer si StepManager gère tout.
+    // Pour l'instant, le plan dit "On se débarrasse de baseTodaySteps persistant"
+    // donc on peut commenter ou supprimer LastKnownApiTodaysStepsValue.
+    // public long LastKnownApiTodaysStepsValue;
+
+    // NOUVEAU CHAMP : Instant UTC de la dernière synchronisation API réussie avec GetDeltaSince
+    public long LastSyncEpochMs;
 
 
-    public string CurrentLocationId;
-
-
-    // TODO: Store currency amount
-    // public int Currency;
-
-    // TODO: Store legacy points
-    // public int LegacyPointsEarned;
-    // public int LegacyPointsSpent;
-
-    // TODO: Store story progression flags/variables
-    // public HashSet<string> CompletedQuestIds;
-    // public Dictionary<string, int> StoryVariables; // e.g., {"Chapter": 1}
-
-    // TODO: Store info about the currently active task (if any)
-    // public ActiveTaskData CurrentTask;
-
-    // TODO: Store saved steps balance
-    // public int SavedSteps;
-
-    // Constructor (optional, for default values)
+    // Constructeur par défaut
     public PlayerData()
     {
-        // BaseStats = new Dictionary<string, int>();
-        // CompletedQuestIds = new HashSet<string>();
-        // StoryVariables = new Dictionary<string, int>();
-
+        Id = 1; // Fixons l'Id à 1 pour notre joueur unique si pas d'AutoIncrement
         TotalPlayerSteps = 0;
-        LastKnownDailyStepsForDeltaCalc = 0;
+        //LastKnownApiTodaysStepsValue = 0;
+        LastSyncEpochMs = 0; // 0 indique quaucune synchro na encore eu lieu
     }
 }
 

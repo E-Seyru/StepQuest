@@ -6,34 +6,36 @@ public class DataManager : MonoBehaviour
     public static DataManager Instance { get; private set; }
 
     public PlayerData CurrentPlayerData { get; private set; }
-    private LocalDatabase _localDatabase;
+    private LocalDatabase _localDatabase; // En supposant que LocalDatabase.cs existe et fonctionne
 
     void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // Pour que le DataManager persiste entre les scènes
+            DontDestroyOnLoad(gameObject);
             InitializeManager();
         }
         else
         {
-            Destroy(gameObject); // S'il y a déjà un DataManager, on détruit ce doublon
+            Destroy(gameObject);
         }
     }
 
     private void InitializeManager()
     {
-
-        UnityEngine.Debug.Log("DataManager: Calling SQLitePCL.Batteries_V2.Init()"); // Log pour vérifier
-        SQLitePCL.Batteries_V2.Init();
-        UnityEngine.Debug.Log("DataManager: SQLitePCL.Batteries_V2.Init() called.");
-
         _localDatabase = new LocalDatabase();
-        _localDatabase.InitializeDatabase(); // Prépare la connexion et la table
+        _localDatabase.InitializeDatabase();
 
-        LoadGame(); // Charge les données du joueur
+        LoadGame();
         Logger.LogInfo("DataManager initialized and game data loaded.");
+        // Log pour vérifier la nouvelle valeur
+        if (CurrentPlayerData != null)
+        {
+            Logger.LogInfo($"DataManager: Loaded PlayerData - TotalSteps: {CurrentPlayerData.TotalPlayerSteps}, LastSyncEpochMs: {CurrentPlayerData.LastSyncEpochMs}");
+
+            // --- FIN DU CODE DE TEST TEMPORAIRE ---
+        }
     }
 
     private void LoadGame()
@@ -41,22 +43,21 @@ public class DataManager : MonoBehaviour
         if (_localDatabase == null)
         {
             Logger.LogError("DataManager: Cannot load game, LocalDatabase is not initialized.");
-            // En cas d'erreur grave, on pourrait initialiser avec des données par défaut
-            CurrentPlayerData = new PlayerData(); // Assure que CurrentPlayerData n'est jamais null
-            CurrentPlayerData.Id = 1; // Important pour la première sauvegarde si la DB a échoué
+            CurrentPlayerData = new PlayerData(); // Crée un PlayerData avec les valeurs par défaut (LastSyncEpochMs = 0)
+            // CurrentPlayerData.Id = 1; // Assuré par le constructeur de PlayerData ou par LocalDatabase
             return;
         }
 
         CurrentPlayerData = _localDatabase.LoadPlayerData();
-        Logger.LogInfo("DataManager: PlayerData loaded.");
+        Logger.LogInfo("DataManager: PlayerData loading process complete.");
 
-        // Vérification supplémentaire : si LoadPlayerData retourne un PlayerData avec Id 0
-        // (ce qui pourrait arriver si on modifie LoadPlayerData pour retourner new PlayerData() sans fixer l'Id),
-        // il faut s'assurer qu'il est prêt pour la sauvegarde.
-        if (CurrentPlayerData.Id == 0)
+
+
+        // Si c'est la première fois et que LoadPlayerData retourne un nouvel objet,
+        // LastSyncEpochMs sera 0 par défaut, ce qui est correct.
+        if (CurrentPlayerData.Id == 0 && CurrentPlayerData.TotalPlayerSteps == 0 && CurrentPlayerData.LastSyncEpochMs == 0)
         {
-            CurrentPlayerData.Id = 1;
-            Logger.LogWarning("DataManager: Loaded PlayerData had Id 0. Set to 1 for consistency.");
+            Logger.LogInfo("DataManager: Looks like a fresh PlayerData load (or first time).");
         }
     }
 
@@ -73,30 +74,25 @@ public class DataManager : MonoBehaviour
             return;
         }
 
-        // Assurons-nous que l'Id est correct avant de sauvegarder, surtout si c'est une nouvelle partie.
-        if (CurrentPlayerData.Id == 0)
-        {
-            CurrentPlayerData.Id = 1;
-            Logger.LogWarning("DataManager: CurrentPlayerData had Id 0 before saving. Set to 1.");
-        }
-
+        // L'Id devrait être géré correctement par PlayerData ou LocalDatabase
+        // Logger.LogInfo($"DataManager: Saving PlayerData - TotalSteps: {CurrentPlayerData.TotalPlayerSteps}, LastSyncEpochMs: {CurrentPlayerData.LastSyncEpochMs}");
         _localDatabase.SavePlayerData(CurrentPlayerData);
-        Logger.LogInfo("DataManager: PlayerData saved.");
+        Logger.LogInfo($"DataManager [Test]: Saved PlayerData - TotalSteps: {CurrentPlayerData.TotalPlayerSteps}, LastSyncEpochMs: {CurrentPlayerData.LastSyncEpochMs}");
+        // Logger.LogInfo("DataManager: PlayerData save request sent to LocalDatabase."); // SavePlayerData dans LocalDatabase a déjà un log de succès
     }
-    void OnApplicationQuit() // Automatiquement appelé lors de la fermeture de l'application
+
+    void OnApplicationQuit()
     {
-
-
-        if (CurrentPlayerData != null)
+        if (CurrentPlayerData != null) // Sauvegarder une dernière fois
         {
+            Logger.LogInfo("DataManager: Application quitting, ensuring data is saved.");
             SaveGame();
         }
 
         if (_localDatabase != null)
         {
             _localDatabase.CloseDatabase();
-            Logger.LogInfo("DataManager: Database connection closed on application quit.");
+            // Logger.LogInfo("DataManager: Database connection closed on application quit."); // Log déjà dans LocalDatabase
         }
     }
-
 }

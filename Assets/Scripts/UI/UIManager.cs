@@ -1,86 +1,101 @@
-// Purpose: Main UI coordinator, handles switching between major panels/screens.
 // Filepath: Assets/Scripts/UI/UIManager.cs
-// using System.Collections.Generic; // Potential dependency for managing panels
+using System.Collections; // Ajouté pour la coroutine d'attente
 using TMPro;
 using UnityEngine;
 
 public class UIManager : MonoBehaviour
 {
-    // TODO: References to all major UI Panel GameObjects (assign in Inspector)
-    // public GameObject mapPanel;
-    // public GameObject characterPanel;
-    // public GameObject inventoryPanel;
-    // public GameObject combatPanel;
-    // public GameObject craftingPanel;
-    // public GameObject questLogPanel;
-    // public GameObject affinityPanel;
-    // public GameObject dialoguePanel;
-    // ... add other panels (Settings, Shop, etc.)
-
-    // TODO: Store the currently active panel
-    // private GameObject currentActivePanel;
-
     public static UIManager Instance { get; private set; }
 
+    [Header("UI References")] // Renommé pour plus de clarté
+    [SerializeField] private TextMeshProUGUI pasDuJourText; // Renommé pour éviter confusion avec variables
+    [SerializeField] private TextMeshProUGUI pasTotauxText; // Renommé pour éviter confusion avec variables
 
-    [SerializeField] private TextMeshProUGUI pasDuJour;
-    [SerializeField] private TextMeshProUGUI pasTotaux;
+    private StepManager stepManager; // Référence au StepManager
 
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            //  DontDestroyOnLoad(gameObject); // Keep this instance across scenes
+            // DontDestroyOnLoad(gameObject); // UIManager est souvent spécifique à une scène, mais si votre UI est persistante, décommentez.
         }
         else
         {
-            Destroy(gameObject); // Destroy duplicate instance
+            Destroy(gameObject);
+            return;
         }
 
-        UpdateTodaysStepsDisplay(0);
-        UpdateTotalPlayerStepsDisplay(0);
-
-    }
-    void Start()
-    {
-        // TODO: Ensure all panels are initially hidden except the default one (e.g., MapPanel)
-        // ShowPanel(mapPanel); // Example starting panel
-    }
-
-    public void ShowPanel(GameObject panelToShow)
-    {
-        // TODO: Check if panelToShow is valid
-        // TODO: Hide the currentActivePanel if it exists
-        // if (currentActivePanel != null) { currentActivePanel.SetActive(false); }
-        // TODO: Show the panelToShow
-        // panelToShow.SetActive(true);
-        // TODO: Update currentActivePanel reference
-        // currentActivePanel = panelToShow;
-        Debug.Log($"UIManager: Showing panel {panelToShow?.name} (Placeholder)");
-    }
-
-    public void UpdateTotalPlayerStepsDisplay(long steps)
-    {
-        if (pasTotaux != null)
+        // Vérifier si les références TextMeshPro sont bien assignées
+        if (pasDuJourText == null)
         {
-            pasTotaux.text = $"{steps}";
+            Debug.LogError("UIManager: pasDuJourText n'est pas assigné dans l'inspecteur !");
         }
-        else
+        if (pasTotauxText == null)
         {
-            Debug.LogError("UIManager: pasTotaux TextMeshProUGUI reference is not set.");
+            Debug.LogError("UIManager: pasTotauxText n'est pas assigné dans l'inspecteur !");
+        }
+
+        // Initialiser l'affichage à des valeurs d'attente
+        UpdateTodaysStepsDisplayInternal(0, true); // true pour indiquer "valeur d'attente"
+        UpdateTotalPlayerStepsDisplayInternal(0, true);
+    }
+
+    IEnumerator Start() // Utiliser Start comme une coroutine pour attendre StepManager
+    {
+        // Attendre que StepManager soit initialisé et prêt
+        // Logger.LogInfo("UIManager: Waiting for StepManager.Instance..."); // Peut être verbeux
+        while (StepManager.Instance == null)
+        {
+            yield return null; // Attendre la prochaine frame
+        }
+        stepManager = StepManager.Instance;
+        Logger.LogInfo("UIManager: StepManager.Instance found. Ready to update UI from StepManager.");
+    }
+
+    void Update()
+    {
+        // La mise à jour se fait maintenant en lisant les propriétés de StepManager
+        if (stepManager != null && stepManager.enabled) // S'assurer que StepManager est prêt et actif
+        {
+            UpdateTodaysStepsDisplayInternal(stepManager.CurrentDisplayStepsToday);
+            UpdateTotalPlayerStepsDisplayInternal(stepManager.CurrentDisplayTotalSteps);
+        }
+        // Si StepManager n'est pas prêt, Awake a déjà mis des valeurs d'attente.
+    }
+
+    // Les méthodes publiques sont appelées par StepManager
+    // Correction: Ces méthodes ne sont plus appelées par StepManager.
+    // UIManager lit directement les propriétés de StepManager dans son Update.
+    // On garde des méthodes internes pour la logique d'affichage.
+
+    private void UpdateTotalPlayerStepsDisplayInternal(long steps, bool isWaitingMessage = false)
+    {
+        if (pasTotauxText != null)
+        {
+            if (isWaitingMessage)
+            {
+                pasTotauxText.text = "---"; // Ou "Chargement..."
+            }
+            else
+            {
+                pasTotauxText.text = $"{steps}";
+            }
         }
     }
 
-    public void UpdateTodaysStepsDisplay(long steps)
+    private void UpdateTodaysStepsDisplayInternal(long steps, bool isWaitingMessage = false)
     {
-        if (pasDuJour != null)
+        if (pasDuJourText != null)
         {
-            pasDuJour.text = $"{steps}";
-        }
-        else
-        {
-            Debug.LogError("UIManager: pasDuJour TextMeshProUGUI reference is not set.");
+            if (isWaitingMessage)
+            {
+                pasDuJourText.text = "---"; // Ou "Chargement..."
+            }
+            else
+            {
+                pasDuJourText.text = $"{steps}";
+            }
         }
     }
 }

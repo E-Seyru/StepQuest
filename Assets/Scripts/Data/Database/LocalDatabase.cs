@@ -43,7 +43,7 @@ public class LocalDatabase
         int rowsAffected = _connection.InsertOrReplace(data);
         if (rowsAffected > 0)
         {
-            Logger.LogInfo($"LocalDatabase: PlayerData saved successfully (Id: {data.Id}). TotalSteps: {data.TotalPlayerSteps}, LastDaily: {data.LastKnownDailyStepsForDeltaCalc}");
+            Logger.LogInfo($"LocalDatabase: PlayerData saved successfully (Id: {data.Id}). TotalSteps: {data.TotalPlayerSteps}, LastSyncEpoch: {data.LastSyncEpochMs}");
         }
         else
         {
@@ -66,7 +66,7 @@ public class LocalDatabase
 
         if (loadedData != null)
         {
-            Logger.LogInfo($"LocalDatabase: PlayerData loaded successfully. TotalSteps: {loadedData.TotalPlayerSteps}, LastDaily: {loadedData.LastKnownDailyStepsForDeltaCalc}");
+            Logger.LogInfo($"LocalDatabase: PlayerData loaded successfully. TotalSteps: {loadedData.TotalPlayerSteps}, LastSyncEpoch: {loadedData.LastSyncEpochMs}");
             return loadedData;
 
         }
