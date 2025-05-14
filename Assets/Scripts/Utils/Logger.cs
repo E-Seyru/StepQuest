@@ -1,18 +1,19 @@
 // Purpose: Provides a simple, centralized logging utility. Can be expanded for different log levels, outputs etc.
 // Filepath: Assets/Scripts/Utils/Logger.cs
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro; 
 
 public static class Logger
 {
-    // TODO: Define log levels (Debug, Info, Warning, Error)
     public enum LogLevel { Debug, Info, Warning, Error }
 
-    // TODO: Set minimum log level to output (e.g., only show Info and above in builds)
-#if UNITY_EDITOR
+
     public static LogLevel CurrentLogLevel = LogLevel.Debug;
-#else
-        public static LogLevel CurrentLogLevel = LogLevel.Info;
-#endif
+
+
+
+
 
     public static void Log(string message, LogLevel level = LogLevel.Info, Object context = null)
     {

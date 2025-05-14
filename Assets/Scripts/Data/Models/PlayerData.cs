@@ -5,7 +5,7 @@ using System;
 [Serializable]
 public class PlayerData
 {
-    [PrimaryKey, AutoIncrement] // Si vous utilisez SQLite-net
+    [PrimaryKey] // Si vous utilisez SQLite-net
     public int Id { get; set; }
 
     public long TotalPlayerSteps; // Anciennement TotalPlayerStepsInGame, on garde ce nom pour la compatibilité
