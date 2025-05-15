@@ -100,9 +100,8 @@ public class UIManager : MonoBehaviour
                     long lastChangeMs = DataManager.Instance.PlayerData.LastStepsChangeEpochMs;
                     if (lastChangeMs > 0)
                     {
-                        System.DateTime lastChange = new System.DateTime(1970, 1, 1, 0, 0, 0, System.DateTimeKind.Utc)
-                            .AddMilliseconds(lastChangeMs);
-                        lastUpdateText.text = $"Dernière mise à jour: {lastChange.ToLocalTime():HH:mm:ss}";
+                        string readableDate = LocalDatabase.GetReadableDateFromEpoch(lastChangeMs);
+                        lastUpdateText.text = $"Dernière mise à jour: {readableDate}";
                     }
                 }
 

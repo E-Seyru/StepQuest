@@ -1,36 +1,42 @@
-// Purpose: Provides a simple, centralized logging utility. Can be expanded for different log levels, outputs etc.
-// Filepath: Assets/Scripts/Utils/Logger.cs
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro; 
 
 public static class Logger
 {
     public enum LogLevel { Debug, Info, Warning, Error }
-
-
     public static LogLevel CurrentLogLevel = LogLevel.Debug;
 
-
-
-
+    // Color definitions (matching those in DebugLogPanel)
+    private static readonly string infoColor = "#3399FF";     // Blue
+    private static readonly string warningColor = "#FFCC00";  // Yellow
+    private static readonly string errorColor = "#FF3333";    // Red
 
     public static void Log(string message, LogLevel level = LogLevel.Info, Object context = null)
     {
         if (level < CurrentLogLevel) return;
 
-        string formattedMessage = $"[{level}] {message}";
+        string logTag;
+        string formattedMessage;
 
         switch (level)
         {
             case LogLevel.Debug:
+                logTag = "[Debug]";
+                formattedMessage = $"{logTag} {message}";
+                Debug.Log(formattedMessage, context);
+                break;
             case LogLevel.Info:
+                logTag = $"[Info]";
+                formattedMessage = $"{logTag} {message}";
                 Debug.Log(formattedMessage, context);
                 break;
             case LogLevel.Warning:
+                logTag = $"[Warning]";
+                formattedMessage = $"{logTag} {message}";
                 Debug.LogWarning(formattedMessage, context);
                 break;
             case LogLevel.Error:
+                logTag = $"[Error]";
+                formattedMessage = $"{logTag} {message}";
                 Debug.LogError(formattedMessage, context);
                 break;
         }

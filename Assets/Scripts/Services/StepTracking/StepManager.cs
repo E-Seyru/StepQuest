@@ -90,7 +90,15 @@ public class StepManager : MonoBehaviour
         long lastPauseEpochMs = dataManager.PlayerData.LastPauseEpochMs;
         long nowEpochMs = new System.DateTimeOffset(System.DateTime.UtcNow).ToUnixTimeMilliseconds();
 
-        Logger.LogInfo($"StepManager: Loaded state - Initial TotalSteps: {TotalSteps}, DailySteps: {DailySteps}, LastSync: {lastSyncEpochMs}, LastPause: {lastPauseEpochMs}");
+        // Convertir les timestamps en dates lisibles
+        string lastSyncDate = LocalDatabase.GetReadableDateFromEpoch(lastSyncEpochMs);
+        string lastPauseDate = LocalDatabase.GetReadableDateFromEpoch(lastPauseEpochMs);
+        string nowDate = LocalDatabase.GetReadableDateFromEpoch(nowEpochMs);
+
+        Logger.LogInfo($"StepManager: Loaded state - Initial TotalSteps: {TotalSteps}, DailySteps: {DailySteps}, " +
+                      $"LastSync: {lastSyncEpochMs} ({lastSyncDate}), " +
+                      $"LastPause: {lastPauseEpochMs} ({lastPauseDate}), " +
+                      $"Now: {nowEpochMs} ({nowDate})");
 
         // Vérification des permissions requise AVANT TOUT !
         if (!apiCounter.HasPermission())
@@ -179,7 +187,7 @@ public class StepManager : MonoBehaviour
             // Toujours mettre à jour LastSyncEpochMs au temps actuel
             dataManager.PlayerData.LastSyncEpochMs = nowEpochMs;
             dataManager.SaveGame();
-            Logger.LogInfo($"StepManager: Updated LastSync to: {nowEpochMs}");
+            Logger.LogInfo($"StepManager: Updated LastSync to: {nowEpochMs} ({LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)})");
         }
 
         // Initialiser correctement sensorStartCount avec la valeur actuelle du capteur pour éviter de recompter les pas déjà récupérés par l'API
@@ -321,13 +329,15 @@ public class StepManager : MonoBehaviour
 
         // Enregistrer le timestamp de pause pour résoudre le problème de double comptage
         long nowEpochMs = new System.DateTimeOffset(System.DateTime.UtcNow).ToUnixTimeMilliseconds();
+        string nowDate = LocalDatabase.GetReadableDateFromEpoch(nowEpochMs);
         dataManager.PlayerData.LastSyncEpochMs = nowEpochMs;
         dataManager.PlayerData.LastPauseEpochMs = nowEpochMs;
 
         // Force une sauvegarde à chaque pause/fermeture pour s'assurer que les données sont persistées
         dataManager.PlayerData.TotalSteps = TotalSteps;
         dataManager.PlayerData.DailySteps = DailySteps;
-        Logger.LogInfo($"StepManager: Saving steps. Final TotalSteps: {TotalSteps}, DailySteps: {DailySteps}, LastPauseEpochMs: {nowEpochMs}");
+        Logger.LogInfo($"StepManager: Saving steps. Final TotalSteps: {TotalSteps}, DailySteps: {DailySteps}, " +
+                       $"LastPauseEpochMs: {nowEpochMs} ({nowDate})");
         dataManager.SaveGame();
         Logger.LogInfo("StepManager: Data saved on pause/close.");
     }

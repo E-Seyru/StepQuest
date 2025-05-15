@@ -9,6 +9,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
 
     private bool isPluginClassInitialized = false;
     private bool isSubscribedToApi = false;
+    private bool lastPermissionResult = false;
 
     // Constantes pour le mécanisme d'attente amélioré
     private const int MAX_API_READ_ATTEMPTS = 5;
@@ -71,7 +72,14 @@ public class RecordingAPIStepCounter : MonoBehaviour
         }
 
         bool hasPermission = stepPluginClass.CallStatic<bool>("hasActivityRecognitionPermission");
-        Logger.LogInfo($"RecordingAPIStepCounter: Permission check result: {hasPermission}");
+
+        // Ne journaliser que si le résultat a changé ou avec un niveau de détail moindre
+        if (hasPermission != lastPermissionResult)
+        {
+            Logger.LogInfo($"RecordingAPIStepCounter: Permission status changed to: {hasPermission}");
+            lastPermissionResult = hasPermission;
+        }
+
         return hasPermission;
     }
 
