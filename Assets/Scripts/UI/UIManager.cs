@@ -9,10 +9,12 @@ public class UIManager : MonoBehaviour
 
     [Header("UI References")]
     [SerializeField] private TextMeshProUGUI totalStepsText;
-    [SerializeField] private TextMeshProUGUI lastUpdateText; // Nouveau: indicateur de dernière mise à jour
+    [SerializeField] private TextMeshProUGUI dailyStepsText; // Nouveau: texte pour afficher les pas quotidiens
+    [SerializeField] private TextMeshProUGUI lastUpdateText; // Indicateur de dernière mise à jour
 
     private StepManager stepManager;
-    private long lastDisplayedSteps = -1;
+    private long lastDisplayedTotalSteps = -1;
+    private long lastDisplayedDailySteps = -1;
     private float stepUpdateFlashDuration = 0.3f;
 
     private void Awake()
@@ -34,8 +36,14 @@ public class UIManager : MonoBehaviour
             Logger.LogError("UIManager: totalStepsText n'est pas assigné dans l'inspecteur !");
         }
 
+        if (dailyStepsText == null)
+        {
+            Logger.LogWarning("UIManager: dailyStepsText n'est pas assigné dans l'inspecteur ! L'affichage des pas quotidiens ne fonctionnera pas.");
+        }
+
         // Initialiser l'affichage à une valeur d'attente
         UpdateTotalStepsDisplay(0, true);
+        UpdateDailyStepsDisplay(0, true);
     }
 
     IEnumerator Start()
@@ -52,10 +60,16 @@ public class UIManager : MonoBehaviour
     {
         if (stepManager != null && stepManager.enabled)
         {
-            // Mettre à jour l'affichage des pas uniquement si la valeur a changé
-            if (stepManager.TotalSteps != lastDisplayedSteps)
+            // Mettre à jour l'affichage des pas totaux uniquement si la valeur a changé
+            if (stepManager.TotalSteps != lastDisplayedTotalSteps)
             {
                 UpdateTotalStepsDisplay(stepManager.TotalSteps);
+            }
+
+            // Mettre à jour l'affichage des pas quotidiens uniquement si la valeur a changé
+            if (stepManager.DailySteps != lastDisplayedDailySteps)
+            {
+                UpdateDailyStepsDisplay(stepManager.DailySteps);
             }
         }
     }
@@ -75,7 +89,7 @@ public class UIManager : MonoBehaviour
             else
             {
                 // Effet visuel pour les changements de pas
-                bool isIncrease = steps > lastDisplayedSteps && lastDisplayedSteps >= 0;
+                bool isIncrease = steps > lastDisplayedTotalSteps && lastDisplayedTotalSteps >= 0;
 
                 // Mettre à jour le texte
                 totalStepsText.text = $"{steps}";
@@ -95,30 +109,60 @@ public class UIManager : MonoBehaviour
                 // Si c'est une augmentation, ajouter un effet de flash
                 if (isIncrease)
                 {
-                    StartCoroutine(FlashStepUpdate());
+                    StartCoroutine(FlashStepUpdate(totalStepsText));
                 }
 
                 // Enregistrer la valeur
-                lastDisplayedSteps = steps;
+                lastDisplayedTotalSteps = steps;
             }
         }
     }
 
-    private IEnumerator FlashStepUpdate()
+    // Nouvelle méthode pour mettre à jour l'affichage des pas quotidiens
+    private void UpdateDailyStepsDisplay(long steps, bool isWaitingMessage = false)
     {
-        if (totalStepsText != null)
+        if (dailyStepsText != null)
+        {
+            if (isWaitingMessage)
+            {
+                dailyStepsText.text = "---";
+            }
+            else
+            {
+                // Effet visuel pour les changements de pas
+                bool isIncrease = steps > lastDisplayedDailySteps && lastDisplayedDailySteps >= 0;
+
+                // Mettre à jour le texte
+                dailyStepsText.text = $"{steps}";
+
+                // Si c'est une augmentation, ajouter un effet de flash
+                if (isIncrease)
+                {
+                    StartCoroutine(FlashStepUpdate(dailyStepsText));
+                }
+
+                // Enregistrer la valeur
+                lastDisplayedDailySteps = steps;
+            }
+        }
+    }
+
+    // Méthode modifiée pour accepter n'importe quel TextMeshProUGUI comme paramètre
+    private IEnumerator FlashStepUpdate(TextMeshProUGUI textElement)
+    {
+        if (textElement != null)
         {
             // Sauvegarder la couleur originale
-            Color originalColor = totalStepsText.color;
+            Color originalColor = textElement.color;
 
             // Transition vers le vert pour indiquer une augmentation
-            totalStepsText.color = Color.green;
+            textElement.color = Color.green;
 
             // Attendre un court instant
             yield return new WaitForSeconds(stepUpdateFlashDuration);
 
             // Revenir à la couleur d'origine
-            totalStepsText.color = originalColor;
+            textElement.color = originalColor;
         }
     }
 }

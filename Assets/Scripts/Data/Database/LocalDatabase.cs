@@ -1,4 +1,4 @@
-// Filepath: Assets/Scripts/Data/Database/LocalDatabase.cs
+Ôªø// Filepath: Assets/Scripts/Data/Database/LocalDatabase.cs
 using SQLite;
 using System;
 using System.IO;
@@ -10,18 +10,18 @@ public class LocalDatabase
     private string _databasePath;
 
     private const string DatabaseFilename = "StepQuestRPG_Data.db";
-    private const int DATABASE_VERSION = 2; // IncrÈmentÈ pour gÈrer les migrations
+    private const int DATABASE_VERSION = 3; // Incr–πment–π pour g–πrer les migrations (2 -> 3 pour DailySteps)
 
     public void InitializeDatabase()
     {
-        // DÈfinir le chemin de la base de donnÈes
+        // D–πfinir le chemin de la base de donn–πes
         _databasePath = Path.Combine(Application.persistentDataPath, DatabaseFilename);
         Logger.LogInfo($"LocalDatabase: Database path is: {_databasePath}");
 
         try
         {
-            // Force la suppression de la base de donnÈes existante pour repartir proprement
-            // ¿ dÈsactiver en production aprËs vÈrification du bon fonctionnement
+            // Force la suppression de la base de donn–πes existante pour repartir proprement
+            // –ê d–πsactiver en production apr–∏s v–πrification du bon fonctionnement
             bool forceReset = false;
 
             if (forceReset && File.Exists(_databasePath))
@@ -30,18 +30,18 @@ public class LocalDatabase
                 Logger.LogInfo("LocalDatabase: Reset - Existing database file deleted");
             }
 
-            // CrÈer ou ouvrir la connexion SQLite
+            // Cr–πer ou ouvrir la connexion SQLite
             _connection = new SQLiteConnection(_databasePath);
             Logger.LogInfo("LocalDatabase: Connection established");
 
-            // VÈrifier si la base de donnÈes nÈcessite une migration
+            // V–πrifier si la base de donn–πes n–πcessite une migration
             ManageDatabaseMigration();
 
-            // CrÈer la table PlayerData si elle n'existe pas dÈj‡
+            // Cr–πer la table PlayerData si elle n'existe pas d–πj–∞
             _connection.CreateTable<PlayerData>();
             Logger.LogInfo("LocalDatabase: PlayerData table created/verified");
 
-            // VÈrifier la structure de la table
+            // V–πrifier la structure de la table
             DebugLogTableStructure();
         }
         catch (Exception ex)
@@ -50,15 +50,15 @@ public class LocalDatabase
         }
     }
 
-    // Gestion des migrations de base de donnÈes
+    // Gestion des migrations de base de donn–πes
     private void ManageDatabaseMigration()
     {
         try
         {
-            // CrÈer une table de version si elle n'existe pas
+            // Cr–πer une table de version si elle n'existe pas
             _connection.Execute("CREATE TABLE IF NOT EXISTS DatabaseVersion (Version INTEGER)");
 
-            // RÈcupÈrer la version actuelle
+            // R–πcup–πrer la version actuelle
             int currentVersion = 0;
             var result = _connection.Query<DatabaseVersionInfo>("SELECT Version FROM DatabaseVersion LIMIT 1");
             if (result.Count > 0)
@@ -67,17 +67,17 @@ public class LocalDatabase
             }
             else
             {
-                // Aucune version trouvÈe, insÈrer la version initiale
+                // Aucune version trouv–πe, ins–πrer la version initiale
                 _connection.Execute("INSERT INTO DatabaseVersion (Version) VALUES (1)");
                 currentVersion = 1;
             }
 
             Logger.LogInfo($"LocalDatabase: Current database version: {currentVersion}, Target version: {DATABASE_VERSION}");
 
-            // Appliquer les migrations nÈcessaires
+            // Appliquer les migrations n–πcessaires
             if (currentVersion < DATABASE_VERSION)
             {
-                // Migration de la version 1 ‡ 2
+                // Migration de la version 1 –∞ 2
                 if (currentVersion == 1 && DATABASE_VERSION >= 2)
                 {
                     Logger.LogInfo("LocalDatabase: Migrating from version 1 to 2...");
@@ -88,7 +88,7 @@ public class LocalDatabase
                         _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastStepsDelta INTEGER DEFAULT 0");
                         _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastStepsChangeEpochMs INTEGER DEFAULT 0");
 
-                        // Mettre ‡ jour la version
+                        // Mettre –∞ jour la version
                         _connection.Execute("UPDATE DatabaseVersion SET Version = 2");
                         Logger.LogInfo("LocalDatabase: Migration to version 2 completed");
                     }
@@ -98,8 +98,33 @@ public class LocalDatabase
                     }
                 }
 
+                // NOUVELLE MIGRATION: Migration de la version 2 √† 3 pour ajouter DailySteps et LastDailyResetDate
+                if (currentVersion == 2 && DATABASE_VERSION >= 3)
+                {
+                    Logger.LogInfo("LocalDatabase: Migrating from version 2 to 3...");
+
+                    try
+                    {
+                        // Ajouter les colonnes pour le comptage quotidien
+                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN DailySteps INTEGER DEFAULT 0");
+                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastDailyResetDate TEXT DEFAULT ''");
+
+                        // Initialiser LastDailyResetDate √† la date du jour
+                        string todayDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+                        _connection.Execute($"UPDATE PlayerData SET LastDailyResetDate = '{todayDate}'");
+
+                        // Mettre √† jour la version
+                        _connection.Execute("UPDATE DatabaseVersion SET Version = 3");
+                        Logger.LogInfo("LocalDatabase: Migration to version 3 completed");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError($"LocalDatabase: Migration error: {ex.Message}");
+                    }
+                }
+
                 // Ajouter d'autres migrations ici au besoin:
-                // if (currentVersion == 2 && DATABASE_VERSION >= 3) {...}
+                // if (currentVersion == 3 && DATABASE_VERSION >= 4) {...}
             }
         }
         catch (Exception ex)
@@ -123,12 +148,12 @@ public class LocalDatabase
 
             if (data != null)
             {
-                Logger.LogInfo($"LocalDatabase: Data loaded - TotalSteps: {data.TotalPlayerSteps}, LastSync: {data.LastSyncEpochMs}");
+                Logger.LogInfo($"LocalDatabase: Data loaded - TotalSteps: {data.TotalPlayerSteps}, LastSync: {data.LastSyncEpochMs}, DailySteps: {data.DailySteps}, LastReset: {data.LastDailyResetDate}");
                 return data;
             }
             else
             {
-                // CrÈer un nouveau PlayerData si aucun n'existe
+                // Cr–πer un nouveau PlayerData si aucun n'existe
                 PlayerData newData = new PlayerData();
                 _connection.Insert(newData);
                 Logger.LogInfo("LocalDatabase: New PlayerData created and saved");
@@ -158,22 +183,29 @@ public class LocalDatabase
 
         try
         {
-            // VÈrifier que l'identifiant est correct
+            // V–πrifier que l'identifiant est correct
             if (data.Id <= 0)
                 data.Id = 1;
 
-            // VÈrifier que LastSyncEpochMs est correctement dÈfini
+            // V–πrifier que LastSyncEpochMs est correctement d–πfini
             if (data.LastSyncEpochMs <= 0 && data.TotalPlayerSteps > 0)
             {
                 Logger.LogWarning("LocalDatabase: LastSyncEpochMs needs initialization");
                 data.LastSyncEpochMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             }
 
-            // Enregistrer les donnÈes
-            int result = _connection.InsertOrReplace(data);
-            Logger.LogInfo($"LocalDatabase: Data saved - TotalSteps: {data.TotalPlayerSteps}, LastSync: {data.LastSyncEpochMs}, LastDelta: {data.LastStepsDelta}, Result: {result}");
+            // S'assurer que LastDailyResetDate n'est pas vide
+            if (string.IsNullOrEmpty(data.LastDailyResetDate))
+            {
+                data.LastDailyResetDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+                Logger.LogWarning($"LocalDatabase: LastDailyResetDate was empty, initialized to {data.LastDailyResetDate}");
+            }
 
-            // VÈrifier que la sauvegarde a rÈussi
+            // Enregistrer les donn–πes
+            int result = _connection.InsertOrReplace(data);
+            Logger.LogInfo($"LocalDatabase: Data saved - TotalSteps: {data.TotalPlayerSteps}, LastSync: {data.LastSyncEpochMs}, LastDelta: {data.LastStepsDelta}, DailySteps: {data.DailySteps}, LastReset: {data.LastDailyResetDate}, Result: {result}");
+
+            // V–πrifier que la sauvegarde a r–πussi
             VerifySaveSuccess(data);
         }
         catch (Exception ex)
@@ -192,7 +224,7 @@ public class LocalDatabase
         }
     }
 
-    // MÈthode privÈe pour vÈrifier la structure de la table
+    // M–πthode priv–πe pour v–πrifier la structure de la table
     private void DebugLogTableStructure()
     {
         try
@@ -211,7 +243,7 @@ public class LocalDatabase
         }
     }
 
-    // MÈthode privÈe pour vÈrifier que la sauvegarde a rÈussi
+    // M–πthode priv–πe pour v–πrifier que la sauvegarde a r–πussi
     private void VerifySaveSuccess(PlayerData originalData)
     {
         try
@@ -219,11 +251,13 @@ public class LocalDatabase
             var savedData = _connection.Table<PlayerData>().FirstOrDefault(p => p.Id == 1);
             if (savedData != null)
             {
-                Logger.LogInfo($"LocalDatabase: Verification - Saved data: TotalSteps: {savedData.TotalPlayerSteps}, LastSync: {savedData.LastSyncEpochMs}");
+                Logger.LogInfo($"LocalDatabase: Verification - Saved data: TotalSteps: {savedData.TotalPlayerSteps}, LastSync: {savedData.LastSyncEpochMs}, DailySteps: {savedData.DailySteps}");
 
-                // VÈrifier que les valeurs correspondent
+                // V–πrifier que les valeurs correspondent
                 if (savedData.TotalPlayerSteps != originalData.TotalPlayerSteps ||
-                    savedData.LastSyncEpochMs != originalData.LastSyncEpochMs)
+                    savedData.LastSyncEpochMs != originalData.LastSyncEpochMs ||
+                    savedData.DailySteps != originalData.DailySteps ||
+                    savedData.LastDailyResetDate != originalData.LastDailyResetDate)
                 {
                     Logger.LogError("LocalDatabase: Verification FAILED - Data mismatch after save");
                 }
@@ -236,7 +270,7 @@ public class LocalDatabase
     }
 }
 
-// Classe pour stocker les informations de version de la base de donnÈes
+// Classe pour stocker les informations de version de la base de donn–πes
 class DatabaseVersionInfo
 {
     public int Version { get; set; }

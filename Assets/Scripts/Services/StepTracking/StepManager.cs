@@ -6,8 +6,9 @@ public class StepManager : MonoBehaviour
 {
     public static StepManager Instance { get; private set; }
 
-    // Variable unique pour compter les pas
+    // Variables pour compter les pas
     public long TotalSteps { get; private set; }
+    public long DailySteps { get; private set; }
 
     // Références aux autres services
     private RecordingAPIStepCounter apiCounter;
@@ -79,13 +80,17 @@ public class StepManager : MonoBehaviour
         Logger.LogInfo("StepManager: HandleAppOpeningOrResuming started.");
         isAppInForeground = true;
 
-        // Charger le total de pas à partir du DataManager
+        // Vérifier s'il faut réinitialiser les pas quotidiens en cas de changement de jour
+        dataManager.CheckAndResetDailySteps();
+
+        // Charger le total de pas et les pas quotidiens à partir du DataManager
         TotalSteps = dataManager.PlayerData.TotalSteps;
+        DailySteps = dataManager.PlayerData.DailySteps;
         long lastSyncEpochMs = dataManager.PlayerData.LastSyncEpochMs;
         long lastPauseEpochMs = dataManager.PlayerData.LastPauseEpochMs;
         long nowEpochMs = new System.DateTimeOffset(System.DateTime.UtcNow).ToUnixTimeMilliseconds();
 
-        Logger.LogInfo($"StepManager: Loaded state - Initial TotalSteps: {TotalSteps}, LastSync: {lastSyncEpochMs}, LastPause: {lastPauseEpochMs}");
+        Logger.LogInfo($"StepManager: Loaded state - Initial TotalSteps: {TotalSteps}, DailySteps: {DailySteps}, LastSync: {lastSyncEpochMs}, LastPause: {lastPauseEpochMs}");
 
         // Vérification des permissions requise AVANT TOUT !
         if (!apiCounter.HasPermission())
@@ -159,10 +164,12 @@ public class StepManager : MonoBehaviour
                     deltaApiSinceLast = MAX_STEPS_PER_UPDATE;
                 }
 
-                // Mettre à jour le total des pas avec le delta API
+                // Mettre à jour le total des pas et les pas quotidiens avec le delta API
                 TotalSteps += deltaApiSinceLast;
+                DailySteps += deltaApiSinceLast;
                 dataManager.PlayerData.TotalSteps = TotalSteps;
-                Logger.LogInfo($"StepManager: API Catch-up - Delta: {deltaApiSinceLast}. New TotalSteps: {TotalSteps}.");
+                dataManager.PlayerData.DailySteps = DailySteps;
+                Logger.LogInfo($"StepManager: API Catch-up - Delta: {deltaApiSinceLast}. New TotalSteps: {TotalSteps}, DailySteps: {DailySteps}");
             }
             else
             {
@@ -288,10 +295,12 @@ public class StepManager : MonoBehaviour
 
                         sensorDeltaThisSession += newIndividualSensorSteps;
                         TotalSteps += newIndividualSensorSteps;
-                        Logger.LogInfo($"StepManager: New steps: {newIndividualSensorSteps}, TotalSteps: {TotalSteps}");
+                        DailySteps += newIndividualSensorSteps;
+                        Logger.LogInfo($"StepManager: New steps: {newIndividualSensorSteps}, TotalSteps: {TotalSteps}, DailySteps: {DailySteps}");
 
                         // Sauvegarde périodique pour assurer que les pas sont enregistrés même en cas de crash
                         dataManager.PlayerData.TotalSteps = TotalSteps;
+                        dataManager.PlayerData.DailySteps = DailySteps;
                         dataManager.SaveGame();
                     }
                 }
@@ -317,7 +326,8 @@ public class StepManager : MonoBehaviour
 
         // Force une sauvegarde à chaque pause/fermeture pour s'assurer que les données sont persistées
         dataManager.PlayerData.TotalSteps = TotalSteps;
-        Logger.LogInfo($"StepManager: Saving steps. Final TotalSteps: {TotalSteps}, LastPauseEpochMs: {nowEpochMs}");
+        dataManager.PlayerData.DailySteps = DailySteps;
+        Logger.LogInfo($"StepManager: Saving steps. Final TotalSteps: {TotalSteps}, DailySteps: {DailySteps}, LastPauseEpochMs: {nowEpochMs}");
         dataManager.SaveGame();
         Logger.LogInfo("StepManager: Data saved on pause/close.");
     }

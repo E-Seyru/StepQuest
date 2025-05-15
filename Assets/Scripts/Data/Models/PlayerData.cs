@@ -53,6 +53,24 @@ public class PlayerData
         set { _lastStepsChangeEpochMs = value; }
     }
 
+    // NOUVEAU: Compteur de pas journalier
+    private long _dailySteps;
+    [Column("DailySteps")]
+    public long DailySteps
+    {
+        get { return _dailySteps; }
+        set { _dailySteps = value; }
+    }
+
+    // NOUVEAU: Date du dernier reset journalier (format yyyy-MM-dd)
+    private string _lastDailyResetDate;
+    [Column("LastDailyResetDate")]
+    public string LastDailyResetDate
+    {
+        get { return _lastDailyResetDate; }
+        set { _lastDailyResetDate = value; }
+    }
+
     // Constructeur par défaut
     public PlayerData()
     {
@@ -62,6 +80,8 @@ public class PlayerData
         _lastPauseEpochMs = 0; // 0 indique que l'app n'a jamais été mise en pause auparavant
         _lastStepsDelta = 0;
         _lastStepsChangeEpochMs = 0;
+        _dailySteps = 0;
+        _lastDailyResetDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
     }
 
     // Propriété pour accéder à TotalPlayerSteps avec le nom simplifié TotalSteps

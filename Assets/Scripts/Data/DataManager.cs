@@ -1,4 +1,5 @@
 ﻿// Filepath: Assets/Scripts/Data/DataManager.cs
+using System;
 using UnityEngine;
 
 public class DataManager : MonoBehaviour
@@ -10,6 +11,7 @@ public class DataManager : MonoBehaviour
 
     // Constantes pour la détection d'anomalies
     private const long MAX_ACCEPTABLE_STEPS_DELTA = 10000; // Nombre maximum de pas acceptable entre deux sauvegardes
+    private const long MAX_ACCEPTABLE_DAILY_STEPS = 50000; // Nombre maximum de pas quotidiens raisonnable
 
     void Awake()
     {
@@ -35,8 +37,11 @@ public class DataManager : MonoBehaviour
         Logger.LogInfo("DataManager initialized and game data loaded.");
         if (PlayerData != null)
         {
-            Logger.LogInfo($"DataManager: Loaded PlayerData - TotalSteps: {PlayerData.TotalSteps}, LastSyncEpochMs: {PlayerData.LastSyncEpochMs}");
+            Logger.LogInfo($"DataManager: Loaded PlayerData - TotalSteps: {PlayerData.TotalSteps}, LastSyncEpochMs: {PlayerData.LastSyncEpochMs}, DailySteps: {PlayerData.DailySteps}");
         }
+
+        // Vérifier si c'est un nouveau jour après le chargement
+        CheckAndResetDailySteps();
     }
 
     private void LoadGame()
@@ -49,7 +54,7 @@ public class DataManager : MonoBehaviour
         }
 
         PlayerData = _localDatabase.LoadPlayerData();
-        Logger.LogInfo($"DataManager: LoadGame → loaded TotalSteps={PlayerData.TotalSteps}, LastSync={PlayerData.LastSyncEpochMs}");
+        Logger.LogInfo($"DataManager: LoadGame → loaded TotalSteps={PlayerData.TotalSteps}, LastSync={PlayerData.LastSyncEpochMs}, DailySteps={PlayerData.DailySteps}");
 
         // Vérification supplémentaire - si pas de données, sauvegarder immédiatement
         if (PlayerData.Id == 0)
@@ -57,6 +62,35 @@ public class DataManager : MonoBehaviour
             PlayerData.Id = 1;
             SaveGame();
             Logger.LogInfo("DataManager: Fixed PlayerData Id and saved.");
+        }
+
+        // Si LastDailyResetDate est null ou vide, l'initialiser
+        if (string.IsNullOrEmpty(PlayerData.LastDailyResetDate))
+        {
+            PlayerData.LastDailyResetDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            Logger.LogInfo($"DataManager: Initialized LastDailyResetDate to {PlayerData.LastDailyResetDate}");
+            SaveGame();
+        }
+    }
+
+    // Nouvelle méthode pour vérifier et réinitialiser les pas quotidiens au besoin
+    public void CheckAndResetDailySteps()
+    {
+        if (PlayerData == null) return;
+
+        string todayDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        if (PlayerData.LastDailyResetDate != todayDate)
+        {
+            Logger.LogInfo($"DataManager: New day detected. Resetting daily steps. Last reset: {PlayerData.LastDailyResetDate}, Today: {todayDate}");
+
+            // Réinitialiser les pas quotidiens et mettre à jour la date
+            PlayerData.DailySteps = 0;
+            PlayerData.LastDailyResetDate = todayDate;
+
+            // Sauvegarder les changements
+            SaveGame();
+
+            Logger.LogInfo("DataManager: Daily steps reset completed.");
         }
     }
 
@@ -81,10 +115,13 @@ public class DataManager : MonoBehaviour
 
         try
         {
+            // Vérifier si c'est un nouveau jour
+            CheckAndResetDailySteps();
+
             // Vérifier l'intégrité des données avant de sauvegarder
             ValidatePlayerData();
 
-            Logger.LogInfo($"DataManager: SaveGame → saving TotalSteps={PlayerData.TotalSteps}, LastSync={PlayerData.LastSyncEpochMs}, LastDelta={PlayerData.LastStepsDelta}");
+            Logger.LogInfo($"DataManager: SaveGame → saving TotalSteps={PlayerData.TotalSteps}, LastSync={PlayerData.LastSyncEpochMs}, LastDelta={PlayerData.LastStepsDelta}, DailySteps={PlayerData.DailySteps}");
             _localDatabase.SavePlayerData(PlayerData);
         }
         catch (System.Exception ex)
@@ -114,6 +151,13 @@ public class DataManager : MonoBehaviour
             // Réinitialiser le nombre de pas et le delta
             PlayerData.TotalPlayerSteps = newSteps;
             PlayerData.LastStepsDelta = MAX_ACCEPTABLE_STEPS_DELTA;
+        }
+
+        // Vérifier si les pas quotidiens sont suspicieusement élevés
+        if (PlayerData.DailySteps > MAX_ACCEPTABLE_DAILY_STEPS)
+        {
+            Logger.LogWarning($"DataManager: Suspicious daily steps detected: {PlayerData.DailySteps} > {MAX_ACCEPTABLE_DAILY_STEPS}");
+            PlayerData.DailySteps = MAX_ACCEPTABLE_DAILY_STEPS;
         }
 
         // Vérifier si les valeurs de timestamp sont cohérentes
