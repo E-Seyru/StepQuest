@@ -1146,8 +1146,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d24355a6c2666cf43be3508fd348d03d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pasDuJourText: {fileID: 1027038381}
-  pasTotauxText: {fileID: 1993028279}
+  totalStepsText: {fileID: 1993028279}
+  lastUpdateText: {fileID: 0}
 --- !u!4 &1022293413
 Transform:
   m_ObjectHideFlags: 0
@@ -1919,8 +1919,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -6.2132, y: -292.97656}
-  m_SizeDelta: {x: 913.2647, y: 1422.153}
+  m_AnchoredPosition: {x: -6.2132, y: -136.47}
+  m_SizeDelta: {x: 913.2647, y: 1735.2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1766167453
 MonoBehaviour:

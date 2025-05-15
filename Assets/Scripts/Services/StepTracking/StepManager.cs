@@ -1,4 +1,4 @@
-// Filepath: Assets/Scripts/Gameplay/StepManager.cs
+ï»¿// Filepath: Assets/Scripts/Gameplay/StepManager.cs
 using System.Collections;
 using UnityEngine;
 
@@ -6,33 +6,37 @@ public class StepManager : MonoBehaviour
 {
     public static StepManager Instance { get; private set; }
 
-    // Variables exposées à l'UIManager (selon le plan)
-    public long CurrentDisplayStepsToday { get; private set; }
-    public long CurrentDisplayTotalSteps { get; private set; }
+    // Variable unique pour compter les pas
+    public long TotalSteps { get; private set; }
 
-    // Références aux autres services
+    // RÃ©fÃ©rences aux autres services
     private RecordingAPIStepCounter apiCounter;
     private DataManager dataManager;
-    private UIManager uiManager; // On garde la référence pour s'assurer qu'il est là
+    private UIManager uiManager;
 
-    // Variables internes pour la logique du plan
-    private long baseTodayStepsFromAPI;
-    private long baseTotalStepsAtOpeningAfterApiSync; // Renommé pour clarté
-
+    // Variables internes
     private long sensorStartCount = -1;
     private long sensorDeltaThisSession = 0;
 
     private bool isInitialized = false;
     private bool isAppInForeground = true;
 
+    // ParamÃ¨tres de dÃ©bounce et filtrage
+    private const int SENSOR_SPIKE_THRESHOLD = 50; // Nombre de pas considÃ©rÃ© comme anormal en une seule mise Ã  jour
+    private const int SENSOR_DEBOUNCE_SECONDS = 3; // Temps minimum entre deux grandes variations
+    private float lastLargeUpdateTime = 0f;
+    private const long MAX_STEPS_PER_UPDATE = 1000; // Limite raisonnable pour une sauvegarde unique
+
     void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
+            Logger.LogWarning("StepManager: Multiple instances detected! Destroying duplicate.");
             Destroy(gameObject);
             return;
         }
@@ -42,13 +46,17 @@ public class StepManager : MonoBehaviour
     {
         Logger.LogInfo("StepManager: Start - Initializing...");
         yield return StartCoroutine(WaitForServices());
-        if (apiCounter == null || dataManager == null || uiManager == null) // uiManager est vérifié ici
+        if (apiCounter == null || dataManager == null || uiManager == null)
         {
             Logger.LogError("StepManager: Critical services not found. StepManager cannot function.");
             isInitialized = false;
             yield break;
         }
         apiCounter.InitializeService();
+
+        // Attendre un peu pour s'assurer que le DataManager ait correctement chargÃ© les donnÃ©es
+        yield return new WaitForSeconds(1.0f);
+
         yield return StartCoroutine(HandleAppOpeningOrResuming());
         isInitialized = true;
         Logger.LogInfo("StepManager: Initialization complete.");
@@ -62,7 +70,7 @@ public class StepManager : MonoBehaviour
         }
         apiCounter = RecordingAPIStepCounter.Instance;
         dataManager = DataManager.Instance;
-        uiManager = UIManager.Instance; // Récupérer l'instance de UIManager
+        uiManager = UIManager.Instance;
         Logger.LogInfo("StepManager: All dependent services found.");
     }
 
@@ -71,15 +79,18 @@ public class StepManager : MonoBehaviour
         Logger.LogInfo("StepManager: HandleAppOpeningOrResuming started.");
         isAppInForeground = true;
 
-        // CurrentDisplayTotalSteps est initialisé avec la valeur de DataManager au début.
-        baseTotalStepsAtOpeningAfterApiSync = dataManager.CurrentPlayerData.TotalPlayerSteps; // Stocker la valeur avant le rattrapage API
-        long lastSyncEpochMs = dataManager.CurrentPlayerData.LastSyncEpochMs;
+        // Charger le total de pas Ã  partir du DataManager
+        TotalSteps = dataManager.PlayerData.TotalSteps;
+        long lastSyncEpochMs = dataManager.PlayerData.LastSyncEpochMs;
+        long lastPauseEpochMs = dataManager.PlayerData.LastPauseEpochMs;
         long nowEpochMs = new System.DateTimeOffset(System.DateTime.UtcNow).ToUnixTimeMilliseconds();
 
-        Logger.LogInfo($"StepManager: Loaded state - Initial TotalSteps (from DM): {baseTotalStepsAtOpeningAfterApiSync}, LastSync: {lastSyncEpochMs}");
+        Logger.LogInfo($"StepManager: Loaded state - Initial TotalSteps: {TotalSteps}, LastSync: {lastSyncEpochMs}, LastPause: {lastPauseEpochMs}");
 
+        // VÃ©rification des permissions requise AVANT TOUT !
         if (!apiCounter.HasPermission())
         {
+            Logger.LogInfo("StepManager: Permission not granted. Requesting permission...");
             apiCounter.RequestPermission();
             float permissionWaitTime = 0f;
             while (!apiCounter.HasPermission() && permissionWaitTime < 30f)
@@ -92,48 +103,97 @@ public class StepManager : MonoBehaviour
 
         if (!apiCounter.HasPermission())
         {
-            Logger.LogError("StepManager: Permission still not granted after request. Cannot proceed with API sync.");
-            CurrentDisplayStepsToday = 0; // Ou une valeur d'erreur
-            CurrentDisplayTotalSteps = baseTotalStepsAtOpeningAfterApiSync; // Afficher le total stocké
-            // UIManager mettra à jour l'UI depuis ces propriétés dans son Update()
+            Logger.LogError("StepManager: Permission still not granted after request. Cannot proceed with API sync or sensor.");
             yield break;
         }
 
+        // S'abonner Ã  l'API de comptage
         apiCounter.SubscribeToRecordingApiIfNeeded();
 
-        Logger.LogInfo("StepManager: Starting API Catch-up (GetDeltaSince).");
-        long deltaApiSinceLast = 0;
-        yield return StartCoroutine(apiCounter.GetDeltaSinceFromAPI(lastSyncEpochMs, (result) =>
+        // VÃ©rifier si c'est le premier dÃ©marrage rÃ©el (pas enregistrÃ©s = 0 ET LastSync = 0)
+        bool isFirstRun = TotalSteps == 0 && lastSyncEpochMs == 0;
+
+        // Si c'est le premier dÃ©marrage, on initialise uniquement le timestamp
+        if (isFirstRun)
         {
-            deltaApiSinceLast = result;
-        }));
-
-        if (deltaApiSinceLast < 0) { deltaApiSinceLast = 0; Logger.LogWarning("StepManager: GetDeltaSinceFromAPI returned error, defaulting delta to 0."); }
-
-        // Mettre à jour baseTotalStepsAtOpeningAfterApiSync pour refléter le total après rattrapage
-        baseTotalStepsAtOpeningAfterApiSync += deltaApiSinceLast;
-        dataManager.CurrentPlayerData.TotalPlayerSteps = baseTotalStepsAtOpeningAfterApiSync;
-        dataManager.CurrentPlayerData.LastSyncEpochMs = nowEpochMs;
-        dataManager.SaveGame();
-        Logger.LogInfo($"StepManager: API Catch-up - Delta: {deltaApiSinceLast}. New TotalSteps in DM: {baseTotalStepsAtOpeningAfterApiSync}. Updated LastSync to: {nowEpochMs}");
-
-        Logger.LogInfo("StepManager: Reading API for BaseTodaySteps (GetDeltaToday).");
-        yield return StartCoroutine(apiCounter.GetDeltaTodayFromAPI((result) =>
+            Logger.LogInfo("StepManager: First app startup detected (TotalSteps=0 AND LastSync=0). Initializing LastSync timestamp without API catch-up.");
+            dataManager.PlayerData.LastSyncEpochMs = nowEpochMs;
+            dataManager.PlayerData.LastPauseEpochMs = nowEpochMs;
+            dataManager.SaveGame();
+            Logger.LogInfo($"StepManager: API Catch-up skipped for first start. TotalSteps: {TotalSteps}. Updated LastSync to: {nowEpochMs}");
+        }
+        else
         {
-            baseTodayStepsFromAPI = result;
-        }));
-        if (baseTodayStepsFromAPI < 0) { baseTodayStepsFromAPI = 0; Logger.LogWarning("StepManager: GetDeltaTodayFromAPI returned error, defaulting baseToday to 0."); }
-        Logger.LogInfo($"StepManager: BaseTodaySteps from API: {baseTodayStepsFromAPI}");
+            // S'assurer que LastSync a une valeur valide
+            if (lastSyncEpochMs <= 0)
+            {
+                // Si on a des pas mais pas de timestamp valide, on utilise une date rÃ©cente (24h avant)
+                Logger.LogInfo("StepManager: LastSync value invalid (0) but TotalSteps > 0. Setting LastSync to 24h ago.");
+                lastSyncEpochMs = nowEpochMs - (24 * 60 * 60 * 1000); // 24h en millisecondes
+            }
 
-        sensorStartCount = -1;
-        sensorDeltaThisSession = 0;
+            // CORRECTION: Utiliser LastPauseEpochMs comme fin de pÃ©riode si disponible
+            long startTimeMs = lastSyncEpochMs;
+            // Utiliser LastPauseEpochMs au lieu de nowEpochMs pour Ã©viter le double comptage
+            long endTimeMs = (lastPauseEpochMs > startTimeMs) ? lastPauseEpochMs : nowEpochMs;
+
+            // Ne rÃ©cupÃ©rer les pas que s'il y a un intervalle de temps valide
+            if (endTimeMs > startTimeMs)
+            {
+                // RÃ©cupÃ©rer les pas depuis la derniÃ¨re synchronisation jusqu'Ã  la derniÃ¨re pause
+                Logger.LogInfo($"StepManager: Starting API Catch-up (GetDeltaSince) from {startTimeMs} to {endTimeMs}");
+                long deltaApiSinceLast = 0;
+                yield return StartCoroutine(apiCounter.GetDeltaSinceFromAPI(startTimeMs, endTimeMs, (result) =>
+                {
+                    deltaApiSinceLast = result;
+                }));
+
+                if (deltaApiSinceLast < 0)
+                {
+                    deltaApiSinceLast = 0;
+                    Logger.LogWarning("StepManager: GetDeltaSinceFromAPI returned error, defaulting delta to 0.");
+                }
+                else if (deltaApiSinceLast > MAX_STEPS_PER_UPDATE)
+                {
+                    Logger.LogWarning($"StepManager: API returned {deltaApiSinceLast} steps, which exceeds threshold. Limiting to {MAX_STEPS_PER_UPDATE}.");
+                    deltaApiSinceLast = MAX_STEPS_PER_UPDATE;
+                }
+
+                // Mettre Ã  jour le total des pas avec le delta API
+                TotalSteps += deltaApiSinceLast;
+                dataManager.PlayerData.TotalSteps = TotalSteps;
+                Logger.LogInfo($"StepManager: API Catch-up - Delta: {deltaApiSinceLast}. New TotalSteps: {TotalSteps}.");
+            }
+            else
+            {
+                Logger.LogInfo("StepManager: API Catch-up skipped - no valid time interval available or app was just paused very recently.");
+            }
+
+            // Toujours mettre Ã  jour LastSyncEpochMs au temps actuel
+            dataManager.PlayerData.LastSyncEpochMs = nowEpochMs;
+            dataManager.SaveGame();
+            Logger.LogInfo($"StepManager: Updated LastSync to: {nowEpochMs}");
+        }
+
+        // Initialiser correctement sensorStartCount avec la valeur actuelle du capteur pour Ã©viter de recompter les pas dÃ©jÃ  rÃ©cupÃ©rÃ©s par l'API
+        long currentSensorValue = apiCounter.GetCurrentRawSensorSteps();
+        if (currentSensorValue > 0)
+        {
+            sensorStartCount = currentSensorValue;
+            sensorDeltaThisSession = 0;
+            Logger.LogInfo($"StepManager: sensorStartCount initialized to {sensorStartCount} after API sync");
+        }
+        else
+        {
+            // RÃ©initialiser le compteur de capteur pour la nouvelle session
+            sensorStartCount = -1;
+            sensorDeltaThisSession = 0;
+            Logger.LogInfo("StepManager: Sensor values reset for new session.");
+        }
+
+        // DÃ©marrer l'Ã©coute directe du capteur pour les pas en temps rÃ©el
         apiCounter.StartDirectSensorListener();
-        Logger.LogInfo("StepManager: Direct sensor listener started. sensorStartCount and sensorDeltaThisSession reset.");
-
-        CurrentDisplayStepsToday = baseTodayStepsFromAPI;
-        CurrentDisplayTotalSteps = baseTotalStepsAtOpeningAfterApiSync; // Total après rattrapage API, avant delta capteur session
-        // UIManager mettra à jour l'UI dans son propre Update()
-        Logger.LogInfo($"StepManager: Initial values for UI - StepsToday: {CurrentDisplayStepsToday}, TotalSteps: {CurrentDisplayTotalSteps}");
+        Logger.LogInfo("StepManager: Direct sensor listener started.");
 
         StartCoroutine(DirectSensorUpdateLoop());
     }
@@ -175,9 +235,22 @@ public class StepManager : MonoBehaviour
             }
             else if (rawSensorValue < sensorStartCount)
             {
-                Logger.LogWarning($"StepManager: Sensor reset detected (new: {rawSensorValue} < start: {sensorStartCount}). Adjusting start count.");
-                sensorStartCount = rawSensorValue;
-                sensorDeltaThisSession = 0;
+                // AmÃ©lioration de la dÃ©tection des rÃ©initialisations capteur
+                // Distinguer entre rÃ©initialisation rÃ©elle et erreur temporaire
+                if (sensorStartCount - rawSensorValue > 1000)
+                {
+                    // Si la valeur est significativement plus petite, c'est probablement une rÃ©initialisation
+                    Logger.LogInfo($"StepManager: Sensor full reset detected. Old={sensorStartCount}, New={rawSensorValue}");
+                    sensorStartCount = rawSensorValue;
+                    sensorDeltaThisSession = 0;
+                }
+                else
+                {
+                    // Petite diminution, potentiellement une erreur de lecture
+                    Logger.LogWarning($"StepManager: Unexpected sensor value decrease from {sensorStartCount} to {rawSensorValue}. Ignoring.");
+                    // Ne pas modifier sensorStartCount, juste ignorer cette valeur
+                }
+                continue;
             }
 
             if (sensorStartCount != -1)
@@ -187,13 +260,42 @@ public class StepManager : MonoBehaviour
 
                 if (newIndividualSensorSteps > 0)
                 {
-                    sensorDeltaThisSession += newIndividualSensorSteps;
+                    // Filtrer les pics anormaux avec dÃ©bounce
+                    if (newIndividualSensorSteps > SENSOR_SPIKE_THRESHOLD)
+                    {
+                        float currentTime = Time.time;
+                        if (currentTime - lastLargeUpdateTime < SENSOR_DEBOUNCE_SECONDS)
+                        {
+                            Logger.LogWarning($"StepManager: Anomaly detected! {newIndividualSensorSteps} steps in quick succession filtered out.");
+                            newIndividualSensorSteps = 0; // Ignorer cette mise Ã  jour
+                        }
+                        else
+                        {
+                            lastLargeUpdateTime = currentTime;
+                            Logger.LogInfo($"StepManager: Large step update of {newIndividualSensorSteps} accepted after debounce check.");
+                        }
+                    }
+
+                    // Mettre Ã  jour les pas seulement si la valeur filtrÃ©e est valide
+                    if (newIndividualSensorSteps > 0)
+                    {
+                        // VÃ©rifier si l'incrÃ©ment reste dans des limites raisonnables
+                        if (newIndividualSensorSteps > MAX_STEPS_PER_UPDATE)
+                        {
+                            Logger.LogWarning($"StepManager: Unusually large step increment detected: {newIndividualSensorSteps}. Limiting to {MAX_STEPS_PER_UPDATE}.");
+                            newIndividualSensorSteps = MAX_STEPS_PER_UPDATE;
+                        }
+
+                        sensorDeltaThisSession += newIndividualSensorSteps;
+                        TotalSteps += newIndividualSensorSteps;
+                        Logger.LogInfo($"StepManager: New steps: {newIndividualSensorSteps}, TotalSteps: {TotalSteps}");
+
+                        // Sauvegarde pÃ©riodique pour assurer que les pas sont enregistrÃ©s mÃªme en cas de crash
+                        dataManager.PlayerData.TotalSteps = TotalSteps;
+                        dataManager.SaveGame();
+                    }
                 }
             }
-
-            CurrentDisplayStepsToday = baseTodayStepsFromAPI + sensorDeltaThisSession;
-            CurrentDisplayTotalSteps = baseTotalStepsAtOpeningAfterApiSync + sensorDeltaThisSession;
-            // UIManager mettra à jour l'UI dans son propre Update()
         }
         Logger.LogInfo("StepManager: Exiting DirectSensorUpdateLoop.");
     }
@@ -204,37 +306,33 @@ public class StepManager : MonoBehaviour
 
         Logger.LogInfo("StepManager: HandleAppPausingOrClosing started.");
         isAppInForeground = false;
-        // StopCoroutine(DirectSensorUpdateLoop()); // La boucle s'arrêtera à cause de isAppInForeground = false
 
         apiCounter.StopDirectSensorListener();
         Logger.LogInfo("StepManager: Direct sensor listener stopped.");
 
-        // CurrentDisplayTotalSteps contient déjà baseTotalStepsAtOpeningAfterApiSync + sensorDeltaThisSession
-        // C'est la valeur finale à sauvegarder dans DataManager pour TotalPlayerSteps.
-        if (sensorDeltaThisSession > 0 || dataManager.CurrentPlayerData.TotalPlayerSteps != CurrentDisplayTotalSteps) // Sauvegarder si le delta capteur a changé ou si le total a changé pour une autre raison
-        {
-            dataManager.CurrentPlayerData.TotalPlayerSteps = CurrentDisplayTotalSteps;
-            Logger.LogInfo($"StepManager: Validating sensorDelta ({sensorDeltaThisSession}). Final TotalSteps to save: {dataManager.CurrentPlayerData.TotalPlayerSteps}");
-        }
+        // Enregistrer le timestamp de pause pour rÃ©soudre le problÃ¨me de double comptage
+        long nowEpochMs = new System.DateTimeOffset(System.DateTime.UtcNow).ToUnixTimeMilliseconds();
+        dataManager.PlayerData.LastSyncEpochMs = nowEpochMs;
+        dataManager.PlayerData.LastPauseEpochMs = nowEpochMs;
 
+        // Force une sauvegarde Ã  chaque pause/fermeture pour s'assurer que les donnÃ©es sont persistÃ©es
+        dataManager.PlayerData.TotalSteps = TotalSteps;
+        Logger.LogInfo($"StepManager: Saving steps. Final TotalSteps: {TotalSteps}, LastPauseEpochMs: {nowEpochMs}");
         dataManager.SaveGame();
         Logger.LogInfo("StepManager: Data saved on pause/close.");
     }
-
-    // Supprimé : void UpdateUIManager()
-    // {
-    //     // Cette méthode n'est plus nécessaire, UIManager lit les propriétés directement.
-    // }
 
     void OnApplicationPause(bool pauseStatus)
     {
         if (!isInitialized && !pauseStatus) return;
         if (pauseStatus)
         {
+            Logger.LogInfo("StepManager: OnApplicationPause â†’ app goes to background");
             HandleAppPausingOrClosing();
         }
         else
         {
+            Logger.LogInfo("StepManager: OnApplicationPause â†’ app returns to foreground");
             if (isInitialized)
             {
                 StartCoroutine(HandleAppOpeningOrResuming());

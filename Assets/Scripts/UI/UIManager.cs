@@ -1,5 +1,5 @@
-// Filepath: Assets/Scripts/UI/UIManager.cs
-using System.Collections; // AjoutÈ pour la coroutine d'attente
+Ôªø// Filepath: Assets/Scripts/UI/UIManager.cs
+using System.Collections;
 using TMPro;
 using UnityEngine;
 
@@ -7,47 +7,42 @@ public class UIManager : MonoBehaviour
 {
     public static UIManager Instance { get; private set; }
 
-    [Header("UI References")] // RenommÈ pour plus de clartÈ
-    [SerializeField] private TextMeshProUGUI pasDuJourText; // RenommÈ pour Èviter confusion avec variables
-    [SerializeField] private TextMeshProUGUI pasTotauxText; // RenommÈ pour Èviter confusion avec variables
+    [Header("UI References")]
+    [SerializeField] private TextMeshProUGUI totalStepsText;
+    [SerializeField] private TextMeshProUGUI lastUpdateText; // Nouveau: indicateur de derni√®re mise √† jour
 
-    private StepManager stepManager; // RÈfÈrence au StepManager
+    private StepManager stepManager;
+    private long lastDisplayedSteps = -1;
+    private float stepUpdateFlashDuration = 0.3f;
 
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            // DontDestroyOnLoad(gameObject); // UIManager est souvent spÈcifique ‡ une scËne, mais si votre UI est persistante, dÈcommentez.
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
+            Logger.LogWarning("UIManager: Multiple instances detected! Destroying duplicate.");
             Destroy(gameObject);
             return;
         }
 
-        // VÈrifier si les rÈfÈrences TextMeshPro sont bien assignÈes
-        if (pasDuJourText == null)
+        if (totalStepsText == null)
         {
-            Debug.LogError("UIManager: pasDuJourText n'est pas assignÈ dans l'inspecteur !");
-        }
-        if (pasTotauxText == null)
-        {
-            Debug.LogError("UIManager: pasTotauxText n'est pas assignÈ dans l'inspecteur !");
+            Logger.LogError("UIManager: totalStepsText n'est pas assign√© dans l'inspecteur !");
         }
 
-        // Initialiser l'affichage ‡ des valeurs d'attente
-        UpdateTodaysStepsDisplayInternal(0, true); // true pour indiquer "valeur d'attente"
-        UpdateTotalPlayerStepsDisplayInternal(0, true);
+        // Initialiser l'affichage √† une valeur d'attente
+        UpdateTotalStepsDisplay(0, true);
     }
 
-    IEnumerator Start() // Utiliser Start comme une coroutine pour attendre StepManager
+    IEnumerator Start()
     {
-        // Attendre que StepManager soit initialisÈ et prÍt
-        // Logger.LogInfo("UIManager: Waiting for StepManager.Instance..."); // Peut Ítre verbeux
         while (StepManager.Instance == null)
         {
-            yield return null; // Attendre la prochaine frame
+            yield return null;
         }
         stepManager = StepManager.Instance;
         Logger.LogInfo("UIManager: StepManager.Instance found. Ready to update UI from StepManager.");
@@ -55,47 +50,75 @@ public class UIManager : MonoBehaviour
 
     void Update()
     {
-        // La mise ‡ jour se fait maintenant en lisant les propriÈtÈs de StepManager
-        if (stepManager != null && stepManager.enabled) // S'assurer que StepManager est prÍt et actif
+        if (stepManager != null && stepManager.enabled)
         {
-            UpdateTodaysStepsDisplayInternal(stepManager.CurrentDisplayStepsToday);
-            UpdateTotalPlayerStepsDisplayInternal(stepManager.CurrentDisplayTotalSteps);
-        }
-        // Si StepManager n'est pas prÍt, Awake a dÈj‡ mis des valeurs d'attente.
-    }
-
-    // Les mÈthodes publiques sont appelÈes par StepManager
-    // Correction: Ces mÈthodes ne sont plus appelÈes par StepManager.
-    // UIManager lit directement les propriÈtÈs de StepManager dans son Update.
-    // On garde des mÈthodes internes pour la logique d'affichage.
-
-    private void UpdateTotalPlayerStepsDisplayInternal(long steps, bool isWaitingMessage = false)
-    {
-        if (pasTotauxText != null)
-        {
-            if (isWaitingMessage)
+            // Mettre √† jour l'affichage des pas uniquement si la valeur a chang√©
+            if (stepManager.TotalSteps != lastDisplayedSteps)
             {
-                pasTotauxText.text = "---"; // Ou "Chargement..."
-            }
-            else
-            {
-                pasTotauxText.text = $"{steps}";
+                UpdateTotalStepsDisplay(stepManager.TotalSteps);
             }
         }
     }
 
-    private void UpdateTodaysStepsDisplayInternal(long steps, bool isWaitingMessage = false)
+    private void UpdateTotalStepsDisplay(long steps, bool isWaitingMessage = false)
     {
-        if (pasDuJourText != null)
+        if (totalStepsText != null)
         {
             if (isWaitingMessage)
             {
-                pasDuJourText.text = "---"; // Ou "Chargement..."
+                totalStepsText.text = "---";
+                if (lastUpdateText != null)
+                {
+                    lastUpdateText.text = "Chargement...";
+                }
             }
             else
             {
-                pasDuJourText.text = $"{steps}";
+                // Effet visuel pour les changements de pas
+                bool isIncrease = steps > lastDisplayedSteps && lastDisplayedSteps >= 0;
+
+                // Mettre √† jour le texte
+                totalStepsText.text = $"{steps}";
+
+                // Mettre √† jour l'horodatage si disponible
+                if (lastUpdateText != null && DataManager.Instance?.PlayerData != null)
+                {
+                    long lastChangeMs = DataManager.Instance.PlayerData.LastStepsChangeEpochMs;
+                    if (lastChangeMs > 0)
+                    {
+                        System.DateTime lastChange = new System.DateTime(1970, 1, 1, 0, 0, 0, System.DateTimeKind.Utc)
+                            .AddMilliseconds(lastChangeMs);
+                        lastUpdateText.text = $"Derni√®re mise √† jour: {lastChange.ToLocalTime():HH:mm:ss}";
+                    }
+                }
+
+                // Si c'est une augmentation, ajouter un effet de flash
+                if (isIncrease)
+                {
+                    StartCoroutine(FlashStepUpdate());
+                }
+
+                // Enregistrer la valeur
+                lastDisplayedSteps = steps;
             }
+        }
+    }
+
+    private IEnumerator FlashStepUpdate()
+    {
+        if (totalStepsText != null)
+        {
+            // Sauvegarder la couleur originale
+            Color originalColor = totalStepsText.color;
+
+            // Transition vers le vert pour indiquer une augmentation
+            totalStepsText.color = Color.green;
+
+            // Attendre un court instant
+            yield return new WaitForSeconds(stepUpdateFlashDuration);
+
+            // Revenir √† la couleur d'origine
+            totalStepsText.color = originalColor;
         }
     }
 }

@@ -1,12 +1,15 @@
-// Filepath: Assets/Scripts/Data/DataManager.cs
+ï»¿// Filepath: Assets/Scripts/Data/DataManager.cs
 using UnityEngine;
 
 public class DataManager : MonoBehaviour
 {
     public static DataManager Instance { get; private set; }
 
-    public PlayerData CurrentPlayerData { get; private set; }
-    private LocalDatabase _localDatabase; // En supposant que LocalDatabase.cs existe et fonctionne
+    public PlayerData PlayerData { get; private set; }
+    private LocalDatabase _localDatabase;
+
+    // Constantes pour la dÃ©tection d'anomalies
+    private const long MAX_ACCEPTABLE_STEPS_DELTA = 10000; // Nombre maximum de pas acceptable entre deux sauvegardes
 
     void Awake()
     {
@@ -18,6 +21,7 @@ public class DataManager : MonoBehaviour
         }
         else
         {
+            Logger.LogWarning("DataManager: Multiple instances detected! Destroying duplicate.");
             Destroy(gameObject);
         }
     }
@@ -29,12 +33,9 @@ public class DataManager : MonoBehaviour
 
         LoadGame();
         Logger.LogInfo("DataManager initialized and game data loaded.");
-        // Log pour vérifier la nouvelle valeur
-        if (CurrentPlayerData != null)
+        if (PlayerData != null)
         {
-            Logger.LogInfo($"DataManager: Loaded PlayerData - TotalSteps: {CurrentPlayerData.TotalPlayerSteps}, LastSyncEpochMs: {CurrentPlayerData.LastSyncEpochMs}");
-
-            // --- FIN DU CODE DE TEST TEMPORAIRE ---
+            Logger.LogInfo($"DataManager: Loaded PlayerData - TotalSteps: {PlayerData.TotalSteps}, LastSyncEpochMs: {PlayerData.LastSyncEpochMs}");
         }
     }
 
@@ -43,21 +44,19 @@ public class DataManager : MonoBehaviour
         if (_localDatabase == null)
         {
             Logger.LogError("DataManager: Cannot load game, LocalDatabase is not initialized.");
-            CurrentPlayerData = new PlayerData(); // Crée un PlayerData avec les valeurs par défaut (LastSyncEpochMs = 0)
-            // CurrentPlayerData.Id = 1; // Assuré par le constructeur de PlayerData ou par LocalDatabase
+            PlayerData = new PlayerData(); // CrÃ©e un PlayerData avec les valeurs par dÃ©faut (LastSyncEpochMs = 0)
             return;
         }
 
-        CurrentPlayerData = _localDatabase.LoadPlayerData();
-        Logger.LogInfo("DataManager: PlayerData loading process complete.");
+        PlayerData = _localDatabase.LoadPlayerData();
+        Logger.LogInfo($"DataManager: LoadGame â†’ loaded TotalSteps={PlayerData.TotalSteps}, LastSync={PlayerData.LastSyncEpochMs}");
 
-
-
-        // Si c'est la première fois et que LoadPlayerData retourne un nouvel objet,
-        // LastSyncEpochMs sera 0 par défaut, ce qui est correct.
-        if (CurrentPlayerData.Id == 0 && CurrentPlayerData.TotalPlayerSteps == 0 && CurrentPlayerData.LastSyncEpochMs == 0)
+        // VÃ©rification supplÃ©mentaire - si pas de donnÃ©es, sauvegarder immÃ©diatement
+        if (PlayerData.Id == 0)
         {
-            Logger.LogInfo("DataManager: Looks like a fresh PlayerData load (or first time).");
+            PlayerData.Id = 1;
+            SaveGame();
+            Logger.LogInfo("DataManager: Fixed PlayerData Id and saved.");
         }
     }
 
@@ -68,22 +67,70 @@ public class DataManager : MonoBehaviour
             Logger.LogError("DataManager: Cannot save game, LocalDatabase is not initialized.");
             return;
         }
-        if (CurrentPlayerData == null)
+        if (PlayerData == null)
         {
-            Logger.LogError("DataManager: Cannot save game, CurrentPlayerData is null.");
+            Logger.LogError("DataManager: Cannot save game, PlayerData is null.");
             return;
         }
 
-        // L'Id devrait être géré correctement par PlayerData ou LocalDatabase
-        // Logger.LogInfo($"DataManager: Saving PlayerData - TotalSteps: {CurrentPlayerData.TotalPlayerSteps}, LastSyncEpochMs: {CurrentPlayerData.LastSyncEpochMs}");
-        _localDatabase.SavePlayerData(CurrentPlayerData);
-        Logger.LogInfo($"DataManager [Test]: Saved PlayerData - TotalSteps: {CurrentPlayerData.TotalPlayerSteps}, LastSyncEpochMs: {CurrentPlayerData.LastSyncEpochMs}");
-        // Logger.LogInfo("DataManager: PlayerData save request sent to LocalDatabase."); // SavePlayerData dans LocalDatabase a déjà un log de succès
+        // Assurez-vous que l'ID est toujours valide
+        if (PlayerData.Id <= 0)
+        {
+            PlayerData.Id = 1;
+        }
+
+        try
+        {
+            // VÃ©rifier l'intÃ©gritÃ© des donnÃ©es avant de sauvegarder
+            ValidatePlayerData();
+
+            Logger.LogInfo($"DataManager: SaveGame â†’ saving TotalSteps={PlayerData.TotalSteps}, LastSync={PlayerData.LastSyncEpochMs}, LastDelta={PlayerData.LastStepsDelta}");
+            _localDatabase.SavePlayerData(PlayerData);
+        }
+        catch (System.Exception ex)
+        {
+            Logger.LogError($"DataManager: Exception during SaveGame: {ex.Message}");
+        }
+    }
+
+    // MÃ©thode pour vÃ©rifier l'intÃ©gritÃ© des donnÃ©es avant sauvegarde
+    private void ValidatePlayerData()
+    {
+        // Si c'est la premiÃ¨re fois ou s'il n'y a pas encore de pas, rien Ã  valider
+        if (PlayerData.TotalSteps <= 0 || PlayerData.LastStepsChangeEpochMs <= 0)
+        {
+            return;
+        }
+
+        // VÃ©rifier si le changement de pas est suspicieusement Ã©levÃ©
+        if (PlayerData.LastStepsDelta > MAX_ACCEPTABLE_STEPS_DELTA)
+        {
+            Logger.LogWarning($"DataManager: Suspicious step delta detected: {PlayerData.LastStepsDelta} > {MAX_ACCEPTABLE_STEPS_DELTA}");
+
+            // Restaurer une valeur plus raisonnable
+            long newSteps = PlayerData.TotalSteps - PlayerData.LastStepsDelta + MAX_ACCEPTABLE_STEPS_DELTA;
+            Logger.LogWarning($"DataManager: Capping steps from {PlayerData.TotalSteps} to {newSteps}");
+
+            // RÃ©initialiser le nombre de pas et le delta
+            PlayerData.TotalPlayerSteps = newSteps;
+            PlayerData.LastStepsDelta = MAX_ACCEPTABLE_STEPS_DELTA;
+        }
+
+        // VÃ©rifier si les valeurs de timestamp sont cohÃ©rentes
+        long nowEpochMs = new System.DateTimeOffset(System.DateTime.UtcNow).ToUnixTimeMilliseconds();
+        if (PlayerData.LastSyncEpochMs > nowEpochMs || PlayerData.LastPauseEpochMs > nowEpochMs ||
+            PlayerData.LastStepsChangeEpochMs > nowEpochMs)
+        {
+            Logger.LogWarning("DataManager: Invalid timestamp detected (in the future). Resetting to now.");
+            PlayerData.LastSyncEpochMs = nowEpochMs;
+            PlayerData.LastPauseEpochMs = nowEpochMs;
+            PlayerData.LastStepsChangeEpochMs = nowEpochMs;
+        }
     }
 
     void OnApplicationQuit()
     {
-        if (CurrentPlayerData != null) // Sauvegarder une dernière fois
+        if (PlayerData != null)
         {
             Logger.LogInfo("DataManager: Application quitting, ensuring data is saved.");
             SaveGame();
@@ -92,7 +139,6 @@ public class DataManager : MonoBehaviour
         if (_localDatabase != null)
         {
             _localDatabase.CloseDatabase();
-            // Logger.LogInfo("DataManager: Database connection closed on application quit."); // Log déjà dans LocalDatabase
         }
     }
 }

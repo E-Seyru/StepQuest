@@ -1,46 +1,83 @@
-// Filepath: Assets/Scripts/Data/Models/PlayerData.cs
-using SQLite; // Si vous utilisez SQLite-net pour la persistance
+ï»¿// Filepath: Assets/Scripts/Data/Models/PlayerData.cs
+using SQLite;
 using System;
 
 [Serializable]
+[Table("PlayerData")]
 public class PlayerData
 {
-    [PrimaryKey] // Si vous utilisez SQLite-net
+    [PrimaryKey]
     public int Id { get; set; }
 
-    public long TotalPlayerSteps; // Anciennement TotalPlayerStepsInGame, on garde ce nom pour la compatibilité
+    // Conversion des champs en propriÃ©tÃ©s pour pouvoir utiliser l'attribut Column
+    private long _totalPlayerSteps;
+    [Column("TotalPlayerSteps")]
+    public long TotalPlayerSteps
+    {
+        get { return _totalPlayerSteps; }
+        set { _totalPlayerSteps = value; }
+    }
 
-    // Anciennement LastKnownDailyStepsForDeltaCalc ou LastApiTodaysStepsValue
-    // On le renomme pour plus de clarté par rapport au nouveau plan,
-    // même si le plan simplifié ne le persiste plus de cette manière.
-    // Pour l'instant, on le garde au cas où, mais il sera moins central.
-    // On pourrait le supprimer si StepManager gère tout.
-    // Pour l'instant, le plan dit "On se débarrasse de baseTodaySteps persistant"
-    // donc on peut commenter ou supprimer LastKnownApiTodaysStepsValue.
-    // public long LastKnownApiTodaysStepsValue;
+    private long _lastSyncEpochMs;
+    [Column("LastSyncEpochMs")]
+    public long LastSyncEpochMs
+    {
+        get { return _lastSyncEpochMs; }
+        set { _lastSyncEpochMs = value; }
+    }
 
-    // NOUVEAU CHAMP : Instant UTC de la dernière synchronisation API réussie avec GetDeltaSince
-    public long LastSyncEpochMs;
+    // Timestamp de la derniÃ¨re mise en pause/fermeture de l'application
+    private long _lastPauseEpochMs;
+    [Column("LastPauseEpochMs")]
+    public long LastPauseEpochMs
+    {
+        get { return _lastPauseEpochMs; }
+        set { _lastPauseEpochMs = value; }
+    }
 
+    // Ajout: journalisation des changements pour dÃ©tecter les anomalies
+    private long _lastStepsDelta;
+    [Column("LastStepsDelta")]
+    public long LastStepsDelta
+    {
+        get { return _lastStepsDelta; }
+        set { _lastStepsDelta = value; }
+    }
 
-    // Constructeur par défaut
+    // Ajout: horodatage du dernier changement de pas pour suivi des anomalies
+    private long _lastStepsChangeEpochMs;
+    [Column("LastStepsChangeEpochMs")]
+    public long LastStepsChangeEpochMs
+    {
+        get { return _lastStepsChangeEpochMs; }
+        set { _lastStepsChangeEpochMs = value; }
+    }
+
+    // Constructeur par dÃ©faut
     public PlayerData()
     {
-        Id = 1; // Fixons l'Id à 1 pour notre joueur unique si pas d'AutoIncrement
-        TotalPlayerSteps = 0;
-        //LastKnownApiTodaysStepsValue = 0;
-        LastSyncEpochMs = 0; // 0 indique quaucune synchro na encore eu lieu
+        Id = 1; // Fixons l'Id Ã  1 pour notre joueur unique
+        _totalPlayerSteps = 0;
+        _lastSyncEpochMs = 0; // 0 indique qu'aucune synchro n'a encore eu lieu
+        _lastPauseEpochMs = 0; // 0 indique que l'app n'a jamais Ã©tÃ© mise en pause auparavant
+        _lastStepsDelta = 0;
+        _lastStepsChangeEpochMs = 0;
+    }
+
+    // PropriÃ©tÃ© pour accÃ©der Ã  TotalPlayerSteps avec le nom simplifiÃ© TotalSteps
+    public long TotalSteps
+    {
+        get { return TotalPlayerSteps; }
+        set
+        {
+            // Calculer et stocker le delta pour dÃ©tecter les anomalies
+            long delta = value - TotalPlayerSteps;
+            if (delta != 0)
+            {
+                LastStepsDelta = delta;
+                LastStepsChangeEpochMs = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
+            }
+            TotalPlayerSteps = value;
+        }
     }
 }
-
-// Potentially define ActiveTaskData struct/class here or in a separate file
-[System.Serializable]
-public class ActiveTaskData
-{
-    public TaskType Type;
-    public string TargetId; // e.g., LocationId, RecipeId, MonsterZoneId
-    public System.DateTime StartTime;
-    public int StepsAtStart; // Only relevant for step tasks
-                             // Add other relevant task progress data
-}
-public enum TaskType { None, Traveling, Gathering, Crafting, LoopedCombat }
