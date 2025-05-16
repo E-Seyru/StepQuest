@@ -57,7 +57,7 @@ public class LocalDatabase
         try
         {
             DateTime date = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(epochMs);
-            return date.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss");
+            return date.ToLocalTime().ToString("HH:mm:ss dd/MM/yyyy");
         }
         catch
         {
@@ -164,9 +164,9 @@ public class LocalDatabase
             if (data != null)
             {
                 Logger.LogInfo($"LocalDatabase: Data loaded - TotalSteps: {data.TotalPlayerSteps}, " +
-                               $"LastSync: {data.LastSyncEpochMs} ({GetReadableDateFromEpoch(data.LastSyncEpochMs)}), " +
-                               $"LastPause: {data.LastPauseEpochMs} ({GetReadableDateFromEpoch(data.LastPauseEpochMs)}), " +
-                               $"LastChange: {data.LastStepsChangeEpochMs} ({GetReadableDateFromEpoch(data.LastStepsChangeEpochMs)}), " +
+                               $"LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}, " +
+                               $"LastPause: {GetReadableDateFromEpoch(data.LastPauseEpochMs)}, " +
+                               $"LastChange: {GetReadableDateFromEpoch(data.LastStepsChangeEpochMs)}, " +
                                $"DailySteps: {data.DailySteps}, LastReset: {data.LastDailyResetDate}");
                 return data;
             }
@@ -223,10 +223,10 @@ public class LocalDatabase
             // Enregistrer les données
             int result = _connection.InsertOrReplace(data);
             Logger.LogInfo($"LocalDatabase: Data saved - TotalSteps: {data.TotalPlayerSteps}, " +
-                           $"LastSync: {data.LastSyncEpochMs} ({GetReadableDateFromEpoch(data.LastSyncEpochMs)}), " +
-                           $"LastPause: {data.LastPauseEpochMs} ({GetReadableDateFromEpoch(data.LastPauseEpochMs)}), " +
+                           $"LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}, " +
+                           $"LastPause: {GetReadableDateFromEpoch(data.LastPauseEpochMs)}, " +
                            $"LastDelta: {data.LastStepsDelta}, " +
-                           $"LastChange: {data.LastStepsChangeEpochMs} ({GetReadableDateFromEpoch(data.LastStepsChangeEpochMs)}), " +
+                           $"LastChange: {GetReadableDateFromEpoch(data.LastStepsChangeEpochMs)}, " +
                            $"DailySteps: {data.DailySteps}, " +
                            $"LastReset: {data.LastDailyResetDate}, " +
                            $"Result: {result}");
@@ -278,8 +278,8 @@ public class LocalDatabase
             if (savedData != null)
             {
                 Logger.LogInfo($"LocalDatabase: Verification - Saved data: TotalSteps: {savedData.TotalPlayerSteps}, " +
-                              $"LastSync: {savedData.LastSyncEpochMs} ({GetReadableDateFromEpoch(savedData.LastSyncEpochMs)}), " +
-                              $"LastPause: {savedData.LastPauseEpochMs} ({GetReadableDateFromEpoch(savedData.LastPauseEpochMs)}), " +
+                              $"LastSync: {GetReadableDateFromEpoch(savedData.LastSyncEpochMs)}, " +
+                              $"LastPause: {GetReadableDateFromEpoch(savedData.LastPauseEpochMs)}, " +
                               $"DailySteps: {savedData.DailySteps}");
 
                 // Vérifier que les valeurs correspondent

@@ -37,14 +37,10 @@ public class DataManager : MonoBehaviour
         Logger.LogInfo("DataManager initialized and game data loaded.");
         if (PlayerData != null)
         {
-            string lastSyncDate = LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastSyncEpochMs);
-            string lastPauseDate = LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastPauseEpochMs);
-            string lastChangeDate = LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastStepsChangeEpochMs);
-
             Logger.LogInfo($"DataManager: Loaded PlayerData - TotalSteps: {PlayerData.TotalSteps}, " +
-                          $"LastSync: {PlayerData.LastSyncEpochMs} ({lastSyncDate}), " +
-                          $"LastPause: {PlayerData.LastPauseEpochMs} ({lastPauseDate}), " +
-                          $"LastChange: {PlayerData.LastStepsChangeEpochMs} ({lastChangeDate}), " +
+                          $"LastSync: {LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastSyncEpochMs)}, " +
+                          $"LastPause: {LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastPauseEpochMs)}, " +
+                          $"LastChange: {LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastStepsChangeEpochMs)}, " +
                           $"DailySteps: {PlayerData.DailySteps}");
         }
 
@@ -62,14 +58,11 @@ public class DataManager : MonoBehaviour
         }
 
         PlayerData = _localDatabase.LoadPlayerData();
-        string lastSyncDate = LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastSyncEpochMs);
-        string lastPauseDate = LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastPauseEpochMs);
-        string lastChangeDate = LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastStepsChangeEpochMs);
 
         Logger.LogInfo($"DataManager: LoadGame → loaded TotalSteps={PlayerData.TotalSteps}, " +
-                      $"LastSync={PlayerData.LastSyncEpochMs} ({lastSyncDate}), " +
-                      $"LastPause={PlayerData.LastPauseEpochMs} ({lastPauseDate}), " +
-                      $"LastChange={PlayerData.LastStepsChangeEpochMs} ({lastChangeDate}), " +
+                      $"LastSync={LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastSyncEpochMs)}, " +
+                      $"LastPause={LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastPauseEpochMs)}, " +
+                      $"LastChange={LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastStepsChangeEpochMs)}, " +
                       $"DailySteps={PlayerData.DailySteps}, LastResetDate={PlayerData.LastDailyResetDate}");
 
         // Vérification supplémentaire - si pas de données, sauvegarder immédiatement
@@ -124,15 +117,10 @@ public class DataManager : MonoBehaviour
             // Vérifier l'intégrité des données avant de sauvegarder
             ValidatePlayerData();
 
-            // Convertir les timestamps en dates lisibles pour les logs
-            string lastSyncDate = LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastSyncEpochMs);
-            string lastPauseDate = LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastPauseEpochMs);
-            string lastChangeDate = LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastStepsChangeEpochMs);
-
             Logger.LogInfo($"DataManager: SaveGame → saving TotalSteps={PlayerData.TotalSteps}, " +
-                          $"LastSync={PlayerData.LastSyncEpochMs} ({lastSyncDate}), " +
-                          $"LastPause={PlayerData.LastPauseEpochMs} ({lastPauseDate}), " +
-                          $"LastChange={PlayerData.LastStepsChangeEpochMs} ({lastChangeDate}), " +
+                          $"LastSync={LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastSyncEpochMs)}, " +
+                          $"LastPause={LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastPauseEpochMs)}, " +
+                          $"LastChange={LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastStepsChangeEpochMs)}, " +
                           $"LastDelta={PlayerData.LastStepsDelta}, " +
                           $"DailySteps={PlayerData.DailySteps}, " +
                           $"LastDailyResetDate={PlayerData.LastDailyResetDate}");
@@ -180,16 +168,11 @@ public class DataManager : MonoBehaviour
         if (PlayerData.LastSyncEpochMs > nowEpochMs || PlayerData.LastPauseEpochMs > nowEpochMs ||
             PlayerData.LastStepsChangeEpochMs > nowEpochMs)
         {
-            string lastSyncDate = LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastSyncEpochMs);
-            string lastPauseDate = LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastPauseEpochMs);
-            string lastChangeDate = LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastStepsChangeEpochMs);
-            string nowDate = LocalDatabase.GetReadableDateFromEpoch(nowEpochMs);
-
             Logger.LogWarning($"DataManager: Invalid timestamp detected (in the future). " +
-                             $"LastSync: {PlayerData.LastSyncEpochMs} ({lastSyncDate}), " +
-                             $"LastPause: {PlayerData.LastPauseEpochMs} ({lastPauseDate}), " +
-                             $"LastChange: {PlayerData.LastStepsChangeEpochMs} ({lastChangeDate}), " +
-                             $"Now: {nowEpochMs} ({nowDate}). Resetting to now.");
+                             $"LastSync: {LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastSyncEpochMs)}, " +
+                             $"LastPause: {LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastPauseEpochMs)}, " +
+                             $"LastChange: {LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastStepsChangeEpochMs)}, " +
+                             $"Now: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}. Resetting to now.");
 
             PlayerData.LastSyncEpochMs = nowEpochMs;
             PlayerData.LastPauseEpochMs = nowEpochMs;

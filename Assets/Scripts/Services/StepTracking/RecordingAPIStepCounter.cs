@@ -136,12 +136,12 @@ public class RecordingAPIStepCounter : MonoBehaviour
         }
         else if (fromEpochMs >= toEpochMs)
         {
-            Logger.LogWarning($"RecordingAPIStepCounter: GetDeltaSinceFromAPI called with fromEpochMs ({fromEpochMs}) >= toEpochMs ({toEpochMs}). Returning 0 steps.");
+            Logger.LogWarning($"RecordingAPIStepCounter: GetDeltaSinceFromAPI called with fromEpochMs ({LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)}) >= toEpochMs ({LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}). Returning 0 steps.");
             onResultCallback?.Invoke(0);
             yield break;
         }
 
-        Logger.LogInfo($"RecordingAPIStepCounter: Requesting readStepsForTimeRange from plugin for GetDeltaSinceFromAPI (from: {fromEpochMs}, to: {toEpochMs}).");
+        Logger.LogInfo($"RecordingAPIStepCounter: Requesting readStepsForTimeRange from plugin for GetDeltaSinceFromAPI (from: {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)}, to: {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}).");
         stepPluginClass.CallStatic("readStepsForTimeRange", fromEpochMs, toEpochMs);
 
         // Mécanisme d'attente amélioré avec vérification
@@ -168,7 +168,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
             attempts++;
         }
 
-        Logger.LogInfo($"RecordingAPIStepCounter: GetDeltaSinceFromAPI received {currentResult} steps from plugin for time range {fromEpochMs} to {toEpochMs}.");
+        Logger.LogInfo($"RecordingAPIStepCounter: GetDeltaSinceFromAPI received {currentResult} steps from plugin for time range {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)} to {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}.");
         onResultCallback?.Invoke(currentResult >= 0 ? currentResult : 0);
     }
 

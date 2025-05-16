@@ -116,15 +116,10 @@ public class StepManager : MonoBehaviour
             Logger.LogInfo($"StepManager: Same day detected. LastResetDate: {lastResetDateStr}, Today: {currentDateStr}");
         }
 
-        // Convertir les timestamps en dates lisibles
-        string lastSyncDate = LocalDatabase.GetReadableDateFromEpoch(lastSyncEpochMs);
-        string lastPauseDate = LocalDatabase.GetReadableDateFromEpoch(lastPauseEpochMs);
-        string nowDate = LocalDatabase.GetReadableDateFromEpoch(nowEpochMs);
-
         Logger.LogInfo($"StepManager: Loaded state - Initial TotalSteps: {TotalSteps}, DailySteps: {DailySteps}, " +
-                      $"LastSync: {lastSyncEpochMs} ({lastSyncDate}), " +
-                      $"LastPause: {lastPauseEpochMs} ({lastPauseDate}), " +
-                      $"Now: {nowEpochMs} ({nowDate})");
+                      $"LastSync: {LocalDatabase.GetReadableDateFromEpoch(lastSyncEpochMs)}, " +
+                      $"LastPause: {LocalDatabase.GetReadableDateFromEpoch(lastPauseEpochMs)}, " +
+                      $"Now: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}");
 
         // Vérification des permissions requise AVANT TOUT !
         if (!apiCounter.HasPermission())
@@ -159,7 +154,7 @@ public class StepManager : MonoBehaviour
             dataManager.PlayerData.LastSyncEpochMs = nowEpochMs;
             dataManager.PlayerData.LastPauseEpochMs = nowEpochMs;
             dataManager.SaveGame();
-            Logger.LogInfo($"StepManager: API Catch-up skipped for first start. TotalSteps: {TotalSteps}. Updated LastSync to: {nowEpochMs} ({LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)})");
+            Logger.LogInfo($"StepManager: API Catch-up skipped for first start. TotalSteps: {TotalSteps}. Updated LastSync to: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}");
         }
         else
         {
@@ -176,16 +171,12 @@ public class StepManager : MonoBehaviour
             // Utiliser LastPauseEpochMs au lieu de nowEpochMs pour éviter le double comptage
             long endTimeMs = (lastPauseEpochMs > startTimeMs) ? lastPauseEpochMs : nowEpochMs;
 
-            // Convertir en dates lisibles
-            string startDate = LocalDatabase.GetReadableDateFromEpoch(startTimeMs);
-            string endDate = LocalDatabase.GetReadableDateFromEpoch(endTimeMs);
-
             // Ne récupérer les pas que s'il y a un intervalle de temps valide
             if (endTimeMs > startTimeMs)
             {
                 // Récupérer les pas depuis la dernière synchronisation jusqu'à la dernière pause
                 // avec gestion spéciale en cas de chevauchement de minuit
-                Logger.LogInfo($"StepManager: Starting API Catch-up from {startTimeMs} ({startDate}) to {endTimeMs} ({endDate})");
+                Logger.LogInfo($"StepManager: Starting API Catch-up from {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}");
 
                 yield return StartCoroutine(HandleMidnightSplitStepCount(startTimeMs, endTimeMs));
             }
@@ -197,7 +188,7 @@ public class StepManager : MonoBehaviour
             // Toujours mettre à jour LastSyncEpochMs au temps actuel
             dataManager.PlayerData.LastSyncEpochMs = nowEpochMs;
             dataManager.SaveGame();
-            Logger.LogInfo($"StepManager: Updated LastSync to: {nowEpochMs} ({LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)})");
+            Logger.LogInfo($"StepManager: Updated LastSync to: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}");
         }
 
         // Initialiser correctement sensorStartCount avec la valeur actuelle du capteur pour éviter de recompter les pas déjà récupérés par l'API
@@ -229,7 +220,7 @@ public class StepManager : MonoBehaviour
         // Enregistrer le timestamp actuel comme dernier point de synchronisation
         long nowEpochMs = new System.DateTimeOffset(System.DateTime.UtcNow).ToUnixTimeMilliseconds();
         dataManager.PlayerData.LastSyncEpochMs = nowEpochMs;
-        Logger.LogInfo($"StepManager: Updated LastSyncEpochMs to current time after direct sensor update: {nowEpochMs} ({LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)})");
+        Logger.LogInfo($"StepManager: Updated LastSyncEpochMs to current time after direct sensor update: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}");
     }
 
     // Méthode pour gérer le chevauchement de minuit
@@ -280,8 +271,7 @@ public class StepManager : MonoBehaviour
 
             // 1. Trouver le timestamp de minuit entre les deux timestamps
             long midnightMs = FindMidnightTimestamp(startTimeMs, endTimeMs);
-            string midnightDate = LocalDatabase.GetReadableDateFromEpoch(midnightMs);
-            Logger.LogInfo($"StepManager: Interval spans midnight at {midnightMs} ({midnightDate}). Splitting step counts.");
+            Logger.LogInfo($"StepManager: Interval spans midnight at {LocalDatabase.GetReadableDateFromEpoch(midnightMs)}. Splitting step counts.");
 
             // 2. Récupérer les pas de la période avant minuit (jour précédent)
             long stepsBeforeMidnight = 0;
@@ -481,7 +471,6 @@ public class StepManager : MonoBehaviour
 
         // Enregistrer le timestamp de pause pour résoudre le problème de double comptage
         long nowEpochMs = new System.DateTimeOffset(System.DateTime.UtcNow).ToUnixTimeMilliseconds();
-        string nowDate = LocalDatabase.GetReadableDateFromEpoch(nowEpochMs);
         dataManager.PlayerData.LastSyncEpochMs = nowEpochMs;
         dataManager.PlayerData.LastPauseEpochMs = nowEpochMs;
 
@@ -489,7 +478,7 @@ public class StepManager : MonoBehaviour
         dataManager.PlayerData.TotalSteps = TotalSteps;
         dataManager.PlayerData.DailySteps = DailySteps;
         Logger.LogInfo($"StepManager: Saving steps. Final TotalSteps: {TotalSteps}, DailySteps: {DailySteps}, " +
-                       $"LastPauseEpochMs: {nowEpochMs} ({nowDate})");
+                       $"LastPauseEpochMs: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}");
         dataManager.SaveGame();
         Logger.LogInfo("StepManager: Data saved on pause/close.");
     }
