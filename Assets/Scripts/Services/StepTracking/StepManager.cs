@@ -19,15 +19,22 @@ public class StepManager : MonoBehaviour
     // Variables internes
     private long sensorStartCount = -1;
     private long sensorDeltaThisSession = 0;
+    private long lastRecordedSensorValue = -1;
 
     private bool isInitialized = false;
     private bool isAppInForeground = true;
+    private bool isReturningFromBackground = false;
 
     // Paramètres de débounce et filtrage
     private const int SENSOR_SPIKE_THRESHOLD = 50; // Nombre de pas considéré comme anormal en une seule mise à jour
     private const int SENSOR_DEBOUNCE_SECONDS = 3; // Temps minimum entre deux grandes variations
     private float lastLargeUpdateTime = 0f;
     private const long MAX_STEPS_PER_UPDATE = 1000; // Limite raisonnable pour une sauvegarde unique
+
+    // Période de grâce après le retour au premier plan (en secondes)
+    private const float SENSOR_GRACE_PERIOD = 2.0f;
+    private float sensorGraceTimer = 0f;
+    private bool inSensorGracePeriod = false;
 
     void Awake()
     {
@@ -158,6 +165,8 @@ public class StepManager : MonoBehaviour
         }
         else
         {
+            // Pour tous les autres cas (y compris retour d'arrière-plan), récupérer les pas via l'API
+
             // S'assurer que LastSync a une valeur valide
             if (lastSyncEpochMs <= 0)
             {
@@ -176,7 +185,14 @@ public class StepManager : MonoBehaviour
             {
                 // Récupérer les pas depuis la dernière synchronisation jusqu'à la dernière pause
                 // avec gestion spéciale en cas de chevauchement de minuit
-                Logger.LogInfo($"StepManager: Starting API Catch-up from {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}");
+                if (isReturningFromBackground)
+                {
+                    Logger.LogInfo($"StepManager: RETURNING FROM BACKGROUND - Starting API Catch-up from {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}");
+                }
+                else
+                {
+                    Logger.LogInfo($"StepManager: Starting API Catch-up from {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}");
+                }
 
                 yield return StartCoroutine(HandleMidnightSplitStepCount(startTimeMs, endTimeMs));
             }
@@ -191,11 +207,22 @@ public class StepManager : MonoBehaviour
             Logger.LogInfo($"StepManager: Updated LastSync to: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}");
         }
 
-        // Initialiser correctement sensorStartCount avec la valeur actuelle du capteur pour éviter de recompter les pas déjà récupérés par l'API
+        // Si on revient de l'arrière-plan, activer la période de grâce pour le sensor
+        if (isReturningFromBackground)
+        {
+            Logger.LogInfo("StepManager: Activating sensor grace period after returning from background.");
+            inSensorGracePeriod = true;
+            sensorGraceTimer = 0f;
+            // Reset le flag
+            isReturningFromBackground = false;
+        }
+
+        // Initialiser correctement sensorStartCount avec la valeur actuelle du capteur
         long currentSensorValue = apiCounter.GetCurrentRawSensorSteps();
         if (currentSensorValue > 0)
         {
             sensorStartCount = currentSensorValue;
+            lastRecordedSensorValue = currentSensorValue;
             sensorDeltaThisSession = 0;
             Logger.LogInfo($"StepManager: sensorStartCount initialized to {sensorStartCount} after API sync");
         }
@@ -203,11 +230,12 @@ public class StepManager : MonoBehaviour
         {
             // Réinitialiser le compteur de capteur pour la nouvelle session
             sensorStartCount = -1;
+            lastRecordedSensorValue = -1;
             sensorDeltaThisSession = 0;
             Logger.LogInfo("StepManager: Sensor values reset for new session.");
         }
 
-        // Démarrer l'écoute directe du capteur pour les pas en temps réel
+        // Démarrer l'écoute directe du capteur pour les pas en temps réel (uniquement au premier plan)
         apiCounter.StartDirectSensorListener();
         Logger.LogInfo("StepManager: Direct sensor listener started.");
 
@@ -348,6 +376,34 @@ public class StepManager : MonoBehaviour
         {
             yield return new WaitForSeconds(1.0f);
 
+            // Mise à jour de la période de grâce
+            if (inSensorGracePeriod)
+            {
+                sensorGraceTimer += 1.0f;
+                if (sensorGraceTimer >= SENSOR_GRACE_PERIOD)
+                {
+                    inSensorGracePeriod = false;
+                    Logger.LogInfo("StepManager: Sensor grace period ended - normal step counting resumed.");
+                }
+                else
+                {
+                    // Pendant la période de grâce, on continue à lire les valeurs du capteur mais on ignore les changements
+                    long currentRawValue = apiCounter.GetCurrentRawSensorSteps();
+                    if (currentRawValue > 0 && currentRawValue != lastRecordedSensorValue)
+                    {
+                        Logger.LogInfo($"StepManager: [GRACE PERIOD] Ignoring sensor update from {lastRecordedSensorValue} to {currentRawValue}");
+
+                        // Mettre à jour la valeur de référence pour éviter les écarts importants après la période de grâce
+                        lastRecordedSensorValue = currentRawValue;
+                        sensorStartCount = currentRawValue;
+                        sensorDeltaThisSession = 0;
+                    }
+
+                    // Ignorer le reste de la boucle pendant la période de grâce
+                    continue;
+                }
+            }
+
             if (!apiCounter.HasPermission())
             {
                 Logger.LogWarning("StepManager: Permission lost during sensor update loop. Stopping sensor.");
@@ -369,6 +425,9 @@ public class StepManager : MonoBehaviour
                 }
                 continue;
             }
+
+            // Stocker la valeur actuelle pour référence future
+            lastRecordedSensorValue = rawSensorValue;
 
             if (sensorStartCount == -1)
             {
@@ -466,6 +525,7 @@ public class StepManager : MonoBehaviour
         Logger.LogInfo("StepManager: HandleAppPausingOrClosing started.");
         isAppInForeground = false;
 
+        // Arrêter le capteur direct quand l'application n'est plus au premier plan
         apiCounter.StopDirectSensorListener();
         Logger.LogInfo("StepManager: Direct sensor listener stopped.");
 
@@ -485,15 +545,22 @@ public class StepManager : MonoBehaviour
 
     void OnApplicationPause(bool pauseStatus)
     {
-        if (!isInitialized && !pauseStatus) return;
+        if (!isInitialized) return;
+
         if (pauseStatus)
         {
+            // L'application va en arrière-plan
             Logger.LogInfo("StepManager: OnApplicationPause → app goes to background");
             HandleAppPausingOrClosing();
         }
         else
         {
+            // L'application revient au premier plan
             Logger.LogInfo("StepManager: OnApplicationPause → app returns to foreground");
+
+            // Marquer que l'application retourne au premier plan après avoir été en arrière-plan
+            isReturningFromBackground = true;
+
             if (isInitialized)
             {
                 StartCoroutine(HandleAppOpeningOrResuming());
