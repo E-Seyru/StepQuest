@@ -10,18 +10,18 @@ public class LocalDatabase
     private string _databasePath;
 
     private const string DatabaseFilename = "StepQuestRPG_Data.db";
-    private const int DATABASE_VERSION = 3; // Incrйmentй pour gйrer les migrations (2 -> 3 pour DailySteps)
+    private const int DATABASE_VERSION = 3; // Incrementé pour gérer les migrations (2 -> 3 pour DailySteps)
 
     public void InitializeDatabase()
     {
-        // Dйfinir le chemin de la base de donnйes
+        // Définir le chemin de la base de données
         _databasePath = Path.Combine(Application.persistentDataPath, DatabaseFilename);
         Logger.LogInfo($"LocalDatabase: Database path is: {_databasePath}");
 
         try
         {
-            // Force la suppression de la base de donnйes existante pour repartir proprement
-            // А dйsactiver en production aprиs vйrification du bon fonctionnement
+            // Force la suppression de la base de données existante pour repartir proprement
+            // À désactiver en production après vérification du bon fonctionnement
             bool forceReset = false;
 
             if (forceReset && File.Exists(_databasePath))
@@ -30,18 +30,18 @@ public class LocalDatabase
                 Logger.LogInfo("LocalDatabase: Reset - Existing database file deleted");
             }
 
-            // Crйer ou ouvrir la connexion SQLite
+            // Créer ou ouvrir la connexion SQLite
             _connection = new SQLiteConnection(_databasePath);
             Logger.LogInfo("LocalDatabase: Connection established");
 
-            // Vйrifier si la base de donnйes nйcessite une migration
+            // Vérifier si la base de données nécessite une migration
             ManageDatabaseMigration();
 
-            // Crйer la table PlayerData si elle n'existe pas dйjа
+            // Créer la table PlayerData si elle n'existe pas déjà
             _connection.CreateTable<PlayerData>();
             Logger.LogInfo("LocalDatabase: PlayerData table created/verified");
 
-            // Vйrifier la structure de la table
+            // Vérifier la structure de la table
             DebugLogTableStructure();
         }
         catch (Exception ex)
@@ -50,15 +50,30 @@ public class LocalDatabase
         }
     }
 
-    // Gestion des migrations de base de donnйes
+    // Méthode utilitaire pour convertir un epoch timestamp en date lisible
+    public static string GetReadableDateFromEpoch(long epochMs)
+    {
+        if (epochMs <= 0) return "Jamais";
+        try
+        {
+            DateTime date = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(epochMs);
+            return date.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss");
+        }
+        catch
+        {
+            return "Epoch invalide";
+        }
+    }
+
+    // Gestion des migrations de base de données
     private void ManageDatabaseMigration()
     {
         try
         {
-            // Crйer une table de version si elle n'existe pas
+            // Créer une table de version si elle n'existe pas
             _connection.Execute("CREATE TABLE IF NOT EXISTS DatabaseVersion (Version INTEGER)");
 
-            // Rйcupйrer la version actuelle
+            // Récupérer la version actuelle
             int currentVersion = 0;
             var result = _connection.Query<DatabaseVersionInfo>("SELECT Version FROM DatabaseVersion LIMIT 1");
             if (result.Count > 0)
@@ -67,17 +82,17 @@ public class LocalDatabase
             }
             else
             {
-                // Aucune version trouvйe, insйrer la version initiale
+                // Aucune version trouvée, insérer la version initiale
                 _connection.Execute("INSERT INTO DatabaseVersion (Version) VALUES (1)");
                 currentVersion = 1;
             }
 
             Logger.LogInfo($"LocalDatabase: Current database version: {currentVersion}, Target version: {DATABASE_VERSION}");
 
-            // Appliquer les migrations nйcessaires
+            // Appliquer les migrations nécessaires
             if (currentVersion < DATABASE_VERSION)
             {
-                // Migration de la version 1 а 2
+                // Migration de la version 1 à 2
                 if (currentVersion == 1 && DATABASE_VERSION >= 2)
                 {
                     Logger.LogInfo("LocalDatabase: Migrating from version 1 to 2...");
@@ -88,7 +103,7 @@ public class LocalDatabase
                         _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastStepsDelta INTEGER DEFAULT 0");
                         _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastStepsChangeEpochMs INTEGER DEFAULT 0");
 
-                        // Mettre а jour la version
+                        // Mettre à jour la version
                         _connection.Execute("UPDATE DatabaseVersion SET Version = 2");
                         Logger.LogInfo("LocalDatabase: Migration to version 2 completed");
                     }
@@ -157,7 +172,7 @@ public class LocalDatabase
             }
             else
             {
-                // Crйer un nouveau PlayerData si aucun n'existe
+                // Créer un nouveau PlayerData si aucun n'existe
                 PlayerData newData = new PlayerData();
                 _connection.Insert(newData);
                 Logger.LogInfo("LocalDatabase: New PlayerData created and saved");
@@ -168,21 +183,6 @@ public class LocalDatabase
         {
             Logger.LogError($"LocalDatabase: Error loading data: {ex.Message}");
             return new PlayerData();
-        }
-    }
-
-    // Méthode utilitaire pour convertir un epoch timestamp en date lisible
-    public static string GetReadableDateFromEpoch(long epochMs)
-    {
-        if (epochMs <= 0) return "Jamais";
-        try
-        {
-            DateTime date = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(epochMs);
-            return date.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss");
-        }
-        catch
-        {
-            return "Epoch invalide";
         }
     }
 
@@ -202,11 +202,11 @@ public class LocalDatabase
 
         try
         {
-            // Vйrifier que l'identifiant est correct
+            // Vérifier que l'identifiant est correct
             if (data.Id <= 0)
                 data.Id = 1;
 
-            // Vйrifier que LastSyncEpochMs est correctement dйfini
+            // Vérifier que LastSyncEpochMs est correctement défini
             if (data.LastSyncEpochMs <= 0 && data.TotalPlayerSteps > 0)
             {
                 Logger.LogWarning("LocalDatabase: LastSyncEpochMs needs initialization");
@@ -220,7 +220,7 @@ public class LocalDatabase
                 Logger.LogWarning($"LocalDatabase: LastDailyResetDate was empty, initialized to {data.LastDailyResetDate}");
             }
 
-            // Enregistrer les donnйes
+            // Enregistrer les données
             int result = _connection.InsertOrReplace(data);
             Logger.LogInfo($"LocalDatabase: Data saved - TotalSteps: {data.TotalPlayerSteps}, " +
                            $"LastSync: {data.LastSyncEpochMs} ({GetReadableDateFromEpoch(data.LastSyncEpochMs)}), " +
@@ -231,7 +231,7 @@ public class LocalDatabase
                            $"LastReset: {data.LastDailyResetDate}, " +
                            $"Result: {result}");
 
-            // Vйrifier que la sauvegarde a rйussi
+            // Vérifier que la sauvegarde a réussi
             VerifySaveSuccess(data);
         }
         catch (Exception ex)
@@ -250,7 +250,7 @@ public class LocalDatabase
         }
     }
 
-    // Mйthode privйe pour vйrifier la structure de la table
+    // Méthode privée pour vérifier la structure de la table
     private void DebugLogTableStructure()
     {
         try
@@ -269,7 +269,7 @@ public class LocalDatabase
         }
     }
 
-    // Mйthode privйe pour vйrifier que la sauvegarde a rйussi
+    // Méthode privée pour vérifier que la sauvegarde a réussi
     private void VerifySaveSuccess(PlayerData originalData)
     {
         try
@@ -282,7 +282,7 @@ public class LocalDatabase
                               $"LastPause: {savedData.LastPauseEpochMs} ({GetReadableDateFromEpoch(savedData.LastPauseEpochMs)}), " +
                               $"DailySteps: {savedData.DailySteps}");
 
-                // Vйrifier que les valeurs correspondent
+                // Vérifier que les valeurs correspondent
                 if (savedData.TotalPlayerSteps != originalData.TotalPlayerSteps ||
                     savedData.LastSyncEpochMs != originalData.LastSyncEpochMs ||
                     savedData.DailySteps != originalData.DailySteps ||
@@ -299,7 +299,7 @@ public class LocalDatabase
     }
 }
 
-// Classe pour stocker les informations de version de la base de donnйes
+// Classe pour stocker les informations de version de la base de données
 class DatabaseVersionInfo
 {
     public int Version { get; set; }

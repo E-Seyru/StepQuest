@@ -2,13 +2,10 @@ using UnityEngine;
 
 public static class Logger
 {
-    public enum LogLevel { Debug, Info, Warning, Error }
+    public enum LogLevel { Debug,   Info, Warning, Error }
     public static LogLevel CurrentLogLevel = LogLevel.Debug;
 
-    // Color definitions (matching those in DebugLogPanel)
-    private static readonly string infoColor = "#3399FF";     // Blue
-    private static readonly string warningColor = "#FFCC00";  // Yellow
-    private static readonly string errorColor = "#FF3333";    // Red
+
 
     public static void Log(string message, LogLevel level = LogLevel.Info, Object context = null)
     {

@@ -10,6 +10,8 @@ public class RecordingAPIStepCounter : MonoBehaviour
     private bool isPluginClassInitialized = false;
     private bool isSubscribedToApi = false;
     private bool lastPermissionResult = false;
+    private int permissionCheckCounter = 0;
+    private const int LOG_FREQUENCY = 60; // Ne journaliser qu'une fois toutes les 60 vérifications
 
     // Constantes pour le mécanisme d'attente amélioré
     private const int MAX_API_READ_ATTEMPTS = 5;
@@ -73,10 +75,20 @@ public class RecordingAPIStepCounter : MonoBehaviour
 
         bool hasPermission = stepPluginClass.CallStatic<bool>("hasActivityRecognitionPermission");
 
-        // Ne journaliser que si le résultat a changé ou avec un niveau de détail moindre
-        if (hasPermission != lastPermissionResult)
+        // Journaliser si le résultat a changé ou périodiquement
+        permissionCheckCounter++;
+        if (hasPermission != lastPermissionResult || permissionCheckCounter >= LOG_FREQUENCY)
         {
-            Logger.LogInfo($"RecordingAPIStepCounter: Permission status changed to: {hasPermission}");
+            if (hasPermission != lastPermissionResult)
+            {
+                Logger.LogInfo($"RecordingAPIStepCounter: Permission status changed to: {hasPermission}");
+            }
+            else if (permissionCheckCounter >= LOG_FREQUENCY)
+            {
+                Logger.LogInfo($"RecordingAPIStepCounter: Permission check result: {hasPermission}");
+                permissionCheckCounter = 0;
+            }
+
             lastPermissionResult = hasPermission;
         }
 

@@ -48,8 +48,8 @@ public class DataManager : MonoBehaviour
                           $"DailySteps: {PlayerData.DailySteps}");
         }
 
-        // Vérifier si c'est un nouveau jour après le chargement
-        CheckAndResetDailySteps();
+        // Ne plus vérifier le changement de jour ici - désormais géré par StepManager
+        // CheckAndResetDailySteps();
     }
 
     private void LoadGame()
@@ -89,46 +89,12 @@ public class DataManager : MonoBehaviour
         }
     }
 
-    // Nouvelle méthode pour vérifier et réinitialiser les pas quotidiens au besoin
+    // Cette méthode est désactivée pour laisser le StepManager gérer la réinitialisation quotidienne
     public void CheckAndResetDailySteps()
     {
-        if (PlayerData == null) return;
-
-        string todayDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
-        string lastResetDate = PlayerData.LastDailyResetDate;
-
-        if (lastResetDate != todayDate)
-        {
-            // Convertir ces dates pour les logs dans un format plus lisible
-            DateTime lastResetDateTime = DateTime.MinValue;
-            if (DateTime.TryParse(lastResetDate, out lastResetDateTime))
-            {
-                string formattedLastReset = lastResetDateTime.ToString("dd/MM/yyyy");
-                string formattedToday = DateTime.UtcNow.ToString("dd/MM/yyyy");
-
-                Logger.LogInfo($"DataManager: New day detected. Resetting daily steps. " +
-                              $"Last reset: {lastResetDate} ({formattedLastReset}), " +
-                              $"Today: {todayDate} ({formattedToday})");
-            }
-            else
-            {
-                Logger.LogInfo($"DataManager: New day detected. Resetting daily steps. " +
-                              $"Last reset: {lastResetDate} (format invalide), " +
-                              $"Today: {todayDate}");
-            }
-
-            // Enregistrer les valeurs avant réinitialisation pour le débogage
-            long previousDailySteps = PlayerData.DailySteps;
-
-            // Réinitialiser les pas quotidiens et mettre à jour la date
-            PlayerData.DailySteps = 0;
-            PlayerData.LastDailyResetDate = todayDate;
-
-            // Sauvegarder les changements
-            SaveGame();
-
-            Logger.LogInfo($"DataManager: Daily steps reset completed. Previous value: {previousDailySteps}, New value: {PlayerData.DailySteps}");
-        }
+        // Déactivé - gestion déplacée vers StepManager
+        // Le StepManager s'occupe de la réinitialisation des pas quotidiens
+        Logger.LogInfo("DataManager: CheckAndResetDailySteps called but ignored - this functionality is now handled by StepManager");
     }
 
     public void SaveGame()
@@ -152,8 +118,8 @@ public class DataManager : MonoBehaviour
 
         try
         {
-            // Vérifier si c'est un nouveau jour
-            CheckAndResetDailySteps();
+            // NE PLUS vérifier si c'est un nouveau jour - géré par StepManager
+            // CheckAndResetDailySteps();
 
             // Vérifier l'intégrité des données avant de sauvegarder
             ValidatePlayerData();
