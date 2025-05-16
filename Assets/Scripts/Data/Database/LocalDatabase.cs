@@ -10,7 +10,7 @@ public class LocalDatabase
     private string _databasePath;
 
     private const string DatabaseFilename = "StepQuestRPG_Data.db";
-    private const int DATABASE_VERSION = 3; // Incrementé pour gérer les migrations (2 -> 3 pour DailySteps)
+    private const int DATABASE_VERSION = 4; // Incrementé pour gérer les migrations (3 -> 4 pour LastApiCatchUpEpochMs)
 
     public void InitializeDatabase()
     {
@@ -20,15 +20,15 @@ public class LocalDatabase
 
         try
         {
-            // Force la suppression de la base de données existante pour repartir proprement
-            // À désactiver en production après vérification du bon fonctionnement
-            bool forceReset = false;
-
+            // Force la suppression de la base de données existante uniquement en mode éditeur
+#if UNITY_EDITOR
+            bool forceReset = false; // À activer seulement pour les tests en éditeur
             if (forceReset && File.Exists(_databasePath))
             {
                 File.Delete(_databasePath);
                 Logger.LogInfo("LocalDatabase: Reset - Existing database file deleted");
             }
+#endif
 
             // Créer ou ouvrir la connexion SQLite
             _connection = new SQLiteConnection(_databasePath);
@@ -56,6 +56,7 @@ public class LocalDatabase
         if (epochMs <= 0) return "Jamais";
         try
         {
+            // MODIFIÉ: Utiliser DateTime.Now et le fuseau horaire local (Faille B)
             DateTime date = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(epochMs);
             return date.ToLocalTime().ToString("HH:mm:ss dd/MM/yyyy");
         }
@@ -113,7 +114,7 @@ public class LocalDatabase
                     }
                 }
 
-                // NOUVELLE MIGRATION: Migration de la version 2 à 3 pour ajouter DailySteps et LastDailyResetDate
+                // Migration de la version 2 à 3 pour ajouter DailySteps et LastDailyResetDate
                 if (currentVersion == 2 && DATABASE_VERSION >= 3)
                 {
                     Logger.LogInfo("LocalDatabase: Migrating from version 2 to 3...");
@@ -125,7 +126,7 @@ public class LocalDatabase
                         _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastDailyResetDate TEXT DEFAULT ''");
 
                         // Initialiser LastDailyResetDate à la date du jour
-                        string todayDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+                        string todayDate = DateTime.Now.ToString("yyyy-MM-dd"); // MODIFIÉ: Utiliser DateTime.Now (Faille B)
                         _connection.Execute($"UPDATE PlayerData SET LastDailyResetDate = '{todayDate}'");
 
                         // Mettre à jour la version
@@ -138,8 +139,31 @@ public class LocalDatabase
                     }
                 }
 
+                // NOUVELLE MIGRATION: Migration de la version 3 à 4 pour ajouter LastApiCatchUpEpochMs (Faille A)
+                if (currentVersion == 3 && DATABASE_VERSION >= 4)
+                {
+                    Logger.LogInfo("LocalDatabase: Migrating from version 3 to 4...");
+
+                    try
+                    {
+                        // Ajouter la colonne pour le timestamp dédié à l'API catch-up
+                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastApiCatchUpEpochMs INTEGER DEFAULT 0");
+
+                        // Initialiser LastApiCatchUpEpochMs à la même valeur que LastSyncEpochMs pour les données existantes
+                        _connection.Execute("UPDATE PlayerData SET LastApiCatchUpEpochMs = LastSyncEpochMs");
+
+                        // Mettre à jour la version
+                        _connection.Execute("UPDATE DatabaseVersion SET Version = 4");
+                        Logger.LogInfo("LocalDatabase: Migration to version 4 completed");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError($"LocalDatabase: Migration error: {ex.Message}");
+                    }
+                }
+
                 // Ajouter d'autres migrations ici au besoin:
-                // if (currentVersion == 3 && DATABASE_VERSION >= 4) {...}
+                // if (currentVersion == 4 && DATABASE_VERSION >= 5) {...}
             }
         }
         catch (Exception ex)
@@ -167,7 +191,8 @@ public class LocalDatabase
                                $"LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}, " +
                                $"LastPause: {GetReadableDateFromEpoch(data.LastPauseEpochMs)}, " +
                                $"LastChange: {GetReadableDateFromEpoch(data.LastStepsChangeEpochMs)}, " +
-                               $"DailySteps: {data.DailySteps}, LastReset: {data.LastDailyResetDate}");
+                               $"DailySteps: {data.DailySteps}, LastReset: {data.LastDailyResetDate}, " +
+                               $"LastApiCatchUp: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}");
                 return data;
             }
             else
@@ -210,14 +235,21 @@ public class LocalDatabase
             if (data.LastSyncEpochMs <= 0 && data.TotalPlayerSteps > 0)
             {
                 Logger.LogWarning("LocalDatabase: LastSyncEpochMs needs initialization");
-                data.LastSyncEpochMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                data.LastSyncEpochMs = DateTimeOffset.Now.ToUnixTimeMilliseconds(); // MODIFIÉ: Utiliser DateTime.Now (Faille B)
             }
 
             // S'assurer que LastDailyResetDate n'est pas vide
             if (string.IsNullOrEmpty(data.LastDailyResetDate))
             {
-                data.LastDailyResetDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+                data.LastDailyResetDate = DateTime.Now.ToString("yyyy-MM-dd"); // MODIFIÉ: Utiliser DateTime.Now (Faille B)
                 Logger.LogWarning($"LocalDatabase: LastDailyResetDate was empty, initialized to {data.LastDailyResetDate}");
+            }
+
+            // NOUVEAU: S'assurer que LastApiCatchUpEpochMs a une valeur par défaut
+            if (data.LastApiCatchUpEpochMs <= 0 && data.LastSyncEpochMs > 0)
+            {
+                data.LastApiCatchUpEpochMs = data.LastSyncEpochMs;
+                Logger.LogWarning($"LocalDatabase: LastApiCatchUpEpochMs was 0, initialized to LastSyncEpochMs: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}");
             }
 
             // Enregistrer les données
@@ -229,6 +261,7 @@ public class LocalDatabase
                            $"LastChange: {GetReadableDateFromEpoch(data.LastStepsChangeEpochMs)}, " +
                            $"DailySteps: {data.DailySteps}, " +
                            $"LastReset: {data.LastDailyResetDate}, " +
+                           $"LastApiCatchUp: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}, " +
                            $"Result: {result}");
 
             // Vérifier que la sauvegarde a réussi
@@ -280,13 +313,15 @@ public class LocalDatabase
                 Logger.LogInfo($"LocalDatabase: Verification - Saved data: TotalSteps: {savedData.TotalPlayerSteps}, " +
                               $"LastSync: {GetReadableDateFromEpoch(savedData.LastSyncEpochMs)}, " +
                               $"LastPause: {GetReadableDateFromEpoch(savedData.LastPauseEpochMs)}, " +
-                              $"DailySteps: {savedData.DailySteps}");
+                              $"DailySteps: {savedData.DailySteps}, " +
+                              $"LastApiCatchUp: {GetReadableDateFromEpoch(savedData.LastApiCatchUpEpochMs)}");
 
                 // Vérifier que les valeurs correspondent
                 if (savedData.TotalPlayerSteps != originalData.TotalPlayerSteps ||
                     savedData.LastSyncEpochMs != originalData.LastSyncEpochMs ||
                     savedData.DailySteps != originalData.DailySteps ||
-                    savedData.LastDailyResetDate != originalData.LastDailyResetDate)
+                    savedData.LastDailyResetDate != originalData.LastDailyResetDate ||
+                    savedData.LastApiCatchUpEpochMs != originalData.LastApiCatchUpEpochMs)
                 {
                     Logger.LogError("LocalDatabase: Verification FAILED - Data mismatch after save");
                 }

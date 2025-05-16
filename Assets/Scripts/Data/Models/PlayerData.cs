@@ -53,7 +53,7 @@ public class PlayerData
         set { _lastStepsChangeEpochMs = value; }
     }
 
-    // NOUVEAU: Compteur de pas journalier
+    // Compteur de pas journalier
     private long _dailySteps;
     [Column("DailySteps")]
     public long DailySteps
@@ -62,13 +62,22 @@ public class PlayerData
         set { _dailySteps = value; }
     }
 
-    // NOUVEAU: Date du dernier reset journalier (format yyyy-MM-dd)
+    // Date du dernier reset journalier (format yyyy-MM-dd)
     private string _lastDailyResetDate;
     [Column("LastDailyResetDate")]
     public string LastDailyResetDate
     {
         get { return _lastDailyResetDate; }
         set { _lastDailyResetDate = value; }
+    }
+
+    // NOUVEAU: Timestamp du dernier catch-up API (Faille A)
+    private long _lastApiCatchUpEpochMs;
+    [Column("LastApiCatchUpEpochMs")]
+    public long LastApiCatchUpEpochMs
+    {
+        get { return _lastApiCatchUpEpochMs; }
+        set { _lastApiCatchUpEpochMs = value; }
     }
 
     // Constructeur par défaut
@@ -81,7 +90,8 @@ public class PlayerData
         _lastStepsDelta = 0;
         _lastStepsChangeEpochMs = 0;
         _dailySteps = 0;
-        _lastDailyResetDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        _lastDailyResetDate = DateTime.Now.ToString("yyyy-MM-dd"); // MODIFIÉ: Utiliser DateTime.Now au lieu de DateTime.UtcNow (Faille B)
+        _lastApiCatchUpEpochMs = 0; // Nouvelle propriété
     }
 
     // Propriété pour accéder à TotalPlayerSteps avec le nom simplifié TotalSteps
@@ -95,7 +105,7 @@ public class PlayerData
             if (delta != 0)
             {
                 LastStepsDelta = delta;
-                LastStepsChangeEpochMs = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
+                LastStepsChangeEpochMs = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds(); // MODIFIÉ: Utiliser DateTime.Now (Faille B)
             }
             TotalPlayerSteps = value;
         }

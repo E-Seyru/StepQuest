@@ -136,6 +136,22 @@ public class StepPlugin implements SensorEventListener {
         }
     }
 
+    // NOUVELLE MÉTHODE: Effacer les valeurs stockées après lecture pour éviter le double comptage (Faille C)
+    // Retourne un booléen pour indiquer le succès de l'opération
+    public static boolean clearStoredStepsForCustomRange() {
+        synchronized (apiReadLock) {
+            try {
+                long oldValue = lastReadStepsForCustomRange;
+                lastReadStepsForCustomRange = -1;
+                Log.i(TAG, "[API Recording] clearStoredStepsForCustomRange called. Old value: " + oldValue + " has been cleared.");
+                return true;  // Indique un nettoyage réussi
+            } catch (Exception e) {
+                Log.e(TAG, "[API Recording] Failed to clear stored range: " + e.getMessage());
+                return false;  // Indique un échec du nettoyage
+            }
+        }
+    }
+
     // Méthode interne principale pour lire les données de pas API
     private static void readStepDataInternal(long startTimeEpochSec, long endTimeEpochSec) {
         synchronized (apiReadLock) {

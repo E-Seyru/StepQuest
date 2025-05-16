@@ -1,4 +1,5 @@
 // Filepath: Assets/Scripts/Services/StepTracking/RecordingAPIStepCounter.cs
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -128,6 +129,14 @@ public class RecordingAPIStepCounter : MonoBehaviour
             yield break;
         }
 
+        // Vérifier s'il s'agit d'une plage déjà lue (solution de secours si clearStoredRange échoue)
+        if (ShouldSkipRange(fromEpochMs, toEpochMs))
+        {
+            Logger.LogWarning($"RecordingAPIStepCounter: Skipping already read range from {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)} to {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}");
+            onResultCallback?.Invoke(0);
+            yield break;
+        }
+
         // Vérifier et gérer le cas spécial où fromEpochMs est 0 ou très ancien
         if (fromEpochMs <= 1)
         {
@@ -140,6 +149,10 @@ public class RecordingAPIStepCounter : MonoBehaviour
             onResultCallback?.Invoke(0);
             yield break;
         }
+
+        // Mémoriser la plage en cours de lecture
+        lastReadStartMs = fromEpochMs;
+        lastReadEndMs = toEpochMs;
 
         Logger.LogInfo($"RecordingAPIStepCounter: Requesting readStepsForTimeRange from plugin for GetDeltaSinceFromAPI (from: {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)}, to: {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}).");
         stepPluginClass.CallStatic("readStepsForTimeRange", fromEpochMs, toEpochMs);
@@ -170,13 +183,122 @@ public class RecordingAPIStepCounter : MonoBehaviour
 
         Logger.LogInfo($"RecordingAPIStepCounter: GetDeltaSinceFromAPI received {currentResult} steps from plugin for time range {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)} to {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}.");
         onResultCallback?.Invoke(currentResult >= 0 ? currentResult : 0);
+
+        // Après avoir récupéré les données, effacer automatiquement la valeur stockée (Faille C)
+        ClearStoredRange();
     }
+
+    // Vérifier si une plage a déjà été lue (solution de secours pour la Faille #3)
+    private bool ShouldSkipRange(long fromEpochMs, long toEpochMs)
+    {
+        try
+        {
+            string lastRange = PlayerPrefs.GetString("LastReadRange", "");
+            if (!string.IsNullOrEmpty(lastRange))
+            {
+                string[] parts = lastRange.Split(':');
+                if (parts.Length == 2)
+                {
+                    long lastStart = long.Parse(parts[0]);
+                    long lastEnd = long.Parse(parts[1]);
+
+                    // Vérifier si la plage actuelle chevauche la dernière plage lue
+                    bool overlaps = (fromEpochMs <= lastEnd && toEpochMs >= lastStart);
+
+                    if (overlaps)
+                    {
+                        Logger.LogWarning($"RecordingAPIStepCounter: Current range ({LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)} to {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}) " +
+                                         $"overlaps with last recorded range ({LocalDatabase.GetReadableDateFromEpoch(lastStart)} to {LocalDatabase.GetReadableDateFromEpoch(lastEnd)})");
+                        return true;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"RecordingAPIStepCounter: Error checking last range: {ex.Message}");
+        }
+
+        return false;
+    }
+
+    // Pour effacer la valeur stockée dans le plugin après la lecture (Faille C)
+    // IMPORTANT: Toutes les lectures API doivent être suivies d'un appel à cette méthode
+    // pour garantir l'effacement du buffer et éviter tout double comptage
+    public void ClearStoredRange()
+    {
+        if (!isPluginClassInitialized || stepPluginClass == null)
+        {
+            Logger.LogWarning("RecordingAPIStepCounter: ClearStoredRange called but plugin class not initialized.");
+            return;
+        }
+
+        bool clearSuccess = false;
+
+        try
+        {
+            // Appeler la méthode dans le plugin Java et récupérer le statut de succès
+            // Note: Cette modification nécessite de mettre à jour StepPlugin.java pour retourner un booléen
+            clearSuccess = stepPluginClass.CallStatic<bool>("clearStoredStepsForCustomRange");
+
+            if (clearSuccess)
+            {
+                Logger.LogInfo("RecordingAPIStepCounter: Successfully cleared stored range in plugin.");
+            }
+            else
+            {
+                // Échec de nettoyage côté plugin, mémoriser l'état pour éviter un double comptage
+                HandleClearFailure();
+                Logger.LogWarning("RecordingAPIStepCounter: Plugin reported failure to clear stored range. Using fallback mechanism.");
+            }
+        }
+        catch (AndroidJavaException ex)
+        {
+            Logger.LogError($"RecordingAPIStepCounter: Failed to clear stored range in plugin. Exception: {ex.Message}");
+            // Si la méthode n'existe pas encore dans le plugin, utiliser une solution de secours
+            HandleClearFailure();
+            Logger.LogWarning("RecordingAPIStepCounter: clearStoredStepsForCustomRange function may not be available. Using fallback mechanism.");
+        }
+    }
+
+    // Méthode de secours pour éviter le double comptage si le nettoyage échoue
+    private void HandleClearFailure()
+    {
+        // Stocker la dernière plage lue dans PlayerPrefs pour pouvoir l'éviter la prochaine fois
+        // Cette solution est une SOLUTION DE SECOURS si le plugin ne supporte pas clearStoredStepsForCustomRange
+        try
+        {
+            // Si nous avons des timestamps de la dernière lecture, les enregistrer
+            if (lastReadStartMs > 0 && lastReadEndMs > 0)
+            {
+                PlayerPrefs.SetString("LastReadRange", $"{lastReadStartMs}:{lastReadEndMs}");
+                PlayerPrefs.Save();
+                Logger.LogInfo($"RecordingAPIStepCounter: Saved last read range {LocalDatabase.GetReadableDateFromEpoch(lastReadStartMs)} to {LocalDatabase.GetReadableDateFromEpoch(lastReadEndMs)} to PlayerPrefs as fallback.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"RecordingAPIStepCounter: Failed to save fallback data: {ex.Message}");
+        }
+    }
+
+    // Variables pour mémoriser la dernière plage lue
+    private long lastReadStartMs = 0;
+    private long lastReadEndMs = 0;
 
     // Maintient l'ancienne méthode pour compatibilité, mais utilise la nouvelle en interne
     public IEnumerator GetDeltaSinceFromAPI(long fromEpochMs, System.Action<long> onResultCallback)
     {
-        long nowEpochMs = new System.DateTimeOffset(System.DateTime.UtcNow).ToUnixTimeMilliseconds();
+        // MODIFIÉ: Utiliser TimeZoneInfo.Local.ToLocalTime pour éviter les problèmes de fuseau horaire (Faille B)
+        long nowEpochMs = GetLocalEpochMs();
         return GetDeltaSinceFromAPI(fromEpochMs, nowEpochMs, onResultCallback);
+    }
+
+    // NOUVELLE MÉTHODE: Obtenir le timestamp en utilisant le fuseau horaire local (Faille B)
+    private long GetLocalEpochMs()
+    {
+        // MODIFIÉ: Utiliser DateTime.Now pour cohérence avec le reste du code
+        return new System.DateTimeOffset(System.DateTime.Now).ToUnixTimeMilliseconds();
     }
 
     // Méthodes pour le capteur direct
