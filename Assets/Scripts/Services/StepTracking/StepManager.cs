@@ -50,6 +50,9 @@ public class StepManager : MonoBehaviour
     // NOUVELLE CONSTANTE: décalage en ms pour éviter le chevauchement à minuit
     private const long MIDNIGHT_SAFETY_MS = 1;
 
+    // NOUVELLE CONSTANTE: padding pour éviter le chevauchement exact entre capteur direct et API
+    private const long SENSOR_API_PADDING_MS = 1500;   // 1 seconde
+
     // NOUVELLE VARIABLE: pour vérifier et éviter les dédoublements
     private string lastMidnightSplitKey = "";
 
@@ -206,26 +209,19 @@ public class StepManager : MonoBehaviour
                 lastApiCatchUpEpochMs = nowEpochMs - (24 * 60 * 60 * 1000); // 24h en millisecondes
             }
 
-            // IMPORTANT: Pour éviter le double comptage après un crash (Faille A)
-            // Si un crash est détecté, utiliser LastPauseEpochMs comme borne de départ
+            // 1. borne de départ "brute"
             long startTimeMs = wasProbablyCrash ? lastPauseEpochMs : lastApiCatchUpEpochMs;
             long endTimeMs = nowEpochMs;
 
-            // NOUVEAU: Ne faire un catch-up API que si nécessaire (éviter le double comptage)
-            // Si LastSyncEpochMs est plus récent que LastApiCatchUpEpochMs, cela signifie que le capteur direct
-            // a enregistré des pas pendant cette période, donc pas besoin de catch-up API
-            if (lastSyncEpochMs > lastApiCatchUpEpochMs && !wasProbablyCrash)
+            // 2. Si le capteur direct recouvre déjà la borne, pousse-la d'un padding
+            if (!wasProbablyCrash && lastSyncEpochMs >= startTimeMs)
             {
-                Logger.LogInfo($"StepManager: Skipping API catch-up because direct sensor was active from {LocalDatabase.GetReadableDateFromEpoch(lastApiCatchUpEpochMs)} to {LocalDatabase.GetReadableDateFromEpoch(lastSyncEpochMs)}");
-
-                // Mettre à jour LastApiCatchUpEpochMs pour la cohérence
-                lastApiCatchUpEpochMs = nowEpochMs;
-                dataManager.PlayerData.LastApiCatchUpEpochMs = lastApiCatchUpEpochMs;
-                dataManager.SaveGame();
-                Logger.LogInfo($"StepManager: Updated LastApiCatchUpEpochMs to now: {LocalDatabase.GetReadableDateFromEpoch(lastApiCatchUpEpochMs)} without API catch-up");
+                startTimeMs = lastSyncEpochMs + SENSOR_API_PADDING_MS;   // évite le chevauchement exact
+                Logger.LogInfo($"StepManager: Small overlap détecté – API catch-up décalé à {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)}");
             }
-            // Ne récupérer les pas que s'il y a un intervalle de temps valide
-            else if (endTimeMs > startTimeMs)
+
+            // 3. On ne déclenche l'API que si l'intervalle est toujours valide
+            if (endTimeMs > startTimeMs)
             {
                 // Récupérer les pas depuis la dernière synchronisation jusqu'à maintenant
                 // avec gestion spéciale en cas de chevauchement de minuit
@@ -256,7 +252,7 @@ public class StepManager : MonoBehaviour
             }
             else
             {
-                Logger.LogInfo("StepManager: API Catch-up skipped - no valid time interval available or app was just paused very recently.");
+                Logger.LogInfo("StepManager: API catch-up skipped – pas d'intervalle valide après ajustement.");
             }
 
             // Toujours mettre à jour LastSyncEpochMs et LastPauseEpochMs au temps actuel
@@ -818,5 +814,4 @@ public class StepManager : MonoBehaviour
     {
         return new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
     }
-
 }

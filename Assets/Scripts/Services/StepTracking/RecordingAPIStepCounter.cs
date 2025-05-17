@@ -84,11 +84,6 @@ public class RecordingAPIStepCounter : MonoBehaviour
             {
                 Logger.LogInfo($"RecordingAPIStepCounter: Permission status changed to: {hasPermission}");
             }
-            else if (permissionCheckCounter >= LOG_FREQUENCY)
-            {
-                Logger.LogInfo($"RecordingAPIStepCounter: Permission check result: {hasPermission}");
-                permissionCheckCounter = 0;
-            }
 
             lastPermissionResult = hasPermission;
         }
