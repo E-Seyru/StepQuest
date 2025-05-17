@@ -364,34 +364,6 @@ public class StepManager : MonoBehaviour
         Logger.LogInfo($"StepManager: Updated LastSyncEpochMs and LastPauseEpochMs to current time after direct sensor update: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}");
     }
 
-    // NOUVELLE méthode: Effacer la valeur stockée dans le plugin pour éviter le double comptage (Faille C)
-    private void ClearStoredStepsRangeInPlugin()
-    {
-        if (!isPluginFunctionAvailable("clearStoredRange"))
-        {
-            Logger.LogWarning("StepManager: clearStoredRange function not available in plugin. Double counting may occur!");
-            return;
-        }
-
-        try
-        {
-            apiCounter.GetType().GetMethod("ClearStoredRange").Invoke(apiCounter, null);
-            Logger.LogInfo("StepManager: Successfully cleared stored range in plugin.");
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError($"StepManager: Failed to clear stored range in plugin. Exception: {ex.Message}");
-        }
-    }
-
-    // Helper pour vérifier si une fonction du plugin est disponible
-    private bool isPluginFunctionAvailable(string functionName)
-    {
-        // Simple mock pour simuler la disponibilité de la fonction
-        // Dans l'implémentation réelle, cette méthode vérifierait si la fonction existe dans le plugin
-        return false; // Supposons que la fonction n'est pas disponible pour l'instant
-    }
-
     // Méthode pour gérer le chevauchement de minuit
     private IEnumerator HandleMidnightSplitStepCount(long startTimeMs, long endTimeMs)
     {
@@ -460,9 +432,6 @@ public class StepManager : MonoBehaviour
                 Logger.LogWarning($"StepManager: API returned {stepsBeforeMidnight} steps before midnight, which exceeds threshold. Limiting to {MAX_STEPS_PER_UPDATE}.");
                 stepsBeforeMidnight = MAX_STEPS_PER_UPDATE;
             }
-
-            // NOUVEAU: Effacer la valeur stockée dans le plugin (Faille C)
-            ClearStoredStepsRangeInPlugin();
 
             // 3. Récupérer les pas de la période après minuit (jour courant)
             long stepsAfterMidnight = 0;
