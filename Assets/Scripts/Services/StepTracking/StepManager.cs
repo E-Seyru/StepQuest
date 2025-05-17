@@ -30,7 +30,7 @@ public class StepManager : MonoBehaviour
     private const int SENSOR_SPIKE_THRESHOLD = 50; // Nombre de pas considéré comme anormal en une seule mise à jour
     private const int SENSOR_DEBOUNCE_SECONDS = 3; // Temps minimum entre deux grandes variations
     private float lastLargeUpdateTime = 0f;
-    private const long MAX_STEPS_PER_UPDATE = 1000; // Limite raisonnable pour une sauvegarde unique
+    private const long MAX_STEPS_PER_UPDATE = 100000; // Limite raisonnable pour une sauvegarde unique
 
     // Période de grâce après le retour au premier plan (en secondes)
     private const float SENSOR_GRACE_PERIOD = 5.0f; // Augmenté de 2s à 5s (Faille D)
