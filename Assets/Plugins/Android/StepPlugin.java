@@ -185,10 +185,11 @@ public class StepPlugin implements SensorEventListener {
             return;
         }
 
+        // MODIFIÉ: Utiliser read() au lieu de aggregate() pour éviter les problèmes d'alignement des buckets
         LocalDataReadRequest readRequest = new LocalDataReadRequest.Builder()
-                .aggregate(LocalDataType.TYPE_STEP_COUNT_DELTA)
-                .bucketByTime((int) (endTimeEpochSec - startTimeEpochSec), TimeUnit.SECONDS)
+                .read(LocalDataType.TYPE_STEP_COUNT_DELTA)  // Utilisation de read() au lieu de aggregate()
                 .setTimeRange(startTimeEpochSec, endTimeEpochSec, TimeUnit.SECONDS)
+                // Suppression de bucketByTime pour lire les points individuels
                 .build();
         
         FitnessLocal.getLocalRecordingClient(currentActivity).readData(readRequest)
@@ -196,12 +197,12 @@ public class StepPlugin implements SensorEventListener {
                 long totalSteps = 0;
                 for (LocalBucket bucket : dataReadResponse.getBuckets()) {
                     for (LocalDataSet dataSet : bucket.getDataSets()) {
-                        totalSteps += processSingleDataSet(dataSet);
+                        totalSteps += sumStepsInRange(dataSet, startTimeEpochSec, endTimeEpochSec);
                     }
                 }
                 if (dataReadResponse.getBuckets().isEmpty() && !dataReadResponse.getDataSets().isEmpty()){
                     for (LocalDataSet dataSet : dataReadResponse.getDataSets()) {
-                        totalSteps += processSingleDataSet(dataSet);
+                        totalSteps += sumStepsInRange(dataSet, startTimeEpochSec, endTimeEpochSec);
                     }
                 }
                 
@@ -233,13 +234,33 @@ public class StepPlugin implements SensorEventListener {
         }
     }
 
-    private static long processSingleDataSet(LocalDataSet dataSet) {
+    // NOUVEAU: Méthode qui filtre strictement les points de données selon la plage temporelle
+    private static long sumStepsInRange(LocalDataSet dataSet, long rangeStartSec, long rangeEndSec) {
         long steps = 0;
         if (dataSet.isEmpty()) return 0;
+        
         for (LocalDataPoint dp : dataSet.getDataPoints()) {
-            for (LocalField field : dp.getDataType().getFields()) {
-                if (field.equals(LocalField.FIELD_STEPS)) {
-                    steps += dp.getValue(field).asInt();
+            long dpStart = dp.getStartTime(TimeUnit.SECONDS);
+            long dpEnd = dp.getEndTime(TimeUnit.SECONDS);
+            
+            // On ne garde le point que s'il EST intégralement dans la plage
+            if (dpStart >= rangeStartSec && dpEnd <= rangeEndSec) {
+                for (LocalField field : dp.getDataType().getFields()) {
+                    if (field.equals(LocalField.FIELD_STEPS)) {
+                        steps += dp.getValue(field).asInt();
+                        Log.d(TAG, "[API DataPoint] Adding " + dp.getValue(field).asInt() + 
+                                " steps from point [" + dpStart + " to " + dpEnd + 
+                                "] (within requested range [" + rangeStartSec + " to " + rangeEndSec + "])");
+                    }
+                }
+            } else {
+                // Point partiellement ou totalement hors plage - on l'ignore
+                for (LocalField field : dp.getDataType().getFields()) {
+                    if (field.equals(LocalField.FIELD_STEPS)) {
+                        Log.d(TAG, "[API DataPoint] SKIPPING " + dp.getValue(field).asInt() + 
+                                " steps from point [" + dpStart + " to " + dpEnd + 
+                                "] (outside requested range [" + rangeStartSec + " to " + rangeEndSec + "])");
+                    }
                 }
             }
         }

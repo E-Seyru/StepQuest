@@ -48,7 +48,7 @@ public class StepManager : MonoBehaviour
     private bool wasProbablyCrash = false;
 
     // NOUVELLE CONSTANTE: décalage en ms pour éviter le chevauchement à minuit
-    private const long MIDNIGHT_SAFETY_MS = 1;
+    private const long MIDNIGHT_SAFETY_MS = 500;
 
     // NOUVELLE CONSTANTE: padding pour éviter le chevauchement exact entre capteur direct et API
     private const long SENSOR_API_PADDING_MS = 1500;   // 1 seconde
