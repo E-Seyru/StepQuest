@@ -47,6 +47,12 @@ public class StepManager : MonoBehaviour
     // Nouveau: détection de crash
     private bool wasProbablyCrash = false;
 
+    // NOUVELLE CONSTANTE: décalage en ms pour éviter le chevauchement à minuit
+    private const long MIDNIGHT_SAFETY_MS = 1;
+
+    // NOUVELLE VARIABLE: pour vérifier et éviter les dédoublements
+    private string lastMidnightSplitKey = "";
+
     void Awake()
     {
         // Protection contre les instances multiples (Faille E)
@@ -414,9 +420,24 @@ public class StepManager : MonoBehaviour
             long midnightMs = FindMidnightTimestamp(startTimeMs, endTimeMs);
             Logger.LogInfo($"StepManager: Interval spans midnight at {LocalDatabase.GetReadableDateFromEpoch(midnightMs)}. Splitting step counts.");
 
+            // NOUVEAU: Créer une clé unique pour cette split de minuit pour détecter les doublons
+            string splitKey = $"{startTimeMs}_{midnightMs}_{endTimeMs}";
+
+            // NOUVEAU: Vérifier si nous avons déjà effectué cette requête récemment
+            if (splitKey == lastMidnightSplitKey)
+            {
+                Logger.LogWarning($"StepManager: DUPLICATE MIDNIGHT SPLIT DETECTED! Skipping to avoid double counting. SplitKey: {splitKey}");
+                yield break;
+            }
+
+            // MODIFIÉ: Ajouter un décalage de sécurité pour éviter le chevauchement à minuit
+            long midnightMinus = midnightMs - MIDNIGHT_SAFETY_MS;
+            long midnightPlus = midnightMs + MIDNIGHT_SAFETY_MS;
+
             // 2. Récupérer les pas de la période avant minuit (jour précédent)
             long stepsBeforeMidnight = 0;
-            yield return StartCoroutine(apiCounter.GetDeltaSinceFromAPI(startTimeMs, midnightMs, (result) =>
+            // MODIFIÉ: Utilisation de midnightMinus au lieu de midnightMs
+            yield return StartCoroutine(apiCounter.GetDeltaSinceFromAPI(startTimeMs, midnightMinus, (result) =>
             {
                 stepsBeforeMidnight = result;
             }));
@@ -435,7 +456,8 @@ public class StepManager : MonoBehaviour
 
             // 3. Récupérer les pas de la période après minuit (jour courant)
             long stepsAfterMidnight = 0;
-            yield return StartCoroutine(apiCounter.GetDeltaSinceFromAPI(midnightMs, endTimeMs, (result) =>
+            // MODIFIÉ: Utilisation de midnightPlus au lieu de midnightMs
+            yield return StartCoroutine(apiCounter.GetDeltaSinceFromAPI(midnightPlus, endTimeMs, (result) =>
             {
                 stepsAfterMidnight = result;
             }));
@@ -452,13 +474,68 @@ public class StepManager : MonoBehaviour
                 stepsAfterMidnight = MAX_STEPS_PER_UPDATE;
             }
 
+            // NOUVEAU: Vérifications supplémentaires pour détecter des valeurs anormalement élevées
+            bool stepsBeforeHigherThanExpected = false;
+            bool stepsAfterHigherThanExpected = false;
+
+            // Exemple: si le nombre de pas avant minuit est plus de 10 fois supérieur 
+            // au nombre de pas après minuit, c'est suspect
+            if (stepsAfterMidnight > 0 && stepsBeforeMidnight > stepsAfterMidnight * 10)
+            {
+                stepsBeforeHigherThanExpected = true;
+                Logger.LogWarning($"StepManager: ANOMALY DETECTED - Steps before midnight ({stepsBeforeMidnight}) are suspiciously higher than steps after midnight ({stepsAfterMidnight})");
+            }
+
+            // De même pour l'inverse
+            if (stepsBeforeMidnight > 0 && stepsAfterMidnight > stepsBeforeMidnight * 10)
+            {
+                stepsAfterHigherThanExpected = true;
+                Logger.LogWarning($"StepManager: ANOMALY DETECTED - Steps after midnight ({stepsAfterMidnight}) are suspiciously higher than steps before midnight ({stepsBeforeMidnight})");
+            }
+
+            // Si une des deux valeurs semble anormale, appliquer une correction
+            if (stepsBeforeHigherThanExpected || stepsAfterHigherThanExpected)
+            {
+                // Stratégie simple: dans le doute, prendre la valeur la plus basse
+                // et l'appliquer proportionnellement aux deux périodes
+                long lowerValue = Math.Min(stepsBeforeMidnight, stepsAfterMidnight);
+
+                // Si la période avant minuit est plus longue que la période après minuit,
+                // ajuster proportionnellement
+                long beforeDuration = midnightMinus - startTimeMs;
+                long afterDuration = endTimeMs - midnightPlus;
+                double ratio = (double)beforeDuration / (beforeDuration + afterDuration);
+
+                if (stepsBeforeHigherThanExpected)
+                {
+                    long newStepsBeforeMidnight = (long)(lowerValue * ratio) + 1;
+                    Logger.LogWarning($"StepManager: Adjusting steps before midnight from {stepsBeforeMidnight} to {newStepsBeforeMidnight} to avoid double counting");
+                    stepsBeforeMidnight = newStepsBeforeMidnight;
+                }
+
+                if (stepsAfterHigherThanExpected)
+                {
+                    long newStepsAfterMidnight = (long)(lowerValue * (1 - ratio)) + 1;
+                    Logger.LogWarning($"StepManager: Adjusting steps after midnight from {stepsAfterMidnight} to {newStepsAfterMidnight} to avoid double counting");
+                    stepsAfterMidnight = newStepsAfterMidnight;
+                }
+            }
+
             // 4. Mettre à jour les compteurs
             TotalSteps += (stepsBeforeMidnight + stepsAfterMidnight); // Ajouter tous les pas au total
             DailySteps += stepsAfterMidnight; // N'ajouter que les pas après minuit au compteur journalier
 
+            // NOUVEAU: Enregistrer cette split pour ne pas la répéter
+            lastMidnightSplitKey = splitKey;
+
             Logger.LogInfo($"StepManager: API Catch-up - Steps before midnight: {stepsBeforeMidnight}, " +
                           $"Steps after midnight: {stepsAfterMidnight}. " +
                           $"New TotalSteps: {TotalSteps}, DailySteps: {DailySteps}");
+
+            // NOUVEAU: Logguer explicitement les intervalles utilisés pour le debug
+            Logger.LogInfo($"StepManager: Midnight split intervals - Before: {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(midnightMinus)}, " +
+                          $"After: {LocalDatabase.GetReadableDateFromEpoch(midnightPlus)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}, " +
+                          $"Gap: {MIDNIGHT_SAFETY_MS * 2}ms");
         }
 
         // Sauvegarder les données mises à jour
@@ -741,4 +818,5 @@ public class StepManager : MonoBehaviour
     {
         return new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds();
     }
+
 }
