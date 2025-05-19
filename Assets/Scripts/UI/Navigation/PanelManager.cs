@@ -132,23 +132,7 @@ public class PanelManager : MonoBehaviour
         }
 
         // Handle current panel (hide it)
-        if (currentPanelIndex >= 0 && currentPanelIndex < panels.Count && panels[currentPanelIndex] != null)
-        {
-            if (alwaysActivePanelIndices.Contains(currentPanelIndex))
-            {
-                // Move to off-screen instead of deactivating
-                RectTransform rectTransform = panels[currentPanelIndex].GetComponent<RectTransform>();
-                if (rectTransform != null)
-                {
-                    rectTransform.anchoredPosition = offScreenPosition;
-                }
-            }
-            else
-            {
-                // Deactivate regular panels
-                panels[currentPanelIndex].SetActive(false);
-            }
-        }
+        HidePanel();
 
         // Handle new panel (show it)
         if (alwaysActivePanelIndices.Contains(index))
@@ -476,6 +460,28 @@ public class PanelManager : MonoBehaviour
     }
 
 
+    private void HidePanel()
+    {
+        if (currentPanelIndex >= 0 && currentPanelIndex < panels.Count && panels[currentPanelIndex] != null)
+        {
+            if (alwaysActivePanelIndices.Contains(currentPanelIndex))
+            {
+                // Move to off-screen instead of deactivating
+                RectTransform rectTransform = panels[currentPanelIndex].GetComponent<RectTransform>();
+                if (rectTransform != null)
+                {
+                    rectTransform.anchoredPosition = offScreenPosition;
+                }
+            }
+            else
+            {
+                // Deactivate regular panels
+                panels[currentPanelIndex].SetActive(false);
+            }
+        }
+    }
+
+
     public void ShowAndHideMapPanel()
     {
         if (mapIsHidden)
@@ -485,7 +491,7 @@ public class PanelManager : MonoBehaviour
                                                     // Masque l’UI
             foreach (var panel in panels)
             {
-                panel.SetActive(false);
+                HidePanel();
             }
             mapPanel.SetActive(true);
 
