@@ -2,6 +2,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
@@ -11,11 +12,13 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI totalStepsText;
     [SerializeField] private TextMeshProUGUI dailyStepsText; // Nouveau: texte pour afficher les pas quotidiens
     [SerializeField] private TextMeshProUGUI lastUpdateText; // Indicateur de dernière mise à jour
+    [SerializeField] private Button MapButton;
 
     private StepManager stepManager;
     private long lastDisplayedTotalSteps = -1;
     private long lastDisplayedDailySteps = -1;
     private float stepUpdateFlashDuration = 0.3f;
+
 
     private void Awake()
     {
@@ -164,4 +167,7 @@ public class UIManager : MonoBehaviour
             textElement.color = originalColor;
         }
     }
+
+
+
 }

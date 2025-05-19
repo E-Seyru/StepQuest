@@ -10,6 +10,8 @@ public class PanelManager : MonoBehaviour
     [SerializeField] private int startingPanelIndex = 0;
     [SerializeField] private bool wrapAround = true;
     [SerializeField] private List<int> alwaysActivePanelIndices = new List<int>(); // Nouveaux indices pour les panneaux toujours actifs
+    [SerializeField] private GameObject mapPanel; // Panneau de carte
+
 
     [Header("Swipe Settings")]
     [SerializeField] private float minSwipeDistance = 50f;
@@ -24,6 +26,7 @@ public class PanelManager : MonoBehaviour
     public UnityEvent<int> OnPanelChanged;
 
     // Private variables
+    private bool mapIsHidden = true;
     private int currentPanelIndex;
     private Vector2 touchStartPosition;
     private float touchStartTime;
@@ -33,10 +36,24 @@ public class PanelManager : MonoBehaviour
     private Vector2 containerTargetPosition;
     private float transitionStartTime;
     private Dictionary<int, Vector2> originalPositions = new Dictionary<int, Vector2>(); // Pour stocker les positions d'origine
+    private int previousPanelIndex = 0;
+    public static PanelManager Instance { get; private set; }
 
     private void Awake()
     {
-        // Get or create panel container
+
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+
+        }
+        else
+        {
+
+            Destroy(gameObject);
+        }
+
         panelContainer = GetComponent<RectTransform>();
         if (panelContainer == null)
         {
@@ -456,5 +473,33 @@ public class PanelManager : MonoBehaviour
                 ShowPanel(0);
             }
         }
+    }
+
+
+    public void ShowAndHideMapPanel()
+    {
+        if (mapIsHidden)
+        {
+
+            previousPanelIndex = currentPanelIndex; // Sauvegarde le panel actuel
+                                                    // Masque l’UI
+            foreach (var panel in panels)
+            {
+                panel.SetActive(false);
+            }
+            mapPanel.SetActive(true);
+
+            mapIsHidden = false;
+
+        }
+        else
+        {
+            mapPanel.SetActive(false);
+            ShowPanel(previousPanelIndex); // Ré-affiche le panel d’avant
+            mapIsHidden = true;
+        }
+
+
+
     }
 }
