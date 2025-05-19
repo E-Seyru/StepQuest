@@ -470,53 +470,6 @@ public class StepManager : MonoBehaviour
                 stepsAfterMidnight = MAX_STEPS_PER_UPDATE;
             }
 
-            // NOUVEAU: Vérifications supplémentaires pour détecter des valeurs anormalement élevées
-            bool stepsBeforeHigherThanExpected = false;
-            bool stepsAfterHigherThanExpected = false;
-
-            // Exemple: si le nombre de pas avant minuit est plus de 10 fois supérieur 
-            // au nombre de pas après minuit, c'est suspect
-            if (stepsAfterMidnight > 0 && stepsBeforeMidnight > stepsAfterMidnight * 10)
-            {
-                stepsBeforeHigherThanExpected = true;
-                Logger.LogWarning($"StepManager: ANOMALY DETECTED - Steps before midnight ({stepsBeforeMidnight}) are suspiciously higher than steps after midnight ({stepsAfterMidnight})");
-            }
-
-            // De même pour l'inverse
-            if (stepsBeforeMidnight > 0 && stepsAfterMidnight > stepsBeforeMidnight * 10)
-            {
-                stepsAfterHigherThanExpected = true;
-                Logger.LogWarning($"StepManager: ANOMALY DETECTED - Steps after midnight ({stepsAfterMidnight}) are suspiciously higher than steps before midnight ({stepsBeforeMidnight})");
-            }
-
-            // Si une des deux valeurs semble anormale, appliquer une correction
-            if (stepsBeforeHigherThanExpected || stepsAfterHigherThanExpected)
-            {
-                // Stratégie simple: dans le doute, prendre la valeur la plus basse
-                // et l'appliquer proportionnellement aux deux périodes
-                long lowerValue = Math.Min(stepsBeforeMidnight, stepsAfterMidnight);
-
-                // Si la période avant minuit est plus longue que la période après minuit,
-                // ajuster proportionnellement
-                long beforeDuration = midnightMinus - startTimeMs;
-                long afterDuration = endTimeMs - midnightPlus;
-                double ratio = (double)beforeDuration / (beforeDuration + afterDuration);
-
-                if (stepsBeforeHigherThanExpected)
-                {
-                    long newStepsBeforeMidnight = (long)(lowerValue * ratio) + 1;
-                    Logger.LogWarning($"StepManager: Adjusting steps before midnight from {stepsBeforeMidnight} to {newStepsBeforeMidnight} to avoid double counting");
-                    stepsBeforeMidnight = newStepsBeforeMidnight;
-                }
-
-                if (stepsAfterHigherThanExpected)
-                {
-                    long newStepsAfterMidnight = (long)(lowerValue * (1 - ratio)) + 1;
-                    Logger.LogWarning($"StepManager: Adjusting steps after midnight from {stepsAfterMidnight} to {newStepsAfterMidnight} to avoid double counting");
-                    stepsAfterMidnight = newStepsAfterMidnight;
-                }
-            }
-
             // 4. Mettre à jour les compteurs
             TotalSteps += (stepsBeforeMidnight + stepsAfterMidnight); // Ajouter tous les pas au total
             DailySteps += stepsAfterMidnight; // N'ajouter que les pas après minuit au compteur journalier
