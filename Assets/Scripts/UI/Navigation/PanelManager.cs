@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -20,7 +20,7 @@ public class PanelManager : MonoBehaviour
     [Header("Animation Settings")]
     [SerializeField] private float transitionSpeed = 10f;
     [SerializeField] private AnimationCurve transitionCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-    [SerializeField] private Vector2 offScreenPosition = new Vector2(10000, 10000); // Position hors �cran
+    [SerializeField] private Vector2 offScreenPosition = new Vector2(10000, 10000); // Position hors écran
 
     [Header("Events")]
     public UnityEvent<int> OnPanelChanged;
@@ -69,14 +69,14 @@ public class PanelManager : MonoBehaviour
         // Store original positions for all panels
         for (int i = 0; i < panels.Count; i++)
         {
-            if (panels[i] != null)
-            {
-                RectTransform rectTransform = panels[i].GetComponent<RectTransform>();
-                if (rectTransform != null)
-                {
-                    originalPositions[i] = rectTransform.anchoredPosition;
-                }
-            }
+            if (panels[i] == null) continue;
+
+            RectTransform rectTransform = panels[i].GetComponent<RectTransform>();
+            if (rectTransform == null) continue;
+
+            // on ne touche qu’aux entrées manquantes
+            if (!originalPositions.ContainsKey(i))
+                originalPositions[i] = rectTransform.anchoredPosition;
         }
 
         // Show the starting panel
@@ -98,26 +98,26 @@ public class PanelManager : MonoBehaviour
 
     private void InitializePanels()
     {
-        // Handle each panel based on whether it should stay active
         for (int i = 0; i < panels.Count; i++)
         {
-            if (panels[i] != null)
+            if (panels[i] == null) continue;
+
+            RectTransform rectTransform = panels[i].GetComponent<RectTransform>();
+            if (rectTransform == null) continue;
+
+            if (alwaysActivePanelIndices.Contains(i))
             {
-                if (alwaysActivePanelIndices.Contains(i))
-                {
-                    // Always active panels start active but moved off-screen
-                    panels[i].SetActive(true);
-                    RectTransform rectTransform = panels[i].GetComponent<RectTransform>();
-                    if (rectTransform != null)
-                    {
-                        rectTransform.anchoredPosition = offScreenPosition;
-                    }
-                }
-                else
-                {
-                    // Regular panels start inactive
-                    panels[i].SetActive(false);
-                }
+                // ► mémoriser la position avant de l’éjecter
+                if (!originalPositions.ContainsKey(i))
+                    originalPositions[i] = rectTransform.anchoredPosition; // la plupart du temps (0,0)
+
+                // Panneau toujours actif : visible mais hors champ
+                panels[i].SetActive(true);
+                rectTransform.anchoredPosition = offScreenPosition;
+            }
+            else
+            {
+                panels[i].SetActive(false);
             }
         }
     }
@@ -198,6 +198,10 @@ public class PanelManager : MonoBehaviour
 
     private void HandleInput()
     {
+        // Skip input handling if the map is visible
+        if (!mapIsHidden)
+            return;
+
         // Touch input handling
         if (Input.touchCount > 0)
         {
@@ -244,6 +248,8 @@ public class PanelManager : MonoBehaviour
         }
 #endif
     }
+
+
 
     private enum TransitionDirection
     {
@@ -486,26 +492,47 @@ public class PanelManager : MonoBehaviour
     {
         if (mapIsHidden)
         {
+            // Sauvegarde le panel actuel avant de passer à la carte
+            previousPanelIndex = currentPanelIndex;
 
-            previousPanelIndex = currentPanelIndex; // Sauvegarde le panel actuel
-                                                    // Masque l�UI
-            foreach (var panel in panels)
-            {
-                HidePanel();
-            }
+            // Cache tous les panels (y compris ceux toujours actifs)
+            HidePanel();
+
+            // Affiche la carte
             mapPanel.SetActive(true);
-
             mapIsHidden = false;
-
         }
         else
         {
+            // Cache la carte
             mapPanel.SetActive(false);
-            ShowPanel(previousPanelIndex); // R�-affiche le panel d�avant
+
+            // Restore LE PANEL PRÉCÉDENT
+            // Pour les panels réguliers et toujours actifs
+            if (previousPanelIndex >= 0 && previousPanelIndex < panels.Count && panels[previousPanelIndex] != null)
+            {
+                // Gère spécifiquement les panels toujours actifs
+                if (alwaysActivePanelIndices.Contains(previousPanelIndex))
+                {
+                    // Ramène le panel toujours actif à sa position d'origine
+                    RectTransform rectTransform = panels[previousPanelIndex].GetComponent<RectTransform>();
+                    if (rectTransform != null && originalPositions.ContainsKey(previousPanelIndex))
+                    {
+                        rectTransform.anchoredPosition = originalPositions[previousPanelIndex];
+                    }
+                }
+
+                // Mettre à jour l'index du panel courant
+                currentPanelIndex = previousPanelIndex;
+
+                // Activer le panel précédent s'il n'est pas déjà actif
+                panels[previousPanelIndex].SetActive(true);
+
+                // Déclencher l'événement de changement de panel
+                OnPanelChanged?.Invoke(currentPanelIndex);
+            }
+
             mapIsHidden = true;
         }
-
-
-
     }
 }

@@ -683,8 +683,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cam: {fileID: 519420031}
-  zoomStep: 0
-  zoomMin: 0
+  zoomStep: 0.01
+  zoomMin: 2.5
   mapSprite: {fileID: 692979545}
 --- !u!1 &519502517
 GameObject:
