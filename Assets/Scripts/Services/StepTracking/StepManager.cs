@@ -372,6 +372,22 @@ public class StepManager : MonoBehaviour
         // Vérifier si l'intervalle chevauche minuit en utilisant TimeZoneInfo.Local (Faille B)
         bool spansMidnight = DoesIntervalSpanMidnight(startTimeMs, endTimeMs);
 
+        // Nouveau: Déterminer si l'absence couvre plusieurs jours
+        bool isMultiDayAbsence = false;
+        if (spansMidnight)
+        {
+            // Calculer nombre de jours entre les deux dates
+            DateTime startDate = DateTimeOffset.FromUnixTimeMilliseconds(startTimeMs).ToLocalTime().DateTime;
+            DateTime endDate = DateTimeOffset.FromUnixTimeMilliseconds(endTimeMs).ToLocalTime().DateTime;
+            TimeSpan dayDifference = endDate.Date - startDate.Date;
+            isMultiDayAbsence = dayDifference.Days > 1;
+
+            if (isMultiDayAbsence)
+            {
+                Logger.LogInfo($"StepManager: Multi-day absence detected ({dayDifference.Days} days). Will only count today's steps for DailySteps.");
+            }
+        }
+
         if (!spansMidnight)
         {
             // Cas simple : pas de chevauchement de minuit
@@ -399,9 +415,97 @@ public class StepManager : MonoBehaviour
 
             Logger.LogInfo($"StepManager: API Catch-up - Delta: {deltaApiSinceLast}. New TotalSteps: {TotalSteps}, DailySteps: {DailySteps}");
         }
+        else if (isMultiDayAbsence)
+        {
+            // Nouveau cas: absence de plusieurs jours
+
+            // Force explicitement la réinitialisation du compteur quotidien
+            string currentDateStr = GetLocalDateString();
+            Logger.LogInfo($"StepManager: **CRITICAL** Multi-day absence detected, forcing DailySteps reset. Setting LastDailyResetDate to {currentDateStr}");
+
+            // Réinitialisation explicite
+            DailySteps = 0;
+            dataManager.PlayerData.DailySteps = 0;
+            dataManager.PlayerData.LastDailyResetDate = currentDateStr;
+
+            // 1. Calculer le début du jour courant (00:00 aujourd'hui)
+            DateTime nowLocal = DateTime.Now;
+            DateTime todayMidnight = new DateTime(nowLocal.Year, nowLocal.Month, nowLocal.Day, 0, 0, 0, DateTimeKind.Local);
+            long todayMidnightMs = new DateTimeOffset(todayMidnight, TimeZoneInfo.Local.GetUtcOffset(todayMidnight)).ToUnixTimeMilliseconds();
+
+            // NOUVEAU: Créer une clé unique pour cette division spéciale
+            string splitKey = $"multiday_{startTimeMs}_{todayMidnightMs}_{endTimeMs}";
+
+            // Vérifier si nous avons déjà effectué cette requête récemment
+            if (splitKey == lastMidnightSplitKey)
+            {
+                Logger.LogWarning($"StepManager: DUPLICATE MULTIDAY SPLIT DETECTED! Skipping to avoid double counting. SplitKey: {splitKey}");
+                yield break;
+            }
+
+            // Ajouter décalage de sécurité pour éviter le chevauchement
+            long todayMidnightMinus = todayMidnightMs - MIDNIGHT_SAFETY_MS;
+            long todayMidnightPlus = todayMidnightMs + MIDNIGHT_SAFETY_MS;
+
+            Logger.LogInfo($"StepManager: Splitting multi-day interval at today's midnight: {LocalDatabase.GetReadableDateFromEpoch(todayMidnightMs)}");
+
+            // 2. Récupérer tous les pas passés (avant aujourd'hui)
+            long stepsBeforeToday = 0;
+            yield return StartCoroutine(apiCounter.GetDeltaSinceFromAPI(startTimeMs, todayMidnightMinus, (result) =>
+            {
+                stepsBeforeToday = result;
+            }));
+
+            // Vérifier les limites
+            if (stepsBeforeToday < 0)
+            {
+                stepsBeforeToday = 0;
+                Logger.LogWarning("StepManager: GetDeltaSinceFromAPI (before today) returned error, defaulting to 0.");
+            }
+            else if (stepsBeforeToday > MAX_STEPS_PER_UPDATE)
+            {
+                Logger.LogWarning($"StepManager: API returned {stepsBeforeToday} steps before today, which exceeds threshold. Limiting to {MAX_STEPS_PER_UPDATE}.");
+                stepsBeforeToday = MAX_STEPS_PER_UPDATE;
+            }
+
+            // 3. Récupérer les pas d'aujourd'hui uniquement
+            long stepsToday = 0;
+            yield return StartCoroutine(apiCounter.GetDeltaSinceFromAPI(todayMidnightPlus, endTimeMs, (result) =>
+            {
+                stepsToday = result;
+            }));
+
+            // Vérifier les limites
+            if (stepsToday < 0)
+            {
+                stepsToday = 0;
+                Logger.LogWarning("StepManager: GetDeltaSinceFromAPI (today only) returned error, defaulting to 0.");
+            }
+            else if (stepsToday > MAX_STEPS_PER_UPDATE)
+            {
+                Logger.LogWarning($"StepManager: API returned {stepsToday} steps for today, which exceeds threshold. Limiting to {MAX_STEPS_PER_UPDATE}.");
+                stepsToday = MAX_STEPS_PER_UPDATE;
+            }
+
+            // 4. Mettre à jour les compteurs correctement
+            TotalSteps += (stepsBeforeToday + stepsToday); // Ajouter tous les pas au total
+            DailySteps += stepsToday;                      // N'ajouter que les pas d'aujourd'hui au compteur journalier
+
+            // Enregistrer cette split pour ne pas la répéter
+            lastMidnightSplitKey = splitKey;
+
+            Logger.LogInfo($"StepManager: Multi-day API Catch-up - Steps before today: {stepsBeforeToday}, " +
+                          $"Steps today only: {stepsToday}. " +
+                          $"New TotalSteps: {TotalSteps}, DailySteps: {DailySteps}");
+
+            Logger.LogInfo($"StepManager: Multi-day split intervals - Total: {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}, " +
+                          $"Before today: {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(todayMidnightMinus)}, " +
+                          $"Today only: {LocalDatabase.GetReadableDateFromEpoch(todayMidnightPlus)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}");
+        }
         else
         {
-            // Cas avec chevauchement de minuit : diviser en deux requêtes
+            // Cas avec chevauchement de minuit sur une seule nuit : diviser en deux requêtes
+            // [Code original pour le cas de chevauchement simple d'un seul minuit]
 
             // Force explicitement la réinitialisation du compteur quotidien
             string currentDateStr = GetLocalDateString();
