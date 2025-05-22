@@ -71,124 +71,129 @@ public class LocalDatabase
     {
         try
         {
-            // Créer une table de version si elle n'existe pas
             _connection.Execute("CREATE TABLE IF NOT EXISTS DatabaseVersion (Version INTEGER)");
 
-            // Récupérer la version actuelle
-            int currentVersion = 0;
-            var result = _connection.Query<DatabaseVersionInfo>("SELECT Version FROM DatabaseVersion LIMIT 1");
-            if (result.Count > 0)
-            {
-                currentVersion = result[0].Version;
-            }
-            else
-            {
-                // Aucune version trouvée, insérer la version initiale
-                _connection.Execute("INSERT INTO DatabaseVersion (Version) VALUES (1)");
-                currentVersion = 1;
-            }
-
+            int currentVersion = GetCurrentDatabaseVersion();
             Logger.LogInfo($"LocalDatabase: Current database version: {currentVersion}, Target version: {DATABASE_VERSION}");
 
-            // Appliquer les migrations nécessaires
-            if (currentVersion < DATABASE_VERSION)
+            while (currentVersion < DATABASE_VERSION)
             {
-                // Migration de la version 1 à 2
-                if (currentVersion == 1 && DATABASE_VERSION >= 2)
+                Logger.LogInfo($"LocalDatabase: Migrating from version {currentVersion} to {currentVersion + 1}...");
+                bool migrationSuccess = false;
+                switch (currentVersion)
                 {
-                    Logger.LogInfo("LocalDatabase: Migrating from version 1 to 2...");
-
-                    try
-                    {
-                        // Ajouter les colonnes de suivi des anomalies
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastStepsDelta INTEGER DEFAULT 0");
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastStepsChangeEpochMs INTEGER DEFAULT 0");
-
-                        // Mettre à jour la version
-                        _connection.Execute("UPDATE DatabaseVersion SET Version = 2");
-                        Logger.LogInfo("LocalDatabase: Migration to version 2 completed");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError($"LocalDatabase: Migration error: {ex.Message}");
-                    }
+                    case 1:
+                        migrationSuccess = MigrateFrom1To2();
+                        break;
+                    case 2:
+                        migrationSuccess = MigrateFrom2To3();
+                        break;
+                    case 3:
+                        migrationSuccess = MigrateFrom3To4();
+                        break;
+                    case 4:
+                        migrationSuccess = MigrateFrom4To5();
+                        break;
+                    // Ajouter d'autres cas de migration ici
+                    default:
+                        Logger.LogError($"LocalDatabase: No migration path defined for version {currentVersion}. Halting migration.");
+                        return; // Arrêter si aucune migration n'est définie
                 }
 
-                // Migration de la version 2 à 3 pour ajouter DailySteps et LastDailyResetDate
-                if (currentVersion == 2 && DATABASE_VERSION >= 3)
+                if (migrationSuccess)
                 {
-                    Logger.LogInfo("LocalDatabase: Migrating from version 2 to 3...");
-
-                    try
-                    {
-                        // Ajouter les colonnes pour le comptage quotidien
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN DailySteps INTEGER DEFAULT 0");
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastDailyResetDate TEXT DEFAULT ''");
-
-                        // Initialiser LastDailyResetDate à la date du jour
-                        string todayDate = DateTime.Now.ToString("yyyy-MM-dd"); // MODIFIÉ: Utiliser DateTime.Now (Faille B)
-                        _connection.Execute($"UPDATE PlayerData SET LastDailyResetDate = '{todayDate}'");
-
-                        // Mettre à jour la version
-                        _connection.Execute("UPDATE DatabaseVersion SET Version = 3");
-                        Logger.LogInfo("LocalDatabase: Migration to version 3 completed");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError($"LocalDatabase: Migration error: {ex.Message}");
-                    }
+                    currentVersion++; // Incrémenter uniquement si la migration a réussi
+                    _connection.Execute("UPDATE DatabaseVersion SET Version = ?", currentVersion);
+                    Logger.LogInfo($"LocalDatabase: Migration to version {currentVersion} completed successfully.");
                 }
-
-                // NOUVELLE MIGRATION: Migration de la version 3 à 4 pour ajouter LastApiCatchUpEpochMs (Faille A)
-                if (currentVersion == 3 && DATABASE_VERSION >= 4)
+                else
                 {
-                    Logger.LogInfo("LocalDatabase: Migrating from version 3 to 4...");
-
-                    try
-                    {
-                        // Ajouter la colonne pour le timestamp dédié à l'API catch-up
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastApiCatchUpEpochMs INTEGER DEFAULT 0");
-
-                        // Initialiser LastApiCatchUpEpochMs à la même valeur que LastSyncEpochMs pour les données existantes
-                        _connection.Execute("UPDATE PlayerData SET LastApiCatchUpEpochMs = LastSyncEpochMs");
-
-                        // Mettre à jour la version
-                        _connection.Execute("UPDATE DatabaseVersion SET Version = 4");
-                        Logger.LogInfo("LocalDatabase: Migration to version 4 completed");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError($"LocalDatabase: Migration error: {ex.Message}");
-                    }
+                    Logger.LogError($"LocalDatabase: Migration from version {currentVersion} failed. Halting further migrations.");
+                    return; // Arrêter les migrations si une étape échoue
                 }
-
-                if (currentVersion == 4 && DATABASE_VERSION >= 5)
-                {
-                    Logger.LogInfo("LocalDatabase: Migrating from version 4 to 5...");
-                    try
-                    {
-                        // Ajouter les colonnes pour le système de voyage
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN CurrentLocationId TEXT DEFAULT 'Foret_01'");
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN TravelDestinationId TEXT DEFAULT NULL");
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN TravelStartSteps INTEGER DEFAULT 0");
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN TravelRequiredSteps INTEGER DEFAULT 0");
-
-                        _connection.Execute("UPDATE DatabaseVersion SET Version = 5");
-                        Logger.LogInfo("LocalDatabase: Migration to version 5 completed");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError($"LocalDatabase: Migration error: {ex.Message}");
-                    }
-                }
-
-                // Ajouter d'autres migrations ici au besoin:
-                // if (currentVersion == 4 && DATABASE_VERSION >= 5) {...}
             }
         }
         catch (Exception ex)
         {
             Logger.LogError($"LocalDatabase: Migration management error: {ex.Message}");
+        }
+    }
+
+    private int GetCurrentDatabaseVersion()
+    {
+        var result = _connection.Query<DatabaseVersionInfo>("SELECT Version FROM DatabaseVersion LIMIT 1");
+        if (result.Count > 0)
+        {
+            return result[0].Version;
+        }
+        else
+        {
+            _connection.Execute("INSERT INTO DatabaseVersion (Version) VALUES (1)");
+            return 1;
+        }
+    }
+
+    private bool MigrateFrom1To2()
+    {
+        try
+        {
+            _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastStepsDelta INTEGER DEFAULT 0");
+            _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastStepsChangeEpochMs INTEGER DEFAULT 0");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"LocalDatabase: Migration error (1 to 2): {ex.Message}");
+            return false;
+        }
+    }
+
+    private bool MigrateFrom2To3()
+    {
+        try
+        {
+            _connection.Execute("ALTER TABLE PlayerData ADD COLUMN DailySteps INTEGER DEFAULT 0");
+            _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastDailyResetDate TEXT DEFAULT ''");
+            string todayDate = DateTime.UtcNow.ToLocalTime().ToString("yyyy-MM-dd");
+            _connection.Execute($"UPDATE PlayerData SET LastDailyResetDate = '{todayDate}'");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"LocalDatabase: Migration error (2 to 3): {ex.Message}");
+            return false;
+        }
+    }
+
+    private bool MigrateFrom3To4()
+    {
+        try
+        {
+            _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastApiCatchUpEpochMs INTEGER DEFAULT 0");
+            _connection.Execute("UPDATE PlayerData SET LastApiCatchUpEpochMs = LastSyncEpochMs");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"LocalDatabase: Migration error (3 to 4): {ex.Message}");
+            return false;
+        }
+    }
+
+    private bool MigrateFrom4To5()
+    {
+        try
+        {
+            _connection.Execute("ALTER TABLE PlayerData ADD COLUMN CurrentLocationId TEXT DEFAULT 'Foret_01'");
+            _connection.Execute("ALTER TABLE PlayerData ADD COLUMN TravelDestinationId TEXT DEFAULT NULL");
+            _connection.Execute("ALTER TABLE PlayerData ADD COLUMN TravelStartSteps INTEGER DEFAULT 0");
+            _connection.Execute("ALTER TABLE PlayerData ADD COLUMN TravelRequiredSteps INTEGER DEFAULT 0");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"LocalDatabase: Migration error (4 to 5): {ex.Message}");
+            return false;
         }
     }
 
@@ -207,20 +212,17 @@ public class LocalDatabase
 
             if (data != null)
             {
-                Logger.LogInfo($"LocalDatabase: Data loaded - TotalSteps: {data.TotalPlayerSteps}, " +
-                               $"LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}, " +
-                               $"LastPause: {GetReadableDateFromEpoch(data.LastPauseEpochMs)}, " +
-                               $"LastChange: {GetReadableDateFromEpoch(data.LastStepsChangeEpochMs)}, " +
-                               $"DailySteps: {data.DailySteps}, LastReset: {data.LastDailyResetDate}, " +
-                               $"LastApiCatchUp: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}");
+                // Reduced verbosity: Log key fields for confirmation.
+                Logger.LogInfo($"LocalDatabase: PlayerData loaded (Id: {data.Id}). TotalSteps: {data.TotalPlayerSteps}, DailySteps: {data.DailySteps}, LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}.");
                 return data;
             }
             else
             {
                 // Créer un nouveau PlayerData si aucun n'existe
-                PlayerData newData = new PlayerData();
+                PlayerData newData = new PlayerData(); // Default Id is 1
                 _connection.Insert(newData);
-                Logger.LogInfo("LocalDatabase: New PlayerData created and saved");
+                // Log creation of new data specifically.
+                Logger.LogInfo($"LocalDatabase: No existing PlayerData found. New PlayerData (Id: {newData.Id}) created and saved.");
                 return newData;
             }
         }
@@ -255,13 +257,15 @@ public class LocalDatabase
             if (data.LastSyncEpochMs <= 0 && data.TotalPlayerSteps > 0)
             {
                 Logger.LogWarning("LocalDatabase: LastSyncEpochMs needs initialization");
-                data.LastSyncEpochMs = DateTimeOffset.Now.ToUnixTimeMilliseconds(); // MODIFIÉ: Utiliser DateTime.Now (Faille B)
+                // Standardize to UTC for internal storage
+                data.LastSyncEpochMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             }
 
             // S'assurer que LastDailyResetDate n'est pas vide
             if (string.IsNullOrEmpty(data.LastDailyResetDate))
             {
-                data.LastDailyResetDate = DateTime.Now.ToString("yyyy-MM-dd"); // MODIFIÉ: Utiliser DateTime.Now (Faille B)
+                // LastDailyResetDate should reflect the user's local date
+                data.LastDailyResetDate = DateTime.UtcNow.ToLocalTime().ToString("yyyy-MM-dd");
                 Logger.LogWarning($"LocalDatabase: LastDailyResetDate was empty, initialized to {data.LastDailyResetDate}");
             }
 
@@ -274,15 +278,8 @@ public class LocalDatabase
 
             // Enregistrer les données
             int result = _connection.InsertOrReplace(data);
-            Logger.LogInfo($"LocalDatabase: Data saved - TotalSteps: {data.TotalPlayerSteps}, " +
-                           $"LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}, " +
-                           $"LastPause: {GetReadableDateFromEpoch(data.LastPauseEpochMs)}, " +
-                           $"LastDelta: {data.LastStepsDelta}, " +
-                           $"LastChange: {GetReadableDateFromEpoch(data.LastStepsChangeEpochMs)}, " +
-                           $"DailySteps: {data.DailySteps}, " +
-                           $"LastReset: {data.LastDailyResetDate}, " +
-                           $"LastApiCatchUp: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}, " +
-                           $"Result: {result}");
+            // Reduced verbosity: Log key fields and operation result.
+            Logger.LogInfo($"LocalDatabase: PlayerData saved (Id: {data.Id}, SQLite result: {result}). TotalSteps: {data.TotalPlayerSteps}, DailySteps: {data.DailySteps}, LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}.");
 
             // Vérifier que la sauvegarde a réussi
             VerifySaveSuccess(data);
@@ -327,23 +324,28 @@ public class LocalDatabase
     {
         try
         {
-            var savedData = _connection.Table<PlayerData>().FirstOrDefault(p => p.Id == 1);
+            var savedData = _connection.Table<PlayerData>().FirstOrDefault(p => p.Id == 1); // Assuming Id is always 1 for PlayerData
             if (savedData != null)
             {
-                Logger.LogInfo($"LocalDatabase: Verification - Saved data: TotalSteps: {savedData.TotalPlayerSteps}, " +
-                              $"LastSync: {GetReadableDateFromEpoch(savedData.LastSyncEpochMs)}, " +
-                              $"LastPause: {GetReadableDateFromEpoch(savedData.LastPauseEpochMs)}, " +
-                              $"DailySteps: {savedData.DailySteps}, " +
-                              $"LastApiCatchUp: {GetReadableDateFromEpoch(savedData.LastApiCatchUpEpochMs)}");
+                // Reduced verbosity for the info log during verification.
+                Logger.LogInfo($"LocalDatabase: Verifying saved PlayerData (Id: {savedData.Id}). Verified TotalSteps: {savedData.TotalPlayerSteps}, LastSync: {GetReadableDateFromEpoch(savedData.LastSyncEpochMs)}.");
 
                 // Vérifier que les valeurs correspondent
+                // Keep essential fields for mismatch check.
                 if (savedData.TotalPlayerSteps != originalData.TotalPlayerSteps ||
-                    savedData.LastSyncEpochMs != originalData.LastSyncEpochMs ||
-                    savedData.DailySteps != originalData.DailySteps ||
-                    savedData.LastDailyResetDate != originalData.LastDailyResetDate ||
-                    savedData.LastApiCatchUpEpochMs != originalData.LastApiCatchUpEpochMs)
+                    savedData.LastSyncEpochMs != originalData.LastSyncEpochMs || // Key sync timestamp
+                    savedData.DailySteps != originalData.DailySteps || // Important for daily mechanics
+                    savedData.LastDailyResetDate != originalData.LastDailyResetDate || // Critical for daily resets
+                    savedData.LastApiCatchUpEpochMs != originalData.LastApiCatchUpEpochMs) // Important for API sync logic
                 {
-                    Logger.LogError("LocalDatabase: Verification FAILED - Data mismatch after save");
+                    // Log all fields in case of a mismatch for detailed debugging.
+                    Logger.LogError("LocalDatabase: Verification FAILED - Data mismatch after save. " +
+                                   $"Expected Total: {originalData.TotalPlayerSteps}, Got: {savedData.TotalPlayerSteps}. " +
+                                   $"Expected Daily: {originalData.DailySteps}, Got: {savedData.DailySteps}. " +
+                                   $"Expected LastSync: {GetReadableDateFromEpoch(originalData.LastSyncEpochMs)}, Got: {GetReadableDateFromEpoch(savedData.LastSyncEpochMs)}. " +
+                                   $"Expected LastReset: {originalData.LastDailyResetDate}, Got: {savedData.LastDailyResetDate}. " +
+                                   $"Expected LastApiCatchUp: {GetReadableDateFromEpoch(originalData.LastApiCatchUpEpochMs)}, Got: {GetReadableDateFromEpoch(savedData.LastApiCatchUpEpochMs)}."
+                                   );
                 }
             }
         }
@@ -352,10 +354,10 @@ public class LocalDatabase
             Logger.LogError($"LocalDatabase: Verification error: {ex.Message}");
         }
     }
-}
-
-// Classe pour stocker les informations de version de la base de données
-class DatabaseVersionInfo
-{
-    public int Version { get; set; }
+    
+    // Classe privée pour stocker les informations de version de la base de données
+    private class DatabaseVersionInfo
+    {
+        public int Version { get; set; }
+    }
 }
