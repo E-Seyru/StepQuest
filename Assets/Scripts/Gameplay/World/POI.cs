@@ -10,6 +10,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     [Tooltip("The ID that matches your MapLocationDefinition")]
     public string LocationID;
 
+
     [Header("Visual Feedback")]
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private Color normalColor = Color.white;
@@ -21,6 +22,9 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     // Internal state
     private MapManager mapManager;
+    private DataManager dataManager; // Added DataManager reference
+    private LocationRegistry locationRegistry; // Added LocationRegistry reference
+
     private bool isCurrentLocation = false;
     private bool canTravelHere = false;
 
@@ -28,17 +32,41 @@ public class POI : MonoBehaviour, IPointerClickHandler
     {
         // Get MapManager reference
         mapManager = MapManager.Instance;
+        dataManager = DataManager.Instance; // Get DataManager reference
 
         if (mapManager == null)
         {
             Logger.LogError($"POI ({LocationID}): MapManager not found!", Logger.LogCategory.MapLog);
+            // gameObject.SetActive(false); // Optionally disable if critical
             return;
         }
+
+        if (dataManager == null)
+        {
+            Logger.LogError($"POI ({LocationID}): DataManager not found!", Logger.LogCategory.MapLog);
+            // gameObject.SetActive(false); // Optionally disable if critical
+            return;
+        }
+
+        locationRegistry = mapManager.LocationRegistry; // Get LocationRegistry from MapManager
+        if (locationRegistry == null)
+        {
+            Logger.LogError($"POI ({LocationID}): LocationRegistry not found via MapManager!", Logger.LogCategory.MapLog);
+            // gameObject.SetActive(false); // Optionally disable if critical
+            return;
+        }
+
 
         // Get SpriteRenderer if not assigned
         if (spriteRenderer == null)
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
+            if (spriteRenderer == null)
+            {
+                Logger.LogError($"POI ({LocationID}): SpriteRenderer component not found!", Logger.LogCategory.MapLog);
+                // gameObject.SetActive(false); // Optionally disable if critical
+                return;
+            }
         }
 
         // Subscribe to MapManager events
@@ -97,8 +125,8 @@ public class POI : MonoBehaviour, IPointerClickHandler
             Logger.LogInfo($"POI: Clicked on POI '{LocationID}'", Logger.LogCategory.MapLog);
         }
 
-        // Check if this is the current location
-        if (isCurrentLocation)
+        // Check if this is the current location (when not traveling)
+        if (!dataManager.PlayerData.IsCurrentlyTraveling() && isCurrentLocation)
         {
             if (enableDebugLogs)
             {
@@ -114,82 +142,114 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     private void UpdateVisualState()
     {
-        if (spriteRenderer == null || mapManager == null)
+        if (spriteRenderer == null || mapManager == null || dataManager == null || locationRegistry == null)
             return;
 
-        // Check if this is the current location
-        isCurrentLocation = (mapManager.CurrentLocation != null &&
-                           mapManager.CurrentLocation.LocationID == LocationID);
+        bool isPlayerCurrentlyTraveling = dataManager.PlayerData.IsCurrentlyTraveling();
+        // When traveling, MapManager.CurrentLocation is the DEPARTURE point.
+        // When not traveling, MapManager.CurrentLocation is the actual current location.
+        MapLocationDefinition referenceLocationForConnectivity = mapManager.CurrentLocation;
 
-        // Check if we can travel here
-        canTravelHere = mapManager.CanTravelTo(LocationID);
+        isCurrentLocation = false; // Reset for this update
+        canTravelHere = false;   // Reset for this update
 
-        // Update visual appearance
-        if (isCurrentLocation)
+        if (isPlayerCurrentlyTraveling)
         {
-            // Player is here - maybe use a special indicator
-            spriteRenderer.color = highlightColor;
-            if (enableDebugLogs)
+            // Player is traveling. No POI is "current" in terms of being highlighted.
+            // Color is based on connectivity to the DEPARTURE location.
+            if (referenceLocationForConnectivity != null &&
+                referenceLocationForConnectivity.LocationID != this.LocationID && // Not the departure POI itself
+                !locationRegistry.CanTravelBetween(referenceLocationForConnectivity.LocationID, this.LocationID))
             {
-                Logger.LogInfo($"POI ({LocationID}): This is the current location", Logger.LogCategory.MapLog);
+                spriteRenderer.color = unavailableColor;
             }
+            else
+            {
+                // This includes the departure POI itself and anything connected to it.
+                spriteRenderer.color = normalColor;
+            }
+            // `canTravelHere` remains false as new travel cannot be initiated.
         }
-        else if (canTravelHere)
+        else // Player is NOT traveling
         {
-            // Can travel here
-            spriteRenderer.color = normalColor;
-        }
-        else
-        {
-            // Cannot travel here
-            spriteRenderer.color = unavailableColor;
+            if (referenceLocationForConnectivity != null && referenceLocationForConnectivity.LocationID == this.LocationID)
+            {
+                // This POI is the player's current, actual location.
+                isCurrentLocation = true;
+                // canTravelHere remains false (cannot travel to where you are).
+                spriteRenderer.color = highlightColor;
+            }
+            else
+            {
+                // This POI is not the player's current location.
+                // Check if travel can be initiated from the player's actual current location to this POI.
+                canTravelHere = mapManager.CanTravelTo(this.LocationID);
+
+                if (canTravelHere)
+                {
+                    spriteRenderer.color = normalColor;
+                }
+                else
+                {
+                    // This means it's not connected to player's current location, or some other rule prevents travel.
+                    spriteRenderer.color = unavailableColor;
+                }
+            }
         }
     }
 
     private void OnPlayerLocationChanged(MapLocationDefinition newLocation)
     {
-        if (!enableDebugLogs) return;
-
-        // On ne logue que si CE POI est impliqué
-        if (newLocation != null && newLocation.LocationID == LocationID)
+        // This event fires when travel completes and player is at a new location.
+        // Or if the location changes by other means (e.g. teleport).
+        if (enableDebugLogs && newLocation != null && newLocation.LocationID == LocationID)
         {
-            Logger.LogInfo($"POI ({LocationID}): Le joueur est maintenant ici.", Logger.LogCategory.MapLog);
+            Logger.LogInfo($"POI ({LocationID}): Player's location is now here.", Logger.LogCategory.MapLog);
         }
         UpdateVisualState();
     }
 
     private void OnTravelStarted(string destinationId)
     {
+        // This event fires when travel *begins*.
         if (enableDebugLogs && destinationId == LocationID)
         {
-            Logger.LogInfo($"POI ({LocationID}): Travel started toward this location!", Logger.LogCategory.MapLog);
+            Logger.LogInfo($"POI ({LocationID}): Travel started TOWARD this location!", Logger.LogCategory.MapLog);
         }
+        // All POIs need to update their state because player is now "in transit".
         UpdateVisualState();
     }
 
     private void OnTravelCompleted(string arrivedLocationId)
     {
+        // This event fires when travel *ends*.
         if (enableDebugLogs && arrivedLocationId == LocationID)
         {
-            Logger.LogInfo($"POI ({LocationID}): Player arrived at this location!", Logger.LogCategory.MapLog);
+            Logger.LogInfo($"POI ({LocationID}): Player ARRIVED at this location!", Logger.LogCategory.MapLog);
         }
+        // All POIs need to update their state, especially the one arrived at.
         UpdateVisualState();
     }
 
     // Visual feedback for mouse hover (optional)
     void OnMouseEnter()
     {
-        if (spriteRenderer != null && !isCurrentLocation)
+        // Only apply hover effect if not the current location and sprite is available
+        if (spriteRenderer != null && !isCurrentLocation && !dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            // Slightly brighten the sprite
-            Color currentColor = spriteRenderer.color;
-            spriteRenderer.color = new Color(currentColor.r * 1.2f, currentColor.g * 1.2f, currentColor.b * 1.2f, currentColor.a);
+            if (spriteRenderer.color == normalColor) // Only highlight if it's normally interactable
+            {
+                // Slightly brighten the sprite
+                Color currentColor = spriteRenderer.color;
+                spriteRenderer.color = new Color(currentColor.r * 1.2f, currentColor.g * 1.2f, currentColor.b * 1.2f, currentColor.a);
+            }
         }
     }
 
     void OnMouseExit()
     {
-        UpdateVisualState(); // Restore normal color
+        // Restore normal color state, don't just assume normalColor
+        UpdateVisualState();
     }
 
     // Editor utility to help set up POIs
@@ -197,7 +257,8 @@ public class POI : MonoBehaviour, IPointerClickHandler
     {
         if (string.IsNullOrEmpty(LocationID))
         {
-            Logger.LogWarning($"POI on GameObject '{gameObject.name}': LocationID is not set!", Logger.LogCategory.MapLog);
+            // Using Unity's Debug.LogWarning for OnValidate as Logger might not be fully initialized in editor.
+            Debug.LogWarning($"POI on GameObject '{gameObject.name}': LocationID is not set!");
         }
 
         // Auto-assign SpriteRenderer if missing
@@ -211,12 +272,18 @@ public class POI : MonoBehaviour, IPointerClickHandler
     void OnDrawGizmosSelected()
     {
         // Draw a circle around the POI when selected
-        Gizmos.color = canTravelHere ? Color.green : Color.red;
+        // Gizmos color might not perfectly reflect runtime 'canTravelHere' due to editor context
+        Gizmos.color = (spriteRenderer != null && spriteRenderer.color == normalColor) ? Color.green : Color.red;
         Gizmos.DrawWireSphere(transform.position, 0.5f);
 
         // Draw location ID as text in scene view
+
+
 #if UNITY_EDITOR
-        UnityEditor.Handles.Label(transform.position + Vector3.up * 0.7f, LocationID);
+        if (!string.IsNullOrEmpty(LocationID))
+        {
+            UnityEditor.Handles.Label(transform.position + Vector3.up * 0.7f, LocationID);
+        }
 #endif
     }
 }
