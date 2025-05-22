@@ -10,13 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5fe739f195ecfa34486eb79525bef063, type: 3}
-  m_Name: Village_01
+  m_Name: Mine_01
   m_EditorClassIdentifier: 
-  LocationID: Village_01
-  DisplayName: Village
-  Description: Un village tout ce qu'il y a de plus simple.
+  LocationID: Mine_01
+  DisplayName: Mine
+  Description: Une mine, tout ce qu'il y a de plus banal...
   Connections:
-  - DestinationLocationID: Foret_01
-    StepCost: 50
-  - DestinationLocationID: Mine_01
+  - DestinationLocationID: Village_01
     StepCost: 50

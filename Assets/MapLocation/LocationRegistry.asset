@@ -15,4 +15,7 @@ MonoBehaviour:
   AllLocations:
   - {fileID: 11400000, guid: 7ec001f138d3c54438e7c1adbff0069e, type: 2}
   - {fileID: 11400000, guid: d4a93afcd9f89e6469b9788f1684e14a, type: 2}
-  ValidationStatus: "\u2705 Registry validation passed!\nFound 2 valid location(s)."
+  - {fileID: 11400000, guid: 28ce137ca2d142b4f8c88b7b8f50420d, type: 2}
+  ValidationStatus: 'Registry validation passed!
+
+    Found 3 valid location(s).'
