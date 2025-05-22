@@ -50,7 +50,7 @@ public class PanelManager : MonoBehaviour
         }
         else
         {
-
+            Logger.LogWarning("PanelManager: Multiple instances detected! Destroying duplicate.", Logger.LogCategory.General);
             Destroy(gameObject);
         }
 
@@ -74,7 +74,7 @@ public class PanelManager : MonoBehaviour
             RectTransform rectTransform = panels[i].GetComponent<RectTransform>();
             if (rectTransform == null) continue;
 
-            // on ne touche qu’aux entrées manquantes
+            // on ne touche qu'aux entrées manquantes
             if (!originalPositions.ContainsKey(i))
                 originalPositions[i] = rectTransform.anchoredPosition;
         }
@@ -107,7 +107,7 @@ public class PanelManager : MonoBehaviour
 
             if (alwaysActivePanelIndices.Contains(i))
             {
-                // ► mémoriser la position avant de l’éjecter
+                // ► mémoriser la position avant de l'éjecter
                 if (!originalPositions.ContainsKey(i))
                     originalPositions[i] = rectTransform.anchoredPosition; // la plupart du temps (0,0)
 
@@ -127,7 +127,7 @@ public class PanelManager : MonoBehaviour
         // Validate index
         if (index < 0 || index >= panels.Count || panels[index] == null)
         {
-            Debug.LogWarning("Invalid panel index: " + index);
+            Logger.LogWarning($"PanelManager: Invalid panel index: {index}", Logger.LogCategory.General);
             return;
         }
 
