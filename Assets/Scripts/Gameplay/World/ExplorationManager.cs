@@ -40,7 +40,7 @@ public class ExplorationManager : MonoBehaviour
         // TODO: Trigger OnExplorationProgress event
         // TODO: Save updated PlayerLocationProgress data?
 
-        Debug.Log($"ExplorationManager: Added {steps} steps to exploration in {locationId} (Placeholder)");
+        Logger.LogInfo($"ExplorationManager: Added {steps} steps to exploration in {locationId} (Placeholder)", LogCategory.MapLog);
     }
 
     public float GetExplorationProgress(string locationId)

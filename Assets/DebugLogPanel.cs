@@ -50,39 +50,65 @@ public class DebugLogPanel : MonoBehaviour
 
     private void HandleLog(string condition, string stackTrace, LogType type)
     {
-        string coloredText = condition;
+        string messageColor = infoColor; // Default to info color
+        string displayMessage = condition;
         string category = null;
 
-        // Try to parse category
-        Match categoryMatch = categoryRegex.Match(condition);
+        // Determine color based on LogType
+        switch (type)
+        {
+            case LogType.Warning:
+                messageColor = warningColor;
+                break;
+            case LogType.Error:
+            case LogType.Exception:
+                messageColor = errorColor;
+                break;
+            case LogType.Log: // Typically info
+            default:
+                messageColor = infoColor;
+                break;
+        }
+
+        string actualMessage = condition;
+
+        // Try to parse category and simultaneously strip it and any preceding log level tag from actualMessage
+        Match categoryMatch = categoryRegex.Match(actualMessage);
         if (categoryMatch.Success && categoryMatch.Groups.Count > 1)
         {
             category = categoryMatch.Groups[1].Value;
+            // The message is what's after the full category match (e.g., after "[LogLevel][Category]")
+            int msgStartIndex = actualMessage.IndexOf(categoryMatch.Value) + categoryMatch.Value.Length;
+            actualMessage = actualMessage.Substring(msgStartIndex).TrimStart();
+        }
+        else // No category found by regex, try stripping common log level prefixes
+        {
+            if (actualMessage.StartsWith("[Info]"))
+            {
+                actualMessage = actualMessage.Substring("[Info]".Length).TrimStart();
+            }
+            else if (actualMessage.StartsWith("[Warning]"))
+            {
+                actualMessage = actualMessage.Substring("[Warning]".Length).TrimStart();
+            }
+            else if (actualMessage.StartsWith("[Error]"))
+            {
+                actualMessage = actualMessage.Substring("[Error]".Length).TrimStart();
+            }
+            // If no prefix is found, actualMessage remains the original condition.
         }
 
-        // Apply color based on the log type or message content
-        // This logic ensures the category tag is also colored if it's part of the condition string
-        if (condition.Contains("[Info]"))
+        // Now, construct the displayMessage using the processed actualMessage
+        if (!string.IsNullOrEmpty(category))
         {
-            coloredText = condition.Replace("[Info]", $"<color={infoColor}>[Info]</color>");
+            displayMessage = $"[{category}] {actualMessage}";
         }
-        else if (condition.Contains("[Warning]"))
+        else
         {
-            coloredText = condition.Replace("[Warning]", $"<color={warningColor}>[Warning]</color>");
+            displayMessage = actualMessage;
         }
-        else if (condition.Contains("[Error]"))
-        {
-            coloredText = condition.Replace("[Error]", $"<color={errorColor}>[Error]</color>");
-        }
-        else if (type == LogType.Warning) // Fallback for types if no keyword found
-        {
-            coloredText = $"<color={warningColor}>{condition}</color>";
-        }
-        else if (type == LogType.Error || type == LogType.Exception)
-        {
-            coloredText = $"<color={errorColor}>{condition}</color>";
-        }
-        // If it's a debug log or info without the tag, it remains default color or needs specific handling if desired.
+
+        string coloredText = $"<color={messageColor}>{displayMessage}</color>";
 
         allLogs.Add(new LogMessage
         {

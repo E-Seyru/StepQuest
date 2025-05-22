@@ -39,6 +39,6 @@ public class MapPanel : MonoBehaviour
         //      - Set button text (destination name, step cost)
         //      - Add listener to button's onClick event to call mapManager.StartTravel(destinationId)
         //      - Set button interactable based on CanTravelTo check?
-        Debug.Log("MapPanel: RefreshDisplay (Placeholder)");
+        Logger.LogInfo("MapPanel: RefreshDisplay (Placeholder)", LogCategory.MapLog);
     }
 }
