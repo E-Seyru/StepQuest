@@ -162,6 +162,26 @@ public class LocalDatabase
                     }
                 }
 
+                if (currentVersion == 4 && DATABASE_VERSION >= 5)
+                {
+                    Logger.LogInfo("LocalDatabase: Migrating from version 4 to 5...");
+                    try
+                    {
+                        // Ajouter les colonnes pour le système de voyage
+                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN CurrentLocationId TEXT DEFAULT 'Foret_01'");
+                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN TravelDestinationId TEXT DEFAULT NULL");
+                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN TravelStartSteps INTEGER DEFAULT 0");
+                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN TravelRequiredSteps INTEGER DEFAULT 0");
+
+                        _connection.Execute("UPDATE DatabaseVersion SET Version = 5");
+                        Logger.LogInfo("LocalDatabase: Migration to version 5 completed");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError($"LocalDatabase: Migration error: {ex.Message}");
+                    }
+                }
+
                 // Ajouter d'autres migrations ici au besoin:
                 // if (currentVersion == 4 && DATABASE_VERSION >= 5) {...}
             }

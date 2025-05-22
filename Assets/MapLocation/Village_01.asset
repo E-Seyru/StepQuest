@@ -10,13 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5fe739f195ecfa34486eb79525bef063, type: 3}
-  m_Name: Loc_Clearing
+  m_Name: Village_01
   m_EditorClassIdentifier: 
-  LocationID: Clearing
-  DisplayName: Clearing
-  Description: It's... A clearing. I mean, what did you expect ?
+  LocationID: Village_01
+  DisplayName: Village
+  Description: Un village tout ce qu'il y a de plus simple.
   Connections:
-  - DestinationLocationID: ForestEntrance
-    StepCost: 50
-  - DestinationLocationID: ForestEntrance
+  - DestinationLocationID: Foret_01
     StepCost: 50

@@ -80,6 +80,44 @@ public class PlayerData
         set { _lastApiCatchUpEpochMs = value; }
     }
 
+    // === NOUVEAU: Système de localisation et voyage ===
+
+    // Où est le joueur actuellement (ID de location comme "Village_01")
+    private string _currentLocationId;
+    [Column("CurrentLocationId")]
+    public string CurrentLocationId
+    {
+        get { return _currentLocationId; }
+        set { _currentLocationId = value; }
+    }
+
+    // Est-ce que le joueur voyage actuellement ? (null = non, sinon = destination)
+    private string _travelDestinationId;
+    [Column("TravelDestinationId")]
+    public string TravelDestinationId
+    {
+        get { return _travelDestinationId; }
+        set { _travelDestinationId = value; }
+    }
+
+    // À combien de pas le voyage a commencé
+    private long _travelStartSteps;
+    [Column("TravelStartSteps")]
+    public long TravelStartSteps
+    {
+        get { return _travelStartSteps; }
+        set { _travelStartSteps = value; }
+    }
+
+    // Combien de pas faut-il pour finir le voyage
+    private int _travelRequiredSteps;
+    [Column("TravelRequiredSteps")]
+    public int TravelRequiredSteps
+    {
+        get { return _travelRequiredSteps; }
+        set { _travelRequiredSteps = value; }
+    }
+
     // Constructeur par défaut
     public PlayerData()
     {
@@ -92,6 +130,12 @@ public class PlayerData
         _dailySteps = 0;
         _lastDailyResetDate = DateTime.Now.ToString("yyyy-MM-dd"); // MODIFIÉ: Utiliser DateTime.Now au lieu de DateTime.UtcNow (Faille B)
         _lastApiCatchUpEpochMs = 0; // Nouvelle propriété
+
+        // NOUVEAU: Valeurs par défaut pour le système de voyage
+        _currentLocationId = "Foret_01"; // Le joueur commence au village
+        _travelDestinationId = null; // Pas de voyage en cours
+        _travelStartSteps = 0;
+        _travelRequiredSteps = 0;
     }
 
     // Propriété pour accéder à TotalPlayerSteps avec le nom simplifié TotalSteps
@@ -109,5 +153,27 @@ public class PlayerData
             }
             TotalPlayerSteps = value;
         }
+    }
+
+    // NOUVEAU: Méthodes utiles pour le voyage
+
+    // Est-ce que le joueur voyage actuellement ?
+    public bool IsCurrentlyTraveling()
+    {
+        return !string.IsNullOrEmpty(TravelDestinationId);
+    }
+
+    // Combien de pas a fait le joueur depuis le début du voyage ?
+    public long GetTravelProgress(long currentTotalSteps)
+    {
+        if (!IsCurrentlyTraveling()) return 0;
+        return currentTotalSteps - TravelStartSteps;
+    }
+
+    // Le voyage est-il terminé ?
+    public bool IsTravelComplete(long currentTotalSteps)
+    {
+        if (!IsCurrentlyTraveling()) return false;
+        return GetTravelProgress(currentTotalSteps) >= TravelRequiredSteps;
     }
 }
