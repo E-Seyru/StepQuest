@@ -82,7 +82,7 @@ public class StepManager : MonoBehaviour
         // Protection contre les instances multiples (Faille E)
         if (Instance != null && Instance != this)
         {
-            Logger.LogWarning("StepManager: Multiple instances detected! Destroying duplicate.");
+            Logger.LogWarning("StepManager: Multiple instances detected! Destroying duplicate.", Logger.LogCategory.General);
             Destroy(gameObject);
             return;
         }
@@ -96,11 +96,11 @@ public class StepManager : MonoBehaviour
 
     IEnumerator Start()
     {
-        Logger.LogInfo("StepManager: Start - Initializing...");
+        Logger.LogInfo("StepManager: Start - Initializing...", Logger.LogCategory.General);
         yield return StartCoroutine(WaitForServices());
         if (apiCounter == null || dataManager == null || uiManager == null)
         {
-            Logger.LogError("StepManager: Critical services not found. StepManager cannot function.");
+            Logger.LogError("StepManager: Critical services not found. StepManager cannot function.", Logger.LogCategory.General);
             isInitialized = false;
             yield break;
         }
@@ -112,7 +112,7 @@ public class StepManager : MonoBehaviour
         // Refactored: Call the new main orchestrator for app opening/resuming
         yield return StartCoroutine(OrchestrateAppOpeningOrResuming());
         isInitialized = true;
-        Logger.LogInfo("StepManager: Initialization complete.");
+        Logger.LogInfo("StepManager: Initialization complete.", Logger.LogCategory.General);
     }
 
     IEnumerator WaitForServices()
@@ -124,13 +124,13 @@ public class StepManager : MonoBehaviour
         apiCounter = RecordingAPIStepCounter.Instance;
         dataManager = DataManager.Instance;
         uiManager = UIManager.Instance;
-        Logger.LogInfo("StepManager: All dependent services found.");
+        Logger.LogInfo("StepManager: All dependent services found.", Logger.LogCategory.General);
     }
 
     // Renamed from HandleAppOpeningOrResuming to better reflect its new role as an orchestrator
     private IEnumerator OrchestrateAppOpeningOrResuming()
     {
-        Logger.LogInfo("StepManager: OrchestrateAppOpeningOrResuming started.");
+        Logger.LogInfo("StepManager: OrchestrateAppOpeningOrResuming started.", Logger.LogCategory.StepLog);
         isAppInForeground = true; // Set app state
 
         long nowEpochMs = GetCurrentEpochMs();
@@ -142,13 +142,13 @@ public class StepManager : MonoBehaviour
                       $"LastSync: {LocalDatabase.GetReadableDateFromEpoch(lastSyncEpochMs)}, " +
                       $"LastPause: {LocalDatabase.GetReadableDateFromEpoch(lastPauseEpochMs)}, " +
                       $"LastApiCatchUp: {LocalDatabase.GetReadableDateFromEpoch(lastApiCatchUpEpochMs)}, " +
-                      $"Now: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}");
+                      $"Now: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}", Logger.LogCategory.StepLog);
 
         // Stage 2: Handle API permissions
         bool permissionGranted = yield return StartCoroutine(RequestApiPermission());
         if (!permissionGranted)
         {
-            Logger.LogError("StepManager: API permission not granted. Cannot proceed.");
+            Logger.LogError("StepManager: API permission not granted. Cannot proceed.", Logger.LogCategory.General);
             yield break; // Exit if permission is not granted
         }
         apiCounter.SubscribeToRecordingApiIfNeeded();
@@ -182,13 +182,13 @@ public class StepManager : MonoBehaviour
 
         // Load lastApiCatchUpEpochMs from PlayerData
         lastApiCatchUpEpochMs = dataManager.PlayerData.LastApiCatchUpEpochMs;
-        Logger.LogInfo($"StepManager: lastApiCatchUpEpochMs loaded from database: {LocalDatabase.GetReadableDateFromEpoch(lastApiCatchUpEpochMs)}");
+        Logger.LogInfo($"StepManager: lastApiCatchUpEpochMs loaded from database: {LocalDatabase.GetReadableDateFromEpoch(lastApiCatchUpEpochMs)}", Logger.LogCategory.StepLog);
 
         // Crash detection
         if (lastPauseEpochMs < lastSyncEpochMs)
         {
             wasProbablyCrash = true;
-            Logger.LogWarning($"StepManager: Probable crash detected! LastPause ({LocalDatabase.GetReadableDateFromEpoch(lastPauseEpochMs)}) < LastSync ({LocalDatabase.GetReadableDateFromEpoch(lastSyncEpochMs)})");
+            Logger.LogWarning($"StepManager: Probable crash detected! LastPause ({LocalDatabase.GetReadableDateFromEpoch(lastPauseEpochMs)}) < LastSync ({LocalDatabase.GetReadableDateFromEpoch(lastSyncEpochMs)})", Logger.LogCategory.StepLog);
         }
 
         // Check for day change
@@ -198,16 +198,16 @@ public class StepManager : MonoBehaviour
 
         if (isDayChanged)
         {
-            Logger.LogInfo($"StepManager: **** DAY CHANGE DETECTED **** Last reset date: {lastResetDateStr}, Current date: {currentDateStr}");
+            Logger.LogInfo($"StepManager: **** DAY CHANGE DETECTED **** Last reset date: {lastResetDateStr}, Current date: {currentDateStr}", Logger.LogCategory.StepLog);
             DailySteps = 0;
             dataManager.PlayerData.DailySteps = 0;
             dataManager.PlayerData.LastDailyResetDate = currentDateStr;
             dataManager.SaveGame();
-            Logger.LogInfo($"StepManager: Daily steps reset to 0 for new day {currentDateStr}. Saved to database.");
+            Logger.LogInfo($"StepManager: Daily steps reset to 0 for new day {currentDateStr}. Saved to database.", Logger.LogCategory.StepLog);
         }
         else
         {
-            Logger.LogInfo($"StepManager: Same day detected. LastResetDate: {lastResetDateStr}, Today: {currentDateStr}");
+            Logger.LogInfo($"StepManager: Same day detected. LastResetDate: {lastResetDateStr}, Today: {currentDateStr}", Logger.LogCategory.StepLog);
         }
     }
 
@@ -223,24 +223,24 @@ public class StepManager : MonoBehaviour
             yield break;
         }
 
-        Logger.LogInfo("StepManager: Permission not granted. Requesting permission...");
+        Logger.LogInfo("StepManager: Permission not granted. Requesting permission...", Logger.LogCategory.General);
         apiCounter.RequestPermission();
         float permissionWaitTime = 0f;
         while (!apiCounter.HasPermission() && permissionWaitTime < 30f)
         {
-            Logger.LogInfo("StepManager: Waiting for permission grant for API operations...");
+            Logger.LogInfo("StepManager: Waiting for permission grant for API operations...", Logger.LogCategory.General);
             yield return new WaitForSeconds(1f);
             permissionWaitTime += 1f;
         }
 
         if (!apiCounter.HasPermission())
         {
-            Logger.LogError("StepManager: Permission still not granted after request.");
+            Logger.LogError("StepManager: Permission still not granted after request.", Logger.LogCategory.General);
             yield return false;
         }
         else
         {
-            Logger.LogInfo("StepManager: Permission granted.");
+            Logger.LogInfo("StepManager: Permission granted.", Logger.LogCategory.General);
             yield return true;
         }
     }
@@ -250,12 +250,12 @@ public class StepManager : MonoBehaviour
     /// </summary>
     private void HandleFirstRunInitialization(long nowEpochMs)
     {
-        Logger.LogInfo("StepManager: First app startup detected (TotalSteps=0 AND LastSync=0). Initializing LastSync timestamp without API catch-up.");
+        Logger.LogInfo("StepManager: First app startup detected (TotalSteps=0 AND LastSync=0). Initializing LastSync timestamp without API catch-up.", Logger.LogCategory.StepLog);
         dataManager.PlayerData.LastSyncEpochMs = nowEpochMs;
         dataManager.PlayerData.LastPauseEpochMs = nowEpochMs;
         lastApiCatchUpEpochMs = nowEpochMs; // Initialize also lastApiCatchUpEpochMs
         dataManager.SaveGame();
-        Logger.LogInfo($"StepManager: API Catch-up skipped for first start. TotalSteps: {TotalSteps}. Updated LastSync to: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}");
+        Logger.LogInfo($"StepManager: API Catch-up skipped for first start. TotalSteps: {TotalSteps}. Updated LastSync to: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}", Logger.LogCategory.StepLog);
     }
 
     /// <summary>
@@ -266,12 +266,12 @@ public class StepManager : MonoBehaviour
         // Ensure LastApiCatchUpEpochMs has a valid value
         if (lastApiCatchUpEpochMs <= 0 && TotalSteps > 0) // Check TotalSteps > 0 to avoid setting for a truly new user post-reset/reinstall with no steps
         {
-            Logger.LogInfo("StepManager: LastApiCatchUpEpochMs value invalid (0 or negative) but TotalSteps > 0. Setting to 24h ago.");
+            Logger.LogInfo("StepManager: LastApiCatchUpEpochMs value invalid (0 or negative) but TotalSteps > 0. Setting to 24h ago.", Logger.LogCategory.StepLog);
             lastApiCatchUpEpochMs = nowEpochMs - (24 * 60 * 60 * 1000); // 24h in milliseconds
         }
         else if (lastApiCatchUpEpochMs <= 0)
         {
-             Logger.LogInfo("StepManager: LastApiCatchUpEpochMs value invalid (0 or negative) and TotalSteps is 0. Setting to nowEpochMs.");
+             Logger.LogInfo("StepManager: LastApiCatchUpEpochMs value invalid (0 or negative) and TotalSteps is 0. Setting to nowEpochMs.", Logger.LogCategory.StepLog);
             lastApiCatchUpEpochMs = nowEpochMs; // If no steps and invalid, just align it to now.
         }
 
@@ -283,40 +283,40 @@ public class StepManager : MonoBehaviour
         if (!wasProbablyCrash && lastSyncEpochMs >= startTimeMs)
         {
             startTimeMs = lastSyncEpochMs + SENSOR_API_PADDING_MS;
-            Logger.LogInfo($"StepManager: Small overlap detected – API catch-up start time adjusted to {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)}");
+            Logger.LogInfo($"StepManager: Small overlap detected – API catch-up start time adjusted to {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)}", Logger.LogCategory.StepLog);
         }
 
         if (endTimeMs > startTimeMs)
         {
             if (isReturningFromBackground)
             {
-                Logger.LogInfo($"StepManager: RETURNING FROM BACKGROUND - Starting API Catch-up from {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}");
+                Logger.LogInfo($"StepManager: RETURNING FROM BACKGROUND - Starting API Catch-up from {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}", Logger.LogCategory.StepLog);
             }
             else
             {
-                Logger.LogInfo($"StepManager: Starting API Catch-up from {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}");
+                Logger.LogInfo($"StepManager: Starting API Catch-up from {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}", Logger.LogCategory.StepLog);
             }
 
             yield return StartCoroutine(HandleMidnightSplitStepCount(startTimeMs, endTimeMs));
 
             lastApiCatchUpEpochMs = nowEpochMs;
             dataManager.PlayerData.LastApiCatchUpEpochMs = lastApiCatchUpEpochMs;
-            Logger.LogInfo($"StepManager: Updated lastApiCatchUpEpochMs to: {LocalDatabase.GetReadableDateFromEpoch(lastApiCatchUpEpochMs)}");
+            Logger.LogInfo($"StepManager: Updated lastApiCatchUpEpochMs to: {LocalDatabase.GetReadableDateFromEpoch(lastApiCatchUpEpochMs)}", Logger.LogCategory.StepLog);
 
             apiCounter.ClearStoredRange();
             dataManager.SaveGame(); // Save immediately after successful catch-up and timestamp update
-            Logger.LogInfo("StepManager: Saved LastApiCatchUpEpochMs immediately after API catch-up.");
+            Logger.LogInfo("StepManager: Saved LastApiCatchUpEpochMs immediately after API catch-up.", Logger.LogCategory.StepLog);
         }
         else
         {
-            Logger.LogInfo($"StepManager: API catch-up skipped – no valid interval. Start: {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)}, End: {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}");
+            Logger.LogInfo($"StepManager: API catch-up skipped – no valid interval. Start: {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)}, End: {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}", Logger.LogCategory.StepLog);
         }
 
         // Always update LastSyncEpochMs and LastPauseEpochMs to the current time after attempt
         dataManager.PlayerData.LastSyncEpochMs = nowEpochMs;
         dataManager.PlayerData.LastPauseEpochMs = nowEpochMs;
         dataManager.SaveGame();
-        Logger.LogInfo($"StepManager: Updated LastSync and LastPause to: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)} after API catch-up attempt.");
+        Logger.LogInfo($"StepManager: Updated LastSync and LastPause to: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)} after API catch-up attempt.", Logger.LogCategory.StepLog);
     }
 
     /// <summary>
@@ -326,7 +326,7 @@ public class StepManager : MonoBehaviour
     {
         if (isReturningFromBackground)
         {
-            Logger.LogInfo("StepManager: Activating sensor grace period after returning from background.");
+            Logger.LogInfo("StepManager: Activating sensor grace period after returning from background.", Logger.LogCategory.StepLog);
             inSensorGracePeriod = true;
             sensorGraceTimer = 0f;
             isSensorStartCountValid = false; // Invalidate sensor start count
@@ -348,7 +348,7 @@ public class StepManager : MonoBehaviour
     // Existing InitializeDirectSensor method (ensure it's a coroutine as expected)
     private IEnumerator InitializeDirectSensor()
     {
-        Logger.LogInfo("StepManager: Initializing direct sensor...");
+        Logger.LogInfo("StepManager: Initializing direct sensor...", Logger.LogCategory.StepLog);
 
         // Démarrer l'écoute directe du capteur
         apiCounter.StartDirectSensorListener();
@@ -378,7 +378,7 @@ public class StepManager : MonoBehaviour
                         sensorDeltaThisSession = 0;
                         isSensorStartCountValid = true;
 
-                        Logger.LogInfo($"StepManager: sensorStartCount successfully initialized to {sensorStartCount} after {stableReadingCount} stable readings");
+                        Logger.LogInfo($"StepManager: sensorStartCount successfully initialized to {sensorStartCount} after {stableReadingCount} stable readings", Logger.LogCategory.StepLog);
                         break;
                     }
                 }
@@ -401,11 +401,11 @@ public class StepManager : MonoBehaviour
             lastRecordedSensorValue = currentSensorValue;
             sensorDeltaThisSession = 0;
             isSensorStartCountValid = true;
-            Logger.LogInfo($"StepManager: Couldn't get stable readings. Using last sensor value: {sensorStartCount}");
+            Logger.LogInfo($"StepManager: Couldn't get stable readings. Using last sensor value: {sensorStartCount}", Logger.LogCategory.StepLog);
         }
         else if (!isSensorStartCountValid)
         {
-            Logger.LogWarning("StepManager: Couldn't initialize sensorStartCount with a valid value.");
+            Logger.LogWarning("StepManager: Couldn't initialize sensorStartCount with a valid value.", Logger.LogCategory.StepLog);
             sensorStartCount = -1;
             lastRecordedSensorValue = -1;
             sensorDeltaThisSession = 0;
@@ -418,7 +418,7 @@ public class StepManager : MonoBehaviour
             inSensorGracePeriod = true;
             sensorGraceTimer = 0f;
         }
-        Logger.LogInfo("StepManager: Direct sensor initialization complete. Grace period active or re-activated.");
+        Logger.LogInfo("StepManager: Direct sensor initialization complete. Grace period active or re-activated.", Logger.LogCategory.StepLog);
     }
 
     // Nouvelle méthode pour mettre à jour le timestamp du capteur direct
@@ -429,7 +429,7 @@ public class StepManager : MonoBehaviour
         dataManager.PlayerData.LastPauseEpochMs = nowEpochMs;
         // This log can be very frequent. Consider changing to LogDebug or removing if too noisy.
         // For now, retained as per instruction not to change Logger.cs levels.
-        Logger.LogInfo($"StepManager: Updated LastSync/PauseEpochMs to {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)} after direct sensor update.");
+        Logger.LogInfo($"StepManager: Updated LastSync/PauseEpochMs to {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)} after direct sensor update.", Logger.LogCategory.StepLog);
     }
 
     // Méthode pour gérer le chevauchement de minuit
@@ -446,7 +446,7 @@ public class StepManager : MonoBehaviour
 
             if (isMultiDayAbsence)
             {
-                Logger.LogInfo($"StepManager: Multi-day absence detected ({(endDate.Date - startDate.Date).Days} days).");
+                Logger.LogInfo($"StepManager: Multi-day absence detected ({(endDate.Date - startDate.Date).Days} days).", Logger.LogCategory.StepLog);
             }
         }
 
@@ -474,7 +474,7 @@ public class StepManager : MonoBehaviour
     /// </summary>
     private IEnumerator ProcessApiStepsNoSplit(long startTimeMs, long endTimeMs)
     {
-        Logger.LogInfo($"StepManager: Processing API steps with no midnight split from {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}.");
+        Logger.LogInfo($"StepManager: Processing API steps with no midnight split from {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}.", Logger.LogCategory.StepLog);
         long deltaApiSinceLast = 0;
         yield return StartCoroutine(apiCounter.GetDeltaSinceFromAPI(startTimeMs, endTimeMs, result => deltaApiSinceLast = result));
 
@@ -482,7 +482,7 @@ public class StepManager : MonoBehaviour
 
         TotalSteps += deltaApiSinceLast;
         DailySteps += deltaApiSinceLast;
-        Logger.LogInfo($"StepManager: No-split API Catch-up - Delta: {deltaApiSinceLast}. New TotalSteps: {TotalSteps}, DailySteps: {DailySteps}");
+        Logger.LogInfo($"StepManager: No-split API Catch-up - Delta: {deltaApiSinceLast}. New TotalSteps: {TotalSteps}, DailySteps: {DailySteps}", Logger.LogCategory.StepLog);
     }
 
     /// <summary>
@@ -490,9 +490,9 @@ public class StepManager : MonoBehaviour
     /// </summary>
     private IEnumerator ProcessApiStepsMultiDaySplit(long startTimeMs, long endTimeMs)
     {
-        Logger.LogInfo($"StepManager: Processing API steps for multi-day split from {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}.");
+        Logger.LogInfo($"StepManager: Processing API steps for multi-day split from {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}.", Logger.LogCategory.StepLog);
         string currentDateStr = GetLocalDateString();
-        Logger.LogInfo($"StepManager: Multi-day absence detected, forcing DailySteps reset for {currentDateStr}.");
+        Logger.LogInfo($"StepManager: Multi-day absence detected, forcing DailySteps reset for {currentDateStr}.", Logger.LogCategory.StepLog);
         DailySteps = 0;
         dataManager.PlayerData.DailySteps = 0;
         dataManager.PlayerData.LastDailyResetDate = currentDateStr;
@@ -508,14 +508,14 @@ public class StepManager : MonoBehaviour
         string splitKey = $"multiday_{startTimeMs}_{todayMidnightMs}_{endTimeMs}";
         if (splitKey == lastMidnightSplitKey)
         {
-            Logger.LogWarning($"StepManager: DUPLICATE MULTIDAY SPLIT DETECTED! Skipping. Key: {splitKey}");
+            Logger.LogWarning($"StepManager: DUPLICATE MULTIDAY SPLIT DETECTED! Skipping. Key: {splitKey}", Logger.LogCategory.StepLog);
             yield break;
         }
 
         long todayMidnightMinusSafe = todayMidnightMs - MIDNIGHT_SAFETY_MS;
         long todayMidnightPlusSafe = todayMidnightMs + MIDNIGHT_SAFETY_MS;
 
-        Logger.LogInfo($"StepManager: Splitting multi-day interval at today's midnight: {LocalDatabase.GetReadableDateFromEpoch(todayMidnightMs)}. Safe split: {LocalDatabase.GetReadableDateFromEpoch(todayMidnightMinusSafe)} | {LocalDatabase.GetReadableDateFromEpoch(todayMidnightPlusSafe)}");
+        Logger.LogInfo($"StepManager: Splitting multi-day interval at today's midnight: {LocalDatabase.GetReadableDateFromEpoch(todayMidnightMs)}. Safe split: {LocalDatabase.GetReadableDateFromEpoch(todayMidnightMinusSafe)} | {LocalDatabase.GetReadableDateFromEpoch(todayMidnightPlusSafe)}", Logger.LogCategory.StepLog);
 
         long stepsBeforeToday = 0;
         if (startTimeMs < todayMidnightMinusSafe) // Only fetch if there's a valid interval
@@ -523,7 +523,7 @@ public class StepManager : MonoBehaviour
             yield return StartCoroutine(apiCounter.GetDeltaSinceFromAPI(startTimeMs, todayMidnightMinusSafe, result => stepsBeforeToday = result));
             stepsBeforeToday = SanitizeStepDelta(stepsBeforeToday, "ProcessApiStepsMultiDaySplit - BeforeToday");
         } else {
-            Logger.LogInfo($"StepManager: No interval to query for steps before today. Start: {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)}, MidnightSafe: {LocalDatabase.GetReadableDateFromEpoch(todayMidnightMinusSafe)}");
+            Logger.LogInfo($"StepManager: No interval to query for steps before today. Start: {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)}, MidnightSafe: {LocalDatabase.GetReadableDateFromEpoch(todayMidnightMinusSafe)}", Logger.LogCategory.StepLog);
         }
 
 
@@ -533,7 +533,7 @@ public class StepManager : MonoBehaviour
             yield return StartCoroutine(apiCounter.GetDeltaSinceFromAPI(todayMidnightPlusSafe, endTimeMs, result => stepsToday = result));
             stepsToday = SanitizeStepDelta(stepsToday, "ProcessApiStepsMultiDaySplit - Today");
         } else {
-            Logger.LogInfo($"StepManager: No interval to query for steps today. End: {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}, MidnightSafe: {LocalDatabase.GetReadableDateFromEpoch(todayMidnightPlusSafe)}");
+            Logger.LogInfo($"StepManager: No interval to query for steps today. End: {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}, MidnightSafe: {LocalDatabase.GetReadableDateFromEpoch(todayMidnightPlusSafe)}", Logger.LogCategory.StepLog);
         }
 
 
@@ -541,7 +541,7 @@ public class StepManager : MonoBehaviour
         DailySteps += stepsToday; // Only today's steps for daily
         lastMidnightSplitKey = splitKey;
 
-        Logger.LogInfo($"StepManager: Multi-day API Catch-up - Steps before today: {stepsBeforeToday}, Steps today: {stepsToday}. New TotalSteps: {TotalSteps}, DailySteps: {DailySteps}");
+        Logger.LogInfo($"StepManager: Multi-day API Catch-up - Steps before today: {stepsBeforeToday}, Steps today: {stepsToday}. New TotalSteps: {TotalSteps}, DailySteps: {DailySteps}", Logger.LogCategory.StepLog);
     }
 
     /// <summary>
@@ -549,26 +549,26 @@ public class StepManager : MonoBehaviour
     /// </summary>
     private IEnumerator ProcessApiStepsSingleMidnightSplit(long startTimeMs, long endTimeMs)
     {
-        Logger.LogInfo($"StepManager: Processing API steps for single midnight split from {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}.");
+        Logger.LogInfo($"StepManager: Processing API steps for single midnight split from {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)} to {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}.", Logger.LogCategory.StepLog);
         string currentDateStr = GetLocalDateString();
-        Logger.LogInfo($"StepManager: Single midnight boundary detected, forcing DailySteps reset for {currentDateStr}.");
+        Logger.LogInfo($"StepManager: Single midnight boundary detected, forcing DailySteps reset for {currentDateStr}.", Logger.LogCategory.StepLog);
         DailySteps = 0;
         dataManager.PlayerData.DailySteps = 0;
         dataManager.PlayerData.LastDailyResetDate = currentDateStr;
 
         long midnightMs = FindMidnightTimestamp(startTimeMs, endTimeMs);
-        Logger.LogInfo($"StepManager: Interval spans midnight at {LocalDatabase.GetReadableDateFromEpoch(midnightMs)}. Splitting step counts.");
+        Logger.LogInfo($"StepManager: Interval spans midnight at {LocalDatabase.GetReadableDateFromEpoch(midnightMs)}. Splitting step counts.", Logger.LogCategory.StepLog);
 
         string splitKey = $"single_{startTimeMs}_{midnightMs}_{endTimeMs}";
         if (splitKey == lastMidnightSplitKey)
         {
-            Logger.LogWarning($"StepManager: DUPLICATE SINGLE MIDNIGHT SPLIT DETECTED! Skipping. Key: {splitKey}");
+            Logger.LogWarning($"StepManager: DUPLICATE SINGLE MIDNIGHT SPLIT DETECTED! Skipping. Key: {splitKey}", Logger.LogCategory.StepLog);
             yield break;
         }
 
         long midnightMinusSafe = midnightMs - MIDNIGHT_SAFETY_MS;
         long midnightPlusSafe = midnightMs + MIDNIGHT_SAFETY_MS;
-        Logger.LogInfo($"StepManager: Safe split around midnight: {LocalDatabase.GetReadableDateFromEpoch(midnightMinusSafe)} | {LocalDatabase.GetReadableDateFromEpoch(midnightPlusSafe)}");
+        Logger.LogInfo($"StepManager: Safe split around midnight: {LocalDatabase.GetReadableDateFromEpoch(midnightMinusSafe)} | {LocalDatabase.GetReadableDateFromEpoch(midnightPlusSafe)}", Logger.LogCategory.StepLog);
 
 
         long stepsBeforeMidnight = 0;
@@ -577,7 +577,7 @@ public class StepManager : MonoBehaviour
             yield return StartCoroutine(apiCounter.GetDeltaSinceFromAPI(startTimeMs, midnightMinusSafe, result => stepsBeforeMidnight = result));
             stepsBeforeMidnight = SanitizeStepDelta(stepsBeforeMidnight, "ProcessApiStepsSingleMidnightSplit - BeforeMidnight");
         } else {
-             Logger.LogInfo($"StepManager: No interval to query for steps before midnight. Start: {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)}, MidnightSafe: {LocalDatabase.GetReadableDateFromEpoch(midnightMinusSafe)}");
+             Logger.LogInfo($"StepManager: No interval to query for steps before midnight. Start: {LocalDatabase.GetReadableDateFromEpoch(startTimeMs)}, MidnightSafe: {LocalDatabase.GetReadableDateFromEpoch(midnightMinusSafe)}", Logger.LogCategory.StepLog);
         }
 
         long stepsAfterMidnight = 0;
@@ -586,14 +586,14 @@ public class StepManager : MonoBehaviour
             yield return StartCoroutine(apiCounter.GetDeltaSinceFromAPI(midnightPlusSafe, endTimeMs, result => stepsAfterMidnight = result));
             stepsAfterMidnight = SanitizeStepDelta(stepsAfterMidnight, "ProcessApiStepsSingleMidnightSplit - AfterMidnight");
         } else {
-            Logger.LogInfo($"StepManager: No interval to query for steps after midnight. End: {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}, MidnightSafe: {LocalDatabase.GetReadableDateFromEpoch(midnightPlusSafe)}");
+            Logger.LogInfo($"StepManager: No interval to query for steps after midnight. End: {LocalDatabase.GetReadableDateFromEpoch(endTimeMs)}, MidnightSafe: {LocalDatabase.GetReadableDateFromEpoch(midnightPlusSafe)}", Logger.LogCategory.StepLog);
         }
 
         TotalSteps += (stepsBeforeMidnight + stepsAfterMidnight);
         DailySteps += stepsAfterMidnight; // Only after midnight steps for current daily
         lastMidnightSplitKey = splitKey;
 
-        Logger.LogInfo($"StepManager: Single-midnight API Catch-up - Steps before midnight: {stepsBeforeMidnight}, Steps after midnight: {stepsAfterMidnight}. New TotalSteps: {TotalSteps}, DailySteps: {DailySteps}");
+        Logger.LogInfo($"StepManager: Single-midnight API Catch-up - Steps before midnight: {stepsBeforeMidnight}, Steps after midnight: {stepsAfterMidnight}. New TotalSteps: {TotalSteps}, DailySteps: {DailySteps}", Logger.LogCategory.StepLog);
     }
     
     /// <summary>
@@ -603,12 +603,12 @@ public class StepManager : MonoBehaviour
     {
         if (delta < 0)
         {
-            Logger.LogWarning($"StepManager: {context} - API returned negative delta ({delta}). Defaulting to 0.");
+            Logger.LogWarning($"StepManager: {context} - API returned negative delta ({delta}). Defaulting to 0.", Logger.LogCategory.StepLog);
             return 0;
         }
         if (delta > MAX_STEPS_PER_UPDATE) // Assuming MAX_STEPS_PER_UPDATE is a class constant
         {
-            Logger.LogWarning($"StepManager: {context} - API returned {delta} steps, exceeds threshold {MAX_STEPS_PER_UPDATE}. Limiting.");
+            Logger.LogWarning($"StepManager: {context} - API returned {delta} steps, exceeds threshold {MAX_STEPS_PER_UPDATE}. Limiting.", Logger.LogCategory.StepLog);
             return MAX_STEPS_PER_UPDATE;
         }
         return delta;
@@ -634,7 +634,7 @@ public class StepManager : MonoBehaviour
 
     IEnumerator DirectSensorUpdateLoop()
     {
-        Logger.LogInfo("StepManager: Starting DirectSensorUpdateLoop.");
+        Logger.LogInfo("StepManager: Starting DirectSensorUpdateLoop.", Logger.LogCategory.StepLog);
         lastDBSaveTime = Time.time; // Initialize save timer
 
         while (isAppInForeground)
@@ -704,7 +704,7 @@ public class StepManager : MonoBehaviour
         if (sensorGraceTimer >= SENSOR_GRACE_PERIOD)
         {
             inSensorGracePeriod = false;
-            Logger.LogInfo("StepManager: Sensor grace period ended - normal step counting resumed.");
+            Logger.LogInfo("StepManager: Sensor grace period ended - normal step counting resumed.", Logger.LogCategory.StepLog);
             return false; // Grace period just ended, proceed to normal counting
         }
         else
@@ -714,7 +714,7 @@ public class StepManager : MonoBehaviour
             long currentRawValue = apiCounter.GetCurrentRawSensorSteps();
             if (currentRawValue > 0 && currentRawValue != lastRecordedSensorValue) // Check if value is valid and changed
             {
-                Logger.LogInfo($"StepManager: [GRACE PERIOD] Sensor value changed from {lastRecordedSensorValue} to {currentRawValue}. Updating baseline.");
+                Logger.LogInfo($"StepManager: [GRACE PERIOD] Sensor value changed from {lastRecordedSensorValue} to {currentRawValue}. Updating baseline.", Logger.LogCategory.StepLog);
                 lastRecordedSensorValue = currentRawValue;
                 sensorStartCount = currentRawValue; // Update start count to this new value
                 sensorDeltaThisSession = 0; // Reset delta for this session
@@ -735,7 +735,7 @@ public class StepManager : MonoBehaviour
     {
         if (!apiCounter.HasPermission())
         {
-            Logger.LogWarning("StepManager: Permission lost during sensor update loop. Stopping sensor.");
+            Logger.LogWarning("StepManager: Permission lost during sensor update loop. Stopping sensor.", Logger.LogCategory.StepLog);
             apiCounter.StopDirectSensorListener();
             isAppInForeground = false; // This will cause the main loop to exit
             return false;
@@ -743,7 +743,7 @@ public class StepManager : MonoBehaviour
 
         if (!isSensorStartCountValid)
         {
-            Logger.LogWarning("StepManager: sensorStartCount is not valid. Skipping sensor update.");
+            Logger.LogWarning("StepManager: sensorStartCount is not valid. Skipping sensor update.", Logger.LogCategory.StepLog);
             // Attempt to re-initialize the sensor if start count is invalid.
             // This can happen if the initial InitializeDirectSensor failed or was interrupted.
             StartCoroutine(InitializeDirectSensor());
@@ -767,11 +767,11 @@ public class StepManager : MonoBehaviour
         {
             if (rawSensorValue == -2) // Specific error code for sensor unavailable
             {
-                Logger.LogError("StepManager: Direct sensor became unavailable! Stopping loop.");
+                Logger.LogError("StepManager: Direct sensor became unavailable! Stopping loop.", Logger.LogCategory.StepLog);
                 apiCounter.StopDirectSensorListener();
                 return SensorReadStatus.Error; // Critical error
             }
-            Logger.LogWarning($"StepManager: Invalid raw sensor value ({rawSensorValue}). Skipping this update.");
+            Logger.LogWarning($"StepManager: Invalid raw sensor value ({rawSensorValue}). Skipping this update.", Logger.LogCategory.StepLog);
             return SensorReadStatus.Skip; // Invalid reading, but not critical
         }
         return SensorReadStatus.Valid; // Value is valid
@@ -788,7 +788,7 @@ public class StepManager : MonoBehaviour
             // Distinguish between a significant reset and minor fluctuation
             if (sensorStartCount - rawSensorValue > 1000) // Threshold for definite reset
             {
-                Logger.LogInfo($"StepManager: Sensor full reset detected. Old start count: {sensorStartCount}, New raw value: {rawSensorValue}");
+                Logger.LogInfo($"StepManager: Sensor full reset detected. Old start count: {sensorStartCount}, New raw value: {rawSensorValue}", Logger.LogCategory.StepLog);
 
                 // Option: Trigger a mini API catch-up here if necessary, though current logic defers this.
                 // For now, just resetting internal counters and saving state.
@@ -800,13 +800,13 @@ public class StepManager : MonoBehaviour
 
                 UpdateLastDirectSensorTimestamp(); // Update sync timestamps
                 dataManager.SaveGame();            // Persist this new state immediately
-                Logger.LogInfo($"StepManager: Sensor state reset. New sensorStartCount: {sensorStartCount}. Data saved.");
+                Logger.LogInfo($"StepManager: Sensor state reset. New sensorStartCount: {sensorStartCount}. Data saved.", Logger.LogCategory.StepLog);
                 return true; // Reset handled, skip further processing for this iteration
             }
             else
             {
                 // Minor decrease, potentially a temporary error or fluctuation.
-                Logger.LogWarning($"StepManager: Unexpected sensor value decrease from {sensorStartCount} to {rawSensorValue}. Ignoring this specific reading.");
+                Logger.LogWarning($"StepManager: Unexpected sensor value decrease from {sensorStartCount} to {rawSensorValue}. Ignoring this specific reading.", Logger.LogCategory.StepLog);
                 // Do not modify sensorStartCount here, just ignore this anomalous value.
                 return true; // Ignore this reading, skip further processing
             }
@@ -837,20 +837,20 @@ public class StepManager : MonoBehaviour
             float currentTime = Time.time; // Unity's Time.time for debounce timing
             if (currentTime - lastSensorLargeUpdateTime < SENSOR_DEBOUNCE_SECONDS)
             {
-                Logger.LogWarning($"StepManager: Anomaly detected! {newIndividualSensorSteps} steps in quick succession filtered out (debounce).");
+                Logger.LogWarning($"StepManager: Anomaly detected! {newIndividualSensorSteps} steps in quick succession filtered out (debounce).", Logger.LogCategory.StepLog);
                 return 0; // Ignore this update due to debouncing
             }
             else
             {
                 lastSensorLargeUpdateTime = currentTime; // Update time of last large step update
-                Logger.LogInfo($"StepManager: Large step update of {newIndividualSensorSteps} accepted after debounce check.");
+                Logger.LogInfo($"StepManager: Large step update of {newIndividualSensorSteps} accepted after debounce check.", Logger.LogCategory.StepLog);
             }
         }
 
         // Limit increment to a reasonable maximum
         if (newIndividualSensorSteps > MAX_STEPS_PER_UPDATE)
         {
-            Logger.LogWarning($"StepManager: Unusually large step increment: {newIndividualSensorSteps}. Limiting to {MAX_STEPS_PER_UPDATE}.");
+            Logger.LogWarning($"StepManager: Unusually large step increment: {newIndividualSensorSteps}. Limiting to {MAX_STEPS_PER_UPDATE}.", Logger.LogCategory.StepLog);
             newIndividualSensorSteps = MAX_STEPS_PER_UPDATE;
         }
         
@@ -866,7 +866,7 @@ public class StepManager : MonoBehaviour
         string currentDateStr = GetLocalDateString();
         if (dataManager.PlayerData.LastDailyResetDate != currentDateStr)
         {
-            Logger.LogInfo($"StepManager: Day change detected during active step update. Current Date: {currentDateStr}, Last Reset: {dataManager.PlayerData.LastDailyResetDate}. Resetting daily steps.");
+            Logger.LogInfo($"StepManager: Day change detected during active step update. Current Date: {currentDateStr}, Last Reset: {dataManager.PlayerData.LastDailyResetDate}. Resetting daily steps.", Logger.LogCategory.StepLog);
             DailySteps = 0; // Reset daily steps counter
             dataManager.PlayerData.DailySteps = 0; // Persist reset
             dataManager.PlayerData.LastDailyResetDate = currentDateStr; // Update reset date
@@ -877,7 +877,7 @@ public class StepManager : MonoBehaviour
         TotalSteps += newSteps;
         DailySteps += newSteps;
         // Concise log for step updates
-        Logger.LogInfo($"StepManager: Sensor steps: +{newSteps}. SessionΔ: {sensorDeltaThisSession}, Daily: {DailySteps}, Total: {TotalSteps}");
+        Logger.LogInfo($"StepManager: Sensor steps: +{newSteps}. SessionΔ: {sensorDeltaThisSession}, Daily: {DailySteps}, Total: {TotalSteps}", Logger.LogCategory.StepLog);
 
         // Persist updated step counts
         dataManager.PlayerData.TotalSteps = TotalSteps;
@@ -892,7 +892,7 @@ public class StepManager : MonoBehaviour
         {
             dataManager.SaveGame();
             lastDbSaveTimestamp = currentTime; // Update timestamp of the last save
-            Logger.LogInfo($"StepManager: Periodic DB save triggered. Interval: {DB_SAVE_INTERVAL}s.");
+            Logger.LogInfo($"StepManager: Periodic DB save triggered. Interval: {DB_SAVE_INTERVAL}s.", Logger.LogCategory.StepLog);
         }
     }
 
@@ -900,12 +900,12 @@ public class StepManager : MonoBehaviour
     {
         if (!isInitialized) return;
 
-        Logger.LogInfo("StepManager: HandleAppPausingOrClosing started.");
+        Logger.LogInfo("StepManager: HandleAppPausingOrClosing started.", Logger.LogCategory.General);
         isAppInForeground = false;
 
         // Arrêter le capteur direct quand l'application n'est plus au premier plan
         apiCounter.StopDirectSensorListener();
-        Logger.LogInfo("StepManager: Direct sensor listener stopped.");
+        Logger.LogInfo("StepManager: Direct sensor listener stopped.", Logger.LogCategory.StepLog);
 
         // Enregistrer le timestamp de pause pour résoudre le problème de double comptage
         long nowEpochMs = GetCurrentEpochMs();
@@ -917,7 +917,7 @@ public class StepManager : MonoBehaviour
         dataManager.PlayerData.LastApiCatchUpEpochMs = nowEpochMs;
         
         // Consolidate logging for pause/close
-        Logger.LogInfo($"StepManager: App pausing/closing. Updated LastSync/Pause/ApiCatchUp EpochMs to {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}. Saving data. Final TotalSteps: {TotalSteps}, DailySteps: {DailySteps}");
+        Logger.LogInfo($"StepManager: App pausing/closing. Updated LastSync/Pause/ApiCatchUp EpochMs to {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}. Saving data. Final TotalSteps: {TotalSteps}, DailySteps: {DailySteps}", Logger.LogCategory.General);
         
         // Force une sauvegarde à chaque pause/fermeture pour s'assurer que les données sont persistées
         dataManager.PlayerData.TotalSteps = TotalSteps;
@@ -933,13 +933,13 @@ public class StepManager : MonoBehaviour
         if (pauseStatus)
         {
             // L'application va en arrière-plan
-            Logger.LogInfo("StepManager: OnApplicationPause → app goes to background");
+            Logger.LogInfo("StepManager: OnApplicationPause → app goes to background", Logger.LogCategory.General);
             HandleAppPausingOrClosing();
         }
         else
         {
             // L'application revient au premier plan
-            Logger.LogInfo("StepManager: OnApplicationPause → app returns to foreground");
+            Logger.LogInfo("StepManager: OnApplicationPause → app returns to foreground", Logger.LogCategory.General);
 
             // Marquer que l'application retourne au premier plan après avoir été en arrière-plan
             isReturningFromBackground = true;
@@ -958,7 +958,7 @@ public class StepManager : MonoBehaviour
         {
             HandleAppPausingOrClosing();
         }
-        Logger.LogInfo("StepManager: Application Quitting.");
+        Logger.LogInfo("StepManager: Application Quitting.", Logger.LogCategory.General);
     }
 
     // MODIFIÉ: Harmoniser la gestion des fuseaux horaires (Faille B)

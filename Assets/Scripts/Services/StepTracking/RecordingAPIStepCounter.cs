@@ -29,7 +29,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
         }
         else
         {
-            Logger.LogWarning("RecordingAPIStepCounter: Multiple instances detected! Destroying duplicate.");
+            Logger.LogWarning("RecordingAPIStepCounter: Multiple instances detected! Destroying duplicate.", Logger.LogCategory.General);
             Destroy(gameObject);
             return;
         }
@@ -39,16 +39,16 @@ public class RecordingAPIStepCounter : MonoBehaviour
     {
         if (isPluginClassInitialized) return;
 
-        Logger.LogInfo("RecordingAPIStepCounter: InitializeService called.");
+        Logger.LogInfo("RecordingAPIStepCounter: InitializeService called.", Logger.LogCategory.General);
         try
         {
             stepPluginClass = new AndroidJavaClass(fullPluginClassName);
             isPluginClassInitialized = true;
-            Logger.LogInfo($"RecordingAPIStepCounter: {fullPluginClassName} class found successfully.");
+            Logger.LogInfo($"RecordingAPIStepCounter: {fullPluginClassName} class found successfully.", Logger.LogCategory.General);
         }
         catch (AndroidJavaException e)
         {
-            Logger.LogError($"RecordingAPIStepCounter: Failed to initialize AndroidJavaClass for {fullPluginClassName}. Exception: {e}");
+            Logger.LogError($"RecordingAPIStepCounter: Failed to initialize AndroidJavaClass for {fullPluginClassName}. Exception: {e}", Logger.LogCategory.General);
             stepPluginClass = null;
             isPluginClassInitialized = false;
         }
@@ -59,10 +59,10 @@ public class RecordingAPIStepCounter : MonoBehaviour
     {
         if (!isPluginClassInitialized || stepPluginClass == null)
         {
-            Logger.LogWarning("RecordingAPIStepCounter: RequestPermission called but plugin class not initialized.");
+            Logger.LogWarning("RecordingAPIStepCounter: RequestPermission called but plugin class not initialized.", Logger.LogCategory.General);
             return;
         }
-        Logger.LogInfo("RecordingAPIStepCounter: Requesting activity recognition permission via plugin.");
+        Logger.LogInfo("RecordingAPIStepCounter: Requesting activity recognition permission via plugin.", Logger.LogCategory.General);
         stepPluginClass.CallStatic("requestActivityRecognitionPermission");
     }
 
@@ -70,7 +70,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
     {
         if (!isPluginClassInitialized || stepPluginClass == null)
         {
-            Logger.LogWarning("RecordingAPIStepCounter: HasPermission called but plugin class not initialized.");
+            Logger.LogWarning("RecordingAPIStepCounter: HasPermission called but plugin class not initialized.", Logger.LogCategory.General);
             return false;
         }
 
@@ -82,7 +82,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
         {
             if (hasPermission != lastPermissionResult)
             {
-                Logger.LogInfo($"RecordingAPIStepCounter: Permission status changed to: {hasPermission}");
+                Logger.LogInfo($"RecordingAPIStepCounter: Permission status changed to: {hasPermission}", Logger.LogCategory.General);
             }
 
             lastPermissionResult = hasPermission;
@@ -96,12 +96,12 @@ public class RecordingAPIStepCounter : MonoBehaviour
     {
         if (!isPluginClassInitialized || stepPluginClass == null)
         {
-            Logger.LogWarning("RecordingAPIStepCounter: SubscribeToRecordingApiIfNeeded called but plugin class not initialized.");
+            Logger.LogWarning("RecordingAPIStepCounter: SubscribeToRecordingApiIfNeeded called but plugin class not initialized.", Logger.LogCategory.General);
             return;
         }
         if (!HasPermission())
         {
-            Logger.LogWarning("RecordingAPIStepCounter: Cannot subscribe, permission not granted.");
+            Logger.LogWarning("RecordingAPIStepCounter: Cannot subscribe, permission not granted.", Logger.LogCategory.General);
             return;
         }
         if (isSubscribedToApi)
@@ -109,7 +109,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
             return;
         }
 
-        Logger.LogInfo("RecordingAPIStepCounter: Attempting to subscribe to API Recording.");
+        Logger.LogInfo("RecordingAPIStepCounter: Attempting to subscribe to API Recording.", Logger.LogCategory.General);
         stepPluginClass.CallStatic("subscribeToRecordingAPI");
         isSubscribedToApi = true;
     }
@@ -119,7 +119,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
     {
         if (!isPluginClassInitialized || stepPluginClass == null || !HasPermission())
         {
-            Logger.LogError("RecordingAPIStepCounter: GetDeltaSinceFromAPI cannot execute - plugin not ready or no permission.");
+            Logger.LogError("RecordingAPIStepCounter: GetDeltaSinceFromAPI cannot execute - plugin not ready or no permission.", Logger.LogCategory.StepLog);
             onResultCallback?.Invoke(-1);
             yield break;
         }
@@ -127,7 +127,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
         // Vérifier s'il s'agit d'une plage déjà lue (solution de secours si clearStoredRange échoue)
         if (ShouldSkipRange(fromEpochMs, toEpochMs))
         {
-            Logger.LogWarning($"RecordingAPIStepCounter: Skipping already read range from {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)} to {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}");
+            Logger.LogWarning($"RecordingAPIStepCounter: Skipping already read range from {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)} to {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}", Logger.LogCategory.StepLog);
             onResultCallback?.Invoke(0);
             yield break;
         }
@@ -135,12 +135,12 @@ public class RecordingAPIStepCounter : MonoBehaviour
         // Vérifier et gérer le cas spécial où fromEpochMs est 0 ou très ancien
         if (fromEpochMs <= 1)
         {
-            Logger.LogInfo($"RecordingAPIStepCounter: GetDeltaSinceFromAPI called with very old/initial fromEpochMs={fromEpochMs}. Getting all available history.");
+            Logger.LogInfo($"RecordingAPIStepCounter: GetDeltaSinceFromAPI called with very old/initial fromEpochMs={fromEpochMs}. Getting all available history.", Logger.LogCategory.StepLog);
             // Le plugin StepPlugin va gérer ce cas spécial
         }
         else if (fromEpochMs >= toEpochMs)
         {
-            Logger.LogWarning($"RecordingAPIStepCounter: GetDeltaSinceFromAPI called with fromEpochMs ({LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)}) >= toEpochMs ({LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}). Returning 0 steps.");
+            Logger.LogWarning($"RecordingAPIStepCounter: GetDeltaSinceFromAPI called with fromEpochMs ({LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)}) >= toEpochMs ({LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}). Returning 0 steps.", Logger.LogCategory.StepLog);
             onResultCallback?.Invoke(0);
             yield break;
         }
@@ -149,7 +149,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
         lastReadStartMs = fromEpochMs;
         lastReadEndMs = toEpochMs;
 
-        Logger.LogInfo($"RecordingAPIStepCounter: Requesting readStepsForTimeRange from plugin for GetDeltaSinceFromAPI (from: {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)}, to: {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}).");
+        Logger.LogInfo($"RecordingAPIStepCounter: Requesting readStepsForTimeRange from plugin for GetDeltaSinceFromAPI (from: {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)}, to: {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}).", Logger.LogCategory.StepLog);
         stepPluginClass.CallStatic("readStepsForTimeRange", fromEpochMs, toEpochMs);
 
         // Mécanisme d'attente amélioré avec vérification
@@ -163,12 +163,12 @@ public class RecordingAPIStepCounter : MonoBehaviour
             yield return new WaitForSeconds(BASE_API_WAIT_TIME * (attempts + 1));
 
             currentResult = stepPluginClass.CallStatic<long>("getStoredStepsForCustomRange");
-            Logger.LogInfo($"RecordingAPIStepCounter: API read attempt {attempts + 1}/{MAX_API_READ_ATTEMPTS}, value: {currentResult}");
+            Logger.LogInfo($"RecordingAPIStepCounter: API read attempt {attempts + 1}/{MAX_API_READ_ATTEMPTS}, value: {currentResult}", Logger.LogCategory.StepLog);
 
             // Si on a une valeur valide et qu'elle est stable (deux lectures identiques), on peut sortir
             if (currentResult >= 0 && (currentResult == lastResult || attempts >= MAX_API_READ_ATTEMPTS - 1))
             {
-                Logger.LogInfo($"RecordingAPIStepCounter: GetDeltaSince stable result after {attempts + 1} attempts: {currentResult}");
+                Logger.LogInfo($"RecordingAPIStepCounter: GetDeltaSince stable result after {attempts + 1} attempts: {currentResult}", Logger.LogCategory.StepLog);
                 break;
             }
 
@@ -176,7 +176,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
             attempts++;
         }
 
-        Logger.LogInfo($"RecordingAPIStepCounter: GetDeltaSinceFromAPI received {currentResult} steps from plugin for time range {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)} to {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}.");
+        Logger.LogInfo($"RecordingAPIStepCounter: GetDeltaSinceFromAPI received {currentResult} steps from plugin for time range {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)} to {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}.", Logger.LogCategory.StepLog);
         onResultCallback?.Invoke(currentResult >= 0 ? currentResult : 0);
 
         // Après avoir récupéré les données, effacer automatiquement la valeur stockée (Faille C)
@@ -203,7 +203,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
                     if (overlaps)
                     {
                         Logger.LogWarning($"RecordingAPIStepCounter: Current range ({LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)} to {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}) " +
-                                         $"overlaps with last recorded range ({LocalDatabase.GetReadableDateFromEpoch(lastStart)} to {LocalDatabase.GetReadableDateFromEpoch(lastEnd)})");
+                                         $"overlaps with last recorded range ({LocalDatabase.GetReadableDateFromEpoch(lastStart)} to {LocalDatabase.GetReadableDateFromEpoch(lastEnd)})", Logger.LogCategory.StepLog);
                         return true;
                     }
                 }
@@ -211,7 +211,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Logger.LogError($"RecordingAPIStepCounter: Error checking last range: {ex.Message}");
+            Logger.LogError($"RecordingAPIStepCounter: Error checking last range: {ex.Message}", Logger.LogCategory.StepLog);
         }
 
         return false;
@@ -224,7 +224,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
     {
         if (!isPluginClassInitialized || stepPluginClass == null)
         {
-            Logger.LogWarning("RecordingAPIStepCounter: ClearStoredRange called but plugin class not initialized.");
+            Logger.LogWarning("RecordingAPIStepCounter: ClearStoredRange called but plugin class not initialized.", Logger.LogCategory.StepLog);
             return;
         }
 
@@ -238,21 +238,21 @@ public class RecordingAPIStepCounter : MonoBehaviour
 
             if (clearSuccess)
             {
-                Logger.LogInfo("RecordingAPIStepCounter: Successfully cleared stored range in plugin.");
+                Logger.LogInfo("RecordingAPIStepCounter: Successfully cleared stored range in plugin.", Logger.LogCategory.StepLog);
             }
             else
             {
                 // Échec de nettoyage côté plugin, mémoriser l'état pour éviter un double comptage
                 HandleClearFailure();
-                Logger.LogWarning("RecordingAPIStepCounter: Plugin reported failure to clear stored range. Using fallback mechanism.");
+                Logger.LogWarning("RecordingAPIStepCounter: Plugin reported failure to clear stored range. Using fallback mechanism.", Logger.LogCategory.StepLog);
             }
         }
         catch (AndroidJavaException ex)
         {
-            Logger.LogError($"RecordingAPIStepCounter: Failed to clear stored range in plugin. Exception: {ex.Message}");
+            Logger.LogError($"RecordingAPIStepCounter: Failed to clear stored range in plugin. Exception: {ex.Message}", Logger.LogCategory.StepLog);
             // Si la méthode n'existe pas encore dans le plugin, utiliser une solution de secours
             HandleClearFailure();
-            Logger.LogWarning("RecordingAPIStepCounter: clearStoredStepsForCustomRange function may not be available. Using fallback mechanism.");
+            Logger.LogWarning("RecordingAPIStepCounter: clearStoredStepsForCustomRange function may not be available. Using fallback mechanism.", Logger.LogCategory.StepLog);
         }
     }
 
@@ -268,12 +268,12 @@ public class RecordingAPIStepCounter : MonoBehaviour
             {
                 PlayerPrefs.SetString("LastReadRange", $"{lastReadStartMs}:{lastReadEndMs}");
                 PlayerPrefs.Save();
-                Logger.LogInfo($"RecordingAPIStepCounter: Saved last read range {LocalDatabase.GetReadableDateFromEpoch(lastReadStartMs)} to {LocalDatabase.GetReadableDateFromEpoch(lastReadEndMs)} to PlayerPrefs as fallback.");
+                Logger.LogInfo($"RecordingAPIStepCounter: Saved last read range {LocalDatabase.GetReadableDateFromEpoch(lastReadStartMs)} to {LocalDatabase.GetReadableDateFromEpoch(lastReadEndMs)} to PlayerPrefs as fallback.", Logger.LogCategory.StepLog);
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError($"RecordingAPIStepCounter: Failed to save fallback data: {ex.Message}");
+            Logger.LogError($"RecordingAPIStepCounter: Failed to save fallback data: {ex.Message}", Logger.LogCategory.StepLog);
         }
     }
 
@@ -301,10 +301,10 @@ public class RecordingAPIStepCounter : MonoBehaviour
     {
         if (!isPluginClassInitialized || stepPluginClass == null || !HasPermission())
         {
-            Logger.LogWarning("RecordingAPIStepCounter: StartDirectSensorListener - plugin not ready or no permission.");
+            Logger.LogWarning("RecordingAPIStepCounter: StartDirectSensorListener - plugin not ready or no permission.", Logger.LogCategory.StepLog);
             return;
         }
-        Logger.LogInfo("RecordingAPIStepCounter: Requesting plugin to start direct step counter listener.");
+        Logger.LogInfo("RecordingAPIStepCounter: Requesting plugin to start direct step counter listener.", Logger.LogCategory.StepLog);
         stepPluginClass.CallStatic("startDirectStepCounterListener");
     }
 
@@ -312,10 +312,10 @@ public class RecordingAPIStepCounter : MonoBehaviour
     {
         if (!isPluginClassInitialized || stepPluginClass == null)
         {
-            Logger.LogWarning("RecordingAPIStepCounter: StopDirectSensorListener - plugin class not initialized.");
+            Logger.LogWarning("RecordingAPIStepCounter: StopDirectSensorListener - plugin class not initialized.", Logger.LogCategory.StepLog);
             return;
         }
-        Logger.LogInfo("RecordingAPIStepCounter: Requesting plugin to stop direct step counter listener.");
+        Logger.LogInfo("RecordingAPIStepCounter: Requesting plugin to stop direct step counter listener.", Logger.LogCategory.StepLog);
         stepPluginClass.CallStatic("stopDirectStepCounterListener");
     }
 

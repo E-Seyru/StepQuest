@@ -29,19 +29,19 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            Logger.LogWarning("UIManager: Multiple instances detected! Destroying duplicate.");
+            Logger.LogWarning("UIManager: Multiple instances detected! Destroying duplicate.", Logger.LogCategory.General);
             Destroy(gameObject);
             return;
         }
 
         if (totalStepsText == null)
         {
-            Logger.LogError("UIManager: totalStepsText n'est pas assigné dans l'inspecteur !");
+            Logger.LogError("UIManager: totalStepsText n'est pas assigné dans l'inspecteur !", Logger.LogCategory.General);
         }
 
         if (dailyStepsText == null)
         {
-            Logger.LogWarning("UIManager: dailyStepsText n'est pas assigné dans l'inspecteur ! L'affichage des pas quotidiens ne fonctionnera pas.");
+            Logger.LogWarning("UIManager: dailyStepsText n'est pas assigné dans l'inspecteur ! L'affichage des pas quotidiens ne fonctionnera pas.", Logger.LogCategory.General);
         }
 
         // Initialiser l'affichage à une valeur d'attente
@@ -56,7 +56,7 @@ public class UIManager : MonoBehaviour
             yield return null;
         }
         stepManager = StepManager.Instance;
-        Logger.LogInfo("UIManager: StepManager.Instance found. Ready to update UI from StepManager.");
+        Logger.LogInfo("UIManager: StepManager.Instance found. Ready to update UI from StepManager.", Logger.LogCategory.General);
     }
 
     void Update()

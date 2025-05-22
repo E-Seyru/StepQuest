@@ -16,7 +16,7 @@ public class LocalDatabase
     {
         // Définir le chemin de la base de données
         _databasePath = Path.Combine(Application.persistentDataPath, DatabaseFilename);
-        Logger.LogInfo($"LocalDatabase: Database path is: {_databasePath}");
+        Logger.LogInfo($"LocalDatabase: Database path is: {_databasePath}", Logger.LogCategory.General);
 
         try
         {
@@ -26,27 +26,27 @@ public class LocalDatabase
             if (forceReset && File.Exists(_databasePath))
             {
                 File.Delete(_databasePath);
-                Logger.LogInfo("LocalDatabase: Reset - Existing database file deleted");
+                Logger.LogInfo("LocalDatabase: Reset - Existing database file deleted", Logger.LogCategory.General);
             }
 #endif
 
             // Créer ou ouvrir la connexion SQLite
             _connection = new SQLiteConnection(_databasePath);
-            Logger.LogInfo("LocalDatabase: Connection established");
+            Logger.LogInfo("LocalDatabase: Connection established", Logger.LogCategory.General);
 
             // Vérifier si la base de données nécessite une migration
             ManageDatabaseMigration();
 
             // Créer la table PlayerData si elle n'existe pas déjà
             _connection.CreateTable<PlayerData>();
-            Logger.LogInfo("LocalDatabase: PlayerData table created/verified");
+            Logger.LogInfo("LocalDatabase: PlayerData table created/verified", Logger.LogCategory.General);
 
             // Vérifier la structure de la table
             DebugLogTableStructure();
         }
         catch (Exception ex)
         {
-            Logger.LogError($"LocalDatabase: Initialization error: {ex.Message}");
+            Logger.LogError($"LocalDatabase: Initialization error: {ex.Message}", Logger.LogCategory.General);
         }
     }
 
@@ -74,11 +74,11 @@ public class LocalDatabase
             _connection.Execute("CREATE TABLE IF NOT EXISTS DatabaseVersion (Version INTEGER)");
 
             int currentVersion = GetCurrentDatabaseVersion();
-            Logger.LogInfo($"LocalDatabase: Current database version: {currentVersion}, Target version: {DATABASE_VERSION}");
+            Logger.LogInfo($"LocalDatabase: Current database version: {currentVersion}, Target version: {DATABASE_VERSION}", Logger.LogCategory.General);
 
             while (currentVersion < DATABASE_VERSION)
             {
-                Logger.LogInfo($"LocalDatabase: Migrating from version {currentVersion} to {currentVersion + 1}...");
+                Logger.LogInfo($"LocalDatabase: Migrating from version {currentVersion} to {currentVersion + 1}...", Logger.LogCategory.General);
                 bool migrationSuccess = false;
                 switch (currentVersion)
                 {
@@ -96,7 +96,7 @@ public class LocalDatabase
                         break;
                     // Ajouter d'autres cas de migration ici
                     default:
-                        Logger.LogError($"LocalDatabase: No migration path defined for version {currentVersion}. Halting migration.");
+                        Logger.LogError($"LocalDatabase: No migration path defined for version {currentVersion}. Halting migration.", Logger.LogCategory.General);
                         return; // Arrêter si aucune migration n'est définie
                 }
 
@@ -104,18 +104,18 @@ public class LocalDatabase
                 {
                     currentVersion++; // Incrémenter uniquement si la migration a réussi
                     _connection.Execute("UPDATE DatabaseVersion SET Version = ?", currentVersion);
-                    Logger.LogInfo($"LocalDatabase: Migration to version {currentVersion} completed successfully.");
+                    Logger.LogInfo($"LocalDatabase: Migration to version {currentVersion} completed successfully.", Logger.LogCategory.General);
                 }
                 else
                 {
-                    Logger.LogError($"LocalDatabase: Migration from version {currentVersion} failed. Halting further migrations.");
+                    Logger.LogError($"LocalDatabase: Migration from version {currentVersion} failed. Halting further migrations.", Logger.LogCategory.General);
                     return; // Arrêter les migrations si une étape échoue
                 }
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError($"LocalDatabase: Migration management error: {ex.Message}");
+            Logger.LogError($"LocalDatabase: Migration management error: {ex.Message}", Logger.LogCategory.General);
         }
     }
 
@@ -143,7 +143,7 @@ public class LocalDatabase
         }
         catch (Exception ex)
         {
-            Logger.LogError($"LocalDatabase: Migration error (1 to 2): {ex.Message}");
+            Logger.LogError($"LocalDatabase: Migration error (1 to 2): {ex.Message}", Logger.LogCategory.General);
             return false;
         }
     }
@@ -160,7 +160,7 @@ public class LocalDatabase
         }
         catch (Exception ex)
         {
-            Logger.LogError($"LocalDatabase: Migration error (2 to 3): {ex.Message}");
+            Logger.LogError($"LocalDatabase: Migration error (2 to 3): {ex.Message}", Logger.LogCategory.General);
             return false;
         }
     }
@@ -175,7 +175,7 @@ public class LocalDatabase
         }
         catch (Exception ex)
         {
-            Logger.LogError($"LocalDatabase: Migration error (3 to 4): {ex.Message}");
+            Logger.LogError($"LocalDatabase: Migration error (3 to 4): {ex.Message}", Logger.LogCategory.General);
             return false;
         }
     }
@@ -192,7 +192,7 @@ public class LocalDatabase
         }
         catch (Exception ex)
         {
-            Logger.LogError($"LocalDatabase: Migration error (4 to 5): {ex.Message}");
+            Logger.LogError($"LocalDatabase: Migration error (4 to 5): {ex.Message}", Logger.LogCategory.General);
             return false;
         }
     }
@@ -201,7 +201,7 @@ public class LocalDatabase
     {
         if (_connection == null)
         {
-            Logger.LogError("LocalDatabase: Connection not initialized");
+            Logger.LogError("LocalDatabase: Connection not initialized", Logger.LogCategory.General);
             return new PlayerData();
         }
 
@@ -213,7 +213,7 @@ public class LocalDatabase
             if (data != null)
             {
                 // Reduced verbosity: Log key fields for confirmation.
-                Logger.LogInfo($"LocalDatabase: PlayerData loaded (Id: {data.Id}). TotalSteps: {data.TotalPlayerSteps}, DailySteps: {data.DailySteps}, LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}.");
+                Logger.LogInfo($"LocalDatabase: PlayerData loaded (Id: {data.Id}). TotalSteps: {data.TotalPlayerSteps}, DailySteps: {data.DailySteps}, LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}.", Logger.LogCategory.General);
                 return data;
             }
             else
@@ -222,13 +222,13 @@ public class LocalDatabase
                 PlayerData newData = new PlayerData(); // Default Id is 1
                 _connection.Insert(newData);
                 // Log creation of new data specifically.
-                Logger.LogInfo($"LocalDatabase: No existing PlayerData found. New PlayerData (Id: {newData.Id}) created and saved.");
+                Logger.LogInfo($"LocalDatabase: No existing PlayerData found. New PlayerData (Id: {newData.Id}) created and saved.", Logger.LogCategory.General);
                 return newData;
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError($"LocalDatabase: Error loading data: {ex.Message}");
+            Logger.LogError($"LocalDatabase: Error loading data: {ex.Message}", Logger.LogCategory.General);
             return new PlayerData();
         }
     }
@@ -237,13 +237,13 @@ public class LocalDatabase
     {
         if (_connection == null)
         {
-            Logger.LogError("LocalDatabase: Connection not initialized");
+            Logger.LogError("LocalDatabase: Connection not initialized", Logger.LogCategory.General);
             return;
         }
 
         if (data == null)
         {
-            Logger.LogError("LocalDatabase: Data is null");
+            Logger.LogError("LocalDatabase: Data is null", Logger.LogCategory.General);
             return;
         }
 
@@ -256,7 +256,7 @@ public class LocalDatabase
             // Vérifier que LastSyncEpochMs est correctement défini
             if (data.LastSyncEpochMs <= 0 && data.TotalPlayerSteps > 0)
             {
-                Logger.LogWarning("LocalDatabase: LastSyncEpochMs needs initialization");
+                Logger.LogWarning("LocalDatabase: LastSyncEpochMs needs initialization", Logger.LogCategory.StepLog);
                 // Standardize to UTC for internal storage
                 data.LastSyncEpochMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             }
@@ -266,27 +266,27 @@ public class LocalDatabase
             {
                 // LastDailyResetDate should reflect the user's local date
                 data.LastDailyResetDate = DateTime.UtcNow.ToLocalTime().ToString("yyyy-MM-dd");
-                Logger.LogWarning($"LocalDatabase: LastDailyResetDate was empty, initialized to {data.LastDailyResetDate}");
+                Logger.LogWarning($"LocalDatabase: LastDailyResetDate was empty, initialized to {data.LastDailyResetDate}", Logger.LogCategory.StepLog);
             }
 
             // NOUVEAU: S'assurer que LastApiCatchUpEpochMs a une valeur par défaut
             if (data.LastApiCatchUpEpochMs <= 0 && data.LastSyncEpochMs > 0)
             {
                 data.LastApiCatchUpEpochMs = data.LastSyncEpochMs;
-                Logger.LogWarning($"LocalDatabase: LastApiCatchUpEpochMs was 0, initialized to LastSyncEpochMs: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}");
+                Logger.LogWarning($"LocalDatabase: LastApiCatchUpEpochMs was 0, initialized to LastSyncEpochMs: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}", Logger.LogCategory.StepLog);
             }
 
             // Enregistrer les données
             int result = _connection.InsertOrReplace(data);
             // Reduced verbosity: Log key fields and operation result.
-            Logger.LogInfo($"LocalDatabase: PlayerData saved (Id: {data.Id}, SQLite result: {result}). TotalSteps: {data.TotalPlayerSteps}, DailySteps: {data.DailySteps}, LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}.");
+            Logger.LogInfo($"LocalDatabase: PlayerData saved (Id: {data.Id}, SQLite result: {result}). TotalSteps: {data.TotalPlayerSteps}, DailySteps: {data.DailySteps}, LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}.", Logger.LogCategory.General);
 
             // Vérifier que la sauvegarde a réussi
             VerifySaveSuccess(data);
         }
         catch (Exception ex)
         {
-            Logger.LogError($"LocalDatabase: Save error: {ex.Message}");
+            Logger.LogError($"LocalDatabase: Save error: {ex.Message}", Logger.LogCategory.General);
         }
     }
 
@@ -296,7 +296,7 @@ public class LocalDatabase
         {
             _connection.Close();
             _connection = null;
-            Logger.LogInfo("LocalDatabase: Connection closed");
+            Logger.LogInfo("LocalDatabase: Connection closed", Logger.LogCategory.General);
         }
     }
 
@@ -311,11 +311,11 @@ public class LocalDatabase
             {
                 columns += col.Name + ", ";
             }
-            Logger.LogInfo($"LocalDatabase: Table columns: {columns}");
+            Logger.LogInfo($"LocalDatabase: Table columns: {columns}", Logger.LogCategory.General);
         }
         catch (Exception ex)
         {
-            Logger.LogError($"LocalDatabase: Error checking table structure: {ex.Message}");
+            Logger.LogError($"LocalDatabase: Error checking table structure: {ex.Message}", Logger.LogCategory.General);
         }
     }
 
@@ -328,7 +328,7 @@ public class LocalDatabase
             if (savedData != null)
             {
                 // Reduced verbosity for the info log during verification.
-                Logger.LogInfo($"LocalDatabase: Verifying saved PlayerData (Id: {savedData.Id}). Verified TotalSteps: {savedData.TotalPlayerSteps}, LastSync: {GetReadableDateFromEpoch(savedData.LastSyncEpochMs)}.");
+                Logger.LogInfo($"LocalDatabase: Verifying saved PlayerData (Id: {savedData.Id}). Verified TotalSteps: {savedData.TotalPlayerSteps}, LastSync: {GetReadableDateFromEpoch(savedData.LastSyncEpochMs)}.", Logger.LogCategory.General);
 
                 // Vérifier que les valeurs correspondent
                 // Keep essential fields for mismatch check.
@@ -345,13 +345,13 @@ public class LocalDatabase
                                    $"Expected LastSync: {GetReadableDateFromEpoch(originalData.LastSyncEpochMs)}, Got: {GetReadableDateFromEpoch(savedData.LastSyncEpochMs)}. " +
                                    $"Expected LastReset: {originalData.LastDailyResetDate}, Got: {savedData.LastDailyResetDate}. " +
                                    $"Expected LastApiCatchUp: {GetReadableDateFromEpoch(originalData.LastApiCatchUpEpochMs)}, Got: {GetReadableDateFromEpoch(savedData.LastApiCatchUpEpochMs)}."
-                                   );
+                                   , Logger.LogCategory.General);
                 }
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError($"LocalDatabase: Verification error: {ex.Message}");
+            Logger.LogError($"LocalDatabase: Verification error: {ex.Message}", Logger.LogCategory.General);
         }
     }
     

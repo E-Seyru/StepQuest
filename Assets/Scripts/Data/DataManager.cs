@@ -23,7 +23,7 @@ public class DataManager : MonoBehaviour
         }
         else
         {
-            Logger.LogWarning("DataManager: Multiple instances detected! Destroying duplicate.");
+            Logger.LogWarning("DataManager: Multiple instances detected! Destroying duplicate.", Logger.LogCategory.General);
             Destroy(gameObject);
         }
     }
@@ -34,14 +34,14 @@ public class DataManager : MonoBehaviour
         _localDatabase.InitializeDatabase();
 
         LoadGame();
-        Logger.LogInfo("DataManager initialized and game data loaded.");
+        Logger.LogInfo("DataManager initialized and game data loaded.", Logger.LogCategory.General);
         if (PlayerData != null)
         {
             Logger.LogInfo($"DataManager: Loaded PlayerData - TotalSteps: {PlayerData.TotalSteps}, " +
                           $"LastSync: {LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastSyncEpochMs)}, " +
                           $"LastPause: {LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastPauseEpochMs)}, " +
                           $"LastChange: {LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastStepsChangeEpochMs)}, " +
-                          $"DailySteps: {PlayerData.DailySteps}");
+                          $"DailySteps: {PlayerData.DailySteps}", Logger.LogCategory.General);
         }
 
         // Ne plus vérifier le changement de jour ici - désormais géré par StepManager
@@ -52,7 +52,7 @@ public class DataManager : MonoBehaviour
     {
         if (_localDatabase == null)
         {
-            Logger.LogError("DataManager: Cannot load game, LocalDatabase is not initialized.");
+            Logger.LogError("DataManager: Cannot load game, LocalDatabase is not initialized.", Logger.LogCategory.General);
             PlayerData = new PlayerData(); // Crée un PlayerData avec les valeurs par défaut (LastSyncEpochMs = 0)
             return;
         }
@@ -63,21 +63,21 @@ public class DataManager : MonoBehaviour
                       $"LastSync={LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastSyncEpochMs)}, " +
                       $"LastPause={LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastPauseEpochMs)}, " +
                       $"LastChange={LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastStepsChangeEpochMs)}, " +
-                      $"DailySteps={PlayerData.DailySteps}, LastResetDate={PlayerData.LastDailyResetDate}");
+                      $"DailySteps={PlayerData.DailySteps}, LastResetDate={PlayerData.LastDailyResetDate}", Logger.LogCategory.General);
 
         // Vérification supplémentaire - si pas de données, sauvegarder immédiatement
         if (PlayerData.Id == 0)
         {
             PlayerData.Id = 1;
             SaveGame();
-            Logger.LogInfo("DataManager: Fixed PlayerData Id and saved.");
+            Logger.LogInfo("DataManager: Fixed PlayerData Id and saved.", Logger.LogCategory.General);
         }
 
         // Si LastDailyResetDate est null ou vide, l'initialiser
         if (string.IsNullOrEmpty(PlayerData.LastDailyResetDate))
         {
             PlayerData.LastDailyResetDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
-            Logger.LogInfo($"DataManager: Initialized LastDailyResetDate to {PlayerData.LastDailyResetDate}");
+            Logger.LogInfo($"DataManager: Initialized LastDailyResetDate to {PlayerData.LastDailyResetDate}", Logger.LogCategory.StepLog);
             SaveGame();
         }
     }
@@ -87,19 +87,19 @@ public class DataManager : MonoBehaviour
     {
         // Déactivé - gestion déplacée vers StepManager
         // Le StepManager s'occupe de la réinitialisation des pas quotidiens
-        Logger.LogInfo("DataManager: CheckAndResetDailySteps called but ignored - this functionality is now handled by StepManager");
+        Logger.LogInfo("DataManager: CheckAndResetDailySteps called but ignored - this functionality is now handled by StepManager", Logger.LogCategory.StepLog);
     }
 
     public void SaveGame()
     {
         if (_localDatabase == null)
         {
-            Logger.LogError("DataManager: Cannot save game, LocalDatabase is not initialized.");
+            Logger.LogError("DataManager: Cannot save game, LocalDatabase is not initialized.", Logger.LogCategory.General);
             return;
         }
         if (PlayerData == null)
         {
-            Logger.LogError("DataManager: Cannot save game, PlayerData is null.");
+            Logger.LogError("DataManager: Cannot save game, PlayerData is null.", Logger.LogCategory.General);
             return;
         }
 
@@ -123,13 +123,13 @@ public class DataManager : MonoBehaviour
                           $"LastChange={LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastStepsChangeEpochMs)}, " +
                           $"LastDelta={PlayerData.LastStepsDelta}, " +
                           $"DailySteps={PlayerData.DailySteps}, " +
-                          $"LastDailyResetDate={PlayerData.LastDailyResetDate}");
+                          $"LastDailyResetDate={PlayerData.LastDailyResetDate}", Logger.LogCategory.General);
 
             _localDatabase.SavePlayerData(PlayerData);
         }
         catch (System.Exception ex)
         {
-            Logger.LogError($"DataManager: Exception during SaveGame: {ex.Message}");
+            Logger.LogError($"DataManager: Exception during SaveGame: {ex.Message}", Logger.LogCategory.General);
         }
     }
 
@@ -145,11 +145,11 @@ public class DataManager : MonoBehaviour
         // Vérifier si le changement de pas est suspicieusement élevé
         if (PlayerData.LastStepsDelta > MAX_ACCEPTABLE_STEPS_DELTA)
         {
-            Logger.LogWarning($"DataManager: Suspicious step delta detected: {PlayerData.LastStepsDelta} > {MAX_ACCEPTABLE_STEPS_DELTA}");
+            Logger.LogWarning($"DataManager: Suspicious step delta detected: {PlayerData.LastStepsDelta} > {MAX_ACCEPTABLE_STEPS_DELTA}", Logger.LogCategory.StepLog);
 
             // Restaurer une valeur plus raisonnable
             long newSteps = PlayerData.TotalSteps - PlayerData.LastStepsDelta + MAX_ACCEPTABLE_STEPS_DELTA;
-            Logger.LogWarning($"DataManager: Capping steps from {PlayerData.TotalSteps} to {newSteps}");
+            Logger.LogWarning($"DataManager: Capping steps from {PlayerData.TotalSteps} to {newSteps}", Logger.LogCategory.StepLog);
 
             // Réinitialiser le nombre de pas et le delta
             PlayerData.TotalPlayerSteps = newSteps;
@@ -159,7 +159,7 @@ public class DataManager : MonoBehaviour
         // Vérifier si les pas quotidiens sont suspicieusement élevés
         if (PlayerData.DailySteps > MAX_ACCEPTABLE_DAILY_STEPS)
         {
-            Logger.LogWarning($"DataManager: Suspicious daily steps detected: {PlayerData.DailySteps} > {MAX_ACCEPTABLE_DAILY_STEPS}");
+            Logger.LogWarning($"DataManager: Suspicious daily steps detected: {PlayerData.DailySteps} > {MAX_ACCEPTABLE_DAILY_STEPS}", Logger.LogCategory.StepLog);
             PlayerData.DailySteps = MAX_ACCEPTABLE_DAILY_STEPS;
         }
 
@@ -172,7 +172,7 @@ public class DataManager : MonoBehaviour
                              $"LastSync: {LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastSyncEpochMs)}, " +
                              $"LastPause: {LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastPauseEpochMs)}, " +
                              $"LastChange: {LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastStepsChangeEpochMs)}, " +
-                             $"Now: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}. Resetting to now.");
+                             $"Now: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}. Resetting to now.", Logger.LogCategory.General);
 
             PlayerData.LastSyncEpochMs = nowEpochMs;
             PlayerData.LastPauseEpochMs = nowEpochMs;
@@ -184,7 +184,7 @@ public class DataManager : MonoBehaviour
     {
         if (PlayerData != null)
         {
-            Logger.LogInfo("DataManager: Application quitting, ensuring data is saved.");
+            Logger.LogInfo("DataManager: Application quitting, ensuring data is saved.", Logger.LogCategory.General);
             SaveGame();
         }
 
