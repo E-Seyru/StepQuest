@@ -22,7 +22,7 @@ public class LocationRegistry : ScriptableObject
     {
         if (string.IsNullOrEmpty(locationId))
         {
-            Logger.LogError("LocationRegistry: GetLocationById called with null/empty ID");
+            Logger.LogError("LocationRegistry: GetLocationById called with null/empty ID", Logger.LogCategory.MapLog);
             return null;
         }
 
@@ -30,7 +30,7 @@ public class LocationRegistry : ScriptableObject
 
         if (location == null)
         {
-            Logger.LogError($"LocationRegistry: Location with ID '{locationId}' not found!");
+            Logger.LogError($"LocationRegistry: Location with ID '{locationId}' not found!", Logger.LogCategory.MapLog);
         }
 
         return location;
@@ -155,7 +155,7 @@ public class LocationRegistry : ScriptableObject
                              string.Join("\n", issues);
         }
 
-        Logger.LogInfo($"LocationRegistry: Validation complete. {issues.Count} issue(s) found.");
+        Logger.LogInfo($"LocationRegistry: Validation complete. {issues.Count} issue(s) found.", Logger.LogCategory.MapLog);
     }
 
 #if UNITY_EDITOR

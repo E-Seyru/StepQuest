@@ -31,7 +31,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
         if (mapManager == null)
         {
-            Logger.LogError($"POI ({LocationID}): MapManager not found!");
+            Logger.LogError($"POI ({LocationID}): MapManager not found!", Logger.LogCategory.MapLog);
             return;
         }
 
@@ -51,7 +51,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
         if (enableDebugLogs)
         {
-            Logger.LogInfo($"POI: Initialized POI for location '{LocationID}' at position ({transform.position.x}, {transform.position.y})");
+            Logger.LogInfo($"POI: Initialized POI for location '{LocationID}' at position ({transform.position.x}, {transform.position.y})", Logger.LogCategory.MapLog);
         }
     }
 
@@ -82,19 +82,19 @@ public class POI : MonoBehaviour, IPointerClickHandler
     {
         if (mapManager == null)
         {
-            Logger.LogError($"POI ({LocationID}): MapManager is null!");
+            Logger.LogError($"POI ({LocationID}): MapManager is null!", Logger.LogCategory.MapLog);
             return;
         }
 
         if (string.IsNullOrEmpty(LocationID))
         {
-            Logger.LogError($"POI: LocationID is not set!");
+            Logger.LogError($"POI: LocationID is not set!", Logger.LogCategory.MapLog);
             return;
         }
 
         if (enableDebugLogs)
         {
-            Logger.LogInfo($"POI: Clicked on POI '{LocationID}'");
+            Logger.LogInfo($"POI: Clicked on POI '{LocationID}'", Logger.LogCategory.MapLog);
         }
 
         // Check if this is the current location
@@ -102,7 +102,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
         {
             if (enableDebugLogs)
             {
-                Logger.LogInfo($"POI ({LocationID}): Already at this location!");
+                Logger.LogInfo($"POI ({LocationID}): Already at this location!", Logger.LogCategory.MapLog);
             }
             // TODO: Maybe open location panel instead of travel panel
             return;
@@ -131,7 +131,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
             spriteRenderer.color = highlightColor;
             if (enableDebugLogs)
             {
-                Logger.LogInfo($"POI ({LocationID}): This is the current location");
+                Logger.LogInfo($"POI ({LocationID}): This is the current location", Logger.LogCategory.MapLog);
             }
         }
         else if (canTravelHere)
@@ -153,7 +153,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
         // On ne logue que si CE POI est impliqué
         if (newLocation != null && newLocation.LocationID == LocationID)
         {
-            Logger.LogInfo($"POI ({LocationID}): Le joueur est maintenant ici.");
+            Logger.LogInfo($"POI ({LocationID}): Le joueur est maintenant ici.", Logger.LogCategory.MapLog);
         }
         UpdateVisualState();
     }
@@ -162,7 +162,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     {
         if (enableDebugLogs && destinationId == LocationID)
         {
-            Logger.LogInfo($"POI ({LocationID}): Travel started toward this location!");
+            Logger.LogInfo($"POI ({LocationID}): Travel started toward this location!", Logger.LogCategory.MapLog);
         }
         UpdateVisualState();
     }
@@ -171,7 +171,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     {
         if (enableDebugLogs && arrivedLocationId == LocationID)
         {
-            Logger.LogInfo($"POI ({LocationID}): Player arrived at this location!");
+            Logger.LogInfo($"POI ({LocationID}): Player arrived at this location!", Logger.LogCategory.MapLog);
         }
         UpdateVisualState();
     }
@@ -197,7 +197,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     {
         if (string.IsNullOrEmpty(LocationID))
         {
-            Logger.LogWarning($"POI on GameObject '{gameObject.name}': LocationID is not set!");
+            Logger.LogWarning($"POI on GameObject '{gameObject.name}': LocationID is not set!", Logger.LogCategory.MapLog);
         }
 
         // Auto-assign SpriteRenderer if missing
