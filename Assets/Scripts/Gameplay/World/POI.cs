@@ -146,43 +146,58 @@ public class POI : MonoBehaviour, IPointerClickHandler
             return;
 
         bool isPlayerCurrentlyTraveling = dataManager.PlayerData.IsCurrentlyTraveling();
-        // When traveling, MapManager.CurrentLocation is the DEPARTURE point.
-        // When not traveling, MapManager.CurrentLocation is the actual current location.
-        MapLocationDefinition referenceLocationForConnectivity = mapManager.CurrentLocation;
+        MapLocationDefinition referenceLocation = mapManager.CurrentLocation; // Actual current location or departure location
 
-        isCurrentLocation = false; // Reset for this update
-        canTravelHere = false;   // Reset for this update
+        isCurrentLocation = false; // Default to false
+        canTravelHere = false;   // Default to false
 
         if (isPlayerCurrentlyTraveling)
         {
-            // Player is traveling. No POI is "current" in terms of being highlighted.
-            // Color is based on connectivity to the DEPARTURE location.
-            if (referenceLocationForConnectivity != null &&
-                referenceLocationForConnectivity.LocationID != this.LocationID && // Not the departure POI itself
-                !locationRegistry.CanTravelBetween(referenceLocationForConnectivity.LocationID, this.LocationID))
+            // Player is traveling. No POI is "current". New travel cannot be initiated.
+            isCurrentLocation = false;
+            canTravelHere = false;
+
+            if (referenceLocation == null) // Should not happen if traveling, but good practice
             {
                 spriteRenderer.color = unavailableColor;
+                return;
+            }
+
+            // `referenceLocation` is the DEPARTURE point.
+            if (referenceLocation.LocationID == this.LocationID)
+            {
+                // This POI is the departure POI.
+                spriteRenderer.color = normalColor;
             }
             else
             {
-                // This includes the departure POI itself and anything connected to it.
-                spriteRenderer.color = normalColor;
+                // This POI is not the departure POI.
+                // Check connectivity to the departure POI.
+                if (locationRegistry.CanTravelBetween(referenceLocation.LocationID, this.LocationID))
+                {
+                    spriteRenderer.color = normalColor;
+                }
+                else
+                {
+                    spriteRenderer.color = unavailableColor;
+                }
             }
-            // `canTravelHere` remains false as new travel cannot be initiated.
         }
         else // Player is NOT traveling
         {
-            if (referenceLocationForConnectivity != null && referenceLocationForConnectivity.LocationID == this.LocationID)
+            if (referenceLocation != null && referenceLocation.LocationID == this.LocationID)
             {
                 // This POI is the player's current, actual location.
                 isCurrentLocation = true;
-                // canTravelHere remains false (cannot travel to where you are).
+                canTravelHere = false; // Cannot travel to where you currently are.
                 spriteRenderer.color = highlightColor;
             }
             else
             {
                 // This POI is not the player's current location.
+                isCurrentLocation = false;
                 // Check if travel can be initiated from the player's actual current location to this POI.
+                // `mapManager.CanTravelTo` implicitly uses `mapManager.CurrentLocation` (which is actual current)
                 canTravelHere = mapManager.CanTravelTo(this.LocationID);
 
                 if (canTravelHere)
@@ -191,7 +206,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
                 }
                 else
                 {
-                    // This means it's not connected to player's current location, or some other rule prevents travel.
+                    // Not connected to player's current location, or other rule prevents travel.
                     spriteRenderer.color = unavailableColor;
                 }
             }
