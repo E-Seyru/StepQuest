@@ -1,4 +1,4 @@
-﻿// Purpose: Clickable POI on the world map that triggers travel
+﻿// Purpose: Clickable POI on the world map that shows travel confirmation popup
 // Filepath: Assets/Scripts/Gameplay/World/POI.cs
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -9,7 +9,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
     [Header("Location Settings")]
     [Tooltip("The ID that matches your MapLocationDefinition")]
     public string LocationID;
-
 
     [Header("Visual Feedback")]
     [SerializeField] private SpriteRenderer spriteRenderer;
@@ -22,8 +21,9 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     // Internal state
     private MapManager mapManager;
-    private DataManager dataManager; // Added DataManager reference
-    private LocationRegistry locationRegistry; // Added LocationRegistry reference
+    private DataManager dataManager;
+    private LocationRegistry locationRegistry;
+    private TravelConfirmationPopup travelPopup; // NOUVEAU : Référence vers la popup
 
     private bool isCurrentLocation = false;
     private bool canTravelHere = false;
@@ -32,30 +32,33 @@ public class POI : MonoBehaviour, IPointerClickHandler
     {
         // Get MapManager reference
         mapManager = MapManager.Instance;
-        dataManager = DataManager.Instance; // Get DataManager reference
+        dataManager = DataManager.Instance;
 
         if (mapManager == null)
         {
             Logger.LogError($"POI ({LocationID}): MapManager not found!", Logger.LogCategory.MapLog);
-            // gameObject.SetActive(false); // Optionally disable if critical
             return;
         }
 
         if (dataManager == null)
         {
             Logger.LogError($"POI ({LocationID}): DataManager not found!", Logger.LogCategory.MapLog);
-            // gameObject.SetActive(false); // Optionally disable if critical
             return;
         }
 
-        locationRegistry = mapManager.LocationRegistry; // Get LocationRegistry from MapManager
+        locationRegistry = mapManager.LocationRegistry;
         if (locationRegistry == null)
         {
             Logger.LogError($"POI ({LocationID}): LocationRegistry not found via MapManager!", Logger.LogCategory.MapLog);
-            // gameObject.SetActive(false); // Optionally disable if critical
             return;
         }
 
+        // NOUVEAU : Obtenir la référence vers la popup de voyage
+        travelPopup = TravelConfirmationPopup.Instance;
+        if (travelPopup == null)
+        {
+            Logger.LogWarning($"POI ({LocationID}): TravelConfirmationPopup not found! POI will use direct travel instead.", Logger.LogCategory.MapLog);
+        }
 
         // Get SpriteRenderer if not assigned
         if (spriteRenderer == null)
@@ -64,7 +67,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
             if (spriteRenderer == null)
             {
                 Logger.LogError($"POI ({LocationID}): SpriteRenderer component not found!", Logger.LogCategory.MapLog);
-                // gameObject.SetActive(false); // Optionally disable if critical
                 return;
             }
         }
@@ -133,11 +135,88 @@ public class POI : MonoBehaviour, IPointerClickHandler
                 Logger.LogInfo($"POI ({LocationID}): Already at this location!", Logger.LogCategory.MapLog);
             }
             // TODO: Maybe open location panel instead of travel panel
+            ShowLocationDetails(); // NOUVEAU : Optionnel - montrer les détails de la location actuelle
             return;
         }
 
-        // Call MapManager to handle the click
-        mapManager.OnPOIClicked(LocationID);
+        // MODIFIÉ : Vérifier si le voyage est possible avant d'ouvrir la popup
+        if (mapManager.CanTravelTo(LocationID))
+        {
+            // NOUVEAU : Ouvrir la popup de confirmation au lieu de démarrer directement le voyage
+            if (travelPopup != null)
+            {
+                if (enableDebugLogs)
+                {
+                    Logger.LogInfo($"POI ({LocationID}): Opening travel confirmation popup", Logger.LogCategory.MapLog);
+                }
+                travelPopup.ShowTravelConfirmation(LocationID);
+            }
+            else
+            {
+                // Fallback : si la popup n'est pas disponible, utiliser l'ancien comportement
+                Logger.LogWarning($"POI ({LocationID}): TravelConfirmationPopup not available, starting travel directly", Logger.LogCategory.MapLog);
+                mapManager.StartTravel(LocationID);
+            }
+        }
+        else
+        {
+            // AMÉLIORÉ : Donner plus de feedback quand le voyage n'est pas possible
+            ShowTravelUnavailableMessage();
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU : Affiche un message ou des détails quand le voyage n'est pas possible
+    /// </summary>
+    private void ShowTravelUnavailableMessage()
+    {
+        var destinationLocation = locationRegistry.GetLocationById(LocationID);
+        string reason = "raison inconnue";
+
+        if (mapManager.CurrentLocation == null)
+        {
+            reason = "aucune location de joueur définie.";
+        }
+        else if (dataManager.PlayerData.IsCurrentlyTraveling())
+        {
+            reason = $"déjà en voyage vers {dataManager.PlayerData.TravelDestinationId}.";
+        }
+        else if (destinationLocation == null)
+        {
+            reason = $"destination '{LocationID}' introuvable.";
+        }
+        else if (mapManager.CurrentLocation.LocationID == LocationID)
+        {
+            reason = $"déjà à '{destinationLocation.DisplayName}'.";
+        }
+        else if (!locationRegistry.CanTravelBetween(mapManager.CurrentLocation.LocationID, LocationID))
+        {
+            reason = $"pas connecté à '{destinationLocation.DisplayName}'.";
+        }
+
+        Logger.LogInfo($"POI ({LocationID}): Voyage impossible vers '{destinationLocation?.DisplayName ?? LocationID}'. Raison: {reason}", Logger.LogCategory.MapLog);
+
+        // TODO: Optionnel - Afficher un message UI temporaire au joueur
+        // ShowTemporaryMessage($"Impossible de voyager vers {destinationLocation?.DisplayName ?? LocationID}: {reason}");
+    }
+
+    /// <summary>
+    /// NOUVEAU : Optionnel - Affiche les détails de la location actuelle
+    /// </summary>
+    private void ShowLocationDetails()
+    {
+        var currentLocation = locationRegistry.GetLocationById(LocationID);
+        if (currentLocation != null)
+        {
+            if (enableDebugLogs)
+            {
+                Logger.LogInfo($"POI ({LocationID}): Showing details for current location: {currentLocation.DisplayName}", Logger.LogCategory.MapLog);
+            }
+
+            // TODO: Ouvrir un panneau de détails de la location actuelle
+            // ou afficher des informations sur les activités disponibles
+            // LocationDetailsPanel.Instance?.ShowLocationDetails(currentLocation);
+        }
     }
 
     private void UpdateVisualState()
@@ -146,10 +225,10 @@ public class POI : MonoBehaviour, IPointerClickHandler
             return;
 
         bool isPlayerCurrentlyTraveling = dataManager.PlayerData.IsCurrentlyTraveling();
-        MapLocationDefinition referenceLocation = mapManager.CurrentLocation; // Actual current location or departure location
+        MapLocationDefinition referenceLocation = mapManager.CurrentLocation;
 
-        isCurrentLocation = false; // Default to false
-        canTravelHere = false;   // Default to false
+        isCurrentLocation = false;
+        canTravelHere = false;
 
         if (isPlayerCurrentlyTraveling)
         {
@@ -157,7 +236,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
             isCurrentLocation = false;
             canTravelHere = false;
 
-            if (referenceLocation == null) // Should not happen if traveling, but good practice
+            if (referenceLocation == null)
             {
                 spriteRenderer.color = unavailableColor;
                 return;
@@ -189,15 +268,13 @@ public class POI : MonoBehaviour, IPointerClickHandler
             {
                 // This POI is the player's current, actual location.
                 isCurrentLocation = true;
-                canTravelHere = false; // Cannot travel to where you currently are.
+                canTravelHere = false;
                 spriteRenderer.color = highlightColor;
             }
             else
             {
                 // This POI is not the player's current location.
                 isCurrentLocation = false;
-                // Check if travel can be initiated from the player's actual current location to this POI.
-                // `mapManager.CanTravelTo` implicitly uses `mapManager.CurrentLocation` (which is actual current)
                 canTravelHere = mapManager.CanTravelTo(this.LocationID);
 
                 if (canTravelHere)
@@ -206,7 +283,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
                 }
                 else
                 {
-                    // Not connected to player's current location, or other rule prevents travel.
                     spriteRenderer.color = unavailableColor;
                 }
             }
@@ -215,8 +291,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     private void OnPlayerLocationChanged(MapLocationDefinition newLocation)
     {
-        // This event fires when travel completes and player is at a new location.
-        // Or if the location changes by other means (e.g. teleport).
         if (enableDebugLogs && newLocation != null && newLocation.LocationID == LocationID)
         {
             Logger.LogInfo($"POI ({LocationID}): Player's location is now here.", Logger.LogCategory.MapLog);
@@ -226,35 +300,29 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     private void OnTravelStarted(string destinationId)
     {
-        // This event fires when travel *begins*.
         if (enableDebugLogs && destinationId == LocationID)
         {
             Logger.LogInfo($"POI ({LocationID}): Travel started TOWARD this location!", Logger.LogCategory.MapLog);
         }
-        // All POIs need to update their state because player is now "in transit".
         UpdateVisualState();
     }
 
     private void OnTravelCompleted(string arrivedLocationId)
     {
-        // This event fires when travel *ends*.
         if (enableDebugLogs && arrivedLocationId == LocationID)
         {
             Logger.LogInfo($"POI ({LocationID}): Player ARRIVED at this location!", Logger.LogCategory.MapLog);
         }
-        // All POIs need to update their state, especially the one arrived at.
         UpdateVisualState();
     }
 
     // Visual feedback for mouse hover (optional)
     void OnMouseEnter()
     {
-        // Only apply hover effect if not the current location and sprite is available
         if (spriteRenderer != null && !isCurrentLocation && !dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            if (spriteRenderer.color == normalColor) // Only highlight if it's normally interactable
+            if (spriteRenderer.color == normalColor)
             {
-                // Slightly brighten the sprite
                 Color currentColor = spriteRenderer.color;
                 spriteRenderer.color = new Color(currentColor.r * 1.2f, currentColor.g * 1.2f, currentColor.b * 1.2f, currentColor.a);
             }
@@ -263,7 +331,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     void OnMouseExit()
     {
-        // Restore normal color state, don't just assume normalColor
         UpdateVisualState();
     }
 
@@ -272,11 +339,9 @@ public class POI : MonoBehaviour, IPointerClickHandler
     {
         if (string.IsNullOrEmpty(LocationID))
         {
-            // Using Unity's Debug.LogWarning for OnValidate as Logger might not be fully initialized in editor.
             Debug.LogWarning($"POI on GameObject '{gameObject.name}': LocationID is not set!");
         }
 
-        // Auto-assign SpriteRenderer if missing
         if (spriteRenderer == null)
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
@@ -286,13 +351,8 @@ public class POI : MonoBehaviour, IPointerClickHandler
     // Debug visualization in Scene view
     void OnDrawGizmosSelected()
     {
-        // Draw a circle around the POI when selected
-        // Gizmos color might not perfectly reflect runtime 'canTravelHere' due to editor context
         Gizmos.color = (spriteRenderer != null && spriteRenderer.color == normalColor) ? Color.green : Color.red;
         Gizmos.DrawWireSphere(transform.position, 0.5f);
-
-        // Draw location ID as text in scene view
-
 
 #if UNITY_EDITOR
         if (!string.IsNullOrEmpty(LocationID))
