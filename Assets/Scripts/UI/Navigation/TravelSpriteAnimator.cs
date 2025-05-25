@@ -8,6 +8,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     [SerializeField] private GameObject travelSprite; // Le sprite qui se déplace
     [SerializeField] private float spriteScale = 1f; // Taille du sprite
     [SerializeField] private Vector3 spriteOffset = Vector3.zero; // Décalage par rapport au trajet
+    [SerializeField] private Transform spriteVisual;
 
     [Header("Animation Settings")]
     [SerializeField] private float animationDuration = 0.5f; // Durée des mouvements LeanTween
@@ -316,14 +317,16 @@ public class TravelSpriteAnimator : MonoBehaviour
     /// </summary>
     private void StartBounceAnimation()
     {
-        if (travelSprite == null) return;
+        if (spriteVisual == null) return;
 
-        StopBounceAnimation(); // S'assurer qu'il n'y a pas d'animation en cours
+        // stoppe toute animation résiduelle
+        LeanTween.cancel(spriteVisual.gameObject);
+        spriteVisual.localPosition = Vector3.zero;    // point de repos
 
-        Vector3 originalPos = travelSprite.transform.position;
-        Vector3 bouncePos = originalPos + Vector3.up * bounceHeight;
-
-        currentBounceId = LeanTween.moveY(travelSprite, bouncePos.y, 1f / bounceSpeed)
+        currentBounceId = LeanTween
+            .moveLocalY(spriteVisual.gameObject,       // le child, pas le parent !
+                        bounceHeight,
+                        0.5f / bounceSpeed)           // demi-période
             .setEase(LeanTweenType.easeInOutSine)
             .setLoopPingPong()
             .id;
@@ -335,10 +338,11 @@ public class TravelSpriteAnimator : MonoBehaviour
     private void StopBounceAnimation()
     {
         if (currentBounceId >= 0)
-        {
             LeanTween.cancel(currentBounceId);
-            currentBounceId = -1;
-        }
+
+        currentBounceId = -1;
+        if (spriteVisual != null)                     // remet au repos
+            spriteVisual.localPosition = Vector3.zero;
     }
 
     /// <summary>
