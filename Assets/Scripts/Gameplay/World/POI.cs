@@ -10,6 +10,13 @@ public class POI : MonoBehaviour, IPointerClickHandler
     [Tooltip("The ID that matches your MapLocationDefinition")]
     public string LocationID;
 
+    [Header("Travel Path Settings")]
+    [Tooltip("Custom starting point for travel path. If null, uses POI center.")]
+    [SerializeField] private Transform travelPathStartPoint;
+    [Tooltip("Visual representation of the travel start point in editor")]
+    [SerializeField] private bool showTravelStartPoint = true;
+    [SerializeField] private Color travelStartPointColor = Color.cyan;
+
     [Header("Visual Feedback")]
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private Color normalColor = Color.white;
@@ -27,6 +34,34 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     private bool isCurrentLocation = false;
     private bool canTravelHere = false;
+
+    /// <summary>
+    /// Retourne la position de départ pour le chemin de voyage
+    /// </summary>
+    public Vector3 GetTravelPathStartPosition()
+    {
+        if (travelPathStartPoint != null)
+        {
+            return travelPathStartPoint.position;
+        }
+        return transform.position; // Fallback vers le centre du POI
+    }
+
+    /// <summary>
+    /// Retourne la position actuelle du point de départ (pour vérification dans l'éditeur)
+    /// </summary>
+    public Vector3 GetTravelPathStartPoint()
+    {
+        return GetTravelPathStartPosition();
+    }
+
+    /// <summary>
+    /// Définit un nouveau point de départ pour le chemin de voyage
+    /// </summary>
+    public void SetTravelPathStartPoint(Transform newStartPoint)
+    {
+        travelPathStartPoint = newStartPoint;
+    }
 
     void Start()
     {
@@ -81,7 +116,8 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
         if (enableDebugLogs)
         {
-            Logger.LogInfo($"POI: Initialized POI for location '{LocationID}' at position ({transform.position.x}, {transform.position.y})", Logger.LogCategory.MapLog);
+            Vector3 startPos = GetTravelPathStartPosition();
+            Logger.LogInfo($"POI: Initialized POI for location '{LocationID}' at position ({transform.position.x}, {transform.position.y}). Travel start point: ({startPos.x}, {startPos.y})", Logger.LogCategory.MapLog);
         }
     }
 
@@ -351,13 +387,37 @@ public class POI : MonoBehaviour, IPointerClickHandler
     // Debug visualization in Scene view
     void OnDrawGizmosSelected()
     {
+        // POI Gizmo
         Gizmos.color = (spriteRenderer != null && spriteRenderer.color == normalColor) ? Color.green : Color.red;
         Gizmos.DrawWireSphere(transform.position, 0.5f);
+
+        // Travel Start Point Gizmo
+        if (showTravelStartPoint)
+        {
+            Vector3 startPos = GetTravelPathStartPosition();
+            Gizmos.color = travelStartPointColor;
+            Gizmos.DrawWireSphere(startPos, 0.3f);
+
+            // Ligne entre le POI et son point de départ si différents
+            if (travelPathStartPoint != null)
+            {
+                Gizmos.color = Color.white;
+                Gizmos.DrawLine(transform.position, startPos);
+            }
+        }
 
 #if UNITY_EDITOR
         if (!string.IsNullOrEmpty(LocationID))
         {
             UnityEditor.Handles.Label(transform.position + Vector3.up * 0.7f, LocationID);
+
+            // Label pour le point de départ si différent
+            if (travelPathStartPoint != null && showTravelStartPoint)
+            {
+                Vector3 startPos = GetTravelPathStartPosition();
+                UnityEditor.Handles.color = travelStartPointColor;
+                UnityEditor.Handles.Label(startPos + Vector3.up * 0.5f, "Start");
+            }
         }
 #endif
     }

@@ -164,9 +164,9 @@ public class TravelSpriteAnimator : MonoBehaviour
             return;
         }
 
-        // Trouver les positions des POI dans le monde
-        startPosition = FindPOIPosition(mapManager.CurrentLocation.LocationID);
-        endPosition = FindPOIPosition(destinationId);
+        // Trouver les positions des POI dans le monde (en utilisant les points de départ personnalisés)
+        startPosition = FindPOITravelStartPosition(mapManager.CurrentLocation.LocationID);
+        endPosition = FindPOITravelStartPosition(destinationId);
 
         // Ajouter les offsets
         startPosition += spriteOffset;
@@ -176,7 +176,34 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// Trouve la position d'un POI dans le monde par son LocationID
+    /// MODIFIÉ: Trouve la position de départ pour le voyage d'un POI dans le monde par son LocationID
+    /// Utilise maintenant GetTravelPathStartPosition() au lieu de la position du transform
+    /// </summary>
+    private Vector3 FindPOITravelStartPosition(string locationId)
+    {
+        // Chercher tous les POI dans la scène
+        POI[] allPOIs = FindObjectsOfType<POI>();
+
+        Logger.LogInfo($"TravelSpriteAnimator: Looking for POI with LocationID '{locationId}' among {allPOIs.Length} POIs", Logger.LogCategory.MapLog);
+
+        foreach (POI poi in allPOIs)
+        {
+            if (poi.LocationID == locationId)
+            {
+                // NOUVEAU: Utilise la méthode GetTravelPathStartPosition() du POI
+                Vector3 startPos = poi.GetTravelPathStartPosition();
+                Logger.LogInfo($"TravelSpriteAnimator: Found POI '{locationId}' at travel start position {startPos}", Logger.LogCategory.MapLog);
+                return startPos;
+            }
+        }
+
+        // Si on ne trouve pas le POI, retourner une position par défaut
+        Logger.LogWarning($"TravelSpriteAnimator: POI not found for location {locationId}. Available POIs: {string.Join(", ", System.Array.ConvertAll(allPOIs, p => p.LocationID))}", Logger.LogCategory.MapLog);
+        return Vector3.zero;
+    }
+
+    /// <summary>
+    /// ANCIEN: Trouve la position d'un POI dans le monde par son LocationID (garde pour compatibilité si besoin)
     /// </summary>
     private Vector3 FindPOIPosition(string locationId)
     {
@@ -215,22 +242,36 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// Positionne le personnage à sa location actuelle (au démarrage du jeu)
+    /// MODIFIÉ: Positionne le personnage à sa location actuelle (au démarrage du jeu)
+    /// Utilise maintenant le point de départ personnalisé
     /// </summary>
     public void PositionPlayerAtCurrentLocation()
     {
         if (mapManager?.CurrentLocation == null || travelSprite == null)
         {
+            Logger.LogWarning("TravelSpriteAnimator: Cannot position player - mapManager.CurrentLocation or travelSprite is null", Logger.LogCategory.MapLog);
             return;
         }
 
-        Vector3 currentPos = FindPOIPosition(mapManager.CurrentLocation.LocationID);
+        // MODIFIÉ: Utilise FindPOITravelStartPosition au lieu de FindPOIPosition
+        Vector3 currentPos = FindPOITravelStartPosition(mapManager.CurrentLocation.LocationID);
+
+        // Vérifier si on a trouvé une position valide
+        if (currentPos == Vector3.zero)
+        {
+            Logger.LogError($"TravelSpriteAnimator: Could not find valid position for location '{mapManager.CurrentLocation.LocationID}'. Trying fallback method.", Logger.LogCategory.MapLog);
+            // Fallback vers l'ancienne méthode
+            currentPos = FindPOIPosition(mapManager.CurrentLocation.LocationID);
+        }
+
         currentPos += spriteOffset;
+
+        Logger.LogInfo($"TravelSpriteAnimator: Positioning player at {currentPos} for location {mapManager.CurrentLocation.DisplayName}", Logger.LogCategory.MapLog);
 
         travelSprite.transform.position = currentPos;
         travelSprite.SetActive(true);
 
-        Logger.LogInfo($"TravelSpriteAnimator: Player positioned at {mapManager.CurrentLocation.DisplayName}", Logger.LogCategory.MapLog);
+        Logger.LogInfo($"TravelSpriteAnimator: Player positioned at {mapManager.CurrentLocation.DisplayName}. Sprite active: {travelSprite.activeSelf}", Logger.LogCategory.MapLog);
     }
 
     /// <summary>
