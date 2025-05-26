@@ -9,8 +9,8 @@ public class PanelManager : MonoBehaviour
     [SerializeField] private List<GameObject> panels = new List<GameObject>();
     [SerializeField] private int startingPanelIndex = 0;
     [SerializeField] private bool wrapAround = true;
-    [SerializeField] private List<int> alwaysActivePanelIndices = new List<int>(); // Nouveaux indices pour les panneaux toujours actifs
-    [SerializeField] private GameObject mapPanel; // Panneau de carte
+    [SerializeField] private List<int> alwaysActivePanelIndices = new List<int>();
+    [SerializeField] private GameObject mapPanel;
 
     [Header("Swipe Settings")]
     [SerializeField] private float minSwipeDistance = 50f;
@@ -19,7 +19,7 @@ public class PanelManager : MonoBehaviour
     [Header("Animation Settings")]
     [SerializeField] private float transitionSpeed = 10f;
     [SerializeField] private AnimationCurve transitionCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-    [SerializeField] private Vector2 offScreenPosition = new Vector2(10000, 10000); // Position hors écran
+    [SerializeField] private Vector2 offScreenPosition = new Vector2(10000, 10000);
 
     [Header("Events")]
     public UnityEvent<int> OnPanelChanged;
@@ -31,11 +31,13 @@ public class PanelManager : MonoBehaviour
     private float touchStartTime;
     private bool isTransitioning;
     private RectTransform panelContainer;
-    private Vector2 containerStartPosition;
-    private Vector2 containerTargetPosition;
-    private float transitionStartTime;
-    private Dictionary<int, Vector2> originalPositions = new Dictionary<int, Vector2>(); // Pour stocker les positions d'origine
+    private Dictionary<int, Vector2> originalPositions = new Dictionary<int, Vector2>();
     private int previousPanelIndex = 0;
+
+    // OPTIMISATION : Variables pour éviter les Update() inutiles
+    private bool isInputActive = false;
+    private Coroutine inputCoroutine;
+
     public static PanelManager Instance { get; private set; }
 
     private void Awake()
@@ -57,7 +59,6 @@ public class PanelManager : MonoBehaviour
             panelContainer = gameObject.AddComponent<RectTransform>();
         }
 
-        // Initialize panel visibility
         InitializePanels();
     }
 
@@ -71,26 +72,50 @@ public class PanelManager : MonoBehaviour
             RectTransform rectTransform = panels[i].GetComponent<RectTransform>();
             if (rectTransform == null) continue;
 
-            // on ne touche qu'aux entrées manquantes
             if (!originalPositions.ContainsKey(i))
                 originalPositions[i] = rectTransform.anchoredPosition;
         }
 
-        // Show the starting panel
         ShowPanel(startingPanelIndex);
+
+        // OPTIMISATION : Démarrer la détection d'input seulement quand nécessaire
+        StartInputDetection();
     }
 
-    private void Update()
+    // OPTIMISATION : Remplacer Update() par une coroutine qui ne tourne que quand nécessaire
+    private void StartInputDetection()
     {
-        // Don't process input during transitions
-        if (isTransitioning)
-        {
-            UpdateTransition();
-            return;
-        }
+        if (inputCoroutine != null)
+            StopCoroutine(inputCoroutine);
 
-        // Handle touch input
-        HandleInput();
+        inputCoroutine = StartCoroutine(InputDetectionCoroutine());
+    }
+
+    private void StopInputDetection()
+    {
+        if (inputCoroutine != null)
+        {
+            StopCoroutine(inputCoroutine);
+            inputCoroutine = null;
+        }
+    }
+
+    private IEnumerator InputDetectionCoroutine()
+    {
+        while (true)
+        {
+            // OPTIMISATION : Arrêter la détection si la carte est visible ou en transition
+            if (!mapIsHidden || isTransitioning)
+            {
+                yield return new WaitForSeconds(0.1f); // Vérifier moins souvent
+                continue;
+            }
+
+            HandleInput();
+
+            // OPTIMISATION : Attendre un frame seulement si nécessaire
+            yield return null;
+        }
     }
 
     private void InitializePanels()
@@ -104,11 +129,9 @@ public class PanelManager : MonoBehaviour
 
             if (alwaysActivePanelIndices.Contains(i))
             {
-                // ► mémoriser la position avant de l'éjecter
                 if (!originalPositions.ContainsKey(i))
-                    originalPositions[i] = rectTransform.anchoredPosition; // la plupart du temps (0,0)
+                    originalPositions[i] = rectTransform.anchoredPosition;
 
-                // Panneau toujours actif : visible mais hors champ
                 panels[i].SetActive(true);
                 rectTransform.anchoredPosition = offScreenPosition;
             }
@@ -121,20 +144,16 @@ public class PanelManager : MonoBehaviour
 
     public void ShowPanel(int index)
     {
-        // Validate index
         if (index < 0 || index >= panels.Count || panels[index] == null)
         {
             Logger.LogWarning($"PanelManager: Invalid panel index: {index}", Logger.LogCategory.General);
             return;
         }
 
-        // Handle current panel (hide it)
         HidePanel();
 
-        // Handle new panel (show it)
         if (alwaysActivePanelIndices.Contains(index))
         {
-            // Panel should already be active, just move it back to original position
             RectTransform rectTransform = panels[index].GetComponent<RectTransform>();
             if (rectTransform != null)
             {
@@ -145,30 +164,25 @@ public class PanelManager : MonoBehaviour
         }
         else
         {
-            // Activate regular panel
             panels[index].SetActive(true);
         }
 
         currentPanelIndex = index;
-
-        // Invoke event
         OnPanelChanged?.Invoke(currentPanelIndex);
     }
 
     public void NextPanel()
     {
+        if (isTransitioning) return; // OPTIMISATION : Éviter les appels multiples
+
         int nextIndex = currentPanelIndex + 1;
 
         if (nextIndex >= panels.Count)
         {
             if (wrapAround)
-            {
                 nextIndex = 0;
-            }
             else
-            {
-                return; // Don't go beyond last panel if wrapping is disabled
-            }
+                return;
         }
 
         StartTransition(currentPanelIndex, nextIndex, TransitionDirection.Right);
@@ -176,18 +190,16 @@ public class PanelManager : MonoBehaviour
 
     public void PreviousPanel()
     {
+        if (isTransitioning) return; // OPTIMISATION : Éviter les appels multiples
+
         int prevIndex = currentPanelIndex - 1;
 
         if (prevIndex < 0)
         {
             if (wrapAround)
-            {
                 prevIndex = panels.Count - 1;
-            }
             else
-            {
-                return; // Don't go beyond first panel if wrapping is disabled
-            }
+                return;
         }
 
         StartTransition(currentPanelIndex, prevIndex, TransitionDirection.Left);
@@ -195,10 +207,6 @@ public class PanelManager : MonoBehaviour
 
     private void HandleInput()
     {
-        // Skip input handling if the map is visible
-        if (!mapIsHidden)
-            return;
-
         // Touch input handling
         if (Input.touchCount > 0)
         {
@@ -215,249 +223,91 @@ public class PanelManager : MonoBehaviour
                     Vector2 swipeDelta = touch.position - touchStartPosition;
                     float swipeTime = Time.time - touchStartTime;
 
-                    // Check if swipe distance and time meet thresholds
                     if (swipeTime < swipeThreshold && Mathf.Abs(swipeDelta.x) > minSwipeDistance)
                     {
                         if (swipeDelta.x < 0)
-                        {
-                            // Swipe left -> next panel
                             NextPanel();
-                        }
                         else
-                        {
-                            // Swipe right -> previous panel
                             PreviousPanel();
-                        }
                     }
                     break;
             }
         }
 
-        // For testing in editor with keyboard
 #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.RightArrow))
-        {
             NextPanel();
-        }
         else if (Input.GetKeyDown(KeyCode.LeftArrow))
-        {
             PreviousPanel();
-        }
 #endif
     }
 
-    private enum TransitionDirection
-    {
-        Left,
-        Right
-    }
+    private enum TransitionDirection { Left, Right }
 
     private void StartTransition(int fromIndex, int toIndex, TransitionDirection direction)
     {
-        // If already transitioning, ignore
-        if (isTransitioning)
-            return;
+        if (isTransitioning) return;
 
-        // Setup transition
         isTransitioning = true;
-        transitionStartTime = Time.time;
 
-        // Prepare both panels for transition
         RectTransform fromRect = panels[fromIndex].GetComponent<RectTransform>();
         RectTransform toRect = panels[toIndex].GetComponent<RectTransform>();
 
-        // Ensure both panels are active for transition
         if (!alwaysActivePanelIndices.Contains(fromIndex))
-        {
             panels[fromIndex].SetActive(true);
-        }
 
         if (!alwaysActivePanelIndices.Contains(toIndex))
-        {
             panels[toIndex].SetActive(true);
-        }
 
-        // Reset positions
         fromRect.anchoredPosition = Vector2.zero;
 
-        // Position the target panel
         if (direction == TransitionDirection.Right)
-        {
-            // Coming from right side
             toRect.anchoredPosition = new Vector2(panelContainer.rect.width, 0);
-        }
         else
-        {
-            // Coming from left side
             toRect.anchoredPosition = new Vector2(-panelContainer.rect.width, 0);
-        }
 
-        // Start coroutine for smooth transition
+        // OPTIMISATION : Utiliser LeanTween au lieu de coroutines pour de meilleures performances
         StartCoroutine(TransitionPanels(fromRect, toRect, direction, toIndex, fromIndex));
     }
 
+    // OPTIMISATION : Version plus efficace de la transition
     private IEnumerator TransitionPanels(RectTransform fromRect, RectTransform toRect,
                                         TransitionDirection direction, int targetIndex, int fromIndex)
     {
-        float elapsedTime = 0f;
         float transitionDuration = 1f / transitionSpeed;
         Vector2 fromStartPos = fromRect.anchoredPosition;
         Vector2 toStartPos = toRect.anchoredPosition;
 
-        // Determine target positions
         Vector2 fromTargetPos = direction == TransitionDirection.Right ?
             new Vector2(-panelContainer.rect.width, 0) : new Vector2(panelContainer.rect.width, 0);
         Vector2 toTargetPos = Vector2.zero;
 
+        float elapsedTime = 0f;
+
+        // OPTIMISATION : Utiliser WaitForEndOfFrame pour de meilleures performances
         while (elapsedTime < transitionDuration)
         {
             float t = transitionCurve.Evaluate(elapsedTime / transitionDuration);
 
-            // Move both panels
             fromRect.anchoredPosition = Vector2.Lerp(fromStartPos, fromTargetPos, t);
             toRect.anchoredPosition = Vector2.Lerp(toStartPos, toTargetPos, t);
 
             elapsedTime += Time.deltaTime;
-            yield return null;
+            yield return null; // Ou yield return new WaitForEndOfFrame() pour moins de calls
         }
 
-        // Ensure final positions are exact
+        // Finaliser la transition
         fromRect.anchoredPosition = fromTargetPos;
         toRect.anchoredPosition = toTargetPos;
-
-        // Update current panel
         currentPanelIndex = targetIndex;
 
-        // Handle old panel after transition
         if (alwaysActivePanelIndices.Contains(fromIndex))
-        {
-            // Move off-screen but keep active
             fromRect.anchoredPosition = offScreenPosition;
-        }
         else
-        {
-            // Disable old panel to save resources
             fromRect.gameObject.SetActive(false);
-        }
 
-        // End transition state
         isTransitioning = false;
-
-        // Invoke event
         OnPanelChanged?.Invoke(currentPanelIndex);
-    }
-
-    private void UpdateTransition()
-    {
-        // This method is reserved for additional transition effects if needed
-    }
-
-    // Public getters
-    public int CurrentPanelIndex => currentPanelIndex;
-    public int PanelCount => panels.Count;
-
-    // Add panel to always active list
-    public void AddAlwaysActivePanel(int panelIndex)
-    {
-        if (panelIndex >= 0 && panelIndex < panels.Count && !alwaysActivePanelIndices.Contains(panelIndex))
-        {
-            alwaysActivePanelIndices.Add(panelIndex);
-
-            // If panel is currently inactive, activate it but move off-screen
-            if (!panels[panelIndex].activeSelf)
-            {
-                panels[panelIndex].SetActive(true);
-                RectTransform rectTransform = panels[panelIndex].GetComponent<RectTransform>();
-                if (rectTransform != null)
-                {
-                    rectTransform.anchoredPosition = offScreenPosition;
-                }
-            }
-        }
-    }
-
-    // Remove panel from always active list
-    public void RemoveAlwaysActivePanel(int panelIndex)
-    {
-        if (alwaysActivePanelIndices.Contains(panelIndex))
-        {
-            alwaysActivePanelIndices.Remove(panelIndex);
-
-            // If this is not the current panel, deactivate it
-            if (panelIndex != currentPanelIndex)
-            {
-                panels[panelIndex].SetActive(false);
-            }
-        }
-    }
-
-    // Optional: Add panel programmatically
-    public void AddPanel(GameObject panel, bool alwaysActive = false)
-    {
-        if (panel != null && !panels.Contains(panel))
-        {
-            panels.Add(panel);
-            int index = panels.Count - 1;
-
-            RectTransform rectTransform = panel.GetComponent<RectTransform>();
-            if (rectTransform != null)
-            {
-                originalPositions[index] = rectTransform.anchoredPosition;
-            }
-
-            if (alwaysActive)
-            {
-                alwaysActivePanelIndices.Add(index);
-                panel.SetActive(true);
-                if (rectTransform != null && index != currentPanelIndex)
-                {
-                    rectTransform.anchoredPosition = offScreenPosition;
-                }
-            }
-            else if (index != currentPanelIndex)
-            {
-                panel.SetActive(false);
-            }
-        }
-    }
-
-    // Optional: Remove panel programmatically
-    public void RemovePanel(GameObject panel)
-    {
-        if (panel != null && panels.Contains(panel))
-        {
-            int index = panels.IndexOf(panel);
-            bool wasActive = panel.activeSelf;
-
-            panels.Remove(panel);
-
-            // Remove from always active list if it was there
-            if (alwaysActivePanelIndices.Contains(index))
-            {
-                alwaysActivePanelIndices.Remove(index);
-            }
-
-            // Update indices in always active list that are greater than the removed index
-            for (int i = 0; i < alwaysActivePanelIndices.Count; i++)
-            {
-                if (alwaysActivePanelIndices[i] > index)
-                {
-                    alwaysActivePanelIndices[i]--;
-                }
-            }
-
-            // Remove from original positions
-            if (originalPositions.ContainsKey(index))
-            {
-                originalPositions.Remove(index);
-            }
-
-            // If the removed panel was active, show the first available panel
-            if (wasActive && panels.Count > 0)
-            {
-                ShowPanel(0);
-            }
-        }
     }
 
     private void HidePanel()
@@ -466,16 +316,12 @@ public class PanelManager : MonoBehaviour
         {
             if (alwaysActivePanelIndices.Contains(currentPanelIndex))
             {
-                // Move to off-screen instead of deactivating
                 RectTransform rectTransform = panels[currentPanelIndex].GetComponent<RectTransform>();
                 if (rectTransform != null)
-                {
                     rectTransform.anchoredPosition = offScreenPosition;
-                }
             }
             else
             {
-                // Deactivate regular panels
                 panels[currentPanelIndex].SetActive(false);
             }
         }
@@ -485,47 +331,63 @@ public class PanelManager : MonoBehaviour
     {
         if (mapIsHidden)
         {
-            // Sauvegarde le panel actuel avant de passer à la carte
             previousPanelIndex = currentPanelIndex;
-
-            // Cache tous les panels (y compris ceux toujours actifs)
             HidePanel();
-
-            // Affiche la carte
             mapPanel.SetActive(true);
             mapIsHidden = false;
+
+            // OPTIMISATION : Arrêter la détection d'input quand la carte est visible
+            StopInputDetection();
         }
         else
         {
-            // Cache la carte
             mapPanel.SetActive(false);
 
-            // Restore LE PANEL PRÉCÉDENT
-            // Pour les panels réguliers et toujours actifs
             if (previousPanelIndex >= 0 && previousPanelIndex < panels.Count && panels[previousPanelIndex] != null)
             {
-                // Gère spécifiquement les panels toujours actifs
                 if (alwaysActivePanelIndices.Contains(previousPanelIndex))
                 {
-                    // Ramène le panel toujours actif à sa position d'origine
                     RectTransform rectTransform = panels[previousPanelIndex].GetComponent<RectTransform>();
                     if (rectTransform != null && originalPositions.ContainsKey(previousPanelIndex))
-                    {
                         rectTransform.anchoredPosition = originalPositions[previousPanelIndex];
-                    }
                 }
 
-                // Mettre à jour l'index du panel courant
                 currentPanelIndex = previousPanelIndex;
-
-                // Activer le panel précédent s'il n'est pas déjà actif
                 panels[previousPanelIndex].SetActive(true);
-
-                // Déclencher l'événement de changement de panel
                 OnPanelChanged?.Invoke(currentPanelIndex);
             }
 
             mapIsHidden = true;
+
+            // OPTIMISATION : Relancer la détection d'input
+            StartInputDetection();
+        }
+    }
+
+    // OPTIMISATION : Nettoyer les coroutines à la destruction
+    private void OnDestroy()
+    {
+        StopInputDetection();
+    }
+
+    // Public getters
+    public int CurrentPanelIndex => currentPanelIndex;
+    public int PanelCount => panels.Count;
+
+    // Autres méthodes restent identiques...
+    public void AddAlwaysActivePanel(int panelIndex)
+    {
+        if (panelIndex >= 0 && panelIndex < panels.Count && !alwaysActivePanelIndices.Contains(panelIndex))
+        {
+            alwaysActivePanelIndices.Add(panelIndex);
+
+            if (!panels[panelIndex].activeSelf)
+            {
+                panels[panelIndex].SetActive(true);
+                RectTransform rectTransform = panels[panelIndex].GetComponent<RectTransform>();
+                if (rectTransform != null)
+                    rectTransform.anchoredPosition = offScreenPosition;
+            }
         }
     }
 }

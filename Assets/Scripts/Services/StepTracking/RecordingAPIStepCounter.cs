@@ -12,13 +12,20 @@ public class RecordingAPIStepCounter : MonoBehaviour
     private bool isSubscribedToApi = false;
     private bool lastPermissionResult = false;
     private int permissionCheckCounter = 0;
-    private const int LOG_FREQUENCY = 60; // Ne journaliser qu'une fois toutes les 60 vérifications
+    private const int LOG_FREQUENCY = 60;
 
-    // Constantes pour le mécanisme d'attente amélioré
     private const int MAX_API_READ_ATTEMPTS = 5;
     private const float BASE_API_WAIT_TIME = 0.5f;
 
     public static RecordingAPIStepCounter Instance { get; private set; }
+
+    // NOUVEAU: Variables pour la simulation dans l'éditeur
+#if UNITY_EDITOR
+    private long editorSimulatedSteps = 0;
+    private long editorLastSensorValue = 0;
+    private bool editorSensorActive = false;
+    private System.Random editorRandom = new System.Random();
+#endif
 
     void Awake()
     {
@@ -39,6 +46,12 @@ public class RecordingAPIStepCounter : MonoBehaviour
     {
         if (isPluginClassInitialized) return;
 
+#if UNITY_EDITOR
+        // Mode éditeur - simulation
+        Logger.LogInfo("RecordingAPIStepCounter: Running in Editor mode - using simulation", Logger.LogCategory.StepLog);
+        isPluginClassInitialized = true;
+        return;
+#else
         Logger.LogInfo("RecordingAPIStepCounter: InitializeService called.", Logger.LogCategory.StepLog);
         try
         {
@@ -52,11 +65,15 @@ public class RecordingAPIStepCounter : MonoBehaviour
             stepPluginClass = null;
             isPluginClassInitialized = false;
         }
+#endif
     }
 
-    // Gestion des Permissions
     public void RequestPermission()
     {
+#if UNITY_EDITOR
+        Logger.LogInfo("RecordingAPIStepCounter: Editor mode - permission automatically granted", Logger.LogCategory.StepLog);
+        return;
+#else
         if (!isPluginClassInitialized || stepPluginClass == null)
         {
             Logger.LogWarning("RecordingAPIStepCounter: RequestPermission called but plugin class not initialized.", Logger.LogCategory.StepLog);
@@ -64,10 +81,14 @@ public class RecordingAPIStepCounter : MonoBehaviour
         }
         Logger.LogInfo("RecordingAPIStepCounter: Requesting activity recognition permission via plugin.", Logger.LogCategory.StepLog);
         stepPluginClass.CallStatic("requestActivityRecognitionPermission");
+#endif
     }
 
     public bool HasPermission()
     {
+#if UNITY_EDITOR
+        return true; // Toujours vrai dans l'éditeur
+#else
         if (!isPluginClassInitialized || stepPluginClass == null)
         {
             Logger.LogWarning("RecordingAPIStepCounter: HasPermission called but plugin class not initialized.", Logger.LogCategory.StepLog);
@@ -76,7 +97,6 @@ public class RecordingAPIStepCounter : MonoBehaviour
 
         bool hasPermission = stepPluginClass.CallStatic<bool>("hasActivityRecognitionPermission");
 
-        // Journaliser si le résultat a changé ou périodiquement
         permissionCheckCounter++;
         if (hasPermission != lastPermissionResult || permissionCheckCounter >= LOG_FREQUENCY)
         {
@@ -84,16 +104,20 @@ public class RecordingAPIStepCounter : MonoBehaviour
             {
                 Logger.LogInfo($"RecordingAPIStepCounter: Permission status changed to: {hasPermission}", Logger.LogCategory.StepLog);
             }
-
             lastPermissionResult = hasPermission;
         }
 
         return hasPermission;
+#endif
     }
 
-    // Gestion de l'Abonnement API Recording
     public void SubscribeToRecordingApiIfNeeded()
     {
+#if UNITY_EDITOR
+        Logger.LogInfo("RecordingAPIStepCounter: Editor mode - API subscription simulated", Logger.LogCategory.StepLog);
+        isSubscribedToApi = true;
+        return;
+#else
         if (!isPluginClassInitialized || stepPluginClass == null)
         {
             Logger.LogWarning("RecordingAPIStepCounter: SubscribeToRecordingApiIfNeeded called but plugin class not initialized.", Logger.LogCategory.StepLog);
@@ -112,11 +136,16 @@ public class RecordingAPIStepCounter : MonoBehaviour
         Logger.LogInfo("RecordingAPIStepCounter: Attempting to subscribe to API Recording.", Logger.LogCategory.StepLog);
         stepPluginClass.CallStatic("subscribeToRecordingAPI");
         isSubscribedToApi = true;
+#endif
     }
 
-    // Lecture des données entre deux timestamps spécifiques avec mécanisme d'attente amélioré
     public IEnumerator GetDeltaSinceFromAPI(long fromEpochMs, long toEpochMs, System.Action<long> onResultCallback)
     {
+#if UNITY_EDITOR
+        // Simulation pour l'éditeur
+        yield return StartCoroutine(SimulateAPIRead(fromEpochMs, toEpochMs, onResultCallback));
+        yield break;
+#else
         if (!isPluginClassInitialized || stepPluginClass == null || !HasPermission())
         {
             Logger.LogError("RecordingAPIStepCounter: GetDeltaSinceFromAPI cannot execute - plugin not ready or no permission.", Logger.LogCategory.StepLog);
@@ -124,7 +153,6 @@ public class RecordingAPIStepCounter : MonoBehaviour
             yield break;
         }
 
-        // Vérifier s'il s'agit d'une plage déjà lue (solution de secours si clearStoredRange échoue)
         if (ShouldSkipRange(fromEpochMs, toEpochMs))
         {
             Logger.LogWarning($"RecordingAPIStepCounter: Skipping already read range from {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)} to {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}", Logger.LogCategory.StepLog);
@@ -132,11 +160,9 @@ public class RecordingAPIStepCounter : MonoBehaviour
             yield break;
         }
 
-        // Vérifier et gérer le cas spécial où fromEpochMs est 0 ou très ancien
         if (fromEpochMs <= 1)
         {
             Logger.LogInfo($"RecordingAPIStepCounter: GetDeltaSinceFromAPI called with very old/initial fromEpochMs={fromEpochMs}. Getting all available history.", Logger.LogCategory.StepLog);
-            // Le plugin StepPlugin va gérer ce cas spécial
         }
         else if (fromEpochMs >= toEpochMs)
         {
@@ -145,27 +171,20 @@ public class RecordingAPIStepCounter : MonoBehaviour
             yield break;
         }
 
-        // Mémoriser la plage en cours de lecture
-        lastReadStartMs = fromEpochMs;
-        lastReadEndMs = toEpochMs;
-
         Logger.LogInfo($"RecordingAPIStepCounter: Requesting readStepsForTimeRange from plugin for GetDeltaSinceFromAPI (from: {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)}, to: {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}).", Logger.LogCategory.StepLog);
         stepPluginClass.CallStatic("readStepsForTimeRange", fromEpochMs, toEpochMs);
 
-        // Mécanisme d'attente amélioré avec vérification
         int attempts = 0;
         long lastResult = -1;
         long currentResult = -1;
 
         while (attempts < MAX_API_READ_ATTEMPTS)
         {
-            // Attente progressive qui augmente avec les tentatives
             yield return new WaitForSeconds(BASE_API_WAIT_TIME * (attempts + 1));
 
             currentResult = stepPluginClass.CallStatic<long>("getStoredStepsForCustomRange");
             Logger.LogInfo($"RecordingAPIStepCounter: API read attempt {attempts + 1}/{MAX_API_READ_ATTEMPTS}, value: {currentResult}", Logger.LogCategory.StepLog);
 
-            // Si on a une valeur valide et qu'elle est stable (deux lectures identiques), on peut sortir
             if (currentResult >= 0 && (currentResult == lastResult || attempts >= MAX_API_READ_ATTEMPTS - 1))
             {
                 Logger.LogInfo($"RecordingAPIStepCounter: GetDeltaSince stable result after {attempts + 1} attempts: {currentResult}", Logger.LogCategory.StepLog);
@@ -179,13 +198,56 @@ public class RecordingAPIStepCounter : MonoBehaviour
         Logger.LogInfo($"RecordingAPIStepCounter: GetDeltaSinceFromAPI received {currentResult} steps from plugin for time range {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)} to {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}.", Logger.LogCategory.StepLog);
         onResultCallback?.Invoke(currentResult >= 0 ? currentResult : 0);
 
-        // Après avoir récupéré les données, effacer automatiquement la valeur stockée (Faille C)
         ClearStoredRange();
+#endif
     }
 
-    // Vérifier si une plage a déjà été lue (solution de secours pour la Faille #3)
+#if UNITY_EDITOR
+    // NOUVEAU: Simulation de lecture API pour l'éditeur
+    private IEnumerator SimulateAPIRead(long fromEpochMs, long toEpochMs, System.Action<long> onResultCallback)
+    {
+        // Attendre un peu pour simuler le délai réseau
+        yield return new WaitForSeconds(0.2f + editorRandom.Next(0, 3) * 0.1f);
+
+        // Calculer une simulation basée sur la durée
+        long durationMs = toEpochMs - fromEpochMs;
+        long durationHours = durationMs / (1000 * 60 * 60);
+
+        // Simuler des pas basés sur la durée (plus c'est long, plus il y a de pas)
+        long simulatedSteps = 0;
+
+        if (durationHours <= 0)
+        {
+            simulatedSteps = editorRandom.Next(0, 5); // Très courte période
+        }
+        else if (durationHours <= 1)
+        {
+            simulatedSteps = editorRandom.Next(50, 200); // Une heure
+        }
+        else if (durationHours <= 8)
+        {
+            simulatedSteps = editorRandom.Next(200, 1000); // Journée de travail
+        }
+        else
+        {
+            simulatedSteps = editorRandom.Next(1000, 3000); // Journée complète
+        }
+
+        // Ajouter un peu de variabilité
+        simulatedSteps += editorRandom.Next(-50, 50);
+        simulatedSteps = Math.Max(0, simulatedSteps);
+
+        Logger.LogInfo($"RecordingAPIStepCounter: [EDITOR SIMULATION] Simulated {simulatedSteps} steps for {durationHours}h period", Logger.LogCategory.StepLog);
+
+        onResultCallback?.Invoke(simulatedSteps);
+    }
+#endif
+
     private bool ShouldSkipRange(long fromEpochMs, long toEpochMs)
     {
+#if UNITY_EDITOR
+        return false; // Pas de skip dans l'éditeur pour simplifier
+#else
         try
         {
             string lastRange = PlayerPrefs.GetString("LastReadRange", "");
@@ -197,7 +259,6 @@ public class RecordingAPIStepCounter : MonoBehaviour
                     long lastStart = long.Parse(parts[0]);
                     long lastEnd = long.Parse(parts[1]);
 
-                    // Vérifier si la plage actuelle chevauche la dernière plage lue
                     bool overlaps = (fromEpochMs <= lastEnd && toEpochMs >= lastStart);
 
                     if (overlaps)
@@ -215,13 +276,15 @@ public class RecordingAPIStepCounter : MonoBehaviour
         }
 
         return false;
+#endif
     }
 
-    // Pour effacer la valeur stockée dans le plugin après la lecture (Faille C)
-    // IMPORTANT: Toutes les lectures API doivent être suivies d'un appel à cette méthode
-    // pour garantir l'effacement du buffer et éviter tout double comptage
     public void ClearStoredRange()
     {
+#if UNITY_EDITOR
+        Logger.LogInfo("RecordingAPIStepCounter: [EDITOR] ClearStoredRange called - simulated success", Logger.LogCategory.StepLog);
+        return;
+#else
         if (!isPluginClassInitialized || stepPluginClass == null)
         {
             Logger.LogWarning("RecordingAPIStepCounter: ClearStoredRange called but plugin class not initialized.", Logger.LogCategory.StepLog);
@@ -232,8 +295,6 @@ public class RecordingAPIStepCounter : MonoBehaviour
 
         try
         {
-            // Appeler la méthode dans le plugin Java et récupérer le statut de succès
-            // Note: Cette modification nécessite de mettre à jour StepPlugin.java pour retourner un booléen
             clearSuccess = stepPluginClass.CallStatic<bool>("clearStoredStepsForCustomRange");
 
             if (clearSuccess)
@@ -242,7 +303,6 @@ public class RecordingAPIStepCounter : MonoBehaviour
             }
             else
             {
-                // Échec de nettoyage côté plugin, mémoriser l'état pour éviter un double comptage
                 HandleClearFailure();
                 Logger.LogWarning("RecordingAPIStepCounter: Plugin reported failure to clear stored range. Using fallback mechanism.", Logger.LogCategory.StepLog);
             }
@@ -250,20 +310,16 @@ public class RecordingAPIStepCounter : MonoBehaviour
         catch (AndroidJavaException ex)
         {
             Logger.LogError($"RecordingAPIStepCounter: Failed to clear stored range in plugin. Exception: {ex.Message}", Logger.LogCategory.StepLog);
-            // Si la méthode n'existe pas encore dans le plugin, utiliser une solution de secours
             HandleClearFailure();
             Logger.LogWarning("RecordingAPIStepCounter: clearStoredStepsForCustomRange function may not be available. Using fallback mechanism.", Logger.LogCategory.StepLog);
         }
+#endif
     }
 
-    // Méthode de secours pour éviter le double comptage si le nettoyage échoue
     private void HandleClearFailure()
     {
-        // Stocker la dernière plage lue dans PlayerPrefs pour pouvoir l'éviter la prochaine fois
-        // Cette solution est une SOLUTION DE SECOURS si le plugin ne supporte pas clearStoredStepsForCustomRange
         try
         {
-            // Si nous avons des timestamps de la dernière lecture, les enregistrer
             if (lastReadStartMs > 0 && lastReadEndMs > 0)
             {
                 PlayerPrefs.SetString("LastReadRange", $"{lastReadStartMs}:{lastReadEndMs}");
@@ -277,28 +333,28 @@ public class RecordingAPIStepCounter : MonoBehaviour
         }
     }
 
-    // Variables pour mémoriser la dernière plage lue
     private long lastReadStartMs = 0;
     private long lastReadEndMs = 0;
 
-    // Maintient l'ancienne méthode pour compatibilité, mais utilise la nouvelle en interne
     public IEnumerator GetDeltaSinceFromAPI(long fromEpochMs, System.Action<long> onResultCallback)
     {
-        // MODIFIÉ: Utiliser TimeZoneInfo.Local.ToLocalTime pour éviter les problèmes de fuseau horaire (Faille B)
         long nowEpochMs = GetLocalEpochMs();
         return GetDeltaSinceFromAPI(fromEpochMs, nowEpochMs, onResultCallback);
     }
 
-    // NOUVELLE MÉTHODE: Obtenir le timestamp en utilisant le fuseau horaire local (Faille B)
     private long GetLocalEpochMs()
     {
-        // MODIFIÉ: Utiliser DateTime.Now pour cohérence avec le reste du code
         return new System.DateTimeOffset(System.DateTime.Now).ToUnixTimeMilliseconds();
     }
 
-    // Méthodes pour le capteur direct
     public void StartDirectSensorListener()
     {
+#if UNITY_EDITOR
+        Logger.LogInfo("RecordingAPIStepCounter: [EDITOR] Starting direct sensor simulation", Logger.LogCategory.StepLog);
+        editorSensorActive = true;
+        editorLastSensorValue = editorRandom.Next(10000, 50000); // Valeur de départ aléatoire
+        return;
+#else
         if (!isPluginClassInitialized || stepPluginClass == null || !HasPermission())
         {
             Logger.LogWarning("RecordingAPIStepCounter: StartDirectSensorListener - plugin not ready or no permission.", Logger.LogCategory.StepLog);
@@ -306,10 +362,16 @@ public class RecordingAPIStepCounter : MonoBehaviour
         }
         Logger.LogInfo("RecordingAPIStepCounter: Requesting plugin to start direct step counter listener.", Logger.LogCategory.StepLog);
         stepPluginClass.CallStatic("startDirectStepCounterListener");
+#endif
     }
 
     public void StopDirectSensorListener()
     {
+#if UNITY_EDITOR
+        Logger.LogInfo("RecordingAPIStepCounter: [EDITOR] Stopping direct sensor simulation", Logger.LogCategory.StepLog);
+        editorSensorActive = false;
+        return;
+#else
         if (!isPluginClassInitialized || stepPluginClass == null)
         {
             Logger.LogWarning("RecordingAPIStepCounter: StopDirectSensorListener - plugin class not initialized.", Logger.LogCategory.StepLog);
@@ -317,14 +379,27 @@ public class RecordingAPIStepCounter : MonoBehaviour
         }
         Logger.LogInfo("RecordingAPIStepCounter: Requesting plugin to stop direct step counter listener.", Logger.LogCategory.StepLog);
         stepPluginClass.CallStatic("stopDirectStepCounterListener");
+#endif
     }
 
     public long GetCurrentRawSensorSteps()
     {
+#if UNITY_EDITOR
+        if (!editorSensorActive) return -1;
+
+        // Simuler une augmentation graduelle des pas
+        if (UnityEngine.Random.Range(0f, 1f) < 0.1f) // 10% de chance d'augmenter
+        {
+            editorLastSensorValue += UnityEngine.Random.Range(1, 5);
+        }
+
+        return editorLastSensorValue;
+#else
         if (!isPluginClassInitialized || stepPluginClass == null || !HasPermission())
         {
             return -1;
         }
         return stepPluginClass.CallStatic<long>("getCurrentRawSensorSteps");
+#endif
     }
 }

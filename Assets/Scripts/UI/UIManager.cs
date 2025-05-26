@@ -1,5 +1,4 @@
-﻿// Filepath: Assets/Scripts/UI/UIManager.cs
-using System.Collections;
+﻿using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,8 +9,8 @@ public class UIManager : MonoBehaviour
 
     [Header("UI References")]
     [SerializeField] private TextMeshProUGUI totalStepsText;
-    [SerializeField] private TextMeshProUGUI dailyStepsText; // Nouveau: texte pour afficher les pas quotidiens
-    [SerializeField] private TextMeshProUGUI lastUpdateText; // Indicateur de dernière mise à jour
+    [SerializeField] private TextMeshProUGUI dailyStepsText;
+    [SerializeField] private TextMeshProUGUI lastUpdateText;
     [SerializeField] private Button MapButton;
 
     private StepManager stepManager;
@@ -19,6 +18,9 @@ public class UIManager : MonoBehaviour
     private long lastDisplayedDailySteps = -1;
     private float stepUpdateFlashDuration = 0.3f;
 
+    // OPTIMISATION : Variables pour éviter les Update() constants
+    private Coroutine updateCoroutine;
+    private bool isUpdateActive = false;
 
     private void Awake()
     {
@@ -57,22 +59,63 @@ public class UIManager : MonoBehaviour
         }
         stepManager = StepManager.Instance;
         Logger.LogInfo("UIManager: StepManager.Instance found. Ready to update UI from StepManager.", Logger.LogCategory.General);
+
+        // OPTIMISATION : Démarrer la coroutine d'update au lieu d'Update()
+        StartUIUpdateCoroutine();
     }
 
-    void Update()
+    // OPTIMISATION : Remplacer Update() par une coroutine plus efficace
+    private void StartUIUpdateCoroutine()
     {
-        if (stepManager != null && stepManager.enabled)
-        {
-            // Mettre à jour l'affichage des pas totaux uniquement si la valeur a changé
-            if (stepManager.TotalSteps != lastDisplayedTotalSteps)
-            {
-                UpdateTotalStepsDisplay(stepManager.TotalSteps);
-            }
+        if (updateCoroutine != null)
+            StopCoroutine(updateCoroutine);
 
-            // Mettre à jour l'affichage des pas quotidiens uniquement si la valeur a changé
-            if (stepManager.DailySteps != lastDisplayedDailySteps)
+        updateCoroutine = StartCoroutine(UIUpdateCoroutine());
+    }
+
+    private void StopUIUpdateCoroutine()
+    {
+        if (updateCoroutine != null)
+        {
+            StopCoroutine(updateCoroutine);
+            updateCoroutine = null;
+        }
+    }
+
+    // OPTIMISATION : Coroutine qui vérifie les changements moins fréquemment
+    private IEnumerator UIUpdateCoroutine()
+    {
+        while (true)
+        {
+            if (stepManager != null && stepManager.enabled)
             {
-                UpdateDailyStepsDisplay(stepManager.DailySteps);
+                // OPTIMISATION : Vérifier seulement si les valeurs ont vraiment changé
+                bool totalStepsChanged = stepManager.TotalSteps != lastDisplayedTotalSteps;
+                bool dailyStepsChanged = stepManager.DailySteps != lastDisplayedDailySteps;
+
+                if (totalStepsChanged)
+                {
+                    UpdateTotalStepsDisplay(stepManager.TotalSteps);
+                }
+
+                if (dailyStepsChanged)
+                {
+                    UpdateDailyStepsDisplay(stepManager.DailySteps);
+                }
+
+                // OPTIMISATION : Si rien n'a changé, attendre plus longtemps
+                if (!totalStepsChanged && !dailyStepsChanged)
+                {
+                    yield return new WaitForSeconds(0.5f); // Attendre 0.5s si pas de changement
+                }
+                else
+                {
+                    yield return new WaitForSeconds(0.1f); // Vérifier plus souvent s'il y a des changements
+                }
+            }
+            else
+            {
+                yield return new WaitForSeconds(1f); // Attendre plus longtemps si StepManager pas prêt
             }
         }
     }
@@ -91,20 +134,28 @@ public class UIManager : MonoBehaviour
             }
             else
             {
-                // Effet visuel pour les changements de pas
+                // OPTIMISATION : Éviter les opérations coûteuses si pas nécessaire
                 bool isIncrease = steps > lastDisplayedTotalSteps && lastDisplayedTotalSteps >= 0;
 
-                // Mettre à jour le texte
-                totalStepsText.text = $"{steps}";
+                // Mettre à jour le texte seulement si nécessaire
+                string newText = $"{steps}";
+                if (totalStepsText.text != newText)
+                {
+                    totalStepsText.text = newText;
+                }
 
-                // Mettre à jour l'horodatage si disponible
+                // Mettre à jour l'horodatage seulement si nécessaire
                 if (lastUpdateText != null && DataManager.Instance?.PlayerData != null)
                 {
                     long lastChangeMs = DataManager.Instance.PlayerData.LastStepsChangeEpochMs;
                     if (lastChangeMs > 0)
                     {
                         string readableDate = LocalDatabase.GetReadableDateFromEpoch(lastChangeMs);
-                        lastUpdateText.text = $"Dernière mise à jour: {readableDate}";
+                        string newUpdateText = $"Dernière mise à jour: {readableDate}";
+                        if (lastUpdateText.text != newUpdateText)
+                        {
+                            lastUpdateText.text = newUpdateText;
+                        }
                     }
                 }
 
@@ -120,7 +171,6 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // Nouvelle méthode pour mettre à jour l'affichage des pas quotidiens
     private void UpdateDailyStepsDisplay(long steps, bool isWaitingMessage = false)
     {
         if (dailyStepsText != null)
@@ -131,11 +181,14 @@ public class UIManager : MonoBehaviour
             }
             else
             {
-                // Effet visuel pour les changements de pas
                 bool isIncrease = steps > lastDisplayedDailySteps && lastDisplayedDailySteps >= 0;
 
-                // Mettre à jour le texte
-                dailyStepsText.text = $"{steps}";
+                // OPTIMISATION : Mettre à jour seulement si nécessaire
+                string newText = $"{steps}";
+                if (dailyStepsText.text != newText)
+                {
+                    dailyStepsText.text = newText;
+                }
 
                 // Si c'est une augmentation, ajouter un effet de flash
                 if (isIncrease)
@@ -149,11 +202,20 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // Méthode modifiée pour accepter n'importe quel TextMeshProUGUI comme paramètre
+    // OPTIMISATION : Éviter les coroutines multiples pour le même élément
+    private System.Collections.Generic.Dictionary<TextMeshProUGUI, Coroutine> flashCoroutines =
+        new System.Collections.Generic.Dictionary<TextMeshProUGUI, Coroutine>();
+
     private IEnumerator FlashStepUpdate(TextMeshProUGUI textElement)
     {
         if (textElement != null)
         {
+            // OPTIMISATION : Arrêter la coroutine précédente si elle existe
+            if (flashCoroutines.ContainsKey(textElement) && flashCoroutines[textElement] != null)
+            {
+                StopCoroutine(flashCoroutines[textElement]);
+            }
+
             // Sauvegarder la couleur originale
             Color originalColor = textElement.color;
 
@@ -165,6 +227,49 @@ public class UIManager : MonoBehaviour
 
             // Revenir à la couleur d'origine
             textElement.color = originalColor;
+
+            // Nettoyer la référence
+            if (flashCoroutines.ContainsKey(textElement))
+            {
+                flashCoroutines.Remove(textElement);
+            }
         }
+    }
+
+    // OPTIMISATION : Méthodes publiques pour contrôler l'update
+    public void PauseUIUpdates()
+    {
+        StopUIUpdateCoroutine();
+    }
+
+    public void ResumeUIUpdates()
+    {
+        StartUIUpdateCoroutine();
+    }
+
+    // OPTIMISATION : Forcer une mise à jour immédiate si nécessaire
+    public void ForceUIUpdate()
+    {
+        if (stepManager != null && stepManager.enabled)
+        {
+            UpdateTotalStepsDisplay(stepManager.TotalSteps);
+            UpdateDailyStepsDisplay(stepManager.DailySteps);
+        }
+    }
+
+    // OPTIMISATION : Nettoyer à la destruction
+    private void OnDestroy()
+    {
+        StopUIUpdateCoroutine();
+
+        // Arrêter toutes les coroutines de flash en cours
+        foreach (var flashCoroutine in flashCoroutines.Values)
+        {
+            if (flashCoroutine != null)
+            {
+                StopCoroutine(flashCoroutine);
+            }
+        }
+        flashCoroutines.Clear();
     }
 }
