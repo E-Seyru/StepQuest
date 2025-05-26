@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9be207c3a5ca57c478fb1cdbdb145352, type: 3}
   m_Name: Fer
   m_EditorClassIdentifier: 
-  ResourceID: 
-  ResourceName: 
-  Description: 
-  ResourceIcon: {fileID: 0}
+  ResourceID: Fer
+  ResourceName: Fer
+  Description: Du fer
+  ResourceIcon: {fileID: 21300000, guid: 35985ff799523944baa3f9a8b5a8fa02, type: 3}
   ResourceColor: {r: 1, g: 1, b: 1, a: 1}
   BaseValue: 1
   RarityTier: 1

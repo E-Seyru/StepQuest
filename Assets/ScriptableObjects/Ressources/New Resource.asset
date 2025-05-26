@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9be207c3a5ca57c478fb1cdbdb145352, type: 3}
   m_Name: New Resource
   m_EditorClassIdentifier: 
-  ResourceID: 
-  ResourceName: 
-  Description: 
-  ResourceIcon: {fileID: 0}
+  ResourceID: Charbon
+  ResourceName: Charbon
+  Description: Du charbon
+  ResourceIcon: {fileID: 21300000, guid: f1adb4eab737f614fb6c2260c1265d69, type: 3}
   ResourceColor: {r: 1, g: 1, b: 1, a: 1}
   BaseValue: 1
   RarityTier: 1

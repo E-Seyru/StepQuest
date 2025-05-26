@@ -177,34 +177,71 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     private void PopulateActivitiesSection()
     {
+        Debug.Log("=== DEBUG PopulateActivitiesSection ===");
 
+        // RÉACTIVER LA SECTION AU CAS OÙ ELLE AURAIT ÉTÉ DÉSACTIVÉE
         if (activitiesSection != null)
         {
             activitiesSection.SetActive(true);
         }
+
         // Clear existing activity items
         ClearActivityItems();
 
-        if (activitiesSection == null || currentLocation == null) return;
+        if (activitiesSection == null)
+        {
+            Debug.Log("ERROR: activitiesSection is NULL!");
+            return;
+        }
+
+        if (currentLocation == null)
+        {
+            Debug.Log("ERROR: currentLocation is NULL!");
+            return;
+        }
+
+        Debug.Log($"Current location: {currentLocation.DisplayName}");
+        Debug.Log($"Total AvailableActivities: {currentLocation.AvailableActivities?.Count ?? 0}");
 
         var availableActivities = currentLocation.GetAvailableActivities();
+        Debug.Log($"Valid activities after filtering: {availableActivities.Count}");
+
+        // Debug chaque activité
+        if (currentLocation.AvailableActivities != null)
+        {
+            for (int i = 0; i < currentLocation.AvailableActivities.Count; i++)
+            {
+                var activity = currentLocation.AvailableActivities[i];
+                Debug.Log($"Activity {i}: {activity?.GetDisplayName() ?? "NULL"}");
+                if (activity != null)
+                {
+                    Debug.Log($"  - IsValidActivity: {activity.IsValidActivity()}");
+                    Debug.Log($"  - VariantCount: {activity.ActivityVariants?.Count ?? 0}");
+                }
+            }
+        }
 
         // Update section title
         if (activitiesSectionTitle != null)
         {
             activitiesSectionTitle.text = $"Activités disponibles ({availableActivities.Count})";
+            Debug.Log($"Section title updated: Activités disponibles ({availableActivities.Count})");
         }
 
         // Show/hide based on availability
         if (availableActivities.Count == 0)
         {
+            Debug.Log("No valid activities found - showing no activities message");
             ShowNoActivitiesMessage();
         }
         else
         {
+            Debug.Log($"Found {availableActivities.Count} valid activities - creating activity items");
             HideNoActivitiesMessage();
             CreateActivityItems(availableActivities);
         }
+
+        Debug.Log("=== END DEBUG PopulateActivitiesSection ===");
     }
 
     /// <summary>
@@ -280,9 +317,15 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         Logger.LogInfo($"LocationDetailsPanel: Activity clicked: {activity.GetDisplayName()}", Logger.LogCategory.General);
 
-        // TODO: Open specific activity panel when implemented
-        // For now, just log the action
-        Debug.Log($"Activity selected: {activity.GetFullInfo()}");
+        // Ouvrir le panel des variants
+        if (ActivityVariantsPanel.Instance != null)
+        {
+            ActivityVariantsPanel.Instance.OpenWithActivity(activity);
+        }
+        else
+        {
+            Debug.LogWarning("ActivityVariantsPanel not found!");
+        }
     }
 
     /// <summary>
