@@ -25,6 +25,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
     private long editorLastSensorValue = 0;
     private bool editorSensorActive = false;
     private System.Random editorRandom = new System.Random();
+    private long editorSensorBaseValue = 0; // Valeur de base fixe
 #endif
 
     void Awake()
@@ -352,7 +353,21 @@ public class RecordingAPIStepCounter : MonoBehaviour
 #if UNITY_EDITOR
         Logger.LogInfo("RecordingAPIStepCounter: [EDITOR] Starting direct sensor simulation", Logger.LogCategory.StepLog);
         editorSensorActive = true;
-        editorLastSensorValue = editorRandom.Next(10000, 50000); // Valeur de départ aléatoire
+
+        // Initialiser avec les pas actuels du jeu
+        var dataManager = DataManager.Instance;
+        if (dataManager?.PlayerData != null)
+        {
+            editorSensorBaseValue = 50000; // Valeur de base fixe pour le capteur
+            editorLastSensorValue = editorSensorBaseValue + dataManager.PlayerData.TotalSteps;
+        }
+        else
+        {
+            editorSensorBaseValue = 50000;
+            editorLastSensorValue = editorSensorBaseValue;
+        }
+
+        Logger.LogInfo($"RecordingAPIStepCounter: [EDITOR] Sensor initialized with base {editorSensorBaseValue}, current {editorLastSensorValue}", Logger.LogCategory.StepLog);
         return;
 #else
         if (!isPluginClassInitialized || stepPluginClass == null || !HasPermission())
@@ -387,10 +402,12 @@ public class RecordingAPIStepCounter : MonoBehaviour
 #if UNITY_EDITOR
         if (!editorSensorActive) return -1;
 
-        // Simuler une augmentation graduelle des pas
-        if (UnityEngine.Random.Range(0f, 1f) < 0.1f) // 10% de chance d'augmenter
+        // CORRIGÉ: Synchroniser avec les vraies données du jeu au lieu d'augmenter automatiquement
+        var dataManager = DataManager.Instance;
+        if (dataManager?.PlayerData != null)
         {
-            editorLastSensorValue += UnityEngine.Random.Range(1, 5);
+            // Le capteur reflète les vrais pas totaux + une base fixe
+            editorLastSensorValue = editorSensorBaseValue + dataManager.PlayerData.TotalSteps;
         }
 
         return editorLastSensorValue;
