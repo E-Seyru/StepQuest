@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Foret
   Description: Une foret tout ce qu'il y a de plus simple.
   LongDescription: gxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhsgxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhsgxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhsgxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhsgxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhsgxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhsgxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhsgxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhsgxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhsgxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhsgxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhsgxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhsgxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhsgxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhsgxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhsgxshxghsgxshxhshxshxhshgsghxsghgshxgshxghsgxhs
-  LocationImage: {fileID: 0}
+  LocationImage: {fileID: 21300000, guid: 8064a9e5f68066a43a3b7ead784e6ef9, type: 3}
   LocationThemeColor: {r: 1, g: 1, b: 1, a: 1}
   Connections:
   - DestinationLocationID: Village_01
@@ -32,7 +32,7 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
-  LocationIcon: {fileID: 0}
+  LocationIcon: {fileID: 21300000, guid: 32af71dbf20033647b2f01e9e722d654, type: 3}
   POIColor: {r: 1, g: 1, b: 1, a: 1}
   IsAccessible: 1
   UnlockRequirement: 0

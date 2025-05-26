@@ -1,6 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class CameraMovement : MonoBehaviour
 {
@@ -11,14 +10,14 @@ public class CameraMovement : MonoBehaviour
     private Vector3 dragOrigin;
 
     [SerializeField]
-    private float zoomStep, zoomMin; 
-        
-        
+    private float zoomStep, zoomMin;
+
+
     private float zoomMax;
 
 
 
-    [SerializeField] 
+    [SerializeField]
     private SpriteRenderer mapSprite;
 
     private float mapMinX, mapMaxX, mapMinY, mapMaxY;
@@ -44,12 +43,17 @@ public class CameraMovement : MonoBehaviour
 
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
     void Update()
     {
+        // S’il n’y a aucun toucher ou si le premier toucher est sur l’UI, on sort.
+        if (Input.touchCount == 0 ||
+            EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId))
+            return;
+
         switch (Input.touchCount)
         {
             case 1:
@@ -57,16 +61,14 @@ public class CameraMovement : MonoBehaviour
                 isPinching = false;
                 break;
             case 2:
+                // Tant qu’un des deux doigts est sur l’UI on ignore le zoom
+                if (EventSystem.current.IsPointerOverGameObject(Input.GetTouch(1).fingerId)) return;
                 Zoom();
                 break;
         }
-
-
-
-       
     }
 
-    private void PanCamera ()
+    private void PanCamera()
     {
         if (Input.touchCount > 0)
         {

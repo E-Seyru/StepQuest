@@ -15,8 +15,21 @@ MonoBehaviour:
   LocationID: Village_01
   DisplayName: Village
   Description: Un village tout ce qu'il y a de plus simple.
+  LongDescription: 
+  LocationImage: {fileID: 21300000, guid: fdab1595d7737174c9ddf42942aed38b, type: 3}
+  LocationThemeColor: {r: 1, g: 1, b: 1, a: 1}
   Connections:
   - DestinationLocationID: Foret_01
     StepCost: 50
+    IsAvailable: 1
+    Requirements: 
   - DestinationLocationID: Mine_01
     StepCost: 50
+    IsAvailable: 1
+    Requirements: 
+  AvailableActivities: []
+  LocationIcon: {fileID: 21300000, guid: 4ad214f54463ee74dbe67a30f0b45aaa, type: 3}
+  POIColor: {r: 1, g: 1, b: 1, a: 1}
+  IsAccessible: 1
+  UnlockRequirement: 0
+  DeveloperNotes: 
