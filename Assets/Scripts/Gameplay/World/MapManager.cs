@@ -12,12 +12,19 @@ public class MapManager : MonoBehaviour
     [SerializeField] private LocationRegistry _locationRegistry; // Renamed to underscore to differentiate from public property
     public LocationRegistry LocationRegistry => _locationRegistry; // Public getter
 
+    [Header("Travel Save Settings")]
+    [SerializeField] private float travelSaveInterval = 10f; // Sauvegarde toutes les 10 secondes pendant le voyage
+    [SerializeField] private int minStepsProgressToSave = 5; // Sauvegarder seulement si au moins 5 pas de progrès
+
     // References
     private DataManager dataManager;
     private StepManager stepManager;
 
     // Current state
     public MapLocationDefinition CurrentLocation { get; private set; }
+
+    // Travel save tracking
+    private long lastSavedTotalSteps = -1; // Track last saved total steps instead of progress
 
     // Events
     public event Action<MapLocationDefinition> OnLocationChanged;
@@ -98,8 +105,18 @@ public class MapManager : MonoBehaviour
         else
         {
             Logger.LogInfo($"MapManager: Loaded current location: {CurrentLocation.DisplayName} ({CurrentLocation.LocationID})", Logger.LogCategory.MapLog);
-            // Note: OnLocationChanged is typically invoked when location *changes*, not on initial load.
-            // If needed for initial setup by other systems, invoke it here or have them query CurrentLocation.
+
+            // NOUVEAU: Si on est en voyage, restaurer l'état au démarrage
+            if (dataManager.PlayerData.IsCurrentlyTraveling())
+            {
+                long currentTotalSteps = dataManager.PlayerData.TotalSteps;
+                long progressSteps = dataManager.PlayerData.GetTravelProgress(currentTotalSteps);
+                int requiredSteps = dataManager.PlayerData.TravelRequiredSteps;
+                string destinationId = dataManager.PlayerData.TravelDestinationId;
+
+                Logger.LogInfo($"MapManager: Restored travel progress: {progressSteps}/{requiredSteps} steps to {destinationId}", Logger.LogCategory.MapLog);
+                lastSavedTotalSteps = currentTotalSteps; // Initialiser le tracking avec les pas actuels
+            }
         }
     }
 
@@ -113,17 +130,49 @@ public class MapManager : MonoBehaviour
             long travelProgress = dataManager.PlayerData.GetTravelProgress(currentTotalSteps);
             int requiredSteps = dataManager.PlayerData.TravelRequiredSteps;
 
-            Logger.LogWarning($"MapManager: Found ongoing travel to {destination} (Progress: {travelProgress}/{requiredSteps}). This might be leftover data from a previous session.", Logger.LogCategory.MapLog);
+            Logger.LogInfo($"MapManager: Found ongoing travel to {destination} (Progress: {travelProgress}/{requiredSteps}).", Logger.LogCategory.MapLog);
 
-            // CORRECTION: Auto-clear any leftover travel state for clean start
-            Logger.LogInfo("MapManager: Attempting to clear leftover travel state...", Logger.LogCategory.MapLog);
-            ClearTravelState(); // This will log the details of what was cleared
+            // Vérifier que l'état de voyage est cohérent
+            if (string.IsNullOrEmpty(destination) || !_locationRegistry.HasLocation(destination))
+            {
+                Logger.LogWarning($"MapManager: Invalid travel destination '{destination}'. Clearing travel state.", Logger.LogCategory.MapLog);
+                ClearTravelState();
+                return;
+            }
+
+            if (requiredSteps <= 0)
+            {
+                Logger.LogWarning($"MapManager: Invalid travel required steps: {requiredSteps}. Clearing travel state.", Logger.LogCategory.MapLog);
+                ClearTravelState();
+                return;
+            }
+
+            if (travelProgress < 0)
+            {
+                Logger.LogWarning($"MapManager: Invalid travel progress: {travelProgress}. Clearing travel state.", Logger.LogCategory.MapLog);
+                ClearTravelState();
+                return;
+            }
+
+            // Si le voyage est déjà terminé selon les pas, le compléter immédiatement
+            if (dataManager.PlayerData.IsTravelComplete(currentTotalSteps))
+            {
+                Logger.LogInfo($"MapManager: Travel to {destination} was already completed ({travelProgress}/{requiredSteps}). Completing now.", Logger.LogCategory.MapLog);
+                CompleteTravel();
+                return;
+            }
+
+            // État de voyage valide, continuer normalement
+            Logger.LogInfo($"MapManager: Valid ongoing travel state restored.", Logger.LogCategory.MapLog);
         }
         else
         {
             Logger.LogInfo("MapManager: No ongoing travel found at startup.", Logger.LogCategory.MapLog);
         }
     }
+
+    // NOUVEAU: Gérer la sauvegarde pendant le voyage (méthode supprimée car remplacée par sauvegarde immédiate)
+    // private void HandleTravelSave() - SUPPRIMÉE
 
     // NOUVEAU: Clear travel state (méthode utilitaire)
     public void ClearTravelState()
@@ -143,9 +192,10 @@ public class MapManager : MonoBehaviour
         dataManager.PlayerData.TravelStartSteps = 0;
         dataManager.PlayerData.TravelRequiredSteps = 0;
 
-        dataManager.SaveGame();
+        // Reset tracking
+        lastSavedTotalSteps = -1;
 
-        // Logger.LogInfo("MapManager: Travel state cleared from PlayerData.", Logger.LogCategory.MapLog); // Consolidated above
+        dataManager.SaveGame();
     }
 
     public bool CanTravelTo(string destinationLocationId)
@@ -153,16 +203,12 @@ public class MapManager : MonoBehaviour
         // Check if we have a current location
         if (CurrentLocation == null)
         {
-            // This log is fine, it's a specific failure case
-            // Logger.LogWarning("MapManager: Cannot travel - no current location set.", Logger.LogCategory.MapLog);
             return false;
         }
 
         // Check if already traveling
         if (dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            // This log is fine
-            // Logger.LogInfo($"MapManager: Cannot start new travel - already traveling to {dataManager.PlayerData.TravelDestinationId}.", Logger.LogCategory.MapLog);
             return false;
         }
 
@@ -170,24 +216,18 @@ public class MapManager : MonoBehaviour
         var destination = _locationRegistry.GetLocationById(destinationLocationId);
         if (destination == null)
         {
-            // This log is fine
-            // Logger.LogWarning($"MapManager: Cannot travel to '{destinationLocationId}' - location not found.", Logger.LogCategory.MapLog);
             return false;
         }
 
         // Check if we're already at that location
         if (CurrentLocation.LocationID == destinationLocationId)
         {
-            // This log is fine
-            // Logger.LogInfo($"MapManager: Already at {destination.DisplayName}.", Logger.LogCategory.MapLog);
             return false;
         }
 
         // Check if locations are connected
         if (!_locationRegistry.CanTravelBetween(CurrentLocation.LocationID, destinationLocationId))
         {
-            // This log is fine
-            // Logger.LogInfo($"MapManager: Cannot travel from {CurrentLocation.DisplayName} to {destination.DisplayName} - not connected.", Logger.LogCategory.MapLog);
             return false;
         }
 
@@ -198,7 +238,6 @@ public class MapManager : MonoBehaviour
     {
         if (!CanTravelTo(destinationLocationId))
         {
-            // Log why it failed inside CanTravelTo or OnPOIClicked
             Logger.LogWarning($"MapManager: StartTravel called for '{destinationLocationId}', but CanTravelTo returned false. Current loc: '{CurrentLocation?.LocationID}', Traveling: {dataManager.PlayerData.IsCurrentlyTraveling()}", Logger.LogCategory.MapLog);
             return;
         }
@@ -206,16 +245,15 @@ public class MapManager : MonoBehaviour
         var destination = _locationRegistry.GetLocationById(destinationLocationId);
         int stepCost = _locationRegistry.GetTravelCost(CurrentLocation.LocationID, destinationLocationId);
 
-        // CORRECTION: Debug le coût pour voir d'où vient 500
-        // This log is useful for debugging specific travel initiations.
-        // Logger.LogInfo($"MapManager: DEBUG - Travel cost from {CurrentLocation.LocationID} to {destinationLocationId}: {stepCost}", Logger.LogCategory.MapLog);
-
         // Start the travel
         dataManager.PlayerData.TravelDestinationId = destinationLocationId;
         dataManager.PlayerData.TravelStartSteps = dataManager.PlayerData.TotalSteps; // Current step count
         dataManager.PlayerData.TravelRequiredSteps = stepCost;
 
-        // Save immediately
+        // NOUVEAU: Initialiser le tracking de sauvegarde
+        lastSavedTotalSteps = dataManager.PlayerData.TotalSteps; // Sauvegarder les pas actuels comme référence
+
+        // MODIFIÉ: Sauvegarde immédiate et obligatoire au démarrage du voyage
         dataManager.SaveGame();
 
         Logger.LogInfo($"MapManager: Travel started from {CurrentLocation.DisplayName} to {destination.DisplayName}. Required steps: {stepCost}, Starting from step: {dataManager.PlayerData.TravelStartSteps}", Logger.LogCategory.MapLog);
@@ -233,12 +271,19 @@ public class MapManager : MonoBehaviour
         int requiredSteps = dataManager.PlayerData.TravelRequiredSteps;
         string destinationId = dataManager.PlayerData.TravelDestinationId;
 
+        // NOUVEAU: Sauvegarder immédiatement si les pas totaux ont changé
+        if (lastSavedTotalSteps != currentTotalSteps)
+        {
+            dataManager.SaveTravelProgress();
+            lastSavedTotalSteps = currentTotalSteps;
+
+            Logger.LogInfo($"MapManager: Auto-saved travel progress after step change: {progressSteps}/{requiredSteps} steps to {destinationId}", Logger.LogCategory.MapLog);
+        }
+
         // Emit progress event
         OnTravelProgress?.Invoke(destinationId, (int)progressSteps, requiredSteps);
 
-        // CORRECTION: Log progress less often and with more infos
-        // This is a deliberate periodic log for player feedback/debugging, not necessarily "spam" unless undesired.
-        // Keep it for now.
+        // Log progress less often and with more infos
         if (progressSteps > 0 && (progressSteps % 25 == 0 || progressSteps == 1)) // Log at 1 step and then every 25
         {
             var destinationLocation = _locationRegistry.GetLocationById(destinationId);
@@ -248,8 +293,6 @@ public class MapManager : MonoBehaviour
         // Check if travel is complete
         if (dataManager.PlayerData.IsTravelComplete(currentTotalSteps))
         {
-            // This log is fine.
-            // Logger.LogInfo($"MapManager: Travel completed! Final progress: {progressSteps}/{requiredSteps}", Logger.LogCategory.MapLog);
             CompleteTravel();
         }
     }
@@ -276,15 +319,17 @@ public class MapManager : MonoBehaviour
         dataManager.PlayerData.CurrentLocationId = destinationId;
 
         // Clear travel data - AMÉLIORATION: S'assurer que tout est bien null
-        // This is done before updating CurrentLocation property and invoking events
         dataManager.PlayerData.TravelDestinationId = null;
         dataManager.PlayerData.TravelStartSteps = 0;
         dataManager.PlayerData.TravelRequiredSteps = 0;
 
+        // NOUVEAU: Reset tracking
+        lastSavedTotalSteps = -1;
+
         // Update current location property in MapManager
         CurrentLocation = destinationLocation;
 
-        // Save game - IMPORTANT: Force save to ensure the new location and cleared travel state are persisted
+        // MODIFIÉ: Sauvegarde immédiate et obligatoire à la fin du voyage
         dataManager.SaveGame();
 
         Logger.LogInfo($"MapManager: Arrived at {CurrentLocation.DisplayName}. Travel state cleared. IsCurrentlyTraveling: {dataManager.PlayerData.IsCurrentlyTraveling()}", Logger.LogCategory.MapLog);
@@ -318,12 +363,6 @@ public class MapManager : MonoBehaviour
     // Method called by POI GameObjects when clicked
     public void OnPOIClicked(string locationId)
     {
-        // Logger.LogInfo($"MapManager: POI clicked: {locationId}", Logger.LogCategory.MapLog); // POI already logs this.
-
-        // NOUVEAU: Debug info pour diagnostiquer
-        // This log is useful for diagnosing click issues.
-        // Logger.LogInfo($"MapManager: Current travel state on POI click - IsCurrentlyTraveling: {dataManager.PlayerData.IsCurrentlyTraveling()}, TravelDestinationId: '{dataManager.PlayerData.TravelDestinationId}'", Logger.LogCategory.MapLog);
-
         if (CanTravelTo(locationId))
         {
             var travelInfo = GetTravelInfo(locationId); // Recalculate, as CanTravelTo could be true now
@@ -351,6 +390,20 @@ public class MapManager : MonoBehaviour
         }
     }
 
+    // NOUVEAU: Méthode publique pour forcer une sauvegarde du voyage (utile pour debug)
+    public void ForceSaveTravelProgress()
+    {
+        if (dataManager.PlayerData.IsCurrentlyTraveling())
+        {
+            dataManager.SaveTravelProgress();
+            lastSavedTotalSteps = dataManager.PlayerData.TotalSteps;
+
+            long currentProgress = dataManager.PlayerData.GetTravelProgress(dataManager.PlayerData.TotalSteps);
+
+            Logger.LogInfo($"MapManager: Force saved travel progress: {currentProgress}/{dataManager.PlayerData.TravelRequiredSteps}", Logger.LogCategory.MapLog);
+        }
+    }
+
     // Helper class for travel information
     [System.Serializable]
     public class TravelInfo
@@ -360,6 +413,4 @@ public class MapManager : MonoBehaviour
         public int StepCost;
         public bool CanTravel;
     }
-
-
 }

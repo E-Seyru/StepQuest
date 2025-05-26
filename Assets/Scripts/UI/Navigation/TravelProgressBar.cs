@@ -66,6 +66,27 @@ public class TravelProgressBar : MonoBehaviour
         {
             separatorText.text = "/";
         }
+
+        // NOUVEAU: Vérifier si on est déjà en voyage au démarrage
+        StartCoroutine(CheckTravelStateOnStart());
+    }
+
+    // NOUVEAU: Vérifier l'état de voyage au démarrage
+    private System.Collections.IEnumerator CheckTravelStateOnStart()
+    {
+        // Attendre que tous les managers soient prêts
+        yield return new WaitForSeconds(0.5f);
+
+        if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
+        {
+            string destinationId = dataManager.PlayerData.TravelDestinationId;
+            Logger.LogInfo($"TravelProgressBar: Found ongoing travel to {destinationId} at startup - showing progress bar", Logger.LogCategory.General);
+
+            // Afficher la barre et initialiser le texte
+            ShowProgressBar();
+            UpdateProgressText(destinationId);
+            UpdateProgressDisplay();
+        }
     }
 
     void OnDestroy()

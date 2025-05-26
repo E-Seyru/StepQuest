@@ -70,7 +70,7 @@ public class TravelSpriteAnimator : MonoBehaviour
             mapManager.OnTravelStarted += OnTravelStarted;
             mapManager.OnTravelCompleted += OnTravelCompleted;
             mapManager.OnTravelProgress += OnTravelProgress;
-            mapManager.OnLocationChanged += OnLocationChanged; // NOUVEAU
+            mapManager.OnLocationChanged += OnLocationChanged;
         }
 
         // Validation
@@ -89,7 +89,45 @@ public class TravelSpriteAnimator : MonoBehaviour
     private System.Collections.IEnumerator PositionPlayerAfterDelay()
     {
         yield return new WaitForSeconds(0.5f); // Attendre que tout soit chargé
-        PositionPlayerAtCurrentLocation();
+
+        // NOUVEAU: Vérifier si on est en voyage au démarrage
+        if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
+        {
+            Logger.LogInfo("TravelSpriteAnimator: Found ongoing travel at startup - restoring travel animation", Logger.LogCategory.MapLog);
+
+            string destinationId = dataManager.PlayerData.TravelDestinationId;
+
+            // Configurer le chemin de voyage
+            SetupTravelPath(destinationId);
+
+            // Positionner le personnage selon le progrès actuel
+            long currentTotalSteps = dataManager.PlayerData.TotalSteps;
+            long progressSteps = dataManager.PlayerData.GetTravelProgress(currentTotalSteps);
+            int requiredSteps = dataManager.PlayerData.TravelRequiredSteps;
+
+            float progress = requiredSteps > 0 ? (float)progressSteps / requiredSteps : 0f;
+            progress = Mathf.Clamp01(progress);
+
+            // Positionner le sprite selon le progrès
+            if (travelSprite != null)
+            {
+                Vector3 currentPos = Vector3.Lerp(startPosition, endPosition, progress);
+                travelSprite.transform.position = currentPos;
+
+                Logger.LogInfo($"TravelSpriteAnimator: Positioned player at travel progress {progress:F2} ({progressSteps}/{requiredSteps})", Logger.LogCategory.MapLog);
+            }
+
+            // Démarrer l'animation de rebond
+            if (bounceAnimation)
+            {
+                StartBounceAnimation();
+            }
+        }
+        else
+        {
+            // Pas en voyage, positionner normalement
+            PositionPlayerAtCurrentLocation();
+        }
     }
 
     /// <summary>
@@ -112,7 +150,7 @@ public class TravelSpriteAnimator : MonoBehaviour
             mapManager.OnTravelStarted -= OnTravelStarted;
             mapManager.OnTravelCompleted -= OnTravelCompleted;
             mapManager.OnTravelProgress -= OnTravelProgress;
-            mapManager.OnLocationChanged -= OnLocationChanged; // NOUVEAU
+            mapManager.OnLocationChanged -= OnLocationChanged;
         }
 
         // Arrêter les animations en cours
@@ -124,7 +162,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     /// </summary>
     private void OnTravelStarted(string destinationId)
     {
-        StopAllAnimations();            // <<< ajoute ceci en premier
+        StopAllAnimations();
         SetupTravelPath(destinationId);
         PositionPlayerAtStart();
         if (bounceAnimation) StartBounceAnimation();
@@ -312,8 +350,6 @@ public class TravelSpriteAnimator : MonoBehaviour
                 Logger.LogInfo("TravelSpriteAnimator: Player positioned at destination", Logger.LogCategory.MapLog);
             });
     }
-
-    // SUPPRIMÉ: HideTravelSprite() car le personnage ne disparaît jamais
 
     /// <summary>
     /// Démarre l'animation de rebond

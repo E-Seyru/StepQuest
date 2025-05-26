@@ -13,6 +13,9 @@ public class DataManager : MonoBehaviour
     private const long MAX_ACCEPTABLE_STEPS_DELTA = 10000; // Nombre maximum de pas acceptable entre deux sauvegardes
     private const long MAX_ACCEPTABLE_DAILY_STEPS = 50000; // Nombre maximum de pas quotidiens raisonnable
 
+    // NOUVEAU: Optimisation des sauvegardes de voyage - SUPPRIMÉ car maintenant on sauvegarde à chaque pas
+    // Plus de limitation de temps pour les sauvegardes de voyage
+
     void Awake()
     {
         if (Instance == null)
@@ -42,6 +45,14 @@ public class DataManager : MonoBehaviour
                           $"LastPause: {LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastPauseEpochMs)}, " +
                           $"LastChange: {LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastStepsChangeEpochMs)}, " +
                           $"DailySteps: {PlayerData.DailySteps}", Logger.LogCategory.General);
+
+            // NOUVEAU: Log de l'état de voyage s'il existe
+            if (PlayerData.IsCurrentlyTraveling())
+            {
+                long travelProgress = PlayerData.GetTravelProgress(PlayerData.TotalSteps);
+                Logger.LogInfo($"DataManager: Travel state loaded - Destination: {PlayerData.TravelDestinationId}, " +
+                              $"Progress: {travelProgress}/{PlayerData.TravelRequiredSteps} steps", Logger.LogCategory.General);
+            }
         }
 
         // Ne plus vérifier le changement de jour ici - désormais géré par StepManager
@@ -125,12 +136,103 @@ public class DataManager : MonoBehaviour
                           $"DailySteps={PlayerData.DailySteps}, " +
                           $"LastDailyResetDate={PlayerData.LastDailyResetDate}", Logger.LogCategory.General);
 
+            // NOUVEAU: Log de l'état de voyage lors de la sauvegarde
+            if (PlayerData.IsCurrentlyTraveling())
+            {
+                long travelProgress = PlayerData.GetTravelProgress(PlayerData.TotalSteps);
+                Logger.LogInfo($"DataManager: SaveGame → Travel state: Destination={PlayerData.TravelDestinationId}, " +
+                              $"Progress={travelProgress}/{PlayerData.TravelRequiredSteps} steps, " +
+                              $"StartSteps={PlayerData.TravelStartSteps}", Logger.LogCategory.General);
+            }
+
             _localDatabase.SavePlayerData(PlayerData);
         }
         catch (System.Exception ex)
         {
             Logger.LogError($"DataManager: Exception during SaveGame: {ex.Message}", Logger.LogCategory.General);
         }
+    }
+
+    // NOUVEAU: Méthode pour sauvegarder spécifiquement le progrès de voyage (maintenant sans limitation de temps)
+    public void SaveTravelProgress()
+    {
+        // Vérifier qu'on est bien en voyage
+        if (!PlayerData.IsCurrentlyTraveling())
+        {
+            Logger.LogWarning("DataManager: SaveTravelProgress called but not currently traveling!", Logger.LogCategory.General);
+            return;
+        }
+
+        // Vérifier l'intégrité de l'état de voyage avant de sauvegarder
+        if (!ValidateTravelState())
+        {
+            Logger.LogWarning("DataManager: SaveTravelProgress aborted - travel state is invalid!", Logger.LogCategory.General);
+            return;
+        }
+
+        // Procéder à la sauvegarde immédiate
+        try
+        {
+            long travelProgress = PlayerData.GetTravelProgress(PlayerData.TotalSteps);
+
+            Logger.LogInfo($"DataManager: SaveTravelProgress → Destination={PlayerData.TravelDestinationId}, " +
+                          $"Progress={travelProgress}/{PlayerData.TravelRequiredSteps} steps, " +
+                          $"StartSteps={PlayerData.TravelStartSteps}, TotalSteps={PlayerData.TotalSteps}", Logger.LogCategory.General);
+
+            _localDatabase.SavePlayerData(PlayerData);
+
+            Logger.LogInfo("DataManager: Travel progress saved successfully", Logger.LogCategory.General);
+        }
+        catch (System.Exception ex)
+        {
+            Logger.LogError($"DataManager: Exception during SaveTravelProgress: {ex.Message}", Logger.LogCategory.General);
+        }
+    }
+
+    // NOUVEAU: Valider l'état de voyage avant sauvegarde
+    private bool ValidateTravelState()
+    {
+        if (PlayerData == null) return false;
+
+        // Vérifier que les données de voyage sont cohérentes
+        if (string.IsNullOrEmpty(PlayerData.TravelDestinationId))
+        {
+            Logger.LogError("DataManager: Travel destination is null or empty!", Logger.LogCategory.General);
+            return false;
+        }
+
+        if (PlayerData.TravelRequiredSteps <= 0)
+        {
+            Logger.LogError($"DataManager: Invalid travel required steps: {PlayerData.TravelRequiredSteps}", Logger.LogCategory.General);
+            return false;
+        }
+
+        if (PlayerData.TravelStartSteps < 0)
+        {
+            Logger.LogError($"DataManager: Invalid travel start steps: {PlayerData.TravelStartSteps}", Logger.LogCategory.General);
+            return false;
+        }
+
+        if (PlayerData.TotalSteps < PlayerData.TravelStartSteps)
+        {
+            Logger.LogError($"DataManager: Current total steps ({PlayerData.TotalSteps}) less than travel start steps ({PlayerData.TravelStartSteps})", Logger.LogCategory.General);
+            return false;
+        }
+
+        long travelProgress = PlayerData.GetTravelProgress(PlayerData.TotalSteps);
+        if (travelProgress < 0)
+        {
+            Logger.LogError($"DataManager: Negative travel progress: {travelProgress}", Logger.LogCategory.General);
+            return false;
+        }
+
+        // Avertissement si le progrès dépasse largement le requis (mais ne pas bloquer)
+        if (travelProgress > PlayerData.TravelRequiredSteps * 2)
+        {
+            Logger.LogWarning($"DataManager: Travel progress ({travelProgress}) is much higher than required ({PlayerData.TravelRequiredSteps}). This might indicate a problem.", Logger.LogCategory.General);
+        }
+
+        return true;
     }
 
     // Méthode pour vérifier l'intégrité des données avant sauvegarde
@@ -178,6 +280,46 @@ public class DataManager : MonoBehaviour
             PlayerData.LastPauseEpochMs = nowEpochMs;
             PlayerData.LastStepsChangeEpochMs = nowEpochMs;
         }
+
+        // NOUVEAU: Valider aussi l'état de voyage si en cours
+        if (PlayerData.IsCurrentlyTraveling())
+        {
+            ValidateTravelState();
+        }
+    }
+
+    // NOUVEAU: Méthode utilitaire pour obtenir des informations de debug sur l'état de voyage
+    public string GetTravelStateDebugInfo()
+    {
+        if (!PlayerData.IsCurrentlyTraveling())
+        {
+            return "No active travel";
+        }
+
+        long travelProgress = PlayerData.GetTravelProgress(PlayerData.TotalSteps);
+        float progressPercent = (float)travelProgress / PlayerData.TravelRequiredSteps * 100f;
+
+        return $"Travel to {PlayerData.TravelDestinationId}: {travelProgress}/{PlayerData.TravelRequiredSteps} steps ({progressPercent:F1}%)";
+    }
+
+    // NOUVEAU: Méthode utilitaire pour forcer une sauvegarde immédiate (ignorer les limitations de temps)
+    public void ForceSave()
+    {
+        Logger.LogInfo("DataManager: Force save requested", Logger.LogCategory.General);
+        SaveGame();
+    }
+
+    // NOUVEAU: Méthode utilitaire pour forcer une sauvegarde de voyage (plus de limitation de temps)
+    public void ForceSaveTravelProgress()
+    {
+        if (!PlayerData.IsCurrentlyTraveling())
+        {
+            Logger.LogWarning("DataManager: ForceSaveTravelProgress called but not currently traveling!", Logger.LogCategory.General);
+            return;
+        }
+
+        Logger.LogInfo("DataManager: Force save travel progress requested", Logger.LogCategory.General);
+        SaveTravelProgress(); // Maintenant SaveTravelProgress n'a plus de limitation de temps
     }
 
     void OnApplicationQuit()
@@ -185,12 +327,38 @@ public class DataManager : MonoBehaviour
         if (PlayerData != null)
         {
             Logger.LogInfo("DataManager: Application quitting, ensuring data is saved.", Logger.LogCategory.General);
+
+            // NOUVEAU: Si en voyage, sauvegarder le progrès une dernière fois
+            if (PlayerData.IsCurrentlyTraveling())
+            {
+                Logger.LogInfo("DataManager: Saving travel progress before quit.", Logger.LogCategory.General);
+                ForceSaveTravelProgress();
+            }
+
             SaveGame();
         }
 
         if (_localDatabase != null)
         {
             _localDatabase.CloseDatabase();
+        }
+    }
+
+    // NOUVEAU: Méthode appelée quand l'application se met en pause (Android)
+    void OnApplicationPause(bool pauseStatus)
+    {
+        if (pauseStatus && PlayerData != null)
+        {
+            Logger.LogInfo("DataManager: Application pausing, saving data.", Logger.LogCategory.General);
+
+            // Si en voyage, sauvegarder le progrès
+            if (PlayerData.IsCurrentlyTraveling())
+            {
+                Logger.LogInfo("DataManager: Saving travel progress before pause.", Logger.LogCategory.General);
+                ForceSaveTravelProgress();
+            }
+
+            SaveGame();
         }
     }
 }
