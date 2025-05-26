@@ -12,7 +12,6 @@ public class PanelManager : MonoBehaviour
     [SerializeField] private List<int> alwaysActivePanelIndices = new List<int>(); // Nouveaux indices pour les panneaux toujours actifs
     [SerializeField] private GameObject mapPanel; // Panneau de carte
 
-
     [Header("Swipe Settings")]
     [SerializeField] private float minSwipeDistance = 50f;
     [SerializeField] private float swipeThreshold = 0.2f;
@@ -41,12 +40,10 @@ public class PanelManager : MonoBehaviour
 
     private void Awake()
     {
-
         if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-
         }
         else
         {
@@ -248,8 +245,6 @@ public class PanelManager : MonoBehaviour
         }
 #endif
     }
-
-
 
     private enum TransitionDirection
     {
@@ -465,7 +460,6 @@ public class PanelManager : MonoBehaviour
         }
     }
 
-
     private void HidePanel()
     {
         if (currentPanelIndex >= 0 && currentPanelIndex < panels.Count && panels[currentPanelIndex] != null)
@@ -486,7 +480,6 @@ public class PanelManager : MonoBehaviour
             }
         }
     }
-
 
     public void ShowAndHideMapPanel()
     {
