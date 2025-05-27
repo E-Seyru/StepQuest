@@ -1,5 +1,6 @@
 // Purpose: Panel that displays detailed information about the current location
 // Filepath: Assets/Scripts/UI/Panels/LocationDetailsPanel.cs
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -38,6 +39,7 @@ public class LocationDetailsPanel : MonoBehaviour
     // Current state
     private MapLocationDefinition currentLocation;
     private List<GameObject> instantiatedActivityItems = new List<GameObject>();
+    private Queue<GameObject> activityItemPool = new Queue<GameObject>();
 
     public static LocationDetailsPanel Instance { get; private set; }
 
@@ -81,6 +83,7 @@ public class LocationDetailsPanel : MonoBehaviour
     void OnEnable()
     {
         RefreshPanel();
+        StartCoroutine(DelayedLayoutFix());
     }
 
     /// <summary>
@@ -177,7 +180,7 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     private void PopulateActivitiesSection()
     {
-        Debug.Log("=== DEBUG PopulateActivitiesSection ===");
+
 
         // RÉACTIVER LA SECTION AU CAS OÙ ELLE AURAIT ÉTÉ DÉSACTIVÉE
         if (activitiesSection != null)
@@ -186,7 +189,7 @@ public class LocationDetailsPanel : MonoBehaviour
         }
 
         // Clear existing activity items
-        ClearActivityItems();
+        RecycleActivityItems();
 
         if (activitiesSection == null)
         {
@@ -200,11 +203,10 @@ public class LocationDetailsPanel : MonoBehaviour
             return;
         }
 
-        Debug.Log($"Current location: {currentLocation.DisplayName}");
-        Debug.Log($"Total AvailableActivities: {currentLocation.AvailableActivities?.Count ?? 0}");
+
 
         var availableActivities = currentLocation.GetAvailableActivities();
-        Debug.Log($"Valid activities after filtering: {availableActivities.Count}");
+
 
         // Debug chaque activité
         if (currentLocation.AvailableActivities != null)
@@ -212,12 +214,8 @@ public class LocationDetailsPanel : MonoBehaviour
             for (int i = 0; i < currentLocation.AvailableActivities.Count; i++)
             {
                 var activity = currentLocation.AvailableActivities[i];
-                Debug.Log($"Activity {i}: {activity?.GetDisplayName() ?? "NULL"}");
-                if (activity != null)
-                {
-                    Debug.Log($"  - IsValidActivity: {activity.IsValidActivity()}");
-                    Debug.Log($"  - VariantCount: {activity.ActivityVariants?.Count ?? 0}");
-                }
+
+
             }
         }
 
@@ -225,7 +223,7 @@ public class LocationDetailsPanel : MonoBehaviour
         if (activitiesSectionTitle != null)
         {
             activitiesSectionTitle.text = $"Activités disponibles ({availableActivities.Count})";
-            Debug.Log($"Section title updated: Activités disponibles ({availableActivities.Count})");
+
         }
 
         // Show/hide based on availability
@@ -236,12 +234,12 @@ public class LocationDetailsPanel : MonoBehaviour
         }
         else
         {
-            Debug.Log($"Found {availableActivities.Count} valid activities - creating activity items");
+
             HideNoActivitiesMessage();
             CreateActivityItems(availableActivities);
         }
 
-        Debug.Log("=== END DEBUG PopulateActivitiesSection ===");
+
     }
 
     /// <summary>
@@ -253,10 +251,11 @@ public class LocationDetailsPanel : MonoBehaviour
 
         foreach (var activity in activities)
         {
-            GameObject item = Instantiate(activityItemPrefab, activitiesContainer);
-            instantiatedActivityItems.Add(item);
+            GameObject item = GetPooledItem();
+            if (item.transform.parent != activitiesContainer)     // s’il vient du pool
+                item.transform.SetParent(activitiesContainer, false);
 
-            // Setup the activity item
+            instantiatedActivityItems.Add(item);
             SetupActivityItem(item, activity);
         }
     }
@@ -288,6 +287,7 @@ public class LocationDetailsPanel : MonoBehaviour
         // Set up click handler
         if (button != null)
         {
+            button.onClick.RemoveAllListeners();
             button.onClick.AddListener(() => OnActivityClicked(activity));
         }
 
@@ -402,18 +402,29 @@ public class LocationDetailsPanel : MonoBehaviour
     /// <summary>
     /// Clear all instantiated activity items
     /// </summary>
-    private void ClearActivityItems()
+    private void RecycleActivityItems()
     {
         foreach (var item in instantiatedActivityItems)
         {
             if (item != null)
             {
-                Destroy(item);
+                item.SetActive(false);          // on ne détruit plus
+                activityItemPool.Enqueue(item); // on stocke pour ré-emploi
             }
         }
         instantiatedActivityItems.Clear();
     }
-
+    private GameObject GetPooledItem()
+    {
+        if (activityItemPool.Count > 0)
+        {
+            var item = activityItemPool.Dequeue();
+            item.SetActive(true);
+            return item;
+        }
+        // - sinon ancienne logique
+        return Instantiate(activityItemPrefab, activitiesContainer);
+    }
     /// <summary>
     /// Close the panel
     /// </summary>
@@ -459,5 +470,21 @@ public class LocationDetailsPanel : MonoBehaviour
     public void ForceRefresh()
     {
         RefreshPanel();
+    }
+
+    /// <summary>
+    /// Attendre une frame que le Canvas soit actif, puis forcer le layout.
+    /// Évite que texte et image se superposent et que le ScrollRect reste bloqué.
+    /// </summary>
+    private IEnumerator DelayedLayoutFix()
+    {
+        yield return null;                    // attendre la fin de frame courante
+        Canvas.ForceUpdateCanvases();         // pousse Unity à recalculer immédiatement
+
+        if (descriptionScrollRect != null && descriptionScrollRect.content != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(descriptionScrollRect.content);
+            descriptionScrollRect.verticalNormalizedPosition = 1f; // facultatif : scroller en haut
+        }
     }
 }
