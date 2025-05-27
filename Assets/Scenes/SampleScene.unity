@@ -4632,7 +4632,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 489.13983, y: -745.3835}
+  m_AnchoredPosition: {x: 489.13983, y: -1055.2686}
   m_SizeDelta: {x: 932.9915, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1037981656
@@ -9327,7 +9327,7 @@ MonoBehaviour:
   bounceAnimation: 1
   bounceHeight: 0.6
   bounceSpeed: 2
-  moveSpeed: 2.5
+  moveSpeed: 0.75
   showDebugPath: 0
   debugPathColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!212 &2093654739

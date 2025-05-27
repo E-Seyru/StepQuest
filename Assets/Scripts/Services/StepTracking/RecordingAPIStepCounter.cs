@@ -19,13 +19,9 @@ public class RecordingAPIStepCounter : MonoBehaviour
 
     public static RecordingAPIStepCounter Instance { get; private set; }
 
-    // NOUVEAU: Variables pour la simulation dans l'éditeur
+    // SIMPLIFIÉ: Variables pour l'éditeur - plus simples
 #if UNITY_EDITOR
-    private long editorSimulatedSteps = 0;
-    private long editorLastSensorValue = 0;
     private bool editorSensorActive = false;
-    private System.Random editorRandom = new System.Random();
-    private long editorSensorBaseValue = 0; // Valeur de base fixe
 #endif
 
     void Awake()
@@ -48,8 +44,8 @@ public class RecordingAPIStepCounter : MonoBehaviour
         if (isPluginClassInitialized) return;
 
 #if UNITY_EDITOR
-        // Mode éditeur - simulation
-        Logger.LogInfo("RecordingAPIStepCounter: Running in Editor mode - using simulation", Logger.LogCategory.StepLog);
+        // Mode éditeur - simple
+        Logger.LogInfo("RecordingAPIStepCounter: Running in Editor mode", Logger.LogCategory.StepLog);
         isPluginClassInitialized = true;
         return;
 #else
@@ -143,8 +139,10 @@ public class RecordingAPIStepCounter : MonoBehaviour
     public IEnumerator GetDeltaSinceFromAPI(long fromEpochMs, long toEpochMs, System.Action<long> onResultCallback)
     {
 #if UNITY_EDITOR
-        // Simulation pour l'éditeur
-        yield return StartCoroutine(SimulateAPIRead(fromEpochMs, toEpochMs, onResultCallback));
+        // Simulation SIMPLE pour l'éditeur - retourne toujours 0 pour éviter les conflits
+        yield return new WaitForSeconds(0.1f);
+        Logger.LogInfo($"RecordingAPIStepCounter: [EDITOR] API call simulated, returning 0 steps", Logger.LogCategory.StepLog);
+        onResultCallback?.Invoke(0);
         yield break;
 #else
         if (!isPluginClassInitialized || stepPluginClass == null || !HasPermission())
@@ -203,51 +201,10 @@ public class RecordingAPIStepCounter : MonoBehaviour
 #endif
     }
 
-#if UNITY_EDITOR
-    // NOUVEAU: Simulation de lecture API pour l'éditeur
-    private IEnumerator SimulateAPIRead(long fromEpochMs, long toEpochMs, System.Action<long> onResultCallback)
-    {
-        // Attendre un peu pour simuler le délai réseau
-        yield return new WaitForSeconds(0.2f + editorRandom.Next(0, 3) * 0.1f);
-
-        // Calculer une simulation basée sur la durée
-        long durationMs = toEpochMs - fromEpochMs;
-        long durationHours = durationMs / (1000 * 60 * 60);
-
-        // Simuler des pas basés sur la durée (plus c'est long, plus il y a de pas)
-        long simulatedSteps = 0;
-
-        if (durationHours <= 0)
-        {
-            simulatedSteps = editorRandom.Next(0, 5); // Très courte période
-        }
-        else if (durationHours <= 1)
-        {
-            simulatedSteps = editorRandom.Next(50, 200); // Une heure
-        }
-        else if (durationHours <= 8)
-        {
-            simulatedSteps = editorRandom.Next(200, 1000); // Journée de travail
-        }
-        else
-        {
-            simulatedSteps = editorRandom.Next(1000, 3000); // Journée complète
-        }
-
-        // Ajouter un peu de variabilité
-        simulatedSteps += editorRandom.Next(-50, 50);
-        simulatedSteps = Math.Max(0, simulatedSteps);
-
-        Logger.LogInfo($"RecordingAPIStepCounter: [EDITOR SIMULATION] Simulated {simulatedSteps} steps for {durationHours}h period", Logger.LogCategory.StepLog);
-
-        onResultCallback?.Invoke(simulatedSteps);
-    }
-#endif
-
     private bool ShouldSkipRange(long fromEpochMs, long toEpochMs)
     {
 #if UNITY_EDITOR
-        return false; // Pas de skip dans l'éditeur pour simplifier
+        return false; // Pas de skip dans l'éditeur
 #else
         try
         {
@@ -283,7 +240,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
     public void ClearStoredRange()
     {
 #if UNITY_EDITOR
-        Logger.LogInfo("RecordingAPIStepCounter: [EDITOR] ClearStoredRange called - simulated success", Logger.LogCategory.StepLog);
+        Logger.LogInfo("RecordingAPIStepCounter: [EDITOR] ClearStoredRange called", Logger.LogCategory.StepLog);
         return;
 #else
         if (!isPluginClassInitialized || stepPluginClass == null)
@@ -351,23 +308,8 @@ public class RecordingAPIStepCounter : MonoBehaviour
     public void StartDirectSensorListener()
     {
 #if UNITY_EDITOR
-        Logger.LogInfo("RecordingAPIStepCounter: [EDITOR] Starting direct sensor simulation", Logger.LogCategory.StepLog);
+        Logger.LogInfo("RecordingAPIStepCounter: [EDITOR] Direct sensor started", Logger.LogCategory.StepLog);
         editorSensorActive = true;
-
-        // Initialiser avec les pas actuels du jeu
-        var dataManager = DataManager.Instance;
-        if (dataManager?.PlayerData != null)
-        {
-            editorSensorBaseValue = 50000; // Valeur de base fixe pour le capteur
-            editorLastSensorValue = editorSensorBaseValue + dataManager.PlayerData.TotalSteps;
-        }
-        else
-        {
-            editorSensorBaseValue = 50000;
-            editorLastSensorValue = editorSensorBaseValue;
-        }
-
-        Logger.LogInfo($"RecordingAPIStepCounter: [EDITOR] Sensor initialized with base {editorSensorBaseValue}, current {editorLastSensorValue}", Logger.LogCategory.StepLog);
         return;
 #else
         if (!isPluginClassInitialized || stepPluginClass == null || !HasPermission())
@@ -383,7 +325,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
     public void StopDirectSensorListener()
     {
 #if UNITY_EDITOR
-        Logger.LogInfo("RecordingAPIStepCounter: [EDITOR] Stopping direct sensor simulation", Logger.LogCategory.StepLog);
+        Logger.LogInfo("RecordingAPIStepCounter: [EDITOR] Direct sensor stopped", Logger.LogCategory.StepLog);
         editorSensorActive = false;
         return;
 #else
@@ -400,17 +342,9 @@ public class RecordingAPIStepCounter : MonoBehaviour
     public long GetCurrentRawSensorSteps()
     {
 #if UNITY_EDITOR
-        if (!editorSensorActive) return -1;
-
-        // CORRIGÉ: Synchroniser avec les vraies données du jeu au lieu d'augmenter automatiquement
-        var dataManager = DataManager.Instance;
-        if (dataManager?.PlayerData != null)
-        {
-            // Le capteur reflète les vrais pas totaux + une base fixe
-            editorLastSensorValue = editorSensorBaseValue + dataManager.PlayerData.TotalSteps;
-        }
-
-        return editorLastSensorValue;
+        // Dans l'éditeur, retourne -1 pour désactiver le système de capteur direct
+        // Les pas seront gérés uniquement par EditorStepSimulator
+        return -1;
 #else
         if (!isPluginClassInitialized || stepPluginClass == null || !HasPermission())
         {

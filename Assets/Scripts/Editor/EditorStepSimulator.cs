@@ -11,7 +11,7 @@ public class EditorStepSimulator : EditorWindow
     [Header("Simulation Settings")]
     [SerializeField] private int stepsToAdd = 100;
     [SerializeField] private bool autoSimulation = false;
-    [SerializeField] private float autoSimulationInterval = 2f; // secondes
+    [SerializeField] private float autoSimulationInterval = 2f;
     [SerializeField] private int autoStepsPerInterval = 10;
 
     [Header("Quick Actions")]
@@ -24,7 +24,6 @@ public class EditorStepSimulator : EditorWindow
     [SerializeField] private long currentDailySteps = 0;
 
     private double lastAutoSimTime = 0;
-    private StepManager stepManager;
     private DataManager dataManager;
 
     [MenuItem("StepQuest/Step Simulator")]
@@ -37,7 +36,6 @@ public class EditorStepSimulator : EditorWindow
 
     void OnEnable()
     {
-        // S'assurer que la simulation continue même quand la fenêtre n'est pas focusée
         EditorApplication.update += UpdateSimulation;
     }
 
@@ -53,11 +51,11 @@ public class EditorStepSimulator : EditorWindow
 
         if (EditorApplication.timeSinceStartup - lastAutoSimTime >= autoSimulationInterval)
         {
-            AddSteps(autoStepsPerInterval);
-            lastAutoSimTime = EditorApplication.timeSinceStartup;
-
-            // NOUVEAU: Forcer le redessin pour la simulation auto aussi
-            Repaint();
+            if (AddStepsInternal(autoStepsPerInterval))
+            {
+                lastAutoSimTime = EditorApplication.timeSinceStartup;
+                Repaint();
+            }
         }
     }
 
@@ -66,31 +64,17 @@ public class EditorStepSimulator : EditorWindow
         GUILayout.Label("🦶 Step Quest - Simulateur de Pas", EditorStyles.boldLabel);
         GUILayout.Space(10);
 
-        // Status actuel
         UpdateStatus();
         DrawStatusSection();
-
         GUILayout.Space(10);
-
-        // Contrôles manuels
         DrawManualControls();
-
         GUILayout.Space(10);
-
-        // Simulation automatique
         DrawAutoSimulation();
-
         GUILayout.Space(10);
-
-        // Actions rapides
         DrawQuickActions();
-
         GUILayout.Space(10);
-
-        // Debug et reset
         DrawDebugSection();
 
-        // Warning si pas en mode Play
         if (!Application.isPlaying)
         {
             EditorGUILayout.HelpBox("⚠️ Lancez le jeu (Play) pour utiliser le simulateur", MessageType.Warning);
@@ -101,20 +85,12 @@ public class EditorStepSimulator : EditorWindow
     {
         if (Application.isPlaying)
         {
-            stepManager = StepManager.Instance;
             dataManager = DataManager.Instance;
 
-            // AMÉLIORÉ: Récupérer directement depuis DataManager pour avoir les valeurs instantanées
             if (dataManager?.PlayerData != null)
             {
                 currentTotalSteps = dataManager.PlayerData.TotalSteps;
                 currentDailySteps = dataManager.PlayerData.DailySteps;
-            }
-            else if (stepManager != null)
-            {
-                // Fallback vers StepManager si DataManager pas disponible
-                currentTotalSteps = stepManager.TotalSteps;
-                currentDailySteps = stepManager.DailySteps;
             }
         }
     }
@@ -131,7 +107,8 @@ public class EditorStepSimulator : EditorWindow
         {
             var progress = dataManager.PlayerData.GetTravelProgress(currentTotalSteps);
             var required = dataManager.PlayerData.TravelRequiredSteps;
-            EditorGUILayout.LabelField("🚶 Voyage", $"{progress}/{required} pas vers {dataManager.PlayerData.TravelDestinationId}");
+            var progressPercent = required > 0 ? (float)progress / required * 100f : 0f;
+            EditorGUILayout.LabelField("🚶 Voyage", $"{progress}/{required} pas ({progressPercent:F1}%) vers {dataManager.PlayerData.TravelDestinationId}");
         }
 
         EditorGUILayout.EndVertical();
@@ -146,7 +123,7 @@ public class EditorStepSimulator : EditorWindow
         stepsToAdd = EditorGUILayout.IntField("Pas à ajouter", stepsToAdd);
         if (GUILayout.Button("Ajouter", GUILayout.Width(80)))
         {
-            AddSteps(stepsToAdd);
+            AddStepsInternal(stepsToAdd);
         }
         EditorGUILayout.EndHorizontal();
 
@@ -180,7 +157,7 @@ public class EditorStepSimulator : EditorWindow
         quickSteps1 = EditorGUILayout.IntField(quickSteps1, GUILayout.Width(60));
         if (GUILayout.Button($"+{quickSteps1}"))
         {
-            AddSteps(quickSteps1);
+            AddStepsInternal(quickSteps1);
         }
         EditorGUILayout.EndHorizontal();
 
@@ -188,7 +165,7 @@ public class EditorStepSimulator : EditorWindow
         quickSteps2 = EditorGUILayout.IntField(quickSteps2, GUILayout.Width(60));
         if (GUILayout.Button($"+{quickSteps2}"))
         {
-            AddSteps(quickSteps2);
+            AddStepsInternal(quickSteps2);
         }
         EditorGUILayout.EndHorizontal();
 
@@ -196,7 +173,7 @@ public class EditorStepSimulator : EditorWindow
         quickSteps3 = EditorGUILayout.IntField(quickSteps3, GUILayout.Width(60));
         if (GUILayout.Button($"+{quickSteps3}"))
         {
-            AddSteps(quickSteps3);
+            AddStepsInternal(quickSteps3);
         }
         EditorGUILayout.EndHorizontal();
 
@@ -218,6 +195,11 @@ public class EditorStepSimulator : EditorWindow
             ResetDailySteps();
         }
 
+        if (GUILayout.Button("Clear Travel State"))
+        {
+            ClearTravelState();
+        }
+
         GUI.backgroundColor = Color.red;
         if (GUILayout.Button("⚠️ Reset Complet"))
         {
@@ -231,31 +213,32 @@ public class EditorStepSimulator : EditorWindow
         EditorGUILayout.EndVertical();
     }
 
-    void AddSteps(int steps)
+    // SIMPLIFIÉ: Logique d'ajout de pas plus directe
+    bool AddStepsInternal(int steps)
     {
         if (!Application.isPlaying)
         {
             Debug.LogWarning("Simulator: Lancez le jeu pour simuler les pas!");
-            return;
+            return false;
         }
 
         if (steps <= 0)
         {
             Debug.LogWarning("Simulator: Nombre de pas doit être positif!");
-            return;
+            return false;
         }
 
         if (dataManager?.PlayerData == null)
         {
             Debug.LogWarning("Simulator: DataManager ou PlayerData non trouvé!");
-            return;
+            return false;
         }
 
-        // AMÉLIORÉ: Ajouter directement aux pas totaux et quotidiens
         long oldTotal = dataManager.PlayerData.TotalSteps;
         long oldDaily = dataManager.PlayerData.DailySteps;
 
-        dataManager.PlayerData.TotalSteps += steps;
+        // DIRECT: Ajouter les pas sans passer par des systèmes compliqués
+        dataManager.PlayerData.TotalPlayerSteps += steps;
         dataManager.PlayerData.DailySteps += steps;
 
         // Mettre à jour les timestamps
@@ -264,14 +247,13 @@ public class EditorStepSimulator : EditorWindow
         dataManager.PlayerData.LastSyncEpochMs = nowMs;
         dataManager.PlayerData.LastPauseEpochMs = nowMs;
 
-        // Sauvegarder
+        // Sauvegarder immédiatement
         dataManager.SaveGame();
 
-        // NOUVEAU: Forcer une mise à jour immédiate du Status et de l'interface
+        // Forcer la mise à jour de l'UI
         UpdateStatus();
-        Repaint(); // Force le redessin de la fenêtre du simulateur
+        Repaint();
 
-        // NOUVEAU: Forcer aussi une mise à jour de l'UIManager si disponible
         var uiManager = UIManager.Instance;
         if (uiManager != null)
         {
@@ -279,6 +261,7 @@ public class EditorStepSimulator : EditorWindow
         }
 
         Debug.Log($"Simulator: Ajouté {steps} pas. Total: {oldTotal} → {dataManager.PlayerData.TotalSteps}, Quotidien: {oldDaily} → {dataManager.PlayerData.DailySteps}");
+        return true;
     }
 
     void SimulateNewDay()
@@ -289,13 +272,11 @@ public class EditorStepSimulator : EditorWindow
             return;
         }
 
-        // Changer la date de reset pour forcer un nouveau jour
         string tomorrow = DateTime.Now.AddDays(1).ToString("yyyy-MM-dd");
         dataManager.PlayerData.LastDailyResetDate = tomorrow;
         dataManager.PlayerData.DailySteps = 0;
         dataManager.SaveGame();
 
-        // NOUVEAU: Mise à jour immédiate
         UpdateStatus();
         Repaint();
 
@@ -313,11 +294,29 @@ public class EditorStepSimulator : EditorWindow
         dataManager.PlayerData.DailySteps = 0;
         dataManager.SaveGame();
 
-        // NOUVEAU: Mise à jour immédiate
         UpdateStatus();
         Repaint();
 
         Debug.Log("Simulator: Pas quotidiens remis à zéro");
+    }
+
+    void ClearTravelState()
+    {
+        if (!Application.isPlaying || dataManager?.PlayerData == null)
+        {
+            Debug.LogWarning("Simulator: Impossible de clear travel state!");
+            return;
+        }
+
+        dataManager.PlayerData.TravelDestinationId = null;
+        dataManager.PlayerData.TravelStartSteps = 0;
+        dataManager.PlayerData.TravelRequiredSteps = 0;
+        dataManager.SaveGame();
+
+        UpdateStatus();
+        Repaint();
+
+        Debug.Log("Simulator: Travel state cleared");
     }
 
     void ResetAllSteps()
@@ -331,9 +330,11 @@ public class EditorStepSimulator : EditorWindow
         dataManager.PlayerData.TotalPlayerSteps = 0;
         dataManager.PlayerData.DailySteps = 0;
         dataManager.PlayerData.LastSyncEpochMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        dataManager.PlayerData.TravelDestinationId = null;
+        dataManager.PlayerData.TravelStartSteps = 0;
+        dataManager.PlayerData.TravelRequiredSteps = 0;
         dataManager.SaveGame();
 
-        // NOUVEAU: Mise à jour immédiate
         UpdateStatus();
         Repaint();
 

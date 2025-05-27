@@ -16,7 +16,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     [SerializeField] private bool bounceAnimation = true; // Animation de rebond pendant le mouvement
     [SerializeField] private float bounceHeight = 0.2f; // Hauteur du rebond
     [SerializeField] private float bounceSpeed = 2f; // Vitesse du rebond
-    [SerializeField] private float moveSpeed = 2.5f; // unités / seconde
+    [SerializeField] private float moveSpeed = 0.75f; // unités / seconde
     private int moveTweenId = -1;
 
     [Header("Debug")]
