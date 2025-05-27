@@ -1,27 +1,32 @@
 ﻿// Purpose: Animates a sprite that moves along the travel path during journey
 // Filepath: Assets/Scripts/UI/Components/TravelSpriteAnimator.cs
+using System.Collections.Generic; // Pour Dictionary
 using UnityEngine;
 
 public class TravelSpriteAnimator : MonoBehaviour
 {
     [Header("Sprite Settings")]
-    [SerializeField] private GameObject travelSprite; // Le sprite qui se déplace
-    [SerializeField] private float spriteScale = 1f; // Taille du sprite
-    [SerializeField] private Vector3 spriteOffset = Vector3.zero; // Décalage par rapport au trajet
+    [SerializeField] private GameObject travelSprite;
+    [SerializeField] private float spriteScale = 1f;
+    [SerializeField] private Vector3 spriteOffset = Vector3.zero;
     [SerializeField] private Transform spriteVisual;
 
     [Header("Animation Settings")]
-    [SerializeField] private float animationDuration = 0.5f; // Durée des mouvements LeanTween
+    [SerializeField] private float animationDuration = 0.5f;
     [SerializeField] private LeanTweenType easeType = LeanTweenType.easeInOutQuad;
-    [SerializeField] private bool bounceAnimation = true; // Animation de rebond pendant le mouvement
-    [SerializeField] private float bounceHeight = 0.2f; // Hauteur du rebond
-    [SerializeField] private float bounceSpeed = 2f; // Vitesse du rebond
-    [SerializeField] private float moveSpeed = 0.75f; // unités / seconde
+    [SerializeField] private bool bounceAnimation = true;
+    [SerializeField] private float bounceHeight = 0.2f;
+    [SerializeField] private float bounceSpeed = 2f;
+    [SerializeField] private float moveSpeed = 0.75f;
     private int moveTweenId = -1;
 
     [Header("Debug")]
     [SerializeField] private bool showDebugPath = false;
     [SerializeField] private Color debugPathColor = Color.yellow;
+
+    // NOUVEAU : Cache des positions POI pour éviter les recherches répétées
+    private Dictionary<string, Vector3> poiPositionsCache = new Dictionary<string, Vector3>();
+    private bool isCacheInitialized = false;
 
     // Références
     private MapManager mapManager;
@@ -49,7 +54,6 @@ public class TravelSpriteAnimator : MonoBehaviour
             return;
         }
 
-        // Le sprite (personnage) reste toujours visible
         if (travelSprite != null)
         {
             travelSprite.SetActive(true);
@@ -79,28 +83,135 @@ public class TravelSpriteAnimator : MonoBehaviour
             Logger.LogError("TravelSpriteAnimator: travelSprite not assigned!", Logger.LogCategory.MapLog);
         }
 
+        // NOUVEAU : Initialiser le cache des positions POI
+        InitializePOICache();
+
         // Positionner le personnage à sa location actuelle au démarrage
         StartCoroutine(PositionPlayerAfterDelay());
     }
 
     /// <summary>
-    /// Positionne le joueur après un petit délai pour s'assurer que tout est initialisé
+    /// NOUVEAU : Initialise le cache des positions POI une seule fois au démarrage
     /// </summary>
+    private void InitializePOICache()
+    {
+        Logger.LogInfo("TravelSpriteAnimator: Initializing POI positions cache...", Logger.LogCategory.MapLog);
+
+        // Chercher le GameObject "WorldMap" dans la scène
+        GameObject worldMapObject = GameObject.Find("WorldMap");
+        if (worldMapObject == null)
+        {
+            Logger.LogError("TravelSpriteAnimator: WorldMap GameObject not found! Cannot cache POI positions.", Logger.LogCategory.MapLog);
+            return;
+        }
+
+        // Sauvegarder l'état actuel de la carte
+        bool wasMapActive = worldMapObject.activeInHierarchy;
+
+        // Activer temporairement la WorldMap si elle était désactivée
+        if (!wasMapActive)
+        {
+            Logger.LogInfo("TravelSpriteAnimator: Temporarily activating WorldMap to scan POIs...", Logger.LogCategory.MapLog);
+            worldMapObject.SetActive(true);
+        }
+
+        // OPTIMISATION : Chercher les POI seulement dans WorldMap au lieu de toute la scène
+        POI[] allPOIs = worldMapObject.GetComponentsInChildren<POI>(true); // 'true' pour inclure les POI désactivés
+
+        Logger.LogInfo($"TravelSpriteAnimator: Found {allPOIs.Length} POIs in WorldMap", Logger.LogCategory.MapLog);
+
+        // Mettre en cache toutes les positions
+        foreach (POI poi in allPOIs)
+        {
+            if (!string.IsNullOrEmpty(poi.LocationID))
+            {
+                Vector3 poiPosition = poi.GetTravelPathStartPosition();
+                poiPositionsCache[poi.LocationID] = poiPosition;
+
+                Logger.LogInfo($"TravelSpriteAnimator: Cached position for '{poi.LocationID}': {poiPosition}", Logger.LogCategory.MapLog);
+            }
+            else
+            {
+                Logger.LogWarning($"TravelSpriteAnimator: POI found without LocationID on GameObject '{poi.gameObject.name}'", Logger.LogCategory.MapLog);
+            }
+        }
+
+        // Remettre la WorldMap dans son état d'origine
+        if (!wasMapActive)
+        {
+            worldMapObject.SetActive(false);
+            Logger.LogInfo("TravelSpriteAnimator: WorldMap restored to inactive state", Logger.LogCategory.MapLog);
+        }
+
+        isCacheInitialized = true;
+        Logger.LogInfo($"TravelSpriteAnimator: POI cache initialized successfully with {poiPositionsCache.Count} positions", Logger.LogCategory.MapLog);
+    }
+
+    /// <summary>
+    /// MODIFIÉ : Utilise maintenant le cache au lieu de chercher dans la scène
+    /// </summary>
+    private Vector3 FindPOITravelStartPosition(string locationId)
+    {
+        // Vérifier que le cache est initialisé
+        if (!isCacheInitialized)
+        {
+            Logger.LogWarning("TravelSpriteAnimator: POI cache not initialized! Trying to initialize now...", Logger.LogCategory.MapLog);
+            InitializePOICache();
+        }
+
+        // Chercher dans le cache
+        if (poiPositionsCache.TryGetValue(locationId, out Vector3 cachedPosition))
+        {
+            Logger.LogInfo($"TravelSpriteAnimator: Found cached position for '{locationId}': {cachedPosition}", Logger.LogCategory.MapLog);
+            return cachedPosition;
+        }
+
+        // Si pas trouvé dans le cache, logger une erreur détaillée
+        string availableLocations = string.Join(", ", poiPositionsCache.Keys);
+        Logger.LogError($"TravelSpriteAnimator: POI position not found in cache for location '{locationId}'. " +
+                       $"Available cached locations: [{availableLocations}]", Logger.LogCategory.MapLog);
+
+        return Vector3.zero;
+    }
+
+    /// <summary>
+    /// NOUVEAU : Méthode utilitaire pour rafraîchir le cache si nécessaire
+    /// (utile si vous ajoutez des POI dynamiquement)
+    /// </summary>
+    public void RefreshPOICache()
+    {
+        Logger.LogInfo("TravelSpriteAnimator: Refreshing POI cache...", Logger.LogCategory.MapLog);
+        poiPositionsCache.Clear();
+        isCacheInitialized = false;
+        InitializePOICache();
+    }
+
+    /// <summary>
+    /// NOUVEAU : Méthode pour débugger le cache (utile pour le développement)
+    /// </summary>
+    [System.Diagnostics.Conditional("UNITY_EDITOR")]
+    public void DebugPrintCache()
+    {
+        Logger.LogInfo($"TravelSpriteAnimator: POI Cache contains {poiPositionsCache.Count} entries:", Logger.LogCategory.MapLog);
+        foreach (var kvp in poiPositionsCache)
+        {
+            Logger.LogInfo($"  - '{kvp.Key}': {kvp.Value}", Logger.LogCategory.MapLog);
+        }
+    }
+
+    // === LE RESTE DU CODE RESTE IDENTIQUE ===
+
     private System.Collections.IEnumerator PositionPlayerAfterDelay()
     {
-        yield return new WaitForSeconds(0.5f); // Attendre que tout soit chargé
+        yield return new WaitForSeconds(0.5f);
 
-        // NOUVEAU: Vérifier si on est en voyage au démarrage
         if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
         {
             Logger.LogInfo("TravelSpriteAnimator: Found ongoing travel at startup - restoring travel animation", Logger.LogCategory.MapLog);
 
             string destinationId = dataManager.PlayerData.TravelDestinationId;
-
-            // Configurer le chemin de voyage
             SetupTravelPath(destinationId);
 
-            // Positionner le personnage selon le progrès actuel
             long currentTotalSteps = dataManager.PlayerData.TotalSteps;
             long progressSteps = dataManager.PlayerData.GetTravelProgress(currentTotalSteps);
             int requiredSteps = dataManager.PlayerData.TravelRequiredSteps;
@@ -108,7 +219,6 @@ public class TravelSpriteAnimator : MonoBehaviour
             float progress = requiredSteps > 0 ? (float)progressSteps / requiredSteps : 0f;
             progress = Mathf.Clamp01(progress);
 
-            // Positionner le sprite selon le progrès
             if (travelSprite != null)
             {
                 Vector3 currentPos = Vector3.Lerp(startPosition, endPosition, progress);
@@ -117,7 +227,6 @@ public class TravelSpriteAnimator : MonoBehaviour
                 Logger.LogInfo($"TravelSpriteAnimator: Positioned player at travel progress {progress:F2} ({progressSteps}/{requiredSteps})", Logger.LogCategory.MapLog);
             }
 
-            // Démarrer l'animation de rebond
             if (bounceAnimation)
             {
                 StartBounceAnimation();
@@ -125,17 +234,12 @@ public class TravelSpriteAnimator : MonoBehaviour
         }
         else
         {
-            // Pas en voyage, positionner normalement
             PositionPlayerAtCurrentLocation();
         }
     }
 
-    /// <summary>
-    /// NOUVEAU: Appelé quand le joueur change de location (même sans voyage)
-    /// </summary>
     private void OnLocationChanged(MapLocationDefinition newLocation)
     {
-        // Si le joueur n'est pas en voyage, s'assurer qu'il est à la bonne position
         if (!dataManager.PlayerData.IsCurrentlyTraveling())
         {
             PositionPlayerAtCurrentLocation();
@@ -144,7 +248,6 @@ public class TravelSpriteAnimator : MonoBehaviour
 
     void OnDestroy()
     {
-        // Se désabonner des événements
         if (mapManager != null)
         {
             mapManager.OnTravelStarted -= OnTravelStarted;
@@ -153,13 +256,9 @@ public class TravelSpriteAnimator : MonoBehaviour
             mapManager.OnLocationChanged -= OnLocationChanged;
         }
 
-        // Arrêter les animations en cours
         StopAllAnimations();
     }
 
-    /// <summary>
-    /// Appelé quand un voyage commence
-    /// </summary>
     private void OnTravelStarted(string destinationId)
     {
         StopAllAnimations();
@@ -168,9 +267,6 @@ public class TravelSpriteAnimator : MonoBehaviour
         if (bounceAnimation) StartBounceAnimation();
     }
 
-    /// <summary>
-    /// Appelé pendant le voyage pour mettre à jour la position
-    /// </summary>
     private void OnTravelProgress(string destinationId, int currentSteps, int requiredSteps)
     {
         if (travelSprite != null && travelSprite.activeSelf)
@@ -182,21 +278,14 @@ public class TravelSpriteAnimator : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Appelé quand un voyage se termine
-    /// </summary>
     private void OnTravelCompleted(string arrivedLocationId)
     {
-        // Le personnage reste à sa nouvelle position (pas de disparition)
         AnimateToDestination();
-        StopBounceAnimation(); // Arrête le rebond une fois arrivé
+        StopBounceAnimation();
 
         Logger.LogInfo($"TravelSpriteAnimator: Player arrived at {arrivedLocationId}", Logger.LogCategory.MapLog);
     }
 
-    /// <summary>
-    /// Configure le chemin de voyage entre deux locations
-    /// </summary>
     private void SetupTravelPath(string destinationId)
     {
         if (mapManager?.CurrentLocation == null || locationRegistry == null)
@@ -205,68 +294,16 @@ public class TravelSpriteAnimator : MonoBehaviour
             return;
         }
 
-        // Trouver les positions des POI dans le monde (en utilisant les points de départ personnalisés)
+        // MODIFIÉ : Utilise le cache au lieu de chercher dans la scène
         startPosition = FindPOITravelStartPosition(mapManager.CurrentLocation.LocationID);
         endPosition = FindPOITravelStartPosition(destinationId);
 
-        // Ajouter les offsets
         startPosition += spriteOffset;
         endPosition += spriteOffset;
 
         Logger.LogInfo($"TravelSpriteAnimator: Path setup from {startPosition} to {endPosition}", Logger.LogCategory.MapLog);
     }
 
-    /// <summary>
-    /// MODIFIÉ: Trouve la position de départ pour le voyage d'un POI dans le monde par son LocationID
-    /// Utilise maintenant GetTravelPathStartPosition() au lieu de la position du transform
-    /// </summary>
-    private Vector3 FindPOITravelStartPosition(string locationId)
-    {
-        // Chercher tous les POI dans la scène
-        POI[] allPOIs = FindObjectsOfType<POI>();
-
-        Logger.LogInfo($"TravelSpriteAnimator: Looking for POI with LocationID '{locationId}' among {allPOIs.Length} POIs", Logger.LogCategory.MapLog);
-
-        foreach (POI poi in allPOIs)
-        {
-            if (poi.LocationID == locationId)
-            {
-                // NOUVEAU: Utilise la méthode GetTravelPathStartPosition() du POI
-                Vector3 startPos = poi.GetTravelPathStartPosition();
-                Logger.LogInfo($"TravelSpriteAnimator: Found POI '{locationId}' at travel start position {startPos}", Logger.LogCategory.MapLog);
-                return startPos;
-            }
-        }
-
-        // Si on ne trouve pas le POI, retourner une position par défaut
-        Logger.LogWarning($"TravelSpriteAnimator: POI not found for location {locationId}. Available POIs: {string.Join(", ", System.Array.ConvertAll(allPOIs, p => p.LocationID))}", Logger.LogCategory.MapLog);
-        return Vector3.zero;
-    }
-
-    /// <summary>
-    /// ANCIEN: Trouve la position d'un POI dans le monde par son LocationID (garde pour compatibilité si besoin)
-    /// </summary>
-    private Vector3 FindPOIPosition(string locationId)
-    {
-        // Chercher tous les POI dans la scène
-        POI[] allPOIs = FindObjectsOfType<POI>();
-
-        foreach (POI poi in allPOIs)
-        {
-            if (poi.LocationID == locationId)
-            {
-                return poi.transform.position;
-            }
-        }
-
-        // Si on ne trouve pas le POI, retourner une position par défaut
-        Logger.LogWarning($"TravelSpriteAnimator: POI not found for location {locationId}", Logger.LogCategory.MapLog);
-        return Vector3.zero;
-    }
-
-    /// <summary>
-    /// Positionne le personnage à sa location actuelle au démarrage
-    /// </summary>
     private void PositionPlayerAtStart()
     {
         if (travelSprite == null) return;
@@ -275,17 +312,12 @@ public class TravelSpriteAnimator : MonoBehaviour
         travelSprite.transform.position = startPosition;
         travelSprite.transform.localScale = Vector3.one * spriteScale;
 
-        // Démarrer l'animation de rebond pendant le voyage
         if (bounceAnimation)
         {
             StartBounceAnimation();
         }
     }
 
-    /// <summary>
-    /// MODIFIÉ: Positionne le personnage à sa location actuelle (au démarrage du jeu)
-    /// Utilise maintenant le point de départ personnalisé
-    /// </summary>
     public void PositionPlayerAtCurrentLocation()
     {
         if (mapManager?.CurrentLocation == null || travelSprite == null)
@@ -294,15 +326,13 @@ public class TravelSpriteAnimator : MonoBehaviour
             return;
         }
 
-        // MODIFIÉ: Utilise FindPOITravelStartPosition au lieu de FindPOIPosition
+        // MODIFIÉ : Utilise le cache
         Vector3 currentPos = FindPOITravelStartPosition(mapManager.CurrentLocation.LocationID);
 
-        // Vérifier si on a trouvé une position valide
         if (currentPos == Vector3.zero)
         {
-            Logger.LogError($"TravelSpriteAnimator: Could not find valid position for location '{mapManager.CurrentLocation.LocationID}'. Trying fallback method.", Logger.LogCategory.MapLog);
-            // Fallback vers l'ancienne méthode
-            currentPos = FindPOIPosition(mapManager.CurrentLocation.LocationID);
+            Logger.LogError($"TravelSpriteAnimator: Could not find cached position for location '{mapManager.CurrentLocation.LocationID}'", Logger.LogCategory.MapLog);
+            return;
         }
 
         currentPos += spriteOffset;
@@ -315,29 +345,22 @@ public class TravelSpriteAnimator : MonoBehaviour
         Logger.LogInfo($"TravelSpriteAnimator: Player positioned at {mapManager.CurrentLocation.DisplayName}. Sprite active: {travelSprite.activeSelf}", Logger.LogCategory.MapLog);
     }
 
-    /// <summary>
-    /// Met à jour la position du sprite basée sur le progrès
-    /// </summary>
     private void UpdateSpritePosition(float progress)
     {
         if (travelSprite == null) return;
 
         Vector3 target = Vector3.Lerp(startPosition, endPosition, progress);
 
-        // Annule le segment précédent
         if (moveTweenId >= 0) LeanTween.cancel(moveTweenId);
 
         float distance = Vector3.Distance(travelSprite.transform.position, target);
-        float duration = Mathf.Max(distance / moveSpeed, 0.05f); // durée mini pour éviter une téléportation
+        float duration = Mathf.Max(distance / moveSpeed, 0.05f);
 
         moveTweenId = LeanTween.move(travelSprite, target, duration)
-                               .setEase(LeanTweenType.linear)  // vitesse constante
+                               .setEase(LeanTweenType.linear)
                                .id;
     }
 
-    /// <summary>
-    /// Anime le sprite jusqu'à la destination finale
-    /// </summary>
     private void AnimateToDestination()
     {
         if (travelSprite == null) return;
@@ -346,62 +369,48 @@ public class TravelSpriteAnimator : MonoBehaviour
             .setEase(easeType)
             .setOnComplete(() =>
             {
-                // Le personnage reste à sa nouvelle position
                 Logger.LogInfo("TravelSpriteAnimator: Player positioned at destination", Logger.LogCategory.MapLog);
             });
     }
 
-    /// <summary>
-    /// Démarre l'animation de rebond
-    /// </summary>
     private void StartBounceAnimation()
     {
         if (spriteVisual == null) return;
 
-        // stoppe toute animation résiduelle
         LeanTween.cancel(spriteVisual.gameObject);
-        spriteVisual.localPosition = Vector3.zero;    // point de repos
+        spriteVisual.localPosition = Vector3.zero;
 
         currentBounceId = LeanTween
-            .moveLocalY(spriteVisual.gameObject,       // le child, pas le parent !
+            .moveLocalY(spriteVisual.gameObject,
                         bounceHeight,
-                        0.5f / bounceSpeed)           // demi-période
+                        0.5f / bounceSpeed)
             .setEase(LeanTweenType.easeInOutSine)
             .setLoopPingPong()
             .id;
     }
 
-    /// <summary>
-    /// Arrête l'animation de rebond
-    /// </summary>
     private void StopBounceAnimation()
     {
         if (currentBounceId >= 0)
             LeanTween.cancel(currentBounceId);
 
         currentBounceId = -1;
-        if (spriteVisual != null)                     // remet au repos
+        if (spriteVisual != null)
             spriteVisual.localPosition = Vector3.zero;
     }
 
-    /// <summary>
-    /// Arrête toutes les animations
-    /// </summary>
     private void StopAllAnimations()
     {
         if (moveTweenId >= 0)
-            LeanTween.cancel(moveTweenId);            // OK, identifiant numérique
+            LeanTween.cancel(moveTweenId);
 
         if (spriteVisual != null)
-            LeanTween.cancel(spriteVisual.gameObject); // <-- (Transform → GameObject)
+            LeanTween.cancel(spriteVisual.gameObject);
 
         moveTweenId = -1;
         currentBounceId = -1;
     }
 
-    /// <summary>
-    /// Force une mise à jour de position (utile pour le debug)
-    /// </summary>
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     public void ForceUpdatePosition()
     {
@@ -422,9 +431,6 @@ public class TravelSpriteAnimator : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Debug : dessiner le chemin dans la Scene View
-    /// </summary>
     void OnDrawGizmos()
     {
         if (!showDebugPath) return;

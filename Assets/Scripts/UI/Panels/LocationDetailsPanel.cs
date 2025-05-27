@@ -1,4 +1,4 @@
-// Purpose: Panel that displays detailed information about the current location
+Ôªø// Purpose: Panel that displays detailed information about the current location
 // Filepath: Assets/Scripts/UI/Panels/LocationDetailsPanel.cs
 using System.Collections;
 using System.Collections.Generic;
@@ -25,7 +25,7 @@ public class LocationDetailsPanel : MonoBehaviour
     [SerializeField] private TextMeshProUGUI noActivitiesText;
 
     [Header("UI References - Info Section")]
-    [SerializeField] private TextMeshProUGUI locationInfoText; // Infos supplÈmentaires (connexions, etc.)
+    [SerializeField] private TextMeshProUGUI locationInfoText; // Infos suppl√©mentaires (connexions, etc.)
 
     [Header("Settings")]
     [SerializeField] private Color defaultImageColor = Color.gray;
@@ -70,11 +70,101 @@ public class LocationDetailsPanel : MonoBehaviour
             closeButton.onClick.AddListener(ClosePanel);
         }
 
+        // NOUVEAU : S'abonner aux √©v√©nements du MapManager pour mise √† jour automatique
+        if (mapManager != null)
+        {
+            mapManager.OnLocationChanged += OnLocationChanged;
+            mapManager.OnTravelCompleted += OnTravelCompleted;
+            mapManager.OnTravelStarted += OnTravelStarted;
+            mapManager.OnTravelProgress += OnTravelProgress;
+        }
+
         // Validate references
         ValidateReferences();
 
         // Initialize panel (will be hidden by PanelManager)
         RefreshPanel();
+    }
+
+    void OnDestroy()
+    {
+        // NOUVEAU : Se d√©sabonner des √©v√©nements pour √©viter les erreurs
+        if (mapManager != null)
+        {
+            mapManager.OnLocationChanged -= OnLocationChanged;
+            mapManager.OnTravelCompleted -= OnTravelCompleted;
+            mapManager.OnTravelStarted -= OnTravelStarted;
+            mapManager.OnTravelProgress -= OnTravelProgress;
+        }
+    }
+
+    // NOUVEAU : M√©thodes appel√©es automatiquement par les √©v√©nements MapManager
+    private void OnLocationChanged(MapLocationDefinition newLocation)
+    {
+        if (gameObject.activeInHierarchy)
+        {
+            Logger.LogInfo($"LocationDetailsPanel: Location changed to {newLocation?.DisplayName}, refreshing panel", Logger.LogCategory.General);
+            StartCoroutine(RefreshPanelSmooth()); // MODIFI√â : Refresh smooth sans flash
+        }
+    }
+
+    private void OnTravelCompleted(string arrivedLocationId)
+    {
+        if (gameObject.activeInHierarchy)
+        {
+            Logger.LogInfo($"LocationDetailsPanel: Travel completed to {arrivedLocationId}, refreshing panel", Logger.LogCategory.General);
+            StartCoroutine(RefreshPanelSmooth()); // MODIFI√â : Refresh smooth sans flash
+        }
+    }
+
+    private void OnTravelStarted(string destinationId)
+    {
+        if (gameObject.activeInHierarchy)
+        {
+            Logger.LogInfo($"LocationDetailsPanel: Travel started to {destinationId}, refreshing panel", Logger.LogCategory.General);
+            StartCoroutine(RefreshPanelSmooth()); // MODIFI√â : Refresh smooth sans flash
+        }
+    }
+
+    private void OnTravelProgress(string destinationId, int currentSteps, int requiredSteps)
+    {
+        if (gameObject.activeInHierarchy)
+        {
+            // Mettre √† jour seulement la section info pour √©viter de tout recalculer
+            PopulateInfoSection();
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU : Refresh le panel sans flash visuel d√©sagr√©able
+    /// </summary>
+    private IEnumerator RefreshPanelSmooth()
+    {
+        // 1. Cacher temporairement le contenu principal pour √©viter le flash
+        if (locationDescriptionText != null)
+            locationDescriptionText.gameObject.SetActive(false);
+        if (activitiesSection != null)
+            activitiesSection.SetActive(false);
+
+        // 2. Faire le refresh du contenu
+        RefreshPanel();
+
+        // 3. Attendre que Unity recalcule tout
+        yield return null;
+        Canvas.ForceUpdateCanvases();
+
+        // 4. Fix du ScrollRect
+        if (descriptionScrollRect != null && descriptionScrollRect.content != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(descriptionScrollRect.content);
+            descriptionScrollRect.verticalNormalizedPosition = 1f;
+        }
+
+        // 5. R√©afficher le contenu maintenant que tout est bien plac√©
+        if (locationDescriptionText != null)
+            locationDescriptionText.gameObject.SetActive(true);
+        if (activitiesSection != null)
+            activitiesSection.SetActive(true);
     }
 
     /// <summary>
@@ -180,14 +270,6 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     private void PopulateActivitiesSection()
     {
-
-
-        // R…ACTIVER LA SECTION AU CAS OŸ ELLE AURAIT …T… D…SACTIV…E
-        if (activitiesSection != null)
-        {
-            activitiesSection.SetActive(true);
-        }
-
         // Clear existing activity items
         RecycleActivityItems();
 
@@ -203,27 +285,21 @@ public class LocationDetailsPanel : MonoBehaviour
             return;
         }
 
-
-
         var availableActivities = currentLocation.GetAvailableActivities();
 
-
-        // Debug chaque activitÈ
+        // Debug chaque activit√©
         if (currentLocation.AvailableActivities != null)
         {
             for (int i = 0; i < currentLocation.AvailableActivities.Count; i++)
             {
                 var activity = currentLocation.AvailableActivities[i];
-
-
             }
         }
 
         // Update section title
         if (activitiesSectionTitle != null)
         {
-            activitiesSectionTitle.text = $"ActivitÈs disponibles ({availableActivities.Count})";
-
+            activitiesSectionTitle.text = $"Activit√©s disponibles ({availableActivities.Count})";
         }
 
         // Show/hide based on availability
@@ -234,12 +310,9 @@ public class LocationDetailsPanel : MonoBehaviour
         }
         else
         {
-
             HideNoActivitiesMessage();
             CreateActivityItems(availableActivities);
         }
-
-
     }
 
     /// <summary>
@@ -252,7 +325,7 @@ public class LocationDetailsPanel : MonoBehaviour
         foreach (var activity in activities)
         {
             GameObject item = GetPooledItem();
-            if (item.transform.parent != activitiesContainer)     // síil vient du pool
+            if (item.transform.parent != activitiesContainer)     // s'il vient du pool
                 item.transform.SetParent(activitiesContainer, false);
 
             instantiatedActivityItems.Add(item);
@@ -373,10 +446,7 @@ public class LocationDetailsPanel : MonoBehaviour
             locationDescriptionText.text = "Aucune information de location disponible.";
         }
 
-        if (activitiesSection != null)
-        {
-            activitiesSection.SetActive(false);
-        }
+        // Note: activitiesSection visibility is now managed by RefreshPanelSmooth()
     }
 
     /// <summary>
@@ -387,7 +457,7 @@ public class LocationDetailsPanel : MonoBehaviour
         if (noActivitiesText != null)
         {
             noActivitiesText.gameObject.SetActive(true);
-            noActivitiesText.text = "Aucune activitÈ disponible dans cette location.";
+            noActivitiesText.text = "Aucune activit√© disponible dans cette location.";
         }
     }
 
@@ -408,8 +478,8 @@ public class LocationDetailsPanel : MonoBehaviour
         {
             if (item != null)
             {
-                item.SetActive(false);          // on ne dÈtruit plus
-                activityItemPool.Enqueue(item); // on stocke pour rÈ-emploi
+                item.SetActive(false);          // on ne d√©truit plus
+                activityItemPool.Enqueue(item); // on stocke pour r√©-emploi
             }
         }
         instantiatedActivityItems.Clear();
@@ -474,12 +544,12 @@ public class LocationDetailsPanel : MonoBehaviour
 
     /// <summary>
     /// Attendre une frame que le Canvas soit actif, puis forcer le layout.
-    /// …vite que texte et image se superposent et que le ScrollRect reste bloquÈ.
+    /// √âvite que texte et image se superposent et que le ScrollRect reste bloqu√©.
     /// </summary>
     private IEnumerator DelayedLayoutFix()
     {
         yield return null;                    // attendre la fin de frame courante
-        Canvas.ForceUpdateCanvases();         // pousse Unity ‡ recalculer immÈdiatement
+        Canvas.ForceUpdateCanvases();         // pousse Unity √† recalculer imm√©diatement
 
         if (descriptionScrollRect != null && descriptionScrollRect.content != null)
         {
