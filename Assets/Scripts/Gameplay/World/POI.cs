@@ -23,6 +23,16 @@ public class POI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private Color highlightColor = Color.yellow;
     [SerializeField] private Color unavailableColor = Color.gray;
 
+    [Header("Click Animation Settings")]
+    [Tooltip("Enable click animation effect")]
+    [SerializeField] private bool enableClickAnimation = true;
+    [Tooltip("Scale multiplier for the click effect (1.0 = no change, 1.2 = 20% bigger)")]
+    [SerializeField] private float clickScaleAmount = 1.2f;
+    [Tooltip("Duration of the scale animation in seconds")]
+    [SerializeField] private float clickAnimationDuration = 0.25f;
+    [Tooltip("LeanTween ease type for the animation")]
+    [SerializeField] private LeanTweenType clickAnimationEase = LeanTweenType.easeOutBack;
+
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
 
@@ -30,10 +40,14 @@ public class POI : MonoBehaviour, IPointerClickHandler
     private MapManager mapManager;
     private DataManager dataManager;
     private LocationRegistry locationRegistry;
-    private TravelConfirmationPopup travelPopup; // NOUVEAU : Référence vers la popup
+    private TravelConfirmationPopup travelPopup;
 
     private bool isCurrentLocation = false;
     private bool canTravelHere = false;
+
+    // NOUVEAU : Variables pour l'animation
+    private Vector3 originalScale;
+    private bool isAnimating = false;
 
     /// <summary>
     /// Retourne la position de départ pour le chemin de voyage
@@ -44,7 +58,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
         {
             return travelPathStartPoint.position;
         }
-        return transform.position; // Fallback vers le centre du POI
+        return transform.position;
     }
 
     /// <summary>
@@ -65,6 +79,9 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     void Start()
     {
+        // NOUVEAU : Sauvegarder l'échelle originale
+        originalScale = transform.localScale;
+
         // Get MapManager reference
         mapManager = MapManager.Instance;
         dataManager = DataManager.Instance;
@@ -88,7 +105,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
             return;
         }
 
-        // NOUVEAU : Obtenir la référence vers la popup de voyage
         travelPopup = TravelConfirmationPopup.Instance;
         if (travelPopup == null)
         {
@@ -123,6 +139,9 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     void OnDestroy()
     {
+        // NOUVEAU : Arrêter toutes les animations LeanTween sur cet objet
+        LeanTween.cancel(gameObject);
+
         // Unsubscribe from events
         if (mapManager != null)
         {
@@ -144,8 +163,74 @@ public class POI : MonoBehaviour, IPointerClickHandler
         HandleClick();
     }
 
+    /// <summary>
+    /// NOUVEAU : Lance l'animation de clic (effet punch scale)
+    /// </summary>
+    private void PlayClickAnimation()
+    {
+        // Ne pas jouer l'animation si elle est désactivée ou si une animation est déjà en cours
+        if (!enableClickAnimation || isAnimating)
+            return;
+
+        isAnimating = true;
+
+        // Annuler toute animation en cours sur cet objet
+        LeanTween.cancel(gameObject);
+
+        // Animation en 2 étapes :
+        // 1. Grandir rapidement
+        // 2. Revenir à la taille normale
+
+        // Étape 1 : Grandir (la moitié du temps total)
+        LeanTween.scale(gameObject, originalScale * clickScaleAmount, clickAnimationDuration * 0.5f)
+            .setEase(LeanTweenType.easeOutQuad)
+            .setOnComplete(() =>
+            {
+                // Étape 2 : Rétrécir vers la taille normale (l'autre moitié du temps)
+                LeanTween.scale(gameObject, originalScale, clickAnimationDuration * 0.5f)
+                    .setEase(clickAnimationEase)
+                    .setOnComplete(() =>
+                    {
+                        isAnimating = false;
+                    });
+            });
+
+        if (enableDebugLogs)
+        {
+            Logger.LogInfo($"POI ({LocationID}): Playing click animation", Logger.LogCategory.MapLog);
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU : Version alternative avec une seule animation "punch"
+    /// Tu peux remplacer PlayClickAnimation() par celle-ci si tu préfères
+    /// </summary>
+    private void PlayClickAnimationPunch()
+    {
+        if (!enableClickAnimation || isAnimating)
+            return;
+
+        isAnimating = true;
+
+        // Annuler toute animation en cours
+        LeanTween.cancel(gameObject);
+
+        // Animation "punch" : utilise LeanTween.punch pour un effet plus naturel
+        LeanTween.scale(gameObject, originalScale + Vector3.one * (clickScaleAmount - 1f), clickAnimationDuration)
+            .setEase(clickAnimationEase)
+            .setLoopPingPong(1) // Fait l'aller-retour automatiquement
+            .setOnComplete(() =>
+            {
+                transform.localScale = originalScale; // S'assurer qu'on revient exactement à l'original
+                isAnimating = false;
+            });
+    }
+
     private void HandleClick()
     {
+        // NOUVEAU : Jouer l'effet d'animation en premier
+        PlayClickAnimation();
+
         if (mapManager == null)
         {
             Logger.LogError($"POI ({LocationID}): MapManager is null!", Logger.LogCategory.MapLog);
@@ -170,15 +255,13 @@ public class POI : MonoBehaviour, IPointerClickHandler
             {
                 Logger.LogInfo($"POI ({LocationID}): Already at this location!", Logger.LogCategory.MapLog);
             }
-            // TODO: Maybe open location panel instead of travel panel
-            ShowLocationDetails(); // NOUVEAU : Optionnel - montrer les détails de la location actuelle
+            ShowLocationDetails();
             return;
         }
 
-        // MODIFIÉ : Vérifier si le voyage est possible avant d'ouvrir la popup
+        // Vérifier si le voyage est possible avant d'ouvrir la popup
         if (mapManager.CanTravelTo(LocationID))
         {
-            // NOUVEAU : Ouvrir la popup de confirmation au lieu de démarrer directement le voyage
             if (travelPopup != null)
             {
                 if (enableDebugLogs)
@@ -189,20 +272,18 @@ public class POI : MonoBehaviour, IPointerClickHandler
             }
             else
             {
-                // Fallback : si la popup n'est pas disponible, utiliser l'ancien comportement
                 Logger.LogWarning($"POI ({LocationID}): TravelConfirmationPopup not available, starting travel directly", Logger.LogCategory.MapLog);
                 mapManager.StartTravel(LocationID);
             }
         }
         else
         {
-            // AMÉLIORÉ : Donner plus de feedback quand le voyage n'est pas possible
             ShowTravelUnavailableMessage();
         }
     }
 
     /// <summary>
-    /// NOUVEAU : Affiche un message ou des détails quand le voyage n'est pas possible
+    /// Affiche un message ou des détails quand le voyage n'est pas possible
     /// </summary>
     private void ShowTravelUnavailableMessage()
     {
@@ -231,13 +312,10 @@ public class POI : MonoBehaviour, IPointerClickHandler
         }
 
         Logger.LogInfo($"POI ({LocationID}): Voyage impossible vers '{destinationLocation?.DisplayName ?? LocationID}'. Raison: {reason}", Logger.LogCategory.MapLog);
-
-        // TODO: Optionnel - Afficher un message UI temporaire au joueur
-        // ShowTemporaryMessage($"Impossible de voyager vers {destinationLocation?.DisplayName ?? LocationID}: {reason}");
     }
 
     /// <summary>
-    /// NOUVEAU : Optionnel - Affiche les détails de la location actuelle
+    /// Optionnel - Affiche les détails de la location actuelle
     /// </summary>
     private void ShowLocationDetails()
     {
@@ -248,10 +326,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
             {
                 Logger.LogInfo($"POI ({LocationID}): Showing details for current location: {currentLocation.DisplayName}", Logger.LogCategory.MapLog);
             }
-
-            // TODO: Ouvrir un panneau de détails de la location actuelle
-            // ou afficher des informations sur les activités disponibles
-            // LocationDetailsPanel.Instance?.ShowLocationDetails(currentLocation);
         }
     }
 
@@ -268,7 +342,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
         if (isPlayerCurrentlyTraveling)
         {
-            // Player is traveling. No POI is "current". New travel cannot be initiated.
             isCurrentLocation = false;
             canTravelHere = false;
 
@@ -278,16 +351,12 @@ public class POI : MonoBehaviour, IPointerClickHandler
                 return;
             }
 
-            // `referenceLocation` is the DEPARTURE point.
             if (referenceLocation.LocationID == this.LocationID)
             {
-                // This POI is the departure POI.
                 spriteRenderer.color = normalColor;
             }
             else
             {
-                // This POI is not the departure POI.
-                // Check connectivity to the departure POI.
                 if (locationRegistry.CanTravelBetween(referenceLocation.LocationID, this.LocationID))
                 {
                     spriteRenderer.color = normalColor;
@@ -298,18 +367,16 @@ public class POI : MonoBehaviour, IPointerClickHandler
                 }
             }
         }
-        else // Player is NOT traveling
+        else
         {
             if (referenceLocation != null && referenceLocation.LocationID == this.LocationID)
             {
-                // This POI is the player's current, actual location.
                 isCurrentLocation = true;
                 canTravelHere = false;
                 spriteRenderer.color = highlightColor;
             }
             else
             {
-                // This POI is not the player's current location.
                 isCurrentLocation = false;
                 canTravelHere = mapManager.CanTravelTo(this.LocationID);
 
@@ -382,6 +449,17 @@ public class POI : MonoBehaviour, IPointerClickHandler
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
         }
+
+        // NOUVEAU : Validation des paramètres d'animation
+        if (clickScaleAmount < 1.0f)
+        {
+            Debug.LogWarning($"POI ({LocationID}): clickScaleAmount should be >= 1.0 for a growing effect");
+        }
+
+        if (clickAnimationDuration <= 0f)
+        {
+            Debug.LogWarning($"POI ({LocationID}): clickAnimationDuration should be > 0");
+        }
     }
 
     // Debug visualization in Scene view
@@ -398,7 +476,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
             Gizmos.color = travelStartPointColor;
             Gizmos.DrawWireSphere(startPos, 0.3f);
 
-            // Ligne entre le POI et son point de départ si différents
             if (travelPathStartPoint != null)
             {
                 Gizmos.color = Color.white;
@@ -411,7 +488,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
         {
             UnityEditor.Handles.Label(transform.position + Vector3.up * 0.7f, LocationID);
 
-            // Label pour le point de départ si différent
             if (travelPathStartPoint != null && showTravelStartPoint)
             {
                 Vector3 startPos = GetTravelPathStartPosition();

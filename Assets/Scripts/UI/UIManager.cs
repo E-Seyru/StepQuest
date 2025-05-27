@@ -134,17 +134,15 @@ public class UIManager : MonoBehaviour
             }
             else
             {
-                // OPTIMISATION : Éviter les opérations coûteuses si pas nécessaire
                 bool isIncrease = steps > lastDisplayedTotalSteps && lastDisplayedTotalSteps >= 0;
 
-                // Mettre à jour le texte seulement si nécessaire
+                // OPTIMISATION : Mettre à jour le texte seulement si nécessaire
                 string newText = $"{steps}";
-                if (totalStepsText.text != newText)
+                if (totalStepsText.text != newText) // MODIFICATION APPLIQUÉE
                 {
                     totalStepsText.text = newText;
                 }
 
-                // Mettre à jour l'horodatage seulement si nécessaire
                 if (lastUpdateText != null && DataManager.Instance?.PlayerData != null)
                 {
                     long lastChangeMs = DataManager.Instance.PlayerData.LastStepsChangeEpochMs;
@@ -152,20 +150,17 @@ public class UIManager : MonoBehaviour
                     {
                         string readableDate = LocalDatabase.GetReadableDateFromEpoch(lastChangeMs);
                         string newUpdateText = $"Dernière mise à jour: {readableDate}";
-                        if (lastUpdateText.text != newUpdateText)
+                        if (lastUpdateText.text != newUpdateText) // MODIFICATION APPLIQUÉE
                         {
                             lastUpdateText.text = newUpdateText;
                         }
                     }
                 }
 
-                // Si c'est une augmentation, ajouter un effet de flash
                 if (isIncrease)
                 {
                     StartCoroutine(FlashStepUpdate(totalStepsText));
                 }
-
-                // Enregistrer la valeur
                 lastDisplayedTotalSteps = steps;
             }
         }
@@ -185,18 +180,15 @@ public class UIManager : MonoBehaviour
 
                 // OPTIMISATION : Mettre à jour seulement si nécessaire
                 string newText = $"{steps}";
-                if (dailyStepsText.text != newText)
+                if (dailyStepsText.text != newText) // MODIFICATION APPLIQUÉE
                 {
                     dailyStepsText.text = newText;
                 }
 
-                // Si c'est une augmentation, ajouter un effet de flash
                 if (isIncrease)
                 {
                     StartCoroutine(FlashStepUpdate(dailyStepsText));
                 }
-
-                // Enregistrer la valeur
                 lastDisplayedDailySteps = steps;
             }
         }

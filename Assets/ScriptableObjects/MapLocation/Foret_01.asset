@@ -24,7 +24,7 @@ MonoBehaviour:
     IsAvailable: 1
     Requirements: 
   AvailableActivities:
-  - ActivityReference: {fileID: 11400000, guid: a79269812d94d284187a6db556306590, type: 2}
+  - ActivityReference: {fileID: 11400000, guid: 5760287f0512d8944a2e949765a00205, type: 2}
     LocationSpecificName: 
     LocationDescription: 
     ActivityVariants:

@@ -26,6 +26,10 @@ public class MapManager : MonoBehaviour
     // Travel save tracking
     private long lastSavedTotalSteps = -1; // Track last saved total steps instead of progress
 
+    // NOUVELLE OPTIMISATION : Variables pour réduire la fréquence des sauvegardes
+    private float timeSinceLastTravelSave = 0f;
+    private const float TRAVEL_SAVE_INTERVAL_DURING_TRAVEL = 20f; // Sauvegarde toutes les 20 secondes pendant un voyage
+
     // Events
     public event Action<MapLocationDefinition> OnLocationChanged;
     public event Action<string, int, int> OnTravelProgress; // destination, current steps, required steps
@@ -171,9 +175,6 @@ public class MapManager : MonoBehaviour
         }
     }
 
-    // NOUVEAU: Gérer la sauvegarde pendant le voyage (méthode supprimée car remplacée par sauvegarde immédiate)
-    // private void HandleTravelSave() - SUPPRIMÉE
-
     // NOUVEAU: Clear travel state (méthode utilitaire)
     public void ClearTravelState()
     {
@@ -252,6 +253,7 @@ public class MapManager : MonoBehaviour
 
         // NOUVEAU: Initialiser le tracking de sauvegarde
         lastSavedTotalSteps = dataManager.PlayerData.TotalSteps; // Sauvegarder les pas actuels comme référence
+        timeSinceLastTravelSave = 0f; // Réinitialiser le timer
 
         // MODIFIÉ: Sauvegarde immédiate et obligatoire au démarrage du voyage
         dataManager.SaveGame();
@@ -271,13 +273,19 @@ public class MapManager : MonoBehaviour
         int requiredSteps = dataManager.PlayerData.TravelRequiredSteps;
         string destinationId = dataManager.PlayerData.TravelDestinationId;
 
-        // NOUVEAU: Sauvegarder immédiatement si les pas totaux ont changé
-        if (lastSavedTotalSteps != currentTotalSteps)
-        {
-            dataManager.SaveTravelProgress();
-            lastSavedTotalSteps = currentTotalSteps;
+        // NOUVELLE OPTIMISATION: Logique de sauvegarde temporisée pendant le voyage
+        timeSinceLastTravelSave += Time.deltaTime;
 
-            Logger.LogInfo($"MapManager: Auto-saved travel progress after step change: {progressSteps}/{requiredSteps} steps to {destinationId}", Logger.LogCategory.MapLog);
+        if (lastSavedTotalSteps != currentTotalSteps) // Condition initiale : sauvegarder si les pas ont changé
+        {
+            if (timeSinceLastTravelSave >= TRAVEL_SAVE_INTERVAL_DURING_TRAVEL)
+            {
+                dataManager.SaveTravelProgress();
+                lastSavedTotalSteps = currentTotalSteps; // Mettre à jour après la sauvegarde réussie
+                timeSinceLastTravelSave = 0f; // Réinitialiser le timer
+
+                Logger.LogInfo($"MapManager: Auto-saved travel progress (timed): {progressSteps}/{requiredSteps} steps to {destinationId}", Logger.LogCategory.MapLog);
+            }
         }
 
         // Emit progress event
@@ -325,6 +333,7 @@ public class MapManager : MonoBehaviour
 
         // NOUVEAU: Reset tracking
         lastSavedTotalSteps = -1;
+        timeSinceLastTravelSave = 0f;
 
         // Update current location property in MapManager
         CurrentLocation = destinationLocation;

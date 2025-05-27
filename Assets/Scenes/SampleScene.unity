@@ -1377,6 +1377,10 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   unavailableColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  enableClickAnimation: 1
+  clickScaleAmount: 1.2
+  clickAnimationDuration: 0.15
+  clickAnimationEase: 27
   enableDebugLogs: 1
 --- !u!61 &272119582
 BoxCollider2D:
@@ -1729,7 +1733,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 8.80481, y: -37.0955}
+  m_AnchoredPosition: {x: 8.80481, y: -37.09546}
   m_SizeDelta: {x: -95.875, y: -214.6041}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &467294769
@@ -4632,7 +4636,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 489.13983, y: -745.3835}
+  m_AnchoredPosition: {x: 489.13983, y: -1055.2686}
   m_SizeDelta: {x: 932.9915, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1037981656
@@ -5977,6 +5981,10 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   unavailableColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  enableClickAnimation: 1
+  clickScaleAmount: 1.2
+  clickAnimationDuration: 0.15
+  clickAnimationEase: 27
   enableDebugLogs: 1
 --- !u!61 &1250875931
 BoxCollider2D:
@@ -8215,7 +8223,7 @@ GameObject:
   - component: {fileID: 1902162921}
   - component: {fileID: 1902162924}
   - component: {fileID: 1902162923}
-  - component: {fileID: 1902162922}
+  - component: {fileID: 1902162925}
   m_Layer: 5
   m_Name: VariantsContainer
   m_TagString: Untagged
@@ -8242,32 +8250,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1902162922
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1902162920}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 59f8146938fff824cb5fd77236b75775, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Padding:
-    m_Left: 20
-    m_Right: 20
-    m_Top: 20
-    m_Bottom: 20
-  m_ChildAlignment: 4
-  m_Spacing: 20
-  m_ChildForceExpandWidth: 1
-  m_ChildForceExpandHeight: 1
-  m_ChildControlWidth: 0
-  m_ChildControlHeight: 0
-  m_ChildScaleWidth: 0
-  m_ChildScaleHeight: 0
-  m_ReverseArrangement: 0
 --- !u!114 &1902162923
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8306,6 +8288,32 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1902162920}
   m_CullTransparentMesh: 1
+--- !u!114 &1902162925
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1902162920}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30649d3a9faa99c48a7b1166b86bf2a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Padding:
+    m_Left: 20
+    m_Right: 20
+    m_Top: 20
+    m_Bottom: 20
+  m_ChildAlignment: 4
+  m_Spacing: 20
+  m_ChildForceExpandWidth: 0
+  m_ChildForceExpandHeight: 1
+  m_ChildControlWidth: 0
+  m_ChildControlHeight: 0
+  m_ChildScaleWidth: 0
+  m_ChildScaleHeight: 0
+  m_ReverseArrangement: 0
 --- !u!1 &1923718011
 GameObject:
   m_ObjectHideFlags: 0
@@ -9660,6 +9668,10 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   unavailableColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  enableClickAnimation: 1
+  clickScaleAmount: 1.2
+  clickAnimationDuration: 0.15
+  clickAnimationEase: 27
   enableDebugLogs: 1
 --- !u!61 &2128668518
 BoxCollider2D:

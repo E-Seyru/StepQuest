@@ -15,6 +15,26 @@ MonoBehaviour:
   LocationID: Mine_01
   DisplayName: Mine
   Description: Une mine, tout ce qu'il y a de plus banal...
+  LongDescription: 
+  LocationImage: {fileID: 21300000, guid: c650daaf21ffc2d48bcb28785b54c2ea, type: 3}
+  LocationThemeColor: {r: 1, g: 1, b: 1, a: 1}
   Connections:
   - DestinationLocationID: Village_01
     StepCost: 50
+    IsAvailable: 1
+    Requirements: 
+  AvailableActivities:
+  - ActivityReference: {fileID: 11400000, guid: a79269812d94d284187a6db556306590, type: 2}
+    LocationSpecificName: 
+    LocationDescription: 
+    ActivityVariants:
+    - {fileID: 11400000, guid: b1b80dcf20b5fef43a4d53fae3690b65, type: 2}
+    - {fileID: 11400000, guid: 4836f717eb356b0469090ca876179639, type: 2}
+    IsAvailable: 1
+    SpecialRequirements: 
+    LocationSpecificIcon: {fileID: 0}
+  LocationIcon: {fileID: 21300000, guid: 5bc3adafad5e1fe4086ae547d4e4ebf3, type: 3}
+  POIColor: {r: 1, g: 1, b: 1, a: 1}
+  IsAccessible: 1
+  UnlockRequirement: 0
+  DeveloperNotes: 
