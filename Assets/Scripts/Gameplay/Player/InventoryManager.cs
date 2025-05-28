@@ -1,4 +1,4 @@
-// Purpose: Main manager for all inventory operations across different container types
+﻿// Purpose: Main manager for all inventory operations across different container types
 // Filepath: Assets/Scripts/Gameplay/Player/InventoryManager.cs
 using System;
 using System.Collections.Generic;
@@ -12,13 +12,15 @@ public class InventoryManager : MonoBehaviour
     [SerializeField] private int defaultPlayerSlots = 20;
     [SerializeField] private int defaultBankSlots = 50;
 
+    [Header("Item Registry")]
+    [SerializeField] private ItemRegistry itemRegistry;
+
     // Container storage
     private Dictionary<string, InventoryContainer> containers;
 
     // References
     private DataManager dataManager;
     private EquipmentManager equipmentManager;
-    // private ItemRegistry itemRegistry; // TODO: Will be created later
 
     // Events
     public event Action<string> OnContainerChanged; // ContainerID
@@ -48,7 +50,6 @@ public class InventoryManager : MonoBehaviour
         // Get references
         dataManager = DataManager.Instance;
         // equipmentManager = EquipmentManager.Instance; // TODO: Add Singleton pattern to EquipmentManager
-        // itemRegistry = ItemRegistry.Instance; // Will be created later
 
         if (dataManager == null)
         {
@@ -56,8 +57,17 @@ public class InventoryManager : MonoBehaviour
             return;
         }
 
+        // Validate ItemRegistry
+        if (itemRegistry == null)
+        {
+            Logger.LogError("InventoryManager: ItemRegistry not assigned! Please assign it in the inspector.", Logger.LogCategory.InventoryLog);
+            return;
+        }
+
         // Load inventory data (containers already created in Awake)
         LoadInventoryData();
+
+        Logger.LogInfo($"InventoryManager: Initialized with {itemRegistry.AllItems.Count} item definitions", Logger.LogCategory.InventoryLog);
     }
 
     /// <summary>
@@ -145,11 +155,11 @@ public class InventoryManager : MonoBehaviour
             return false;
         }
 
-        // Get item definition to check stackability
+        // MODIFIÉ: Utilise le nouveau ItemRegistry
         var itemDef = GetItemDefinition(itemId);
         if (itemDef == null)
         {
-            Logger.LogError($"InventoryManager: Item '{itemId}' definition not found!", Logger.LogCategory.InventoryLog);
+            Logger.LogError($"InventoryManager: Item '{itemId}' definition not found in ItemRegistry!", Logger.LogCategory.InventoryLog);
             return false;
         }
 
@@ -196,7 +206,7 @@ public class InventoryManager : MonoBehaviour
         {
             OnItemAdded?.Invoke(containerId, itemId, actuallyAdded);
             OnContainerChanged?.Invoke(containerId);
-            Logger.LogInfo($"InventoryManager: Added {actuallyAdded} of '{itemId}' to '{containerId}'", Logger.LogCategory.InventoryLog);
+            Logger.LogInfo($"InventoryManager: Added {actuallyAdded} of '{itemDef.GetDisplayName()}' to '{containerId}'", Logger.LogCategory.InventoryLog);
         }
 
         return remainingToAdd == 0; // Return true if all items were added
@@ -238,7 +248,11 @@ public class InventoryManager : MonoBehaviour
 
         OnItemRemoved?.Invoke(containerId, itemId, quantity);
         OnContainerChanged?.Invoke(containerId);
-        Logger.LogInfo($"InventoryManager: Removed {quantity} of '{itemId}' from '{containerId}'", Logger.LogCategory.InventoryLog);
+
+        // Get item name for better logging
+        var itemDef = GetItemDefinition(itemId);
+        string itemName = itemDef?.GetDisplayName() ?? itemId;
+        Logger.LogInfo($"InventoryManager: Removed {quantity} of '{itemName}' from '{containerId}'", Logger.LogCategory.InventoryLog);
 
         return true;
     }
@@ -275,7 +289,9 @@ public class InventoryManager : MonoBehaviour
         {
             if (AddItem(toContainerId, itemId, quantity))
             {
-                Logger.LogInfo($"InventoryManager: Transferred {quantity} of '{itemId}' from '{fromContainerId}' to '{toContainerId}'", Logger.LogCategory.InventoryLog);
+                var itemDef = GetItemDefinition(itemId);
+                string itemName = itemDef?.GetDisplayName() ?? itemId;
+                Logger.LogInfo($"InventoryManager: Transferred {quantity} of '{itemName}' from '{fromContainerId}' to '{toContainerId}'", Logger.LogCategory.InventoryLog);
                 return true;
             }
             else
@@ -326,24 +342,25 @@ public class InventoryManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Get item definition (placeholder - will use ItemRegistry later)
+    /// MODIFIÉ: Get item definition via ItemRegistry
     /// </summary>
     private ItemDefinition GetItemDefinition(string itemId)
     {
-        // TODO: Use ItemRegistry when it's implemented
-        // return itemRegistry?.GetItem(itemId);
+        if (itemRegistry == null)
+        {
+            Logger.LogError("InventoryManager: ItemRegistry is null! Cannot get item definition.", Logger.LogCategory.InventoryLog);
+            return null;
+        }
 
-        // Temporary placeholder - create a basic item definition
-        // This allows testing without ItemRegistry
-        var tempDef = ScriptableObject.CreateInstance<ItemDefinition>();
-        tempDef.ItemID = itemId;
-        tempDef.ItemName = itemId.Replace("_", " ");
-        tempDef.IsStackable = true;
-        tempDef.MaxStackSize = 99;
-        tempDef.BasePrice = 1;
+        return itemRegistry.GetItem(itemId);
+    }
 
-        Logger.LogWarning($"InventoryManager: Using temporary ItemDefinition for '{itemId}' - implement ItemRegistry!", Logger.LogCategory.InventoryLog);
-        return tempDef;
+    /// <summary>
+    /// NOUVEAU: Get ItemRegistry reference (for other systems)
+    /// </summary>
+    public ItemRegistry GetItemRegistry()
+    {
+        return itemRegistry;
     }
 
     /// <summary>
@@ -393,6 +410,15 @@ public class InventoryManager : MonoBehaviour
     {
         var info = new System.Text.StringBuilder();
         info.AppendLine("=== Inventory Manager Debug ===");
+
+        if (itemRegistry != null)
+        {
+            info.AppendLine($"ItemRegistry: {itemRegistry.AllItems.Count} items loaded");
+        }
+        else
+        {
+            info.AppendLine("❌ ItemRegistry: NOT ASSIGNED");
+        }
 
         foreach (var kvp in containers)
         {

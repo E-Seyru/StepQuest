@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c118a50300119344d960e5510e39f16d, type: 3}
+  m_Name: MainItemRegistry
+  m_EditorClassIdentifier: 
+  AllItems:
+  - {fileID: 11400000, guid: e9d231eac7843a34dad4d5820873323a, type: 2}
+  - {fileID: 11400000, guid: a5c99481bcee114448801f2fb8d80b89, type: 2}
+  - {fileID: 11400000, guid: 3430a706d4894e44a88308dea6134369, type: 2}
+  - {fileID: 0}
+  ValidationStatus: "\u274C Registry validation failed (4 issue(s)):\n\n1 null item(s)
+    in registry\nItem 'charbon' missing icon\nItem 'cuivre' missing icon\nItem 'fer'
+    missing icon"

@@ -17,6 +17,7 @@ public class InventorySlotUI : MonoBehaviour
     [SerializeField] private Color emptyColor = Color.gray;
     [SerializeField] private Color filledColor = Color.white;
     [SerializeField] private Color selectedColor = Color.yellow;
+    [SerializeField] private Sprite emptySlotSprite; // Sprite à afficher quand le slot est vide
 
     // Data
     private InventorySlot slotData;
@@ -70,8 +71,17 @@ public class InventorySlotUI : MonoBehaviour
     {
         if (itemIcon != null)
         {
-            itemIcon.sprite = null;
-            itemIcon.color = new Color(1, 1, 1, 0); // Transparent
+            // MODIFIÉ: Affiche un sprite vide ou rend transparent
+            if (emptySlotSprite != null)
+            {
+                itemIcon.sprite = emptySlotSprite;
+                itemIcon.color = new Color(1, 1, 1, 0.3f); // Semi-transparent
+            }
+            else
+            {
+                itemIcon.sprite = null;
+                itemIcon.color = new Color(1, 1, 1, 0); // Complètement transparent
+            }
         }
 
         if (quantityText != null)
@@ -81,7 +91,7 @@ public class InventorySlotUI : MonoBehaviour
 
         if (background != null)
         {
-            background.color = emptyColor;
+            background.color = isSelected ? selectedColor : emptyColor;
         }
     }
 
@@ -90,13 +100,23 @@ public class InventorySlotUI : MonoBehaviour
     /// </summary>
     private void ShowFilledSlot()
     {
-        // Get item definition to show icon
-        // TODO: Use ItemRegistry when available
+        // MODIFIÉ: Récupère la vraie icône via ItemRegistry
         if (itemIcon != null)
         {
-            // For now, just show that slot is filled
-            itemIcon.color = Color.white;
-            // itemIcon.sprite = GetItemIcon(slotData.ItemID);
+            var itemDefinition = GetItemDefinition(slotData.ItemID);
+            if (itemDefinition != null && itemDefinition.ItemIcon != null)
+            {
+                // Affiche la vraie icône de l'objet
+                itemIcon.sprite = itemDefinition.ItemIcon;
+                itemIcon.color = itemDefinition.ItemColor; // Utilise la couleur de l'item
+            }
+            else
+            {
+                // Fallback: icône par défaut ou couleur unie
+                itemIcon.sprite = emptySlotSprite;
+                itemIcon.color = Color.white;
+                Logger.LogWarning($"InventorySlotUI: No icon found for item '{slotData.ItemID}'", Logger.LogCategory.InventoryLog);
+            }
         }
 
         // Show quantity if more than 1
@@ -105,6 +125,13 @@ public class InventorySlotUI : MonoBehaviour
             if (slotData.Quantity > 1)
             {
                 quantityText.text = $"x{slotData.Quantity}";
+
+                // NOUVEAU: Couleur du texte basée sur la rareté
+                var itemDef = GetItemDefinition(slotData.ItemID);
+                if (itemDef != null)
+                {
+                    quantityText.color = itemDef.GetRarityColor();
+                }
             }
             else
             {
@@ -112,9 +139,27 @@ public class InventorySlotUI : MonoBehaviour
             }
         }
 
+        // MODIFIÉ: Couleur de fond basée sur la rareté
         if (background != null)
         {
-            background.color = isSelected ? selectedColor : filledColor;
+            if (isSelected)
+            {
+                background.color = selectedColor;
+            }
+            else
+            {
+                var itemDef = GetItemDefinition(slotData.ItemID);
+                if (itemDef != null)
+                {
+                    // Mélange la couleur de rareté avec la couleur de base
+                    Color rarityColor = itemDef.GetRarityColor();
+                    background.color = Color.Lerp(filledColor, rarityColor, 0.3f); // 30% de couleur de rareté
+                }
+                else
+                {
+                    background.color = filledColor;
+                }
+            }
         }
     }
 
@@ -133,7 +178,18 @@ public class InventorySlotUI : MonoBehaviour
     private void OnSlotButtonClicked()
     {
         OnSlotClicked?.Invoke(this, slotIndex);
-        Debug.Log($"Slot {slotIndex} clicked - Item: {slotData?.ItemID ?? "Empty"} x{slotData?.Quantity ?? 0}");
+
+        // MODIFIÉ: Log plus informatif avec le nom de l'objet
+        if (slotData != null && !slotData.IsEmpty())
+        {
+            var itemDef = GetItemDefinition(slotData.ItemID);
+            string itemName = itemDef?.GetDisplayName() ?? slotData.ItemID;
+            Debug.Log($"Slot {slotIndex} clicked - {itemName} x{slotData.Quantity}");
+        }
+        else
+        {
+            Debug.Log($"Slot {slotIndex} clicked - Empty");
+        }
     }
 
     /// <summary>
@@ -161,6 +217,59 @@ public class InventorySlotUI : MonoBehaviour
     }
 
     /// <summary>
+    /// MODIFIÉ: Get item definition via InventoryManager's ItemRegistry
+    /// </summary>
+    private ItemDefinition GetItemDefinition(string itemId)
+    {
+        if (InventoryManager.Instance?.GetItemRegistry() != null)
+        {
+            return InventoryManager.Instance.GetItemRegistry().GetItem(itemId);
+        }
+
+        Logger.LogWarning("InventorySlotUI: Cannot get ItemDefinition - InventoryManager or ItemRegistry not available", Logger.LogCategory.InventoryLog);
+        return null;
+    }
+
+    /// <summary>
+    /// NOUVEAU: Get tooltip text for this slot
+    /// </summary>
+    public string GetTooltipText()
+    {
+        if (slotData == null || slotData.IsEmpty())
+        {
+            return "Slot vide";
+        }
+
+        var itemDef = GetItemDefinition(slotData.ItemID);
+        if (itemDef == null)
+        {
+            return $"{slotData.ItemID} x{slotData.Quantity}";
+        }
+
+        // Crée un tooltip riche avec infos de l'objet
+        string tooltip = $"<b>{itemDef.GetDisplayName()}</b>";
+
+        if (slotData.Quantity > 1)
+        {
+            tooltip += $" x{slotData.Quantity}";
+        }
+
+        tooltip += $"\n<i>{itemDef.GetRarityText()}</i>";
+
+        if (!string.IsNullOrEmpty(itemDef.Description))
+        {
+            tooltip += $"\n{itemDef.Description}";
+        }
+
+        if (itemDef.BasePrice > 0)
+        {
+            tooltip += $"\n<size=10>Valeur: {itemDef.BasePrice} or</size>";
+        }
+
+        return tooltip;
+    }
+
+    /// <summary>
     /// Validate that all required references are assigned
     /// </summary>
     private void ValidateReferences()
@@ -173,16 +282,9 @@ public class InventorySlotUI : MonoBehaviour
 
         if (slotButton == null)
             Debug.LogWarning($"InventorySlotUI: slotButton not assigned on {gameObject.name}");
-    }
 
-    /// <summary>
-    /// Get item icon (placeholder for now)
-    /// </summary>
-    private Sprite GetItemIcon(string itemId)
-    {
-        // TODO: Implement with ItemRegistry
-        // return ItemRegistry.Instance?.GetItem(itemId)?.ItemIcon;
-        return null;
+        if (background == null)
+            Debug.LogWarning($"InventorySlotUI: background not assigned on {gameObject.name}");
     }
 
 #if UNITY_EDITOR
@@ -192,7 +294,18 @@ public class InventorySlotUI : MonoBehaviour
     void Reset()
     {
         if (itemIcon == null)
-            itemIcon = GetComponentInChildren<Image>();
+        {
+            // Cherche toutes les images et prend celle qui n'est pas le background
+            Image[] images = GetComponentsInChildren<Image>();
+            foreach (var img in images)
+            {
+                if (img != GetComponent<Image>()) // Pas l'image de background
+                {
+                    itemIcon = img;
+                    break;
+                }
+            }
+        }
 
         if (quantityText == null)
             quantityText = GetComponentInChildren<TextMeshProUGUI>();
