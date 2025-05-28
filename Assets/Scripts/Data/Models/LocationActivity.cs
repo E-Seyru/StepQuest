@@ -116,7 +116,7 @@ public class LocationActivity
     /// </summary>
     public string GetResourcesText()
     {
-        var allResources = new List<ResourceDefinition>();
+        var allResources = new List<ItemDefinition>();
         var availableVariants = GetAvailableVariants();
 
         foreach (var variant in availableVariants)

@@ -16,10 +16,10 @@ public class ActivityVariant : ScriptableObject
 
     [Header("Resources")]
     [Tooltip("Primary resource obtained from this variant")]
-    public ResourceDefinition PrimaryResource;
+    public ItemDefinition PrimaryResource;
 
     [Tooltip("Additional resources that can be obtained (with lower chances)")]
-    public List<ResourceDefinition> SecondaryResources = new List<ResourceDefinition>();
+    public List<ItemDefinition> SecondaryResources = new List<ItemDefinition>();
 
     [Header("Requirements")]
     [Tooltip("Is this variant currently available?")]
@@ -77,9 +77,9 @@ public class ActivityVariant : ScriptableObject
     /// <summary>
     /// Get all resources available from this variant
     /// </summary>
-    public List<ResourceDefinition> GetAllResources()
+    public List<ItemDefinition> GetAllResources()
     {
-        var allResources = new List<ResourceDefinition>();
+        var allResources = new List<ItemDefinition>();
 
         if (PrimaryResource != null)
             allResources.Add(PrimaryResource);
@@ -146,8 +146,8 @@ public class ActivityVariant : ScriptableObject
         if (VariantIcon != null)
             return VariantIcon;
 
-        if (PrimaryResource != null && PrimaryResource.ResourceIcon != null)
-            return PrimaryResource.ResourceIcon;
+        if (PrimaryResource != null && PrimaryResource.ItemIcon != null)
+            return PrimaryResource.ItemIcon;
 
         return null;
     }
