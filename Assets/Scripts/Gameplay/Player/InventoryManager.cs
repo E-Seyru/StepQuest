@@ -15,12 +15,20 @@ public class InventoryManager : MonoBehaviour
     [Header("Item Registry")]
     [SerializeField] private ItemRegistry itemRegistry;
 
+    [Header("Auto-save Settings")]
+    [SerializeField] private float autoSaveInterval = 30f; // Sauvegarde automatique toutes les 30 secondes
+    [SerializeField] private bool enableAutoSave = true;
+
     // Container storage
     private Dictionary<string, InventoryContainer> containers;
 
     // References
     private DataManager dataManager;
     private EquipmentManager equipmentManager;
+
+    // Auto-save tracking
+    private float timeSinceLastSave = 0f;
+    private bool hasUnsavedChanges = false;
 
     // Events
     public event Action<string> OnContainerChanged; // ContainerID
@@ -64,10 +72,23 @@ public class InventoryManager : MonoBehaviour
             return;
         }
 
-        // Load inventory data (containers already created in Awake)
+        // Load inventory data from database
         LoadInventoryData();
 
         Logger.LogInfo($"InventoryManager: Initialized with {itemRegistry.AllItems.Count} item definitions", Logger.LogCategory.InventoryLog);
+    }
+
+    void Update()
+    {
+        // Auto-save logic
+        if (enableAutoSave && hasUnsavedChanges)
+        {
+            timeSinceLastSave += Time.deltaTime;
+            if (timeSinceLastSave >= autoSaveInterval)
+            {
+                SaveInventoryData();
+            }
+        }
     }
 
     /// <summary>
@@ -155,7 +176,6 @@ public class InventoryManager : MonoBehaviour
             return false;
         }
 
-        // MODIFIÉ: Utilise le nouveau ItemRegistry
         var itemDef = GetItemDefinition(itemId);
         if (itemDef == null)
         {
@@ -204,6 +224,9 @@ public class InventoryManager : MonoBehaviour
         int actuallyAdded = quantity - remainingToAdd;
         if (actuallyAdded > 0)
         {
+            // Mark for auto-save
+            MarkAsChanged();
+
             OnItemAdded?.Invoke(containerId, itemId, actuallyAdded);
             OnContainerChanged?.Invoke(containerId);
             Logger.LogInfo($"InventoryManager: Added {actuallyAdded} of '{itemDef.GetDisplayName()}' to '{containerId}'", Logger.LogCategory.InventoryLog);
@@ -245,6 +268,9 @@ public class InventoryManager : MonoBehaviour
                 remainingToRemove -= toRemove;
             }
         }
+
+        // Mark for auto-save
+        MarkAsChanged();
 
         OnItemRemoved?.Invoke(containerId, itemId, quantity);
         OnContainerChanged?.Invoke(containerId);
@@ -342,7 +368,7 @@ public class InventoryManager : MonoBehaviour
     }
 
     /// <summary>
-    /// MODIFIÉ: Get item definition via ItemRegistry
+    /// Get item definition via ItemRegistry
     /// </summary>
     private ItemDefinition GetItemDefinition(string itemId)
     {
@@ -356,7 +382,7 @@ public class InventoryManager : MonoBehaviour
     }
 
     /// <summary>
-    /// NOUVEAU: Get ItemRegistry reference (for other systems)
+    /// Get ItemRegistry reference (for other systems)
     /// </summary>
     public ItemRegistry GetItemRegistry()
     {
@@ -373,26 +399,134 @@ public class InventoryManager : MonoBehaviour
         {
             int newCapacity = CalculatePlayerInventoryCapacity();
             playerContainer.Resize(newCapacity);
+            MarkAsChanged();
             OnContainerChanged?.Invoke("player");
         }
     }
 
+    // === NOUVELLES MÉTHODES DE PERSISTANCE ===
+
     /// <summary>
-    /// Load inventory data from save
+    /// Load inventory data from database
     /// </summary>
     private void LoadInventoryData()
     {
-        // TODO: Implement loading from database
-        Logger.LogInfo("InventoryManager: Loading inventory data (TODO)", Logger.LogCategory.InventoryLog);
+        Logger.LogInfo("InventoryManager: Loading inventory data from database...", Logger.LogCategory.InventoryLog);
+
+        if (dataManager?.LocalDatabase == null)
+        {
+            Logger.LogError("InventoryManager: LocalDatabase not available!", Logger.LogCategory.InventoryLog);
+            return;
+        }
+
+        try
+        {
+            // Load all containers from database
+            var containerDataList = dataManager.LocalDatabase.LoadAllInventoryContainers();
+
+            foreach (var containerData in containerDataList)
+            {
+                // Convert database data to InventoryContainer
+                var container = containerData.ToInventoryContainer();
+
+                // Replace in-memory container with loaded data
+                containers[container.ContainerID] = container;
+
+                Logger.LogInfo($"InventoryManager: Loaded container '{container.ContainerID}' with {container.GetUsedSlotsCount()}/{container.MaxSlots} used slots", Logger.LogCategory.InventoryLog);
+            }
+
+            // Make sure we have default containers even if not in database
+            EnsureDefaultContainers();
+
+            Logger.LogInfo($"InventoryManager: Successfully loaded {containerDataList.Count} containers from database", Logger.LogCategory.InventoryLog);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"InventoryManager: Error loading inventory data: {ex.Message}", Logger.LogCategory.InventoryLog);
+        }
     }
 
     /// <summary>
-    /// Save inventory data
+    /// Save inventory data to database
     /// </summary>
     public void SaveInventoryData()
     {
-        // TODO: Implement saving to database
-        Logger.LogInfo("InventoryManager: Saving inventory data (TODO)", Logger.LogCategory.InventoryLog);
+        if (!hasUnsavedChanges)
+        {
+            return; // Pas de changements à sauvegarder
+        }
+
+        Logger.LogInfo("InventoryManager: Saving inventory data to database...", Logger.LogCategory.InventoryLog);
+
+        if (dataManager?.LocalDatabase == null)
+        {
+            Logger.LogError("InventoryManager: LocalDatabase not available!", Logger.LogCategory.InventoryLog);
+            return;
+        }
+
+        try
+        {
+            int savedCount = 0;
+
+            foreach (var kvp in containers)
+            {
+                var container = kvp.Value;
+                var containerData = InventoryContainerData.FromInventoryContainer(container);
+
+                dataManager.LocalDatabase.SaveInventoryContainer(containerData);
+                savedCount++;
+            }
+
+            // Reset auto-save tracking
+            hasUnsavedChanges = false;
+            timeSinceLastSave = 0f;
+
+            Logger.LogInfo($"InventoryManager: Successfully saved {savedCount} containers to database", Logger.LogCategory.InventoryLog);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"InventoryManager: Error saving inventory data: {ex.Message}", Logger.LogCategory.InventoryLog);
+        }
+    }
+
+    /// <summary>
+    /// Ensure default containers exist even if not loaded from database
+    /// </summary>
+    private void EnsureDefaultContainers()
+    {
+        // Check if player container exists
+        if (!containers.ContainsKey("player"))
+        {
+            Logger.LogInfo("InventoryManager: Creating missing player container", Logger.LogCategory.InventoryLog);
+            CreateContainer(InventoryContainerType.Player, "player", CalculatePlayerInventoryCapacity());
+            MarkAsChanged();
+        }
+
+        // Check if bank container exists
+        if (!containers.ContainsKey("bank"))
+        {
+            Logger.LogInfo("InventoryManager: Creating missing bank container", Logger.LogCategory.InventoryLog);
+            CreateContainer(InventoryContainerType.Bank, "bank", defaultBankSlots);
+            MarkAsChanged();
+        }
+    }
+
+    /// <summary>
+    /// Mark data as changed for auto-save
+    /// </summary>
+    private void MarkAsChanged()
+    {
+        hasUnsavedChanges = true;
+        timeSinceLastSave = 0f;
+    }
+
+    /// <summary>
+    /// Force immediate save
+    /// </summary>
+    public void ForceSave()
+    {
+        Logger.LogInfo("InventoryManager: Force save requested", Logger.LogCategory.InventoryLog);
+        SaveInventoryData();
     }
 
     /// <summary>
@@ -420,6 +554,10 @@ public class InventoryManager : MonoBehaviour
             info.AppendLine("❌ ItemRegistry: NOT ASSIGNED");
         }
 
+        info.AppendLine($"Auto-save: {(enableAutoSave ? "Enabled" : "Disabled")}, Interval: {autoSaveInterval}s");
+        info.AppendLine($"Unsaved changes: {hasUnsavedChanges}, Time since save: {timeSinceLastSave:F1}s");
+        info.AppendLine("");
+
         foreach (var kvp in containers)
         {
             info.AppendLine(kvp.Value.GetDebugInfo());
@@ -432,12 +570,12 @@ public class InventoryManager : MonoBehaviour
     {
         if (pauseStatus)
         {
-            SaveInventoryData();
+            ForceSave();
         }
     }
 
     void OnApplicationQuit()
     {
-        SaveInventoryData();
+        ForceSave();
     }
 }

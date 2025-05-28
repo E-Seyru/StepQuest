@@ -1,7 +1,10 @@
 ﻿// Filepath: Assets/Scripts/Data/Database/LocalDatabase.cs
+using Newtonsoft.Json;
 using SQLite;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 public class LocalDatabase
@@ -10,7 +13,7 @@ public class LocalDatabase
     private string _databasePath;
 
     private const string DatabaseFilename = "StepQuestRPG_Data.db";
-    private const int DATABASE_VERSION = 4; // Incrementé pour gérer les migrations (3 -> 4 pour LastApiCatchUpEpochMs)
+    private const int DATABASE_VERSION = 5; // MODIFIÉ: Incrémenté pour la nouvelle table (4 -> 5)
 
     public void InitializeDatabase()
     {
@@ -37,17 +40,30 @@ public class LocalDatabase
             // Vérifier si la base de données nécessite une migration
             ManageDatabaseMigration();
 
-            // Créer la table PlayerData si elle n'existe pas déjà
-            _connection.CreateTable<PlayerData>();
-            Logger.LogInfo("LocalDatabase: PlayerData table created/verified");
+            // Créer les tables principales
+            CreateTables();
 
-            // Vérifier la structure de la table
-            DebugLogTableStructure();
+            // Vérifier la structure des tables
+            DebugLogTableStructures();
         }
         catch (Exception ex)
         {
             Logger.LogError($"LocalDatabase: Initialization error: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// NOUVEAU: Créer toutes les tables nécessaires
+    /// </summary>
+    private void CreateTables()
+    {
+        // Table PlayerData (existante)
+        _connection.CreateTable<PlayerData>();
+        Logger.LogInfo("LocalDatabase: PlayerData table created/verified");
+
+        // NOUVELLE TABLE: InventoryContainers
+        _connection.CreateTable<InventoryContainerData>();
+        Logger.LogInfo("LocalDatabase: InventoryContainers table created/verified");
     }
 
     // Méthode utilitaire pour convertir un epoch timestamp en date lisible
@@ -93,97 +109,31 @@ public class LocalDatabase
             // Appliquer les migrations nécessaires
             if (currentVersion < DATABASE_VERSION)
             {
-                // Migration de la version 1 à 2
-                if (currentVersion == 1 && DATABASE_VERSION >= 2)
+                // Migrations existantes (2, 3, 4)
+                ApplyMigrations(currentVersion);
+
+                // NOUVELLE MIGRATION: Version 4 -> 5 pour InventoryContainers
+                if (currentVersion < 5 && DATABASE_VERSION >= 5)
                 {
-                    Logger.LogInfo("LocalDatabase: Migrating from version 1 to 2...");
+                    Logger.LogInfo("LocalDatabase: Migrating to version 5 - Adding InventoryContainers table...");
 
                     try
                     {
-                        // Ajouter les colonnes de suivi des anomalies
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastStepsDelta INTEGER DEFAULT 0");
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastStepsChangeEpochMs INTEGER DEFAULT 0");
+                        // La table sera créée automatiquement par CreateTable<InventoryContainerData>()
+                        // Pas besoin de CREATE TABLE manuel
+
+                        // Initialiser les conteneurs par défaut
+                        InitializeDefaultContainers();
 
                         // Mettre à jour la version
-                        _connection.Execute("UPDATE DatabaseVersion SET Version = 2");
-                        Logger.LogInfo("LocalDatabase: Migration to version 2 completed");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError($"LocalDatabase: Migration error: {ex.Message}");
-                    }
-                }
-
-                // Migration de la version 2 à 3 pour ajouter DailySteps et LastDailyResetDate
-                if (currentVersion == 2 && DATABASE_VERSION >= 3)
-                {
-                    Logger.LogInfo("LocalDatabase: Migrating from version 2 to 3...");
-
-                    try
-                    {
-                        // Ajouter les colonnes pour le comptage quotidien
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN DailySteps INTEGER DEFAULT 0");
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastDailyResetDate TEXT DEFAULT ''");
-
-                        // Initialiser LastDailyResetDate à la date du jour
-                        string todayDate = DateTime.Now.ToString("yyyy-MM-dd"); // MODIFIÉ: Utiliser DateTime.Now (Faille B)
-                        _connection.Execute($"UPDATE PlayerData SET LastDailyResetDate = '{todayDate}'");
-
-                        // Mettre à jour la version
-                        _connection.Execute("UPDATE DatabaseVersion SET Version = 3");
-                        Logger.LogInfo("LocalDatabase: Migration to version 3 completed");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError($"LocalDatabase: Migration error: {ex.Message}");
-                    }
-                }
-
-                // NOUVELLE MIGRATION: Migration de la version 3 à 4 pour ajouter LastApiCatchUpEpochMs (Faille A)
-                if (currentVersion == 3 && DATABASE_VERSION >= 4)
-                {
-                    Logger.LogInfo("LocalDatabase: Migrating from version 3 to 4...");
-
-                    try
-                    {
-                        // Ajouter la colonne pour le timestamp dédié à l'API catch-up
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastApiCatchUpEpochMs INTEGER DEFAULT 0");
-
-                        // Initialiser LastApiCatchUpEpochMs à la même valeur que LastSyncEpochMs pour les données existantes
-                        _connection.Execute("UPDATE PlayerData SET LastApiCatchUpEpochMs = LastSyncEpochMs");
-
-                        // Mettre à jour la version
-                        _connection.Execute("UPDATE DatabaseVersion SET Version = 4");
-                        Logger.LogInfo("LocalDatabase: Migration to version 4 completed");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError($"LocalDatabase: Migration error: {ex.Message}");
-                    }
-                }
-
-                if (currentVersion == 4 && DATABASE_VERSION >= 5)
-                {
-                    Logger.LogInfo("LocalDatabase: Migrating from version 4 to 5...");
-                    try
-                    {
-                        // Ajouter les colonnes pour le système de voyage
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN CurrentLocationId TEXT DEFAULT 'Foret_01'");
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN TravelDestinationId TEXT DEFAULT NULL");
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN TravelStartSteps INTEGER DEFAULT 0");
-                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN TravelRequiredSteps INTEGER DEFAULT 0");
-
                         _connection.Execute("UPDATE DatabaseVersion SET Version = 5");
                         Logger.LogInfo("LocalDatabase: Migration to version 5 completed");
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError($"LocalDatabase: Migration error: {ex.Message}");
+                        Logger.LogError($"LocalDatabase: Migration to version 5 error: {ex.Message}");
                     }
                 }
-
-                // Ajouter d'autres migrations ici au besoin:
-                // if (currentVersion == 4 && DATABASE_VERSION >= 5) {...}
             }
         }
         catch (Exception ex)
@@ -191,6 +141,129 @@ public class LocalDatabase
             Logger.LogError($"LocalDatabase: Migration management error: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Appliquer les migrations existantes (versions 2, 3, 4)
+    /// </summary>
+    private void ApplyMigrations(int currentVersion)
+    {
+        // Migration de la version 1 à 2
+        if (currentVersion == 1 && DATABASE_VERSION >= 2)
+        {
+            Logger.LogInfo("LocalDatabase: Migrating from version 1 to 2...");
+            try
+            {
+                _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastStepsDelta INTEGER DEFAULT 0");
+                _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastStepsChangeEpochMs INTEGER DEFAULT 0");
+                _connection.Execute("UPDATE DatabaseVersion SET Version = 2");
+                Logger.LogInfo("LocalDatabase: Migration to version 2 completed");
+                currentVersion = 2;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"LocalDatabase: Migration to version 2 error: {ex.Message}");
+            }
+        }
+
+        // Migration de la version 2 à 3
+        if (currentVersion == 2 && DATABASE_VERSION >= 3)
+        {
+            Logger.LogInfo("LocalDatabase: Migrating from version 2 to 3...");
+            try
+            {
+                _connection.Execute("ALTER TABLE PlayerData ADD COLUMN DailySteps INTEGER DEFAULT 0");
+                _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastDailyResetDate TEXT DEFAULT ''");
+                string todayDate = DateTime.Now.ToString("yyyy-MM-dd");
+                _connection.Execute($"UPDATE PlayerData SET LastDailyResetDate = '{todayDate}'");
+                _connection.Execute("UPDATE DatabaseVersion SET Version = 3");
+                Logger.LogInfo("LocalDatabase: Migration to version 3 completed");
+                currentVersion = 3;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"LocalDatabase: Migration to version 3 error: {ex.Message}");
+            }
+        }
+
+        // Migration de la version 3 à 4
+        if (currentVersion == 3 && DATABASE_VERSION >= 4)
+        {
+            Logger.LogInfo("LocalDatabase: Migrating from version 3 to 4...");
+            try
+            {
+                _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastApiCatchUpEpochMs INTEGER DEFAULT 0");
+                _connection.Execute("UPDATE PlayerData SET LastApiCatchUpEpochMs = LastSyncEpochMs");
+                _connection.Execute("UPDATE DatabaseVersion SET Version = 4");
+                Logger.LogInfo("LocalDatabase: Migration to version 4 completed");
+                currentVersion = 4;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"LocalDatabase: Migration to version 4 error: {ex.Message}");
+            }
+        }
+
+        // Migration de la version 4 à 5 sera gérée dans ManageDatabaseMigration()
+    }
+
+    /// <summary>
+    /// NOUVEAU: Initialiser les conteneurs par défaut lors de la première migration
+    /// </summary>
+    private void InitializeDefaultContainers()
+    {
+        // Vérifier si les conteneurs existent déjà
+        var existingContainers = _connection.Query<InventoryContainerData>("SELECT ContainerID FROM InventoryContainers");
+
+        if (existingContainers.Count == 0)
+        {
+            Logger.LogInfo("LocalDatabase: Initializing default inventory containers...");
+
+            // Créer conteneur joueur par défaut
+            var playerContainer = new InventoryContainerData
+            {
+                ContainerID = "player",
+                ContainerType = "Player",
+                MaxSlots = 20,
+                SlotsData = CreateEmptySlots(20),
+                LastResetStepCount = 0
+            };
+
+            // Créer conteneur banque par défaut
+            var bankContainer = new InventoryContainerData
+            {
+                ContainerID = "bank",
+                ContainerType = "Bank",
+                MaxSlots = 50,
+                SlotsData = CreateEmptySlots(50),
+                LastResetStepCount = 0
+            };
+
+            // Insérer dans la base de données
+            _connection.Insert(playerContainer);
+            _connection.Insert(bankContainer);
+
+            Logger.LogInfo("LocalDatabase: Default containers created (player: 20 slots, bank: 50 slots)");
+        }
+        else
+        {
+            Logger.LogInfo($"LocalDatabase: Found {existingContainers.Count} existing containers, skipping default initialization");
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU: Créer des slots vides en format JSON
+    /// </summary>
+    private string CreateEmptySlots(int slotCount)
+    {
+        var emptySlots = new List<InventorySlot>();
+        for (int i = 0; i < slotCount; i++)
+        {
+            emptySlots.Add(new InventorySlot());
+        }
+        return JsonConvert.SerializeObject(emptySlots);
+    }
+
+    // === MÉTHODES PLAYERDATA (existantes) ===
 
     public PlayerData LoadPlayerData()
     {
@@ -202,12 +275,11 @@ public class LocalDatabase
 
         try
         {
-            // Tenter de charger l'enregistrement avec Id=1
             PlayerData data = _connection.Table<PlayerData>().FirstOrDefault(p => p.Id == 1);
 
             if (data != null)
             {
-                Logger.LogInfo($"LocalDatabase: Data loaded - TotalSteps: {data.TotalPlayerSteps}, " +
+                Logger.LogInfo($"LocalDatabase: PlayerData loaded - TotalSteps: {data.TotalPlayerSteps}, " +
                                $"LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}, " +
                                $"LastPause: {GetReadableDateFromEpoch(data.LastPauseEpochMs)}, " +
                                $"LastChange: {GetReadableDateFromEpoch(data.LastStepsChangeEpochMs)}, " +
@@ -217,7 +289,6 @@ public class LocalDatabase
             }
             else
             {
-                // Créer un nouveau PlayerData si aucun n'existe
                 PlayerData newData = new PlayerData();
                 _connection.Insert(newData);
                 Logger.LogInfo("LocalDatabase: New PlayerData created and saved");
@@ -226,7 +297,7 @@ public class LocalDatabase
         }
         catch (Exception ex)
         {
-            Logger.LogError($"LocalDatabase: Error loading data: {ex.Message}");
+            Logger.LogError($"LocalDatabase: Error loading PlayerData: {ex.Message}");
             return new PlayerData();
         }
     }
@@ -241,40 +312,35 @@ public class LocalDatabase
 
         if (data == null)
         {
-            Logger.LogError("LocalDatabase: Data is null");
+            Logger.LogError("LocalDatabase: PlayerData is null");
             return;
         }
 
         try
         {
-            // Vérifier que l'identifiant est correct
             if (data.Id <= 0)
                 data.Id = 1;
 
-            // Vérifier que LastSyncEpochMs est correctement défini
             if (data.LastSyncEpochMs <= 0 && data.TotalPlayerSteps > 0)
             {
                 Logger.LogWarning("LocalDatabase: LastSyncEpochMs needs initialization");
-                data.LastSyncEpochMs = DateTimeOffset.Now.ToUnixTimeMilliseconds(); // MODIFIÉ: Utiliser DateTime.Now (Faille B)
+                data.LastSyncEpochMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             }
 
-            // S'assurer que LastDailyResetDate n'est pas vide
             if (string.IsNullOrEmpty(data.LastDailyResetDate))
             {
-                data.LastDailyResetDate = DateTime.Now.ToString("yyyy-MM-dd"); // MODIFIÉ: Utiliser DateTime.Now (Faille B)
+                data.LastDailyResetDate = DateTime.Now.ToString("yyyy-MM-dd");
                 Logger.LogWarning($"LocalDatabase: LastDailyResetDate was empty, initialized to {data.LastDailyResetDate}");
             }
 
-            // NOUVEAU: S'assurer que LastApiCatchUpEpochMs a une valeur par défaut
             if (data.LastApiCatchUpEpochMs <= 0 && data.LastSyncEpochMs > 0)
             {
                 data.LastApiCatchUpEpochMs = data.LastSyncEpochMs;
                 Logger.LogWarning($"LocalDatabase: LastApiCatchUpEpochMs was 0, initialized to LastSyncEpochMs: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}");
             }
 
-            // Enregistrer les données
             int result = _connection.InsertOrReplace(data);
-            Logger.LogInfo($"LocalDatabase: Data saved - TotalSteps: {data.TotalPlayerSteps}, " +
+            Logger.LogInfo($"LocalDatabase: PlayerData saved - TotalSteps: {data.TotalPlayerSteps}, " +
                            $"LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}, " +
                            $"LastPause: {GetReadableDateFromEpoch(data.LastPauseEpochMs)}, " +
                            $"LastDelta: {data.LastStepsDelta}, " +
@@ -284,12 +350,99 @@ public class LocalDatabase
                            $"LastApiCatchUp: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}, " +
                            $"Result: {result}");
 
-            // Vérifier que la sauvegarde a réussi
             VerifySaveSuccess(data);
         }
         catch (Exception ex)
         {
-            Logger.LogError($"LocalDatabase: Save error: {ex.Message}");
+            Logger.LogError($"LocalDatabase: Save PlayerData error: {ex.Message}");
+        }
+    }
+
+    // === NOUVELLES MÉTHODES INVENTORY ===
+
+    /// <summary>
+    /// NOUVEAU: Charger un conteneur d'inventaire par ID
+    /// </summary>
+    public InventoryContainerData LoadInventoryContainer(string containerId)
+    {
+        if (_connection == null)
+        {
+            Logger.LogError("LocalDatabase: Connection not initialized");
+            return null;
+        }
+
+        try
+        {
+            var containerData = _connection.Table<InventoryContainerData>()
+                .FirstOrDefault(c => c.ContainerID == containerId);
+
+            if (containerData != null)
+            {
+                Logger.LogInfo($"LocalDatabase: Container '{containerId}' loaded - Type: {containerData.ContainerType}, Slots: {containerData.MaxSlots}");
+            }
+            else
+            {
+                Logger.LogWarning($"LocalDatabase: Container '{containerId}' not found in database");
+            }
+
+            return containerData;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"LocalDatabase: Error loading container '{containerId}': {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU: Sauvegarder un conteneur d'inventaire
+    /// </summary>
+    public void SaveInventoryContainer(InventoryContainerData containerData)
+    {
+        if (_connection == null)
+        {
+            Logger.LogError("LocalDatabase: Connection not initialized");
+            return;
+        }
+
+        if (containerData == null)
+        {
+            Logger.LogError("LocalDatabase: InventoryContainerData is null");
+            return;
+        }
+
+        try
+        {
+            int result = _connection.InsertOrReplace(containerData);
+            Logger.LogInfo($"LocalDatabase: Container '{containerData.ContainerID}' saved - Type: {containerData.ContainerType}, MaxSlots: {containerData.MaxSlots}, Result: {result}");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"LocalDatabase: Error saving container '{containerData.ContainerID}': {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU: Charger tous les conteneurs d'inventaire
+    /// </summary>
+    public List<InventoryContainerData> LoadAllInventoryContainers()
+    {
+        if (_connection == null)
+        {
+            Logger.LogError("LocalDatabase: Connection not initialized");
+            return new List<InventoryContainerData>();
+        }
+
+        try
+        {
+            var containers = _connection.Table<InventoryContainerData>().ToList();
+            Logger.LogInfo($"LocalDatabase: Loaded {containers.Count} inventory containers from database");
+            return containers;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"LocalDatabase: Error loading all containers: {ex.Message}");
+            return new List<InventoryContainerData>();
         }
     }
 
@@ -303,26 +456,28 @@ public class LocalDatabase
         }
     }
 
-    // Méthode privée pour vérifier la structure de la table
-    private void DebugLogTableStructure()
+    // === MÉTHODES PRIVÉES ===
+
+    private void DebugLogTableStructures()
     {
         try
         {
-            var tableInfo = _connection.GetTableInfo("PlayerData");
-            string columns = "";
-            foreach (var col in tableInfo)
-            {
-                columns += col.Name + ", ";
-            }
-            Logger.LogInfo($"LocalDatabase: Table columns: {columns}");
+            // Structure PlayerData
+            var playerTableInfo = _connection.GetTableInfo("PlayerData");
+            string playerColumns = string.Join(", ", playerTableInfo.Select(col => col.Name));
+            Logger.LogInfo($"LocalDatabase: PlayerData columns: {playerColumns}");
+
+            // Structure InventoryContainers
+            var inventoryTableInfo = _connection.GetTableInfo("InventoryContainers");
+            string inventoryColumns = string.Join(", ", inventoryTableInfo.Select(col => col.Name));
+            Logger.LogInfo($"LocalDatabase: InventoryContainers columns: {inventoryColumns}");
         }
         catch (Exception ex)
         {
-            Logger.LogError($"LocalDatabase: Error checking table structure: {ex.Message}");
+            Logger.LogError($"LocalDatabase: Error checking table structures: {ex.Message}");
         }
     }
 
-    // Méthode privée pour vérifier que la sauvegarde a réussi
     private void VerifySaveSuccess(PlayerData originalData)
     {
         try
@@ -336,7 +491,6 @@ public class LocalDatabase
                               $"DailySteps: {savedData.DailySteps}, " +
                               $"LastApiCatchUp: {GetReadableDateFromEpoch(savedData.LastApiCatchUpEpochMs)}");
 
-                // Vérifier que les valeurs correspondent
                 if (savedData.TotalPlayerSteps != originalData.TotalPlayerSteps ||
                     savedData.LastSyncEpochMs != originalData.LastSyncEpochMs ||
                     savedData.DailySteps != originalData.DailySteps ||
@@ -358,4 +512,93 @@ public class LocalDatabase
 class DatabaseVersionInfo
 {
     public int Version { get; set; }
+}
+
+// NOUVELLE CLASSE: Structure de données pour les conteneurs d'inventaire en base
+[Table("InventoryContainers")]
+public class InventoryContainerData
+{
+    [PrimaryKey]
+    public string ContainerID { get; set; }
+
+    public string ContainerType { get; set; }
+
+    public int MaxSlots { get; set; }
+
+    [Column("SlotsData")]
+    public string SlotsData { get; set; } // JSON des InventorySlot
+
+    public long LastResetStepCount { get; set; }
+
+    /// <summary>
+    /// Convertir vers InventoryContainer (pour utilisation dans le jeu)
+    /// </summary>
+    public InventoryContainer ToInventoryContainer()
+    {
+        // Parse container type
+        InventoryContainerType containerType = InventoryContainerType.Player;
+        if (Enum.TryParse<InventoryContainerType>(ContainerType, out var parsedType))
+        {
+            containerType = parsedType;
+        }
+
+        // Créer le conteneur
+        var container = new InventoryContainer(containerType, ContainerID, MaxSlots);
+
+        // Désérialiser les slots
+        if (!string.IsNullOrEmpty(SlotsData))
+        {
+            try
+            {
+                var slots = JsonConvert.DeserializeObject<List<InventorySlot>>(SlotsData);
+                if (slots != null)
+                {
+                    // Remplacer les slots
+                    container.Slots.Clear();
+                    container.Slots.AddRange(slots);
+
+                    // S'assurer qu'on a le bon nombre de slots
+                    while (container.Slots.Count < MaxSlots)
+                    {
+                        container.Slots.Add(new InventorySlot());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"InventoryContainerData: Error deserializing slots for '{ContainerID}': {ex.Message}");
+            }
+        }
+
+        // Métadonnées
+        if (LastResetStepCount > 0)
+        {
+            container.SetMetadata("LastResetStepCount", LastResetStepCount.ToString());
+        }
+
+        return container;
+    }
+
+    /// <summary>
+    /// Créer depuis InventoryContainer (pour sauvegarde en base)
+    /// </summary>
+    public static InventoryContainerData FromInventoryContainer(InventoryContainer container)
+    {
+        var data = new InventoryContainerData
+        {
+            ContainerID = container.ContainerID,
+            ContainerType = container.ContainerType.ToString(),
+            MaxSlots = container.MaxSlots,
+            SlotsData = JsonConvert.SerializeObject(container.Slots),
+            LastResetStepCount = 0
+        };
+
+        // Récupérer LastResetStepCount des métadonnées si présent
+        if (long.TryParse(container.GetMetadata("LastResetStepCount", "0"), out long lastReset))
+        {
+            data.LastResetStepCount = lastReset;
+        }
+
+        return data;
+    }
 }
