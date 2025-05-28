@@ -165,12 +165,13 @@ public class ItemDefinition : ScriptableObject
 /// </summary>
 public enum ItemType
 {
-    Material,    // Matériaux de base (fer, bois, pierre, etc.)
-    Food,        // Nourriture (poisson, fruits, pain, etc.)
-    Consumable,  // Consommables (potions de soin, buffs, etc.)
-    Equipment,   // Équipement (armes, armures, outils, accessoires)
-    Currency,    // Monnaies (or, gemmes, etc.)
-    Quest        // Objets de quête spéciaux
+    Equipment,   // Weapons, armor, etc.
+    Material,    // Crafting materials
+    Consumable,  // Health potions, food, etc. 
+    Usable,      // Tools, keys, special items
+    Currency,    // Gold, gems, etc.
+    Quest,       // Quest items
+    Miscellaneous // Other items
 }
 
 /// <summary>

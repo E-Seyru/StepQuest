@@ -182,6 +182,9 @@ public class InventorySlotUI : MonoBehaviour
         // MODIFIÉ: Log plus informatif avec le nom de l'objet
         if (slotData != null && !slotData.IsEmpty())
         {
+
+            ShowItemActionPanel();
+
             var itemDef = GetItemDefinition(slotData.ItemID);
             string itemName = itemDef?.GetDisplayName() ?? slotData.ItemID;
             Debug.Log($"Slot {slotIndex} clicked - {itemName} x{slotData.Quantity}");
@@ -286,6 +289,27 @@ public class InventorySlotUI : MonoBehaviour
         if (background == null)
             Debug.LogWarning($"InventorySlotUI: background not assigned on {gameObject.name}");
     }
+
+    // <summary>
+    /// Show the item action panel for this slot
+    /// </summary>
+    private void ShowItemActionPanel()
+    {
+        if (ItemActionPanel.Instance == null)
+        {
+            Debug.LogError("InventorySlotUI: ItemActionPanel.Instance is NULL! Make sure ItemActionPanel exists in the scene!");
+            return;
+        }
+
+        // Get world position of this slot for panel positioning
+        Vector2 worldPosition = transform.position;
+
+        // Show the action panel
+        ItemActionPanel.Instance.ShowPanel(this, slotData, worldPosition);
+        Debug.Log("InventorySlotUI: Called ShowPanel on ItemActionPanel");
+    }
+
+
 
 #if UNITY_EDITOR
     /// <summary>

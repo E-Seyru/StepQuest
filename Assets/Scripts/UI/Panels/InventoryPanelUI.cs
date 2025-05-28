@@ -61,8 +61,7 @@ public class InventoryPanelUI : MonoBehaviour
         CreateSlotUIs();
         RefreshDisplay();
 
-        // Hide panel initially
-        gameObject.SetActive(false);
+
     }
 
     void OnDestroy()
@@ -84,7 +83,7 @@ public class InventoryPanelUI : MonoBehaviour
         if (closeButton != null)
             closeButton.onClick.AddListener(ClosePanel);
 
-   
+
     }
 
     /// <summary>
