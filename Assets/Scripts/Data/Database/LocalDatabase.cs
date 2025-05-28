@@ -304,9 +304,10 @@ public class LocalDatabase
 
     public void SavePlayerData(PlayerData data)
     {
+        // AJOUT: Protection contre les appels après fermeture
         if (_connection == null)
         {
-            Logger.LogError("LocalDatabase: Connection not initialized");
+            Logger.LogWarning("LocalDatabase: SavePlayerData called but connection is null (probably shutting down)");
             return;
         }
 
@@ -399,9 +400,10 @@ public class LocalDatabase
     /// </summary>
     public void SaveInventoryContainer(InventoryContainerData containerData)
     {
+        // AJOUT: Protection contre les appels après fermeture
         if (_connection == null)
         {
-            Logger.LogError("LocalDatabase: Connection not initialized");
+            Logger.LogWarning($"LocalDatabase: SaveInventoryContainer called but connection is null (probably shutting down)");
             return;
         }
 

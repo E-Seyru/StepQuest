@@ -13,11 +13,6 @@ public class InventoryPanelUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private Button closeButton;
 
-    [Header("Test Buttons (Remove later)")]
-    [SerializeField] private Button addWoodButton;
-    [SerializeField] private Button addSwordButton;
-    [SerializeField] private Button removeItemButton;
-    [SerializeField] private Button clearInventoryButton;
 
     [Header("Info Display")]
     [SerializeField] private TextMeshProUGUI capacityText;
@@ -89,18 +84,7 @@ public class InventoryPanelUI : MonoBehaviour
         if (closeButton != null)
             closeButton.onClick.AddListener(ClosePanel);
 
-        // Test buttons
-        if (addWoodButton != null)
-            addWoodButton.onClick.AddListener(() => TestAddItem("wood", 5));
-
-        if (addSwordButton != null)
-            addSwordButton.onClick.AddListener(() => TestAddItem("iron_sword", 1));
-
-        if (removeItemButton != null)
-            removeItemButton.onClick.AddListener(TestRemoveSelectedItem);
-
-        if (clearInventoryButton != null)
-            clearInventoryButton.onClick.AddListener(TestClearInventory);
+   
     }
 
     /// <summary>

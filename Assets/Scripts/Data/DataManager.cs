@@ -9,6 +9,9 @@ public class DataManager : MonoBehaviour
     public PlayerData PlayerData { get; private set; }
     private LocalDatabase _localDatabase;
 
+    // AJOUT: Propriété publique pour accéder à LocalDatabase
+    public LocalDatabase LocalDatabase => _localDatabase;
+
     // Constantes pour la détection d'anomalies (DÉSACTIVÉES EN ÉDITEUR)
     private const long MAX_ACCEPTABLE_STEPS_DELTA = 10000;
     private const long MAX_ACCEPTABLE_DAILY_STEPS = 50000;
@@ -30,13 +33,15 @@ public class DataManager : MonoBehaviour
 
     private void InitializeManager()
     {
-#if UNITY_EDITOR
-        // En mode éditeur, utiliser une base de données en mémoire simple
-        Logger.LogInfo("DataManager: Running in Editor mode - using simple in-memory database", Logger.LogCategory.General);
-        InitializeEditorMode();
-#else
+        // MODIFIÉ: Toujours initialiser LocalDatabase, même en éditeur
         _localDatabase = new LocalDatabase();
         _localDatabase.InitializeDatabase();
+
+#if UNITY_EDITOR
+        // En mode éditeur, mode simplifié mais avec base de données fonctionnelle
+        Logger.LogInfo("DataManager: Running in Editor mode with LocalDatabase support", Logger.LogCategory.General);
+        LoadGame(); // Utiliser la même logique qu'en production
+#else
         LoadGame();
 #endif
 
@@ -57,31 +62,6 @@ public class DataManager : MonoBehaviour
             }
         }
     }
-
-#if UNITY_EDITOR
-    // Mode éditeur simplifié - pas de base de données SQLite
-    private void InitializeEditorMode()
-    {
-        // Charger depuis PlayerPrefs ou créer nouveau
-        if (PlayerPrefs.HasKey("EditorPlayerData_TotalSteps"))
-        {
-            PlayerData = new PlayerData();
-            PlayerData.TotalPlayerSteps = long.Parse(PlayerPrefs.GetString("EditorPlayerData_TotalSteps", "0"));
-            PlayerData.DailySteps = long.Parse(PlayerPrefs.GetString("EditorPlayerData_DailySteps", "0"));
-            PlayerData.LastSyncEpochMs = long.Parse(PlayerPrefs.GetString("EditorPlayerData_LastSync", "0"));
-            PlayerData.LastPauseEpochMs = long.Parse(PlayerPrefs.GetString("EditorPlayerData_LastPause", "0"));
-            PlayerData.LastDailyResetDate = PlayerPrefs.GetString("EditorPlayerData_LastReset", DateTime.Now.ToString("yyyy-MM-dd"));
-            PlayerData.CurrentLocationId = PlayerPrefs.GetString("EditorPlayerData_Location", "Foret_01");
-
-            Logger.LogInfo($"DataManager: [EDITOR] Loaded from PlayerPrefs - TotalSteps: {PlayerData.TotalSteps}, DailySteps: {PlayerData.DailySteps}", Logger.LogCategory.General);
-        }
-        else
-        {
-            PlayerData = new PlayerData();
-            Logger.LogInfo("DataManager: [EDITOR] Created new PlayerData", Logger.LogCategory.General);
-        }
-    }
-#endif
 
     private void LoadGame()
     {
@@ -128,11 +108,6 @@ public class DataManager : MonoBehaviour
             return;
         }
 
-#if UNITY_EDITOR
-        // En mode éditeur, sauver dans PlayerPrefs
-        SaveToPlayerPrefs();
-        return;
-#else
         if (_localDatabase == null)
         {
             Logger.LogError("DataManager: Cannot save game, LocalDatabase is not initialized.", Logger.LogCategory.General);
@@ -146,7 +121,9 @@ public class DataManager : MonoBehaviour
 
         try
         {
-            ValidatePlayerData();
+#if !UNITY_EDITOR
+            ValidatePlayerData(); // Validation seulement en production
+#endif
 
             Logger.LogInfo($"DataManager: SaveGame → saving TotalSteps={PlayerData.TotalSteps}, " +
                           $"LastSync={LocalDatabase.GetReadableDateFromEpoch(PlayerData.LastSyncEpochMs)}, " +
@@ -170,25 +147,7 @@ public class DataManager : MonoBehaviour
         {
             Logger.LogError($"DataManager: Exception during SaveGame: {ex.Message}", Logger.LogCategory.General);
         }
-#endif
     }
-
-#if UNITY_EDITOR
-    private void SaveToPlayerPrefs()
-    {
-        if (PlayerData == null) return;
-
-        PlayerPrefs.SetString("EditorPlayerData_TotalSteps", PlayerData.TotalSteps.ToString());
-        PlayerPrefs.SetString("EditorPlayerData_DailySteps", PlayerData.DailySteps.ToString());
-        PlayerPrefs.SetString("EditorPlayerData_LastSync", PlayerData.LastSyncEpochMs.ToString());
-        PlayerPrefs.SetString("EditorPlayerData_LastPause", PlayerData.LastPauseEpochMs.ToString());
-        PlayerPrefs.SetString("EditorPlayerData_LastReset", PlayerData.LastDailyResetDate);
-        PlayerPrefs.SetString("EditorPlayerData_Location", PlayerData.CurrentLocationId ?? "Foret_01");
-        PlayerPrefs.Save();
-
-        Logger.LogInfo($"DataManager: [EDITOR] Saved to PlayerPrefs - TotalSteps: {PlayerData.TotalSteps}, DailySteps: {PlayerData.DailySteps}", Logger.LogCategory.General);
-    }
-#endif
 
     public void SaveTravelProgress()
     {
@@ -212,14 +171,10 @@ public class DataManager : MonoBehaviour
                           $"Progress={travelProgress}/{PlayerData.TravelRequiredSteps} steps, " +
                           $"StartSteps={PlayerData.TravelStartSteps}, TotalSteps={PlayerData.TotalSteps}", Logger.LogCategory.General);
 
-#if UNITY_EDITOR
-            SaveToPlayerPrefs();
-#else
             if (_localDatabase != null)
             {
                 _localDatabase.SavePlayerData(PlayerData);
             }
-#endif
 
             Logger.LogInfo("DataManager: Travel progress saved successfully", Logger.LogCategory.General);
         }
@@ -285,10 +240,6 @@ public class DataManager : MonoBehaviour
     // VALIDATIONS DÉSACTIVÉES EN ÉDITEUR
     private void ValidatePlayerData()
     {
-#if UNITY_EDITOR
-        Logger.LogInfo("DataManager: [EDITOR] Data validation skipped", Logger.LogCategory.General);
-        return;
-#else
         if (PlayerData.TotalSteps <= 0 || PlayerData.LastStepsChangeEpochMs <= 0)
         {
             return;
@@ -330,7 +281,6 @@ public class DataManager : MonoBehaviour
         {
             ValidateTravelState();
         }
-#endif
     }
 
     public string GetTravelStateDebugInfo()
@@ -379,12 +329,10 @@ public class DataManager : MonoBehaviour
             SaveGame();
         }
 
-#if !UNITY_EDITOR
         if (_localDatabase != null)
         {
             _localDatabase.CloseDatabase();
         }
-#endif
     }
 
     void OnApplicationPause(bool pauseStatus)
