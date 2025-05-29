@@ -6038,10 +6038,11 @@ MonoBehaviour:
   panels:
   - {fileID: 1829260632}
   - {fileID: 1416427266}
+  - {fileID: 1855796899}
   - {fileID: 2134201465}
   startingPanelIndex: 0
   wrapAround: 1
-  alwaysActivePanelIndices: 02000000
+  alwaysActivePanelIndices: 03000000
   mapPanel: {fileID: 692979541}
   minSwipeDistance: 100
   swipeThreshold: 0.2
