@@ -19,7 +19,7 @@ MonoBehaviour:
   ItemColor: {r: 1, g: 1, b: 1, a: 1}
   BasePrice: 1
   RarityTier: 5
-  Type: 0
+  Type: 1
   IsStackable: 1
   MaxStackSize: 99
   EquipmentSlot: 0

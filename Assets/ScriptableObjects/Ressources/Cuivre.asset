@@ -12,12 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9be207c3a5ca57c478fb1cdbdb145352, type: 3}
   m_Name: Cuivre
   m_EditorClassIdentifier: 
-  ResourceID: Cuivre
-  ResourceName: Cuivre
+  ItemID: cuivre
+  ItemName: Cuivre
   Description: Du cuivre
-  ResourceIcon: {fileID: 21300000, guid: 53ecdfee8179fa54d8a914c598043651, type: 3}
-  ResourceColor: {r: 0.21960786, g: 0.21960786, b: 0.21960786, a: 1}
-  BaseValue: 1
+  ItemIcon: {fileID: 21300000, guid: 53ecdfee8179fa54d8a914c598043651, type: 3}
+  ItemColor: {r: 1, g: 1, b: 1, a: 1}
+  BasePrice: 1
   RarityTier: 1
-  Type: 0
+  Type: 1
   IsStackable: 1
+  MaxStackSize: 99
+  EquipmentSlot: 0
+  InventorySlots: 0
