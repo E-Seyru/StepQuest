@@ -21,5 +21,5 @@ MonoBehaviour:
   UnlockRequirement: 0
   VariantIcon: {fileID: 21300000, guid: 35985ff799523944baa3f9a8b5a8fa02, type: 3}
   VariantColor: {r: 1, g: 1, b: 1, a: 1}
-  ActionCost: 1
+  ActionCost: 10
   SuccessRate: 100

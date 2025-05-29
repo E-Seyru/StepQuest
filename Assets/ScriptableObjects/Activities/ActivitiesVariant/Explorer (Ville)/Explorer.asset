@@ -12,14 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99ddbeafac29af94ba225d9cc62cd345, type: 3}
   m_Name: Explorer
   m_EditorClassIdentifier: 
-  VariantName: 
-  VariantDescription: 
-  PrimaryResource: {fileID: 0}
+  VariantName: Explorer
+  VariantDescription: Vous explorez la ville
+  PrimaryResource: {fileID: 11400000, guid: e9d231eac7843a34dad4d5820873323a, type: 2}
   SecondaryResources: []
   IsAvailable: 1
   Requirements: 
   UnlockRequirement: 0
-  VariantIcon: {fileID: 0}
+  VariantIcon: {fileID: 21300000, guid: 5c2ca2f155b8dfa43a072642e7a93f6e, type: 3}
   VariantColor: {r: 1, g: 1, b: 1, a: 1}
-  ActionCost: 1
+  ActionCost: 10
   SuccessRate: 100
