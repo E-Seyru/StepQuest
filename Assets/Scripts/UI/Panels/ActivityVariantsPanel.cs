@@ -149,14 +149,29 @@ public class ActivityVariantsPanel : MonoBehaviour
     /// <summary>
     /// Handle variant button click
     /// </summary>
+    // Dans OnVariantButtonClicked()
     private void OnVariantButtonClicked(ActivityVariant variant)
     {
         Debug.Log($"Variant selected: {variant.VariantName}");
 
-        // Fire event
-        OnVariantSelected?.Invoke(variant);
+        // AJOUTER : Démarrer l'activité via ActivityManager
+        if (ActivityManager.Instance != null && currentActivity != null)
+        {
+            string activityId = currentActivity.ActivityId;
+            string variantId = ActivityRegistry.GenerateVariantId(variant.VariantName);
 
-        // Close panel
+            bool success = ActivityManager.Instance.StartActivity(activityId, variantId);
+            if (success)
+            {
+                Debug.Log($"Successfully started activity: {variant.GetDisplayName()}");
+            }
+            else
+            {
+                Debug.LogWarning($"Failed to start activity: {variant.GetDisplayName()}");
+            }
+        }
+
+        OnVariantSelected?.Invoke(variant);
         ClosePanel();
     }
 

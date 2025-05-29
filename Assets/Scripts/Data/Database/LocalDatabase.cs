@@ -13,7 +13,7 @@ public class LocalDatabase
     private string _databasePath;
 
     private const string DatabaseFilename = "StepQuestRPG_Data.db";
-    private const int DATABASE_VERSION = 5; // MODIFIÉ: Incrémenté pour la nouvelle table (4 -> 5)
+    private const int DATABASE_VERSION = 6; // MODIFIÉ: Incrémenté pour ActivityData (5 -> 6)
 
     public void InitializeDatabase()
     {
@@ -61,7 +61,7 @@ public class LocalDatabase
         _connection.CreateTable<PlayerData>();
         Logger.LogInfo("LocalDatabase: PlayerData table created/verified");
 
-        // NOUVELLE TABLE: InventoryContainers
+        // Table InventoryContainers (existante)
         _connection.CreateTable<InventoryContainerData>();
         Logger.LogInfo("LocalDatabase: InventoryContainers table created/verified");
     }
@@ -109,29 +109,28 @@ public class LocalDatabase
             // Appliquer les migrations nécessaires
             if (currentVersion < DATABASE_VERSION)
             {
-                // Migrations existantes (2, 3, 4)
+                // Migrations existantes (2, 3, 4, 5)
                 ApplyMigrations(currentVersion);
 
-                // NOUVELLE MIGRATION: Version 4 -> 5 pour InventoryContainers
-                if (currentVersion < 5 && DATABASE_VERSION >= 5)
+                // NOUVELLE MIGRATION: Version 5 -> 6 pour ActivityData
+                if (currentVersion < 6 && DATABASE_VERSION >= 6)
                 {
-                    Logger.LogInfo("LocalDatabase: Migrating to version 5 - Adding InventoryContainers table...");
+                    Logger.LogInfo("LocalDatabase: Migrating to version 6 - Adding ActivityData support...");
 
                     try
                     {
-                        // La table sera créée automatiquement par CreateTable<InventoryContainerData>()
-                        // Pas besoin de CREATE TABLE manuel
+                        // Ajouter la colonne CurrentActivityJson à la table PlayerData
+                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN CurrentActivityJson TEXT DEFAULT NULL");
 
-                        // Initialiser les conteneurs par défaut
-                        InitializeDefaultContainers();
+                        Logger.LogInfo("LocalDatabase: Added CurrentActivityJson column to PlayerData table");
 
                         // Mettre à jour la version
-                        _connection.Execute("UPDATE DatabaseVersion SET Version = 5");
-                        Logger.LogInfo("LocalDatabase: Migration to version 5 completed");
+                        _connection.Execute("UPDATE DatabaseVersion SET Version = 6");
+                        Logger.LogInfo("LocalDatabase: Migration to version 6 completed");
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError($"LocalDatabase: Migration to version 5 error: {ex.Message}");
+                        Logger.LogError($"LocalDatabase: Migration to version 6 error: {ex.Message}");
                     }
                 }
             }
@@ -143,7 +142,7 @@ public class LocalDatabase
     }
 
     /// <summary>
-    /// Appliquer les migrations existantes (versions 2, 3, 4)
+    /// Appliquer les migrations existantes (versions 2, 3, 4, 5)
     /// </summary>
     private void ApplyMigrations(int currentVersion)
     {
@@ -203,11 +202,35 @@ public class LocalDatabase
             }
         }
 
-        // Migration de la version 4 à 5 sera gérée dans ManageDatabaseMigration()
+        // Migration de la version 4 à 5 (InventoryContainers)
+        if (currentVersion == 4 && DATABASE_VERSION >= 5)
+        {
+            Logger.LogInfo("LocalDatabase: Migrating from version 4 to 5 - Adding InventoryContainers table...");
+
+            try
+            {
+                // La table sera créée automatiquement par CreateTable<InventoryContainerData>()
+                // Pas besoin de CREATE TABLE manuel
+
+                // Initialiser les conteneurs par défaut
+                InitializeDefaultContainers();
+
+                // Mettre à jour la version
+                _connection.Execute("UPDATE DatabaseVersion SET Version = 5");
+                Logger.LogInfo("LocalDatabase: Migration to version 5 completed");
+                currentVersion = 5;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"LocalDatabase: Migration to version 5 error: {ex.Message}");
+            }
+        }
+
+        // La migration vers la version 6 sera gérée dans ManageDatabaseMigration()
     }
 
     /// <summary>
-    /// NOUVEAU: Initialiser les conteneurs par défaut lors de la première migration
+    /// Initialiser les conteneurs par défaut lors de la première migration (version 5)
     /// </summary>
     private void InitializeDefaultContainers()
     {
@@ -251,7 +274,7 @@ public class LocalDatabase
     }
 
     /// <summary>
-    /// NOUVEAU: Créer des slots vides en format JSON
+    /// Créer des slots vides en format JSON
     /// </summary>
     private string CreateEmptySlots(int slotCount)
     {
@@ -263,7 +286,7 @@ public class LocalDatabase
         return JsonConvert.SerializeObject(emptySlots);
     }
 
-    // === MÉTHODES PLAYERDATA (existantes) ===
+    // === MÉTHODES PLAYERDATA ===
 
     public PlayerData LoadPlayerData()
     {
@@ -284,7 +307,8 @@ public class LocalDatabase
                                $"LastPause: {GetReadableDateFromEpoch(data.LastPauseEpochMs)}, " +
                                $"LastChange: {GetReadableDateFromEpoch(data.LastStepsChangeEpochMs)}, " +
                                $"DailySteps: {data.DailySteps}, LastReset: {data.LastDailyResetDate}, " +
-                               $"LastApiCatchUp: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}");
+                               $"LastApiCatchUp: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}, " +
+                               $"Activity: {(data.HasActiveActivity() ? data.CurrentActivity.ActivityId : "None")}");
                 return data;
             }
             else
@@ -349,6 +373,7 @@ public class LocalDatabase
                            $"DailySteps: {data.DailySteps}, " +
                            $"LastReset: {data.LastDailyResetDate}, " +
                            $"LastApiCatchUp: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}, " +
+                           $"Activity: {(data.HasActiveActivity() ? data.CurrentActivity.ActivityId : "None")}, " +
                            $"Result: {result}");
 
             VerifySaveSuccess(data);
@@ -359,10 +384,10 @@ public class LocalDatabase
         }
     }
 
-    // === NOUVELLES MÉTHODES INVENTORY ===
+    // === MÉTHODES INVENTORY (existantes, pas changées) ===
 
     /// <summary>
-    /// NOUVEAU: Charger un conteneur d'inventaire par ID
+    /// Charger un conteneur d'inventaire par ID
     /// </summary>
     public InventoryContainerData LoadInventoryContainer(string containerId)
     {
@@ -396,7 +421,7 @@ public class LocalDatabase
     }
 
     /// <summary>
-    /// NOUVEAU: Sauvegarder un conteneur d'inventaire
+    /// Sauvegarder un conteneur d'inventaire
     /// </summary>
     public void SaveInventoryContainer(InventoryContainerData containerData)
     {
@@ -425,7 +450,7 @@ public class LocalDatabase
     }
 
     /// <summary>
-    /// NOUVEAU: Charger tous les conteneurs d'inventaire
+    /// Charger tous les conteneurs d'inventaire
     /// </summary>
     public List<InventoryContainerData> LoadAllInventoryContainers()
     {
@@ -491,13 +516,15 @@ public class LocalDatabase
                               $"LastSync: {GetReadableDateFromEpoch(savedData.LastSyncEpochMs)}, " +
                               $"LastPause: {GetReadableDateFromEpoch(savedData.LastPauseEpochMs)}, " +
                               $"DailySteps: {savedData.DailySteps}, " +
-                              $"LastApiCatchUp: {GetReadableDateFromEpoch(savedData.LastApiCatchUpEpochMs)}");
+                              $"LastApiCatchUp: {GetReadableDateFromEpoch(savedData.LastApiCatchUpEpochMs)}, " +
+                              $"Activity: {(savedData.HasActiveActivity() ? "Active" : "None")}");
 
                 if (savedData.TotalPlayerSteps != originalData.TotalPlayerSteps ||
                     savedData.LastSyncEpochMs != originalData.LastSyncEpochMs ||
                     savedData.DailySteps != originalData.DailySteps ||
                     savedData.LastDailyResetDate != originalData.LastDailyResetDate ||
-                    savedData.LastApiCatchUpEpochMs != originalData.LastApiCatchUpEpochMs)
+                    savedData.LastApiCatchUpEpochMs != originalData.LastApiCatchUpEpochMs ||
+                    savedData.CurrentActivityJson != originalData.CurrentActivityJson)
                 {
                     Logger.LogError("LocalDatabase: Verification FAILED - Data mismatch after save");
                 }
@@ -516,7 +543,7 @@ class DatabaseVersionInfo
     public int Version { get; set; }
 }
 
-// NOUVELLE CLASSE: Structure de données pour les conteneurs d'inventaire en base
+// Structure de données pour les conteneurs d'inventaire en base (existante, pas changée)
 [Table("InventoryContainers")]
 public class InventoryContainerData
 {

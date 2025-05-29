@@ -201,6 +201,10 @@ public class MapManager : MonoBehaviour
 
     public bool CanTravelTo(string destinationLocationId)
     {
+
+        if (ActivityManager.Instance.ShouldBlockTravel())
+            return false;
+
         // Check if we have a current location
         if (CurrentLocation == null)
         {

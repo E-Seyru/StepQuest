@@ -1,4 +1,5 @@
 ﻿// Filepath: Assets/Scripts/Data/Models/PlayerData.cs
+using Newtonsoft.Json;
 using SQLite;
 using System;
 
@@ -118,6 +119,57 @@ public class PlayerData
         set { _travelRequiredSteps = value; }
     }
 
+    // === NOUVEAU: Système d'activité ===
+
+    // Activité en cours (JSON sérialisé)
+    private string _currentActivityJson;
+    [Column("CurrentActivityJson")]
+    public string CurrentActivityJson
+    {
+        get { return _currentActivityJson; }
+        set { _currentActivityJson = value; }
+    }
+
+    // Propriété pour accéder facilement à l'activité courante
+    [Ignore] // Ne pas sauvegarder en base, c'est juste un wrapper
+    public ActivityData CurrentActivity
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_currentActivityJson))
+                return null;
+
+            try
+            {
+                return JsonConvert.DeserializeObject<ActivityData>(_currentActivityJson);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error deserializing CurrentActivity: {ex.Message}", Logger.LogCategory.General);
+                return null;
+            }
+        }
+        set
+        {
+            if (value == null)
+            {
+                _currentActivityJson = null;
+            }
+            else
+            {
+                try
+                {
+                    _currentActivityJson = JsonConvert.SerializeObject(value);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError($"PlayerData: Error serializing CurrentActivity: {ex.Message}", Logger.LogCategory.General);
+                    _currentActivityJson = null;
+                }
+            }
+        }
+    }
+
     // Constructeur par défaut
     public PlayerData()
     {
@@ -136,6 +188,9 @@ public class PlayerData
         _travelDestinationId = null; // Pas de voyage en cours
         _travelStartSteps = 0;
         _travelRequiredSteps = 0;
+
+        // NOUVEAU: Pas d'activité active par défaut
+        _currentActivityJson = null;
     }
 
     // Propriété pour accéder à TotalPlayerSteps avec le nom simplifié TotalSteps
@@ -175,5 +230,48 @@ public class PlayerData
     {
         if (!IsCurrentlyTraveling()) return false;
         return GetTravelProgress(currentTotalSteps) >= TravelRequiredSteps;
+    }
+
+    // === NOUVEAU: Méthodes utiles pour l'activité ===
+
+    /// <summary>
+    /// Vérifie si le joueur a une activité active
+    /// </summary>
+    public bool HasActiveActivity()
+    {
+        return CurrentActivity != null && CurrentActivity.IsActive();
+    }
+
+    /// <summary>
+    /// Démarre une nouvelle activité
+    /// </summary>
+    public void StartActivity(string activityId, string variantId, long currentSteps, string locationId)
+    {
+        CurrentActivity = new ActivityData(activityId, variantId, currentSteps, locationId);
+        Logger.LogInfo($"PlayerData: Started activity {activityId}/{variantId} at {locationId}", Logger.LogCategory.General);
+    }
+
+    /// <summary>
+    /// Arrête l'activité en cours
+    /// </summary>
+    public void StopActivity()
+    {
+        if (HasActiveActivity())
+        {
+            Logger.LogInfo($"PlayerData: Stopped activity {CurrentActivity.ActivityId}/{CurrentActivity.VariantId}", Logger.LogCategory.General);
+        }
+        CurrentActivity = null;
+    }
+
+    /// <summary>
+    /// Obtient des informations de debug sur l'activité courante
+    /// </summary>
+    public string GetActivityDebugInfo()
+    {
+        if (!HasActiveActivity())
+            return "No active activity";
+
+        var activity = CurrentActivity;
+        return $"Activity: {activity.ActivityId}/{activity.VariantId} - Steps: {activity.AccumulatedSteps} - Location: {activity.LocationId}";
     }
 }

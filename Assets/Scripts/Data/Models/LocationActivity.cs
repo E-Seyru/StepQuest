@@ -33,6 +33,32 @@ public class LocationActivity
     public Sprite LocationSpecificIcon;
 
     /// <summary>
+    /// Get the activity ID from the ActivityReference
+    /// </summary>
+    public string ActivityId
+    {
+        get
+        {
+            if (ActivityReference != null)
+                return ActivityReference.ActivityID;
+            return "unknown";
+        }
+    }
+
+    /// <summary>
+    /// Get the activity name from the ActivityReference
+    /// </summary>
+    public string ActivityName
+    {
+        get
+        {
+            if (ActivityReference != null)
+                return ActivityReference.ActivityName;
+            return "Unknown Activity";
+        }
+    }
+
+    /// <summary>
     /// Get the display name for this activity (location-specific or general)
     /// </summary>
     public string GetDisplayName()
@@ -146,25 +172,40 @@ public class LocationActivity
     /// </summary>
     public bool IsValidActivity()
     {
+        // Check if we have a valid ActivityReference
         if (ActivityReference == null)
         {
-            Debug.LogWarning("LocationActivity: ActivityReference is null!");
+            Debug.LogError($"LocationActivity: ActivityReference is null!");
             return false;
         }
 
+        // Check if the referenced activity is valid
         if (!ActivityReference.IsValid())
         {
-            Debug.LogWarning($"LocationActivity: Referenced activity '{ActivityReference.name}' is not valid!");
+            Debug.LogError($"LocationActivity: ActivityReference '{ActivityReference.ActivityID}' is not valid!");
             return false;
         }
 
-        if (!IsAvailable)
+        // Check if we have at least one valid variant
+        if (ActivityVariants == null || ActivityVariants.Count == 0)
         {
+            Debug.LogError($"LocationActivity '{ActivityId}': No activity variants assigned!");
             return false;
         }
 
-        if (!ActivityReference.IsAvailable)
+        bool hasValidVariant = false;
+        foreach (var variant in ActivityVariants)
         {
+            if (variant != null && variant.IsValidVariant())
+            {
+                hasValidVariant = true;
+                break;
+            }
+        }
+
+        if (!hasValidVariant)
+        {
+            Debug.LogError($"LocationActivity '{ActivityId}': No valid variants found!");
             return false;
         }
 
