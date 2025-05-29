@@ -172,6 +172,11 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     void OnEnable()
     {
+
+        if (ActivityDisplayPanel.Instance != null)
+        {
+            ActivityDisplayPanel.Instance.CheckAndShowIfActivityActive();
+        }
         RefreshPanel();
         StartCoroutine(DelayedLayoutFix());
     }
