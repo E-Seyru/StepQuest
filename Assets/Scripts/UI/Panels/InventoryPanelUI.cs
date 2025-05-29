@@ -11,7 +11,7 @@ public class InventoryPanelUI : MonoBehaviour
     [SerializeField] private Transform slotsContainer;
     [SerializeField] private GameObject slotPrefab;
     [SerializeField] private TextMeshProUGUI titleText;
-    [SerializeField] private Button closeButton;
+    [SerializeField] private Button addWoodButton;
 
 
     [Header("Info Display")]
@@ -38,7 +38,6 @@ public class InventoryPanelUI : MonoBehaviour
             return;
         }
 
-        SetupButtons();
     }
 
     void Start()
@@ -75,16 +74,6 @@ public class InventoryPanelUI : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Setup button listeners
-    /// </summary>
-    private void SetupButtons()
-    {
-        if (closeButton != null)
-            closeButton.onClick.AddListener(ClosePanel);
-
-
-    }
 
     /// <summary>
     /// Create UI slots based on container capacity
@@ -313,5 +302,18 @@ public class InventoryPanelUI : MonoBehaviour
     {
         var container = inventoryManager?.GetContainer(currentContainerId);
         return $"UI State: {slotUIs.Count} slots, Container: {container?.GetDebugInfo() ?? "null"}";
+    }
+
+    public void AddWood()
+    {
+        if (inventoryManager != null)
+        {
+            inventoryManager.AddItem(currentContainerId, "Pin", 1);
+            Debug.Log("Added 1 wood to inventory");
+        }
+        else
+        {
+            Debug.LogError("InventoryManager not initialized!");
+        }
     }
 }

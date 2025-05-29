@@ -16,7 +16,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e9d231eac7843a34dad4d5820873323a, type: 2}
   - {fileID: 11400000, guid: a5c99481bcee114448801f2fb8d80b89, type: 2}
   - {fileID: 11400000, guid: 3430a706d4894e44a88308dea6134369, type: 2}
-  - {fileID: 0}
-  ValidationStatus: "\u274C Registry validation failed (4 issue(s)):\n\n1 null item(s)
-    in registry\nItem 'charbon' missing icon\nItem 'cuivre' missing icon\nItem 'fer'
-    missing icon"
+  - {fileID: 11400000, guid: 4b1adcce128ef7d49ad647ee12a71e1d, type: 2}
+  ValidationStatus: "\u274C Registry validation failed (3 issue(s)):\n\nItem 'charbon'
+    missing icon\nItem 'cuivre' missing icon\nItem 'fer' missing icon"
