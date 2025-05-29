@@ -24,7 +24,7 @@ public class InventoryManager : MonoBehaviour
 
     // References
     private DataManager dataManager;
-    private EquipmentManager equipmentManager;
+
 
     // Auto-save tracking
     private float timeSinceLastSave = 0f;
