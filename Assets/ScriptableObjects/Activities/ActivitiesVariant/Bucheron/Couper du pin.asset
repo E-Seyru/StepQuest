@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   VariantName: Couper du Pin
   VariantDescription: "Vous coupez du pin \xE0 rythme soutenu"
+  ParentActivityID: bucheron
+  AutoDetectParent: 1
   PrimaryResource: {fileID: 11400000, guid: 4b1adcce128ef7d49ad647ee12a71e1d, type: 2}
   SecondaryResources: []
   IsAvailable: 1

@@ -10,13 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5e6cc2a70a59166438cdd7fff9273abf, type: 3}
-  m_Name: Mining
+  m_Name: Bucheron
   m_EditorClassIdentifier: 
-  ActivityID: Mining
-  ActivityName: Mining
-  BaseDescription: Mining
-  ActivityIcon: {fileID: 21300000, guid: 13efaac299f52e048bf5c234eddb3930, type: 3}
+  ActivityID: Bucheron
+  ActivityName: Couper du bois
+  BaseDescription: Couper des arbres...
+  ActivityIcon: {fileID: 21300000, guid: 7226ddbce19797445b27b7c0e176990f, type: 3}
   ActivityColor: {r: 1, g: 1, b: 1, a: 1}
   IsAvailable: 1
   UnlockRequirement: 0
+  AutoFindVariants: 1
+  discoveredVariants:
+  - {fileID: 11400000, guid: dc01671088edba0408b08f89e340575a, type: 2}
   DeveloperNotes: 

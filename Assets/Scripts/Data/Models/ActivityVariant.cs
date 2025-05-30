@@ -155,8 +155,8 @@ public class ActivityVariant : ScriptableObject
             if (folderName == "ActivitiesVariant" || folderName == "Activities" || folderName == "ScriptableObjects")
                 continue;
 
-            // This should be our parent activity folder
-            ParentActivityID = folderName.ToLower().Replace(" ", "_");
+            // MODIFIE: Garder exactement le nom du dossier sans transformation
+            ParentActivityID = folderName;
             break;
         }
 

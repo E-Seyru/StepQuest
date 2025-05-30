@@ -12,8 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99ddbeafac29af94ba225d9cc62cd345, type: 3}
   m_Name: Mine Iron
   m_EditorClassIdentifier: 
-  VariantName: Mine Iron
+  VariantName: Miner du fer
   VariantDescription: Vous minez du fer
+  ParentActivityID: Miner
+  AutoDetectParent: 1
   PrimaryResource: {fileID: 11400000, guid: 3430a706d4894e44a88308dea6134369, type: 2}
   SecondaryResources: []
   IsAvailable: 1

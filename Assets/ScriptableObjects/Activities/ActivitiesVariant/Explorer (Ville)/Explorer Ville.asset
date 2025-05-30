@@ -10,18 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 99ddbeafac29af94ba225d9cc62cd345, type: 3}
-  m_Name: Mine Copper
+  m_Name: Explorer Ville
   m_EditorClassIdentifier: 
-  VariantName: Miner du cuivre
-  VariantDescription: 
-  ParentActivityID: Miner
-  AutoDetectParent: 1
-  PrimaryResource: {fileID: 11400000, guid: a5c99481bcee114448801f2fb8d80b89, type: 2}
+  VariantName: Explorer
+  VariantDescription: Vous explorez la ville
+  PrimaryResource: {fileID: 11400000, guid: e9d231eac7843a34dad4d5820873323a, type: 2}
   SecondaryResources: []
   IsAvailable: 1
   Requirements: 
   UnlockRequirement: 0
-  VariantIcon: {fileID: 21300000, guid: 53ecdfee8179fa54d8a914c598043651, type: 3}
+  VariantIcon: {fileID: 21300000, guid: 5c2ca2f155b8dfa43a072642e7a93f6e, type: 3}
   VariantColor: {r: 1, g: 1, b: 1, a: 1}
   ActionCost: 10
   SuccessRate: 100

@@ -25,8 +25,8 @@ MonoBehaviour:
     LocationSpecificName: 
     LocationDescription: 
     ActivityVariants:
-    - {fileID: 11400000, guid: b1b80dcf20b5fef43a4d53fae3690b65, type: 2}
     - {fileID: 11400000, guid: 4836f717eb356b0469090ca876179639, type: 2}
+    - {fileID: 11400000, guid: b1b80dcf20b5fef43a4d53fae3690b65, type: 2}
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
@@ -35,9 +35,20 @@ MonoBehaviour:
     LocationDescription: 
     ActivityVariants:
     - {fileID: 11400000, guid: e5a825ae7b04ac04699d066e6c4cc955, type: 2}
-    - {fileID: 11400000, guid: 4836f717eb356b0469090ca876179639, type: 2}
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
-  ValidationStatus: "\u2705 Registry validation passed!\nFound 3 valid activity(ies).\nTotal
-    variants: 5"
+  - ActivityReference: {fileID: 11400000, guid: c8dfdc7bab46dd646b25182c230e2149, type: 2}
+    LocationSpecificName: 
+    LocationDescription: 
+    ActivityVariants:
+    - {fileID: 11400000, guid: 10b4f3a634d1d32419386186211197ca, type: 2}
+    IsAvailable: 1
+    SpecialRequirements: 
+    LocationSpecificIcon: {fileID: 0}
+  ValidationStatus: 'Registry validation passed!
+
+    Found 4 valid activity(ies).
+
+    Total
+    variants: 5'

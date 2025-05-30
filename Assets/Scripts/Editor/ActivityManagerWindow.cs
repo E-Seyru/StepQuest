@@ -1,4 +1,4 @@
-﻿// Purpose: Custom editor window for managing activities and variants
+﻿// Purpose: Simple tool to manage activities and their associated variants
 // Filepath: Assets/Scripts/Editor/ActivityManagerWindow.cs
 #if UNITY_EDITOR
 using System.Collections.Generic;
@@ -18,53 +18,22 @@ public class ActivityManagerWindow : EditorWindow
 
     // Data
     private ActivityRegistry activityRegistry;
-    private LocationRegistry locationRegistry;
-    private ItemRegistry itemRegistry;
 
     // UI State
     private Vector2 scrollPosition;
-    private int selectedTab = 0;
-    private string[] tabNames = { "Activities", "Create New", "Locations", "Settings" };
-
-    // Create Activity State
-    private string newActivityName = "";
-    private string newActivityDescription = "";
-    private Sprite newActivityIcon;
-    private Color newActivityColor = Color.white;
-
-    // Create Variant State
-    private ActivityDefinition selectedParentActivity;
-    private string newVariantName = "";
-    private string newVariantDescription = "";
-    private ItemDefinition newVariantPrimaryResource;
-    private int newVariantActionCost = 10;
-    private int newVariantSuccessRate = 100;
-
-    // Search and Filter
     private string searchFilter = "";
-    private bool showOnlyInvalidActivities = false;
 
     void OnEnable()
     {
-        LoadRegistries();
+        LoadActivityRegistry();
     }
 
     void OnGUI()
     {
         DrawHeader();
 
-        selectedTab = GUILayout.Toolbar(selectedTab, tabNames);
-
         scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
-
-        switch (selectedTab)
-        {
-            case 0: DrawActivitiesTab(); break;
-            case 1: DrawCreateNewTab(); break;
-            case 2: DrawLocationsTab(); break;
-            case 3: DrawSettingsTab(); break;
-        }
-
+        DrawActivitiesList();
         EditorGUILayout.EndScrollView();
     }
 
@@ -72,40 +41,45 @@ public class ActivityManagerWindow : EditorWindow
     {
         EditorGUILayout.BeginVertical("box");
 
-        GUILayout.Label("🎯 Activity Manager", EditorStyles.boldLabel);
+        GUILayout.Label("Activity Manager", EditorStyles.boldLabel);
 
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("Refresh Registries", GUILayout.Width(120)))
+
+        // Registry selection
+        activityRegistry = (ActivityRegistry)EditorGUILayout.ObjectField("Activity Registry", activityRegistry, typeof(ActivityRegistry), false);
+
+        if (GUILayout.Button("Refresh", GUILayout.Width(60)))
         {
-            LoadRegistries();
+            LoadActivityRegistry();
         }
 
-        if (GUILayout.Button("Validate All", GUILayout.Width(100)))
+        if (GUILayout.Button("Validate", GUILayout.Width(60)))
         {
-            ValidateAllActivities();
+            if (activityRegistry != null)
+            {
+                activityRegistry.ValidateRegistry();
+                Debug.Log("Manual validation triggered");
+            }
         }
 
-        GUILayout.FlexibleSpace();
+        EditorGUILayout.EndHorizontal();
 
-        EditorGUILayout.LabelField($"Activities: {GetActivityCount()}", GUILayout.Width(100));
-        EditorGUILayout.LabelField($"Variants: {GetVariantCount()}", GUILayout.Width(100));
-
+        // Search
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Search:", GUILayout.Width(50));
+        searchFilter = EditorGUILayout.TextField(searchFilter);
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.EndVertical();
     }
 
-    private void DrawActivitiesTab()
+    private void DrawActivitiesList()
     {
         if (activityRegistry == null)
         {
-            EditorGUILayout.HelpBox("No ActivityRegistry found! Create one first.", MessageType.Error);
+            EditorGUILayout.HelpBox("Select an ActivityRegistry to manage activities.", MessageType.Info);
             return;
         }
-
-        DrawSearchAndFilter();
-
-        EditorGUILayout.Space();
 
         var filteredActivities = GetFilteredActivities();
 
@@ -116,26 +90,8 @@ public class ActivityManagerWindow : EditorWindow
 
         if (filteredActivities.Count == 0)
         {
-            EditorGUILayout.HelpBox("No activities found matching your filter.", MessageType.Info);
+            EditorGUILayout.HelpBox("No activities found.", MessageType.Info);
         }
-    }
-
-    private void DrawSearchAndFilter()
-    {
-        EditorGUILayout.BeginHorizontal();
-
-        EditorGUILayout.LabelField("Search:", GUILayout.Width(50));
-        searchFilter = EditorGUILayout.TextField(searchFilter);
-
-        showOnlyInvalidActivities = EditorGUILayout.Toggle("Invalid Only", showOnlyInvalidActivities, GUILayout.Width(100));
-
-        if (GUILayout.Button("Clear", GUILayout.Width(50)))
-        {
-            searchFilter = "";
-            showOnlyInvalidActivities = false;
-        }
-
-        EditorGUILayout.EndHorizontal();
     }
 
     private void DrawActivityEntry(LocationActivity locationActivity)
@@ -143,33 +99,21 @@ public class ActivityManagerWindow : EditorWindow
         if (locationActivity?.ActivityReference == null) return;
 
         var activity = locationActivity.ActivityReference;
-        bool isValid = activity.IsValidActivity();
 
         EditorGUILayout.BeginVertical("box");
 
-        // Header with activity name and status
+        // Activity header
         EditorGUILayout.BeginHorizontal();
 
-        // Status icon
-        string statusIcon = isValid ? "✅" : "❌";
-        GUILayout.Label(statusIcon, GUILayout.Width(20));
-
-        // Activity name (clickable to select)
-        if (GUILayout.Button(activity.GetDisplayName(), EditorStyles.linkLabel, GUILayout.ExpandWidth(false)))
-        {
-            Selection.activeObject = activity;
-            EditorGUIUtility.PingObject(activity);
-        }
+        EditorGUILayout.LabelField(activity.GetDisplayName(), EditorStyles.boldLabel, GUILayout.Width(200));
+        EditorGUILayout.LabelField($"ID: {activity.ActivityID}", EditorStyles.miniLabel);
 
         GUILayout.FlexibleSpace();
 
-        // Activity ID
-        EditorGUILayout.LabelField($"ID: {activity.ActivityID}", EditorStyles.miniLabel, GUILayout.Width(120));
-
-        // Edit button
-        if (GUILayout.Button("Edit", GUILayout.Width(50)))
+        if (GUILayout.Button("Edit Activity", GUILayout.Width(80)))
         {
             Selection.activeObject = activity;
+            EditorGUIUtility.PingObject(activity);
         }
 
         EditorGUILayout.EndHorizontal();
@@ -180,239 +124,155 @@ public class ActivityManagerWindow : EditorWindow
             EditorGUILayout.LabelField(activity.BaseDescription, EditorStyles.wordWrappedMiniLabel);
         }
 
-        // Variants
-        EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField("Variants:", EditorStyles.boldLabel, GUILayout.Width(60));
+        EditorGUILayout.Space();
 
-        var variants = locationActivity.ActivityVariants ?? new List<ActivityVariant>();
-        if (variants.Count > 0)
+        // Variants section
+        EditorGUILayout.LabelField("Associated Variants:", EditorStyles.boldLabel);
+
+        // Current variants list
+        if (locationActivity.ActivityVariants != null && locationActivity.ActivityVariants.Count > 0)
         {
-            foreach (var variant in variants)
+            for (int i = 0; i < locationActivity.ActivityVariants.Count; i++)
             {
-                if (variant != null)
-                {
-                    bool variantValid = variant.IsValidVariant();
-                    string variantIcon = variantValid ? "🔸" : "🔹";
-
-                    if (GUILayout.Button($"{variantIcon} {variant.VariantName}",
-                        EditorStyles.miniButton, GUILayout.ExpandWidth(false)))
-                    {
-                        Selection.activeObject = variant;
-                        EditorGUIUtility.PingObject(variant);
-                    }
-                }
+                DrawVariantEntry(locationActivity, i);
             }
         }
         else
         {
-            EditorGUILayout.LabelField("No variants", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField("  No variants assigned", EditorStyles.miniLabel);
         }
 
-        // Add variant button
-        if (GUILayout.Button("+", GUILayout.Width(25)))
+        // Add new variant
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Add Variant:", GUILayout.Width(80));
+
+        ActivityVariant newVariant = (ActivityVariant)EditorGUILayout.ObjectField(null, typeof(ActivityVariant), false);
+
+        if (newVariant != null)
         {
-            CreateVariantForActivity(activity);
+            AddVariantToActivity(locationActivity, newVariant);
         }
 
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.EndVertical();
+        EditorGUILayout.Space();
     }
 
-    private void DrawCreateNewTab()
+    private void DrawVariantEntry(LocationActivity locationActivity, int index)
     {
-        EditorGUILayout.LabelField("🆕 Create New Activity", EditorStyles.boldLabel);
+        var variant = locationActivity.ActivityVariants[index];
 
-        EditorGUILayout.BeginVertical("box");
-
-        // Activity Creation
-        EditorGUILayout.LabelField("Activity Definition", EditorStyles.boldLabel);
-
-        newActivityName = EditorGUILayout.TextField("Activity Name", newActivityName);
-        newActivityDescription = EditorGUILayout.TextField("Description", newActivityDescription, GUILayout.Height(60));
-        newActivityIcon = (Sprite)EditorGUILayout.ObjectField("Icon", newActivityIcon, typeof(Sprite), false);
-        newActivityColor = EditorGUILayout.ColorField("Color", newActivityColor);
-
-        EditorGUILayout.Space();
-
-        // Quick Variant Creation
-        EditorGUILayout.LabelField("Quick Variant (Optional)", EditorStyles.boldLabel);
-
-        newVariantName = EditorGUILayout.TextField("Variant Name", newVariantName);
-        newVariantDescription = EditorGUILayout.TextField("Variant Description", newVariantDescription);
-        newVariantPrimaryResource = (ItemDefinition)EditorGUILayout.ObjectField("Primary Resource", newVariantPrimaryResource, typeof(ItemDefinition), false);
-        newVariantActionCost = EditorGUILayout.IntField("Action Cost (Steps)", newVariantActionCost);
-        newVariantSuccessRate = EditorGUILayout.IntSlider("Success Rate %", newVariantSuccessRate, 0, 100);
-
-        EditorGUILayout.Space();
-
-        // Create buttons
-        EditorGUILayout.BeginHorizontal();
-
-        GUI.enabled = !string.IsNullOrEmpty(newActivityName);
-        if (GUILayout.Button("Create Activity Only"))
+        if (variant == null)
         {
-            CreateActivity(false);
-        }
-
-        GUI.enabled = !string.IsNullOrEmpty(newActivityName) && !string.IsNullOrEmpty(newVariantName) && newVariantPrimaryResource != null;
-        if (GUILayout.Button("Create Activity + Variant"))
-        {
-            CreateActivity(true);
-        }
-
-        GUI.enabled = true;
-
-        EditorGUILayout.EndHorizontal();
-
-        if (GUILayout.Button("Clear Form"))
-        {
-            ClearCreateForm();
-        }
-
-        EditorGUILayout.EndVertical();
-
-        // Quick Templates
-        DrawQuickTemplates();
-    }
-
-    private void DrawQuickTemplates()
-    {
-        EditorGUILayout.Space();
-        EditorGUILayout.LabelField("⚡ Quick Templates", EditorStyles.boldLabel);
-
-        EditorGUILayout.BeginHorizontal();
-
-        if (GUILayout.Button("Mining Activity"))
-        {
-            FillTemplate("Mining", "Extract valuable ores and materials from the earth", "mining");
-        }
-
-        if (GUILayout.Button("Woodcutting Activity"))
-        {
-            FillTemplate("Woodcutting", "Chop down trees to gather wood resources", "woodcutting");
-        }
-
-        if (GUILayout.Button("Fishing Activity"))
-        {
-            FillTemplate("Fishing", "Catch fish and aquatic resources", "fishing");
-        }
-
-        EditorGUILayout.EndHorizontal();
-
-        EditorGUILayout.BeginHorizontal();
-
-        if (GUILayout.Button("Exploration Activity"))
-        {
-            FillTemplate("Exploration", "Discover new areas and hidden treasures", "exploration");
-        }
-
-        if (GUILayout.Button("Crafting Activity"))
-        {
-            FillTemplate("Crafting", "Create items and equipment", "crafting");
-        }
-
-        EditorGUILayout.EndHorizontal();
-    }
-
-    private void DrawLocationsTab()
-    {
-        if (locationRegistry == null)
-        {
-            EditorGUILayout.HelpBox("No LocationRegistry found!", MessageType.Error);
-            return;
-        }
-
-        EditorGUILayout.LabelField("🗺️ Location Activity Assignment", EditorStyles.boldLabel);
-
-        foreach (var location in locationRegistry.AllLocations)
-        {
-            if (location == null) continue;
-
-            EditorGUILayout.BeginVertical("box");
-
-            // Location header
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField(location.DisplayName, EditorStyles.boldLabel);
-            EditorGUILayout.LabelField($"({location.LocationID})", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField("  [Missing Variant]", EditorStyles.miniLabel);
 
-            if (GUILayout.Button("Edit", GUILayout.Width(50)))
+            if (GUILayout.Button("Remove", GUILayout.Width(60)))
             {
-                Selection.activeObject = location;
+                RemoveVariantFromActivity(locationActivity, index);
             }
 
             EditorGUILayout.EndHorizontal();
-
-            // Show assigned activities
-            if (location.AvailableActivities != null && location.AvailableActivities.Count > 0)
-            {
-                foreach (var activity in location.AvailableActivities)
-                {
-                    if (activity?.ActivityReference != null)
-                    {
-                        EditorGUILayout.BeginHorizontal();
-                        EditorGUILayout.LabelField($"  • {activity.ActivityReference.GetDisplayName()}", EditorStyles.miniLabel);
-                        EditorGUILayout.LabelField($"({activity.ActivityVariants?.Count ?? 0} variants)", EditorStyles.miniLabel, GUILayout.Width(80));
-                        EditorGUILayout.EndHorizontal();
-                    }
-                }
-            }
-            else
-            {
-                EditorGUILayout.LabelField("  No activities assigned", EditorStyles.miniLabel);
-            }
-
-            EditorGUILayout.EndVertical();
+            return;
         }
+
+        EditorGUILayout.BeginHorizontal();
+
+        // Variant info
+        EditorGUILayout.LabelField($"  • {variant.VariantName}", EditorStyles.miniLabel, GUILayout.Width(150));
+
+        if (variant.PrimaryResource != null)
+        {
+            EditorGUILayout.LabelField($"→ {variant.PrimaryResource.ItemName}", EditorStyles.miniLabel, GUILayout.Width(100));
+        }
+
+        EditorGUILayout.LabelField($"{variant.ActionCost} steps", EditorStyles.miniLabel, GUILayout.Width(60));
+
+        GUILayout.FlexibleSpace();
+
+        // Buttons
+        if (GUILayout.Button("Edit", GUILayout.Width(40)))
+        {
+            Selection.activeObject = variant;
+            EditorGUIUtility.PingObject(variant);
+        }
+
+        if (GUILayout.Button("Remove", GUILayout.Width(60)))
+        {
+            RemoveVariantFromActivity(locationActivity, index);
+        }
+
+        EditorGUILayout.EndHorizontal();
     }
 
-    private void DrawSettingsTab()
+    private void AddVariantToActivity(LocationActivity locationActivity, ActivityVariant variant)
     {
-        EditorGUILayout.LabelField("⚙️ Settings & Utilities", EditorStyles.boldLabel);
-
-        EditorGUILayout.BeginVertical("box");
-
-        EditorGUILayout.LabelField("Registries", EditorStyles.boldLabel);
-
-        activityRegistry = (ActivityRegistry)EditorGUILayout.ObjectField("Activity Registry", activityRegistry, typeof(ActivityRegistry), false);
-        locationRegistry = (LocationRegistry)EditorGUILayout.ObjectField("Location Registry", locationRegistry, typeof(LocationRegistry), false);
-        itemRegistry = (ItemRegistry)EditorGUILayout.ObjectField("Item Registry", itemRegistry, typeof(ItemRegistry), false);
-
-        EditorGUILayout.Space();
-
-        if (GUILayout.Button("Auto-Find Registries"))
+        if (locationActivity.ActivityVariants == null)
         {
-            LoadRegistries();
+            locationActivity.ActivityVariants = new List<ActivityVariant>();
         }
 
-        EditorGUILayout.EndVertical();
-
-        EditorGUILayout.Space();
-
-        EditorGUILayout.BeginVertical("box");
-
-        EditorGUILayout.LabelField("Batch Operations", EditorStyles.boldLabel);
-
-        if (GUILayout.Button("Force Re-register All Activities"))
+        // Check if already added
+        if (locationActivity.ActivityVariants.Contains(variant))
         {
-            ForceReregisterAll();
+            EditorUtility.DisplayDialog("Already Added", $"Variant '{variant.VariantName}' is already associated with this activity.", "OK");
+            return;
         }
 
-        if (GUILayout.Button("Clean Up Broken References"))
+        locationActivity.ActivityVariants.Add(variant);
+
+        // IMPORTANT: Forcer la sauvegarde
+        EditorUtility.SetDirty(activityRegistry);
+        AssetDatabase.SaveAssets();
+
+        // Forcer la revalidation du registry
+        if (activityRegistry != null)
         {
-            CleanUpBrokenReferences();
+            activityRegistry.ValidateRegistry();
         }
 
-        if (GUILayout.Button("Export Activity Report"))
-        {
-            ExportActivityReport();
-        }
-
-        EditorGUILayout.EndVertical();
+        Debug.Log($"Added variant '{variant.VariantName}' to activity '{locationActivity.ActivityReference.GetDisplayName()}'");
     }
 
-    // Helper Methods
-    private void LoadRegistries()
+    private void RemoveVariantFromActivity(LocationActivity locationActivity, int index)
+    {
+        if (locationActivity.ActivityVariants != null && index >= 0 && index < locationActivity.ActivityVariants.Count)
+        {
+            var variantName = locationActivity.ActivityVariants[index]?.VariantName ?? "Unknown";
+            locationActivity.ActivityVariants.RemoveAt(index);
+
+            // IMPORTANT: Forcer la sauvegarde
+            EditorUtility.SetDirty(activityRegistry);
+            AssetDatabase.SaveAssets();
+
+            // Forcer la revalidation du registry
+            if (activityRegistry != null)
+            {
+                activityRegistry.ValidateRegistry();
+            }
+
+            Debug.Log($"Removed variant '{variantName}' from activity '{locationActivity.ActivityReference.GetDisplayName()}'");
+        }
+    }
+
+    private List<LocationActivity> GetFilteredActivities()
+    {
+        if (activityRegistry == null) return new List<LocationActivity>();
+
+        var activities = activityRegistry.AllActivities.Where(a => a?.ActivityReference != null);
+
+        if (!string.IsNullOrEmpty(searchFilter))
+        {
+            activities = activities.Where(a =>
+                a.ActivityReference.GetDisplayName().ToLower().Contains(searchFilter.ToLower()) ||
+                a.ActivityReference.ActivityID.ToLower().Contains(searchFilter.ToLower()));
+        }
+
+        return activities.ToList();
+    }
+
+    private void LoadActivityRegistry()
     {
         if (activityRegistry == null)
         {
@@ -423,204 +283,6 @@ public class ActivityManagerWindow : EditorWindow
                 activityRegistry = AssetDatabase.LoadAssetAtPath<ActivityRegistry>(path);
             }
         }
-
-        if (locationRegistry == null)
-        {
-            string[] guids = AssetDatabase.FindAssets("t:LocationRegistry");
-            if (guids.Length > 0)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guids[0]);
-                locationRegistry = AssetDatabase.LoadAssetAtPath<LocationRegistry>(path);
-            }
-        }
-
-        if (itemRegistry == null)
-        {
-            string[] guids = AssetDatabase.FindAssets("t:ItemRegistry");
-            if (guids.Length > 0)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guids[0]);
-                itemRegistry = AssetDatabase.LoadAssetAtPath<ItemRegistry>(path);
-            }
-        }
-    }
-
-    private List<LocationActivity> GetFilteredActivities()
-    {
-        if (activityRegistry == null) return new List<LocationActivity>();
-
-        var filtered = activityRegistry.AllActivities.Where(a => a?.ActivityReference != null);
-
-        if (!string.IsNullOrEmpty(searchFilter))
-        {
-            filtered = filtered.Where(a =>
-                a.ActivityReference.GetDisplayName().ToLower().Contains(searchFilter.ToLower()) ||
-                a.ActivityReference.ActivityID.ToLower().Contains(searchFilter.ToLower()));
-        }
-
-        if (showOnlyInvalidActivities)
-        {
-            filtered = filtered.Where(a => !a.ActivityReference.IsValidActivity());
-        }
-
-        return filtered.ToList();
-    }
-
-    private void CreateActivity(bool includeVariant)
-    {
-        // Create the activity asset
-        ActivityDefinition newActivity = CreateInstance<ActivityDefinition>();
-        newActivity.ActivityName = newActivityName;
-        newActivity.ActivityID = newActivityName.ToLower().Replace(" ", "_");
-        newActivity.BaseDescription = newActivityDescription;
-        newActivity.ActivityIcon = newActivityIcon;
-        newActivity.ActivityColor = newActivityColor;
-
-        // Save the activity
-        string activityPath = $"Assets/ScriptableObjects/Activities/{newActivityName}.asset";
-        AssetDatabase.CreateAsset(newActivity, activityPath);
-
-        ActivityVariant newVariant = null;
-
-        if (includeVariant)
-        {
-            // Create the variant asset
-            newVariant = CreateInstance<ActivityVariant>();
-            newVariant.VariantName = newVariantName;
-            newVariant.VariantDescription = newVariantDescription;
-            newVariant.PrimaryResource = newVariantPrimaryResource;
-            newVariant.ActionCost = newVariantActionCost;
-            newVariant.SuccessRate = newVariantSuccessRate;
-
-            // Save the variant in a subfolder
-            string variantDir = $"Assets/ScriptableObjects/Activities/ActivitiesVariant/{newActivityName}";
-            if (!AssetDatabase.IsValidFolder(variantDir))
-            {
-                string parentDir = $"Assets/ScriptableObjects/Activities/ActivitiesVariant";
-                if (!AssetDatabase.IsValidFolder(parentDir))
-                {
-                    AssetDatabase.CreateFolder("Assets/ScriptableObjects/Activities", "ActivitiesVariant");
-                }
-                AssetDatabase.CreateFolder(parentDir, newActivityName);
-            }
-
-            string variantPath = $"{variantDir}/{newVariantName}.asset";
-            AssetDatabase.CreateAsset(newVariant, variantPath);
-        }
-
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
-
-        // Select the new activity
-        Selection.activeObject = newActivity;
-
-        // Clear form
-        ClearCreateForm();
-
-        // Show success message
-        Debug.Log($"✅ Created activity '{newActivityName}'" + (includeVariant ? $" with variant '{newVariantName}'" : ""));
-    }
-
-    private void CreateVariantForActivity(ActivityDefinition activity)
-    {
-        selectedParentActivity = activity;
-        selectedTab = 1; // Switch to create tab
-        newActivityName = activity.ActivityName; // Pre-fill for context
-    }
-
-    private void ClearCreateForm()
-    {
-        newActivityName = "";
-        newActivityDescription = "";
-        newActivityIcon = null;
-        newActivityColor = Color.white;
-        newVariantName = "";
-        newVariantDescription = "";
-        newVariantPrimaryResource = null;
-        newVariantActionCost = 10;
-        newVariantSuccessRate = 100;
-        selectedParentActivity = null;
-    }
-
-    private void FillTemplate(string activityName, string description, string type)
-    {
-        newActivityName = activityName;
-        newActivityDescription = description;
-        newVariantName = $"Basic {activityName}";
-        newVariantDescription = $"Basic {type} variant";
-        newVariantActionCost = 10;
-        newVariantSuccessRate = 100;
-    }
-
-    private void ValidateAllActivities()
-    {
-        if (activityRegistry != null)
-        {
-            activityRegistry.ValidateRegistry();
-        }
-    }
-
-    private void ForceReregisterAll()
-    {
-        string[] guids = AssetDatabase.FindAssets("t:ActivityDefinition");
-        foreach (string guid in guids)
-        {
-            string path = AssetDatabase.GUIDToAssetPath(guid);
-            ActivityDefinition activity = AssetDatabase.LoadAssetAtPath<ActivityDefinition>(path);
-            if (activity != null)
-            {
-                EditorUtility.SetDirty(activity);
-            }
-        }
-        AssetDatabase.SaveAssets();
-        Debug.Log("✅ Force re-registered all activities");
-    }
-
-    private void CleanUpBrokenReferences()
-    {
-        if (activityRegistry == null) return;
-
-        int removed = activityRegistry.AllActivities.RemoveAll(a => a?.ActivityReference == null);
-        if (removed > 0)
-        {
-            EditorUtility.SetDirty(activityRegistry);
-            AssetDatabase.SaveAssets();
-            Debug.Log($"🧹 Cleaned up {removed} broken activity references");
-        }
-    }
-
-    private void ExportActivityReport()
-    {
-        // Simple report to console - could be expanded to file export
-        Debug.Log("=== Activity Report ===");
-        Debug.Log($"Total Activities: {GetActivityCount()}");
-        Debug.Log($"Total Variants: {GetVariantCount()}");
-
-        if (activityRegistry != null)
-        {
-            foreach (var activity in activityRegistry.AllActivities)
-            {
-                if (activity?.ActivityReference != null)
-                {
-                    var variants = activity.ActivityVariants ?? new List<ActivityVariant>();
-                    Debug.Log($"  • {activity.ActivityReference.GetDisplayName()} ({variants.Count} variants)");
-                }
-            }
-        }
-    }
-
-    private int GetActivityCount()
-    {
-        return activityRegistry?.AllActivities?.Count(a => a?.ActivityReference != null) ?? 0;
-    }
-
-    private int GetVariantCount()
-    {
-        if (activityRegistry == null) return 0;
-
-        return activityRegistry.AllActivities
-            .Where(a => a?.ActivityReference != null)
-            .Sum(a => a.ActivityVariants?.Count ?? 0);
     }
 }
 #endif
