@@ -10,18 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 99ddbeafac29af94ba225d9cc62cd345, type: 3}
-  m_Name: Couper du pin
+  m_Name: Recolter racine
   m_EditorClassIdentifier: 
-  VariantName: Couper du Pin
-  VariantDescription: "Vous coupez du pin \xE0 rythme soutenu"
-  ParentActivityID: Bucheron
+  VariantName: Recolter racines
+  VariantDescription: "Vous recherchez sp\xE9cifiquement des racines"
+  ParentActivityID: Recolter
   AutoDetectParent: 1
-  PrimaryResource: {fileID: 11400000, guid: 4b1adcce128ef7d49ad647ee12a71e1d, type: 2}
+  PrimaryResource: {fileID: 11400000, guid: 41f7ebf02edb63047ad94e6e56d9a1ae, type: 2}
   SecondaryResources: []
   IsAvailable: 1
   Requirements: 
   UnlockRequirement: 0
-  VariantIcon: {fileID: 21300000, guid: 14e9a1b43c40d5341bbf9b52150c1e83, type: 3}
+  VariantIcon: {fileID: 21300000, guid: 44ea96dacf0689a4fb4c7c5498174a6f, type: 3}
   VariantColor: {r: 1, g: 1, b: 1, a: 1}
   ActionCost: 10
   SuccessRate: 100

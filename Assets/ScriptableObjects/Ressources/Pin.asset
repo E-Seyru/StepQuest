@@ -15,7 +15,7 @@ MonoBehaviour:
   ItemID: Pin
   ItemName: Pin
   Description: "Du Pin. Tr\xE8s commun. "
-  ItemIcon: {fileID: 21300000, guid: 42ccc958e2f215643bbcc83b3f70bd28, type: 3}
+  ItemIcon: {fileID: 21300000, guid: 14e9a1b43c40d5341bbf9b52150c1e83, type: 3}
   ItemColor: {r: 1, g: 1, b: 1, a: 1}
   BasePrice: 1
   RarityTier: 5

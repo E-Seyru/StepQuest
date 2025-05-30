@@ -15,7 +15,7 @@ MonoBehaviour:
   ItemID: Cuivre
   ItemName: Cuivre
   Description: Du cuivre
-  ItemIcon: {fileID: 21300000, guid: 53ecdfee8179fa54d8a914c598043651, type: 3}
+  ItemIcon: {fileID: 21300000, guid: a7665c1a3e849254f90ee6718c4efb0e, type: 3}
   ItemColor: {r: 1, g: 1, b: 1, a: 1}
   BasePrice: 1
   RarityTier: 1
