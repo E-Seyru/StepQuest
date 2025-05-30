@@ -12,6 +12,7 @@ public class ActivityData
     // === ÉTAT DE LA SESSION ===
     public long StartSteps;            // Nombre de pas totaux quand l'activité a commencé
     public int AccumulatedSteps;       // Pas accumulés depuis le dernier tic
+    public long LastProcessedTotalSteps; // NOUVEAU : Dernier TotalSteps qu'on a traité
 
     // === MÉTADONNÉES DE SESSION ===
     public long StartTimeMs;           // Timestamp Unix de début (pour calculs offline)
@@ -26,6 +27,7 @@ public class ActivityData
         VariantId = string.Empty;
         StartSteps = 0;
         AccumulatedSteps = 0;
+        LastProcessedTotalSteps = 0;
         StartTimeMs = 0;
         LocationId = string.Empty;
     }
@@ -39,6 +41,7 @@ public class ActivityData
         VariantId = variantId;
         StartSteps = startSteps;
         AccumulatedSteps = 0;
+        LastProcessedTotalSteps = startSteps; // NOUVEAU : Initialiser avec StartSteps
         StartTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         LocationId = locationId;
     }
@@ -89,13 +92,14 @@ public class ActivityData
     }
 
     /// <summary>
-    /// Ajoute des pas à l'accumulation
+    /// Ajoute des pas à l'accumulation et met à jour LastProcessedTotalSteps
     /// </summary>
     public void AddSteps(int steps)
     {
         if (steps > 0)
         {
             AccumulatedSteps += steps;
+            LastProcessedTotalSteps += steps; // NOUVEAU : Garder trace des pas traités
         }
     }
 
@@ -118,6 +122,7 @@ public class ActivityData
         if (string.IsNullOrEmpty(VariantId)) return false;
         if (AccumulatedSteps < 0) return false;
         if (StartSteps < 0) return false;
+        if (LastProcessedTotalSteps < StartSteps) return false; // NOUVEAU
 
         return true;
     }
@@ -131,6 +136,7 @@ public class ActivityData
         VariantId = string.Empty;
         StartSteps = 0;
         AccumulatedSteps = 0;
+        LastProcessedTotalSteps = 0; // NOUVEAU
         StartTimeMs = 0;
         LocationId = string.Empty;
     }

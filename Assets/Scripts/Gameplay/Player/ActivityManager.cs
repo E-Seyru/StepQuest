@@ -35,7 +35,6 @@ public class ActivityManager : MonoBehaviour
 
     private void OnEnable() => autoSaveCoroutine = StartCoroutine(AutoSaveLoop());
 
-
     // Events for UI
     public event Action<ActivityData, ActivityVariant> OnActivityStarted;
     public event Action<ActivityData, ActivityVariant> OnActivityStopped;
@@ -277,10 +276,9 @@ public class ActivityManager : MonoBehaviour
 
     // === STEP PROCESSING ===
 
-    private long lastProcessedSteps = -1;
-
     /// <summary>
-    /// Check for step updates and process them
+    /// CORRIGÉ : Check for step updates and process them
+    /// Utilise LastProcessedTotalSteps de l'activité au lieu d'une variable non-sauvegardée
     /// </summary>
     private void CheckForStepUpdates()
     {
@@ -288,19 +286,17 @@ public class ActivityManager : MonoBehaviour
 
         long currentSteps = stepManager.TotalSteps;
 
-        // Initialize on first check
-        if (lastProcessedSteps == -1)
-        {
-            lastProcessedSteps = currentSteps;
-            return;
-        }
+        RefreshActivityCache();
+        if (currentActivityCache == null) return;
+
+        // Utiliser LastProcessedTotalSteps de l'activité au lieu de lastProcessedSteps local
+        long lastProcessed = currentActivityCache.LastProcessedTotalSteps;
 
         // Check if steps have increased
-        if (currentSteps > lastProcessedSteps)
+        if (currentSteps > lastProcessed)
         {
-            int newSteps = (int)(currentSteps - lastProcessedSteps);
+            int newSteps = (int)(currentSteps - lastProcessed);
             ProcessNewSteps(newSteps);
-            lastProcessedSteps = currentSteps;
         }
     }
 
@@ -381,7 +377,8 @@ public class ActivityManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Process offline activity progress
+    /// CORRIGÉ : Process offline activity progress
+    /// Utilise LastProcessedTotalSteps pour calculer seulement les pas offline
     /// </summary>
     private void ProcessOfflineProgress()
     {
@@ -394,15 +391,14 @@ public class ActivityManager : MonoBehaviour
         long offlineTimeMs = currentActivityCache.GetElapsedTimeMs();
         if (offlineTimeMs <= 0) return;
 
-        // Get steps gained since activity started
+        // CORRIGÉ : Utiliser LastProcessedTotalSteps au lieu de recalculer depuis StartSteps
         long currentTotalSteps = dataManager.PlayerData.TotalSteps;
-        long stepsGainedSinceStart = currentTotalSteps - currentActivityCache.StartSteps;
-        long stepsNotYetProcessed = stepsGainedSinceStart - currentActivityCache.AccumulatedSteps;
+        long stepsToProcess = currentTotalSteps - currentActivityCache.LastProcessedTotalSteps;
 
-        if (stepsNotYetProcessed > 0)
+        if (stepsToProcess > 0)
         {
-            Logger.LogInfo($"ActivityManager: Processing {stepsNotYetProcessed} offline steps for {currentVariantCache.GetDisplayName()}", Logger.LogCategory.General);
-            ProcessNewSteps((int)stepsNotYetProcessed);
+            Logger.LogInfo($"ActivityManager: Processing {stepsToProcess} offline steps for {currentVariantCache.GetDisplayName()}", Logger.LogCategory.General);
+            ProcessNewSteps((int)stepsToProcess);
         }
 
         if (enableDebugLogs)
