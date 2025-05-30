@@ -10,7 +10,7 @@ public class PlayerData
     [PrimaryKey]
     public int Id { get; set; }
 
-    // Conversion des champs en propriétés pour pouvoir utiliser l'attribut Column
+    // Conversion des champs en proprietes pour pouvoir utiliser l'attribut Column
     private long _totalPlayerSteps;
     [Column("TotalPlayerSteps")]
     public long TotalPlayerSteps
@@ -36,7 +36,7 @@ public class PlayerData
         set { _lastPauseEpochMs = value; }
     }
 
-    // Ajout: journalisation des changements pour détecter les anomalies
+    // Ajout: journalisation des changements pour detecter les anomalies
     private long _lastStepsDelta;
     [Column("LastStepsDelta")]
     public long LastStepsDelta
@@ -101,7 +101,7 @@ public class PlayerData
         set { _travelDestinationId = value; }
     }
 
-    // À combien de pas le voyage a commencé
+    // À combien de pas le voyage a commence
     private long _travelStartSteps;
     [Column("TravelStartSteps")]
     public long TravelStartSteps
@@ -119,9 +119,9 @@ public class PlayerData
         set { _travelRequiredSteps = value; }
     }
 
-    // === NOUVEAU: Système d'activité ===
+    // === NOUVEAU: Système d'activite ===
 
-    // Activité en cours (JSON sérialisé)
+    // Activite en cours (JSON serialise)
     private string _currentActivityJson;
     [Column("CurrentActivityJson")]
     public string CurrentActivityJson
@@ -130,7 +130,7 @@ public class PlayerData
         set { _currentActivityJson = value; }
     }
 
-    // Propriété pour accéder facilement à l'activité courante
+    // Propriete pour acceder facilement à l'activite courante
     [Ignore] // Ne pas sauvegarder en base, c'est juste un wrapper
     public ActivityData CurrentActivity
     {
@@ -170,47 +170,47 @@ public class PlayerData
         }
     }
 
-    // Constructeur par défaut
+    // Constructeur par defaut
     public PlayerData()
     {
         Id = 1; // Fixons l'Id à 1 pour notre joueur unique
         _totalPlayerSteps = 0;
         _lastSyncEpochMs = 0; // 0 indique qu'aucune synchro n'a encore eu lieu
-        _lastPauseEpochMs = 0; // 0 indique que l'app n'a jamais été mise en pause auparavant
+        _lastPauseEpochMs = 0; // 0 indique que l'app n'a jamais ete mise en pause auparavant
         _lastStepsDelta = 0;
         _lastStepsChangeEpochMs = 0;
         _dailySteps = 0;
-        _lastDailyResetDate = DateTime.Now.ToString("yyyy-MM-dd"); // MODIFIÉ: Utiliser DateTime.Now au lieu de DateTime.UtcNow (Faille B)
-        _lastApiCatchUpEpochMs = 0; // Nouvelle propriété
+        _lastDailyResetDate = DateTime.Now.ToString("yyyy-MM-dd"); // MODIFIE: Utiliser DateTime.Now au lieu de DateTime.UtcNow (Faille B)
+        _lastApiCatchUpEpochMs = 0; // Nouvelle propriete
 
-        // NOUVEAU: Valeurs par défaut pour le système de voyage
+        // NOUVEAU: Valeurs par defaut pour le système de voyage
         _currentLocationId = "Foret_01"; // Le joueur commence au village
         _travelDestinationId = null; // Pas de voyage en cours
         _travelStartSteps = 0;
         _travelRequiredSteps = 0;
 
-        // NOUVEAU: Pas d'activité active par défaut
+        // NOUVEAU: Pas d'activite active par defaut
         _currentActivityJson = null;
     }
 
-    // Propriété pour accéder à TotalPlayerSteps avec le nom simplifié TotalSteps
+    // Propriete pour acceder à TotalPlayerSteps avec le nom simplifie TotalSteps
     public long TotalSteps
     {
         get { return TotalPlayerSteps; }
         set
         {
-            // Calculer et stocker le delta pour détecter les anomalies
+            // Calculer et stocker le delta pour detecter les anomalies
             long delta = value - TotalPlayerSteps;
             if (delta != 0)
             {
                 LastStepsDelta = delta;
-                LastStepsChangeEpochMs = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds(); // MODIFIÉ: Utiliser DateTime.Now (Faille B)
+                LastStepsChangeEpochMs = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds(); // MODIFIE: Utiliser DateTime.Now (Faille B)
             }
             TotalPlayerSteps = value;
         }
     }
 
-    // NOUVEAU: Méthodes utiles pour le voyage
+    // NOUVEAU: Methodes utiles pour le voyage
 
     // Est-ce que le joueur voyage actuellement ?
     public bool IsCurrentlyTraveling()
@@ -218,24 +218,24 @@ public class PlayerData
         return !string.IsNullOrEmpty(TravelDestinationId);
     }
 
-    // Combien de pas a fait le joueur depuis le début du voyage ?
+    // Combien de pas a fait le joueur depuis le debut du voyage ?
     public long GetTravelProgress(long currentTotalSteps)
     {
         if (!IsCurrentlyTraveling()) return 0;
         return currentTotalSteps - TravelStartSteps;
     }
 
-    // Le voyage est-il terminé ?
+    // Le voyage est-il termine ?
     public bool IsTravelComplete(long currentTotalSteps)
     {
         if (!IsCurrentlyTraveling()) return false;
         return GetTravelProgress(currentTotalSteps) >= TravelRequiredSteps;
     }
 
-    // === NOUVEAU: Méthodes utiles pour l'activité ===
+    // === NOUVEAU: Methodes utiles pour l'activite ===
 
     /// <summary>
-    /// Vérifie si le joueur a une activité active
+    /// Verifie si le joueur a une activite active
     /// </summary>
     public bool HasActiveActivity()
     {
@@ -243,7 +243,7 @@ public class PlayerData
     }
 
     /// <summary>
-    /// Démarre une nouvelle activité
+    /// Demarre une nouvelle activite
     /// </summary>
     public void StartActivity(string activityId, string variantId, long currentSteps, string locationId)
     {
@@ -252,7 +252,7 @@ public class PlayerData
     }
 
     /// <summary>
-    /// Arrête l'activité en cours
+    /// Arrête l'activite en cours
     /// </summary>
     public void StopActivity()
     {
@@ -264,7 +264,7 @@ public class PlayerData
     }
 
     /// <summary>
-    /// Obtient des informations de debug sur l'activité courante
+    /// Obtient des informations de debug sur l'activite courante
     /// </summary>
     public string GetActivityDebugInfo()
     {

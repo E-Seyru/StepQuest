@@ -412,7 +412,7 @@ public class InventoryManager : MonoBehaviour
         }
     }
 
-    // === NOUVELLES MÉTHODES DE PERSISTANCE ===
+    // === NOUVELLES METHODES DE PERSISTANCE ===
 
     /// <summary>
     /// Load inventory data from database

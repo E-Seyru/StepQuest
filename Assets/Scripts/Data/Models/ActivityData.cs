@@ -5,21 +5,21 @@ using System;
 [Serializable]
 public class ActivityData
 {
-    // === RÉFÉRENCES AUX DÉFINITIONS ===
-    public string ActivityId;          // Référence vers ActivityDefinition (ex: "mining")
-    public string VariantId;           // Référence vers ActivityVariant (ex: "iron_ore_variant")
+    // === REFERENCES AUX DEFINITIONS ===
+    public string ActivityId;          // Reference vers ActivityDefinition (ex: "mining")
+    public string VariantId;           // Reference vers ActivityVariant (ex: "iron_ore_variant")
 
-    // === ÉTAT DE LA SESSION ===
-    public long StartSteps;            // Nombre de pas totaux quand l'activité a commencé
-    public int AccumulatedSteps;       // Pas accumulés depuis le dernier tic
-    public long LastProcessedTotalSteps; // NOUVEAU : Dernier TotalSteps qu'on a traité
+    // === ETAT DE LA SESSION ===
+    public long StartSteps;            // Nombre de pas totaux quand l'activite a commence
+    public int AccumulatedSteps;       // Pas accumules depuis le dernier tic
+    public long LastProcessedTotalSteps; // NOUVEAU : Dernier TotalSteps qu'on a traite
 
-    // === MÉTADONNÉES DE SESSION ===
-    public long StartTimeMs;           // Timestamp Unix de début (pour calculs offline)
-    public string LocationId;          // Dans quelle location l'activité a lieu
+    // === METADONNEES DE SESSION ===
+    public long StartTimeMs;           // Timestamp Unix de debut (pour calculs offline)
+    public string LocationId;          // Dans quelle location l'activite a lieu
 
     /// <summary>
-    /// Constructeur par défaut (requis pour la sérialisation)
+    /// Constructeur par defaut (requis pour la serialisation)
     /// </summary>
     public ActivityData()
     {
@@ -33,7 +33,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// Constructeur pour créer une nouvelle session d'activité
+    /// Constructeur pour creer une nouvelle session d'activite
     /// </summary>
     public ActivityData(string activityId, string variantId, long startSteps, string locationId)
     {
@@ -46,10 +46,10 @@ public class ActivityData
         LocationId = locationId;
     }
 
-    // === MÉTHODES UTILITAIRES ===
+    // === METHODES UTILITAIRES ===
 
     /// <summary>
-    /// Vérifie si cette activité est valide et active
+    /// Verifie si cette activite est valide et active
     /// </summary>
     public bool IsActive()
     {
@@ -60,7 +60,7 @@ public class ActivityData
 
     /// <summary>
     /// Calcule le progrès vers le prochain tic (0.0 à 1.0)
-    /// Nécessite le ActivityVariant pour connaître le ActionCost (steps per tick)
+    /// Necessite le ActivityVariant pour connaître le ActionCost (steps per tick)
     /// </summary>
     public float GetProgressToNextTick(ActivityVariant variant)
     {
@@ -69,7 +69,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// Calcule combien de tics complets peuvent être effectués avec les pas donnés
+    /// Calcule combien de tics complets peuvent être effectues avec les pas donnes
     /// </summary>
     public int CalculateCompleteTicks(ActivityVariant variant, int additionalSteps)
     {
@@ -80,7 +80,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// Met à jour les pas accumulés après avoir effectué des tics
+    /// Met à jour les pas accumules après avoir effectue des tics
     /// </summary>
     public void ProcessTicks(ActivityVariant variant, int ticksCompleted)
     {
@@ -99,12 +99,12 @@ public class ActivityData
         if (steps > 0)
         {
             AccumulatedSteps += steps;
-            LastProcessedTotalSteps += steps; // NOUVEAU : Garder trace des pas traités
+            LastProcessedTotalSteps += steps; // NOUVEAU : Garder trace des pas traites
         }
     }
 
     /// <summary>
-    /// Calcule depuis combien de temps l'activité est active (en millisecondes)
+    /// Calcule depuis combien de temps l'activite est active (en millisecondes)
     /// </summary>
     public long GetElapsedTimeMs()
     {
@@ -113,11 +113,11 @@ public class ActivityData
     }
 
     /// <summary>
-    /// Valide que les données de l'activité sont cohérentes
+    /// Valide que les donnees de l'activite sont coherentes
     /// </summary>
     public bool IsValid()
     {
-        // Vérifications de base
+        // Verifications de base
         if (string.IsNullOrEmpty(ActivityId)) return false;
         if (string.IsNullOrEmpty(VariantId)) return false;
         if (AccumulatedSteps < 0) return false;
@@ -128,7 +128,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// Remet à zéro l'activité (pour arrêter proprement)
+    /// Remet à zero l'activite (pour arrêter proprement)
     /// </summary>
     public void Clear()
     {
@@ -153,7 +153,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// Affichage détaillé pour le debug avec les informations du variant
+    /// Affichage detaille pour le debug avec les informations du variant
     /// </summary>
     public string ToString(ActivityVariant variant)
     {

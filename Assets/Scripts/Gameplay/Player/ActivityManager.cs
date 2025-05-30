@@ -277,8 +277,8 @@ public class ActivityManager : MonoBehaviour
     // === STEP PROCESSING ===
 
     /// <summary>
-    /// CORRIGÉ : Check for step updates and process them
-    /// Utilise LastProcessedTotalSteps de l'activité au lieu d'une variable non-sauvegardée
+    /// CORRIGE : Check for step updates and process them
+    /// Utilise LastProcessedTotalSteps de l'activite au lieu d'une variable non-sauvegardee
     /// </summary>
     private void CheckForStepUpdates()
     {
@@ -289,7 +289,7 @@ public class ActivityManager : MonoBehaviour
         RefreshActivityCache();
         if (currentActivityCache == null) return;
 
-        // Utiliser LastProcessedTotalSteps de l'activité au lieu de lastProcessedSteps local
+        // Utiliser LastProcessedTotalSteps de l'activite au lieu de lastProcessedSteps local
         long lastProcessed = currentActivityCache.LastProcessedTotalSteps;
 
         // Check if steps have increased
@@ -377,7 +377,7 @@ public class ActivityManager : MonoBehaviour
     }
 
     /// <summary>
-    /// CORRIGÉ : Process offline activity progress
+    /// CORRIGE : Process offline activity progress
     /// Utilise LastProcessedTotalSteps pour calculer seulement les pas offline
     /// </summary>
     private void ProcessOfflineProgress()
@@ -391,7 +391,7 @@ public class ActivityManager : MonoBehaviour
         long offlineTimeMs = currentActivityCache.GetElapsedTimeMs();
         if (offlineTimeMs <= 0) return;
 
-        // CORRIGÉ : Utiliser LastProcessedTotalSteps au lieu de recalculer depuis StartSteps
+        // CORRIGE : Utiliser LastProcessedTotalSteps au lieu de recalculer depuis StartSteps
         long currentTotalSteps = dataManager.PlayerData.TotalSteps;
         long stepsToProcess = currentTotalSteps - currentActivityCache.LastProcessedTotalSteps;
 

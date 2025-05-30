@@ -22,7 +22,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     [Header("Visual")]
     [SerializeField] private Image activityIcon;
 
-    // État actuel
+    // Etat actuel
     private ActivityData currentActivity;
     private ActivityVariant currentVariant;
     private bool isDisplaying = false;
@@ -119,7 +119,7 @@ public class ActivityDisplayPanel : MonoBehaviour
         }
     }
 
-    // === ÉVÉNEMENTS DE L'ACTIVITYMANAGER ===
+    // === EVENEMENTS DE L'ACTIVITYMANAGER ===
 
     /// <summary>
     /// Appelé quand une activité commence
@@ -300,7 +300,7 @@ public class ActivityDisplayPanel : MonoBehaviour
         }
     }
 
-    // === MÉTHODES PUBLIQUES POUR L'INTÉGRATION ===
+    // === METHODES PUBLIQUES POUR L'INTEGRATION ===
 
     /// <summary>
     /// Vérifier s'il y a une activité en cours et afficher le panel si nécessaire

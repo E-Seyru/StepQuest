@@ -13,19 +13,19 @@ public class LocalDatabase
     private string _databasePath;
 
     private const string DatabaseFilename = "StepQuestRPG_Data.db";
-    private const int DATABASE_VERSION = 6; // MODIFIÉ: Incrémenté pour ActivityData (5 -> 6)
+    private const int DATABASE_VERSION = 6; // MODIFIE: Incremente pour ActivityData (5 -> 6)
 
     public void InitializeDatabase()
     {
-        // Définir le chemin de la base de données
+        // Definir le chemin de la base de donnees
         _databasePath = Path.Combine(Application.persistentDataPath, DatabaseFilename);
 
 
         try
         {
-            // Force la suppression de la base de données existante uniquement en mode éditeur
+            // Force la suppression de la base de donnees existante uniquement en mode editeur
 #if UNITY_EDITOR
-            bool forceReset = false; // À activer seulement pour les tests en éditeur
+            bool forceReset = false; // À activer seulement pour les tests en editeur
             if (forceReset && File.Exists(_databasePath))
             {
                 File.Delete(_databasePath);
@@ -33,17 +33,17 @@ public class LocalDatabase
             }
 #endif
 
-            // Créer ou ouvrir la connexion SQLite
+            // Creer ou ouvrir la connexion SQLite
             _connection = new SQLiteConnection(_databasePath);
 
 
-            // Vérifier si la base de données nécessite une migration
+            // Verifier si la base de donnees necessite une migration
             ManageDatabaseMigration();
 
-            // Créer les tables principales
+            // Creer les tables principales
             CreateTables();
 
-            // Vérifier la structure des tables
+            // Verifier la structure des tables
             DebugLogTableStructures();
         }
         catch (Exception ex)
@@ -53,7 +53,7 @@ public class LocalDatabase
     }
 
     /// <summary>
-    /// NOUVEAU: Créer toutes les tables nécessaires
+    /// NOUVEAU: Creer toutes les tables necessaires
     /// </summary>
     private void CreateTables()
     {
@@ -66,13 +66,13 @@ public class LocalDatabase
 
     }
 
-    // Méthode utilitaire pour convertir un epoch timestamp en date lisible
+    // Methode utilitaire pour convertir un epoch timestamp en date lisible
     public static string GetReadableDateFromEpoch(long epochMs)
     {
         if (epochMs <= 0) return "Jamais";
         try
         {
-            // MODIFIÉ: Utiliser DateTime.Now et le fuseau horaire local (Faille B)
+            // MODIFIE: Utiliser DateTime.Now et le fuseau horaire local (Faille B)
             DateTime date = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(epochMs);
             return date.ToLocalTime().ToString("HH:mm:ss dd/MM/yyyy");
         }
@@ -82,15 +82,15 @@ public class LocalDatabase
         }
     }
 
-    // Gestion des migrations de base de données
+    // Gestion des migrations de base de donnees
     private void ManageDatabaseMigration()
     {
         try
         {
-            // Créer une table de version si elle n'existe pas
+            // Creer une table de version si elle n'existe pas
             _connection.Execute("CREATE TABLE IF NOT EXISTS DatabaseVersion (Version INTEGER)");
 
-            // Récupérer la version actuelle
+            // Recuperer la version actuelle
             int currentVersion = 0;
             var result = _connection.Query<DatabaseVersionInfo>("SELECT Version FROM DatabaseVersion LIMIT 1");
             if (result.Count > 0)
@@ -99,14 +99,14 @@ public class LocalDatabase
             }
             else
             {
-                // Aucune version trouvée, insérer la version initiale
+                // Aucune version trouvee, inserer la version initiale
                 _connection.Execute("INSERT INTO DatabaseVersion (Version) VALUES (1)");
                 currentVersion = 1;
             }
 
             Logger.LogInfo($"LocalDatabase: Current database version: {currentVersion}, Target version: {DATABASE_VERSION}");
 
-            // Appliquer les migrations nécessaires
+            // Appliquer les migrations necessaires
             if (currentVersion < DATABASE_VERSION)
             {
                 // Migrations existantes (2, 3, 4, 5)
@@ -209,10 +209,10 @@ public class LocalDatabase
 
             try
             {
-                // La table sera créée automatiquement par CreateTable<InventoryContainerData>()
+                // La table sera creee automatiquement par CreateTable<InventoryContainerData>()
                 // Pas besoin de CREATE TABLE manuel
 
-                // Initialiser les conteneurs par défaut
+                // Initialiser les conteneurs par defaut
                 InitializeDefaultContainers();
 
                 // Mettre à jour la version
@@ -226,22 +226,22 @@ public class LocalDatabase
             }
         }
 
-        // La migration vers la version 6 sera gérée dans ManageDatabaseMigration()
+        // La migration vers la version 6 sera geree dans ManageDatabaseMigration()
     }
 
     /// <summary>
-    /// Initialiser les conteneurs par défaut lors de la première migration (version 5)
+    /// Initialiser les conteneurs par defaut lors de la première migration (version 5)
     /// </summary>
     private void InitializeDefaultContainers()
     {
-        // Vérifier si les conteneurs existent déjà
+        // Verifier si les conteneurs existent dejà
         var existingContainers = _connection.Query<InventoryContainerData>("SELECT ContainerID FROM InventoryContainers");
 
         if (existingContainers.Count == 0)
         {
 
 
-            // Créer conteneur joueur par défaut
+            // Creer conteneur joueur par defaut
             var playerContainer = new InventoryContainerData
             {
                 ContainerID = "player",
@@ -251,7 +251,7 @@ public class LocalDatabase
                 LastResetStepCount = 0
             };
 
-            // Créer conteneur banque par défaut
+            // Creer conteneur banque par defaut
             var bankContainer = new InventoryContainerData
             {
                 ContainerID = "bank",
@@ -261,7 +261,7 @@ public class LocalDatabase
                 LastResetStepCount = 0
             };
 
-            // Insérer dans la base de données
+            // Inserer dans la base de donnees
             _connection.Insert(playerContainer);
             _connection.Insert(bankContainer);
 
@@ -274,7 +274,7 @@ public class LocalDatabase
     }
 
     /// <summary>
-    /// Créer des slots vides en format JSON
+    /// Creer des slots vides en format JSON
     /// </summary>
     private string CreateEmptySlots(int slotCount)
     {
@@ -286,7 +286,7 @@ public class LocalDatabase
         return JsonConvert.SerializeObject(emptySlots);
     }
 
-    // === MÉTHODES PLAYERDATA ===
+    // === METHODES PLAYERDATA ===
 
     public PlayerData LoadPlayerData()
     {
@@ -380,7 +380,7 @@ public class LocalDatabase
         }
     }
 
-    // === MÉTHODES INVENTORY (existantes, pas changées) ===
+    // === METHODES INVENTORY (existantes, pas changees) ===
 
     /// <summary>
     /// Charger un conteneur d'inventaire par ID
@@ -477,7 +477,7 @@ public class LocalDatabase
         }
     }
 
-    // === MÉTHODES PRIVÉES ===
+    // === METHODES PRIVEES ===
 
     private void DebugLogTableStructures()
     {
@@ -525,13 +525,13 @@ public class LocalDatabase
     }
 }
 
-// Classe pour stocker les informations de version de la base de données
+// Classe pour stocker les informations de version de la base de donnees
 class DatabaseVersionInfo
 {
     public int Version { get; set; }
 }
 
-// Structure de données pour les conteneurs d'inventaire en base (existante, pas changée)
+// Structure de donnees pour les conteneurs d'inventaire en base (existante, pas changee)
 [Table("InventoryContainers")]
 public class InventoryContainerData
 {
@@ -559,10 +559,10 @@ public class InventoryContainerData
             containerType = parsedType;
         }
 
-        // Créer le conteneur
+        // Creer le conteneur
         var container = new InventoryContainer(containerType, ContainerID, MaxSlots);
 
-        // Désérialiser les slots
+        // Deserialiser les slots
         if (!string.IsNullOrEmpty(SlotsData))
         {
             try
@@ -587,7 +587,7 @@ public class InventoryContainerData
             }
         }
 
-        // Métadonnées
+        // Metadonnees
         if (LastResetStepCount > 0)
         {
             container.SetMetadata("LastResetStepCount", LastResetStepCount.ToString());
@@ -597,7 +597,7 @@ public class InventoryContainerData
     }
 
     /// <summary>
-    /// Créer depuis InventoryContainer (pour sauvegarde en base)
+    /// Creer depuis InventoryContainer (pour sauvegarde en base)
     /// </summary>
     public static InventoryContainerData FromInventoryContainer(InventoryContainer container)
     {
@@ -610,7 +610,7 @@ public class InventoryContainerData
             LastResetStepCount = 0
         };
 
-        // Récupérer LastResetStepCount des métadonnées si présent
+        // Recuperer LastResetStepCount des metadonnees si present
         if (long.TryParse(container.GetMetadata("LastResetStepCount", "0"), out long lastReset))
         {
             data.LastResetStepCount = lastReset;

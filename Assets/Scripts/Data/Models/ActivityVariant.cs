@@ -193,7 +193,7 @@ public class ActivityVariant : ScriptableObject
 
         if (!string.IsNullOrEmpty(Requirements))
         {
-            info += $"\nPré-requis: {Requirements}";
+            info += $"\nPre-requis: {Requirements}";
         }
 
         if (ActionCost > 1)
@@ -203,7 +203,7 @@ public class ActivityVariant : ScriptableObject
 
         if (SuccessRate < 100)
         {
-            info += $"\nTaux de réussite: {SuccessRate}%";
+            info += $"\nTaux de reussite: {SuccessRate}%";
         }
 
         return info;

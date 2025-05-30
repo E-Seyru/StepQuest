@@ -25,7 +25,7 @@ public class LocationDetailsPanel : MonoBehaviour
     [SerializeField] private TextMeshProUGUI noActivitiesText;
 
     [Header("UI References - Info Section")]
-    [SerializeField] private TextMeshProUGUI locationInfoText; // Infos supplémentaires (connexions, etc.)
+    [SerializeField] private TextMeshProUGUI locationInfoText; // Infos supplementaires (connexions, etc.)
 
     [Header("Settings")]
     [SerializeField] private Color defaultImageColor = Color.gray;
@@ -70,7 +70,7 @@ public class LocationDetailsPanel : MonoBehaviour
             closeButton.onClick.AddListener(ClosePanel);
         }
 
-        // NOUVEAU : S'abonner aux événements du MapManager pour mise à jour automatique
+        // NOUVEAU : S'abonner aux evenements du MapManager pour mise à jour automatique
         if (mapManager != null)
         {
             mapManager.OnLocationChanged += OnLocationChanged;
@@ -88,7 +88,7 @@ public class LocationDetailsPanel : MonoBehaviour
 
     void OnDestroy()
     {
-        // NOUVEAU : Se désabonner des événements pour éviter les erreurs
+        // NOUVEAU : Se desabonner des evenements pour eviter les erreurs
         if (mapManager != null)
         {
             mapManager.OnLocationChanged -= OnLocationChanged;
@@ -98,13 +98,13 @@ public class LocationDetailsPanel : MonoBehaviour
         }
     }
 
-    // NOUVEAU : Méthodes appelées automatiquement par les événements MapManager
+    // NOUVEAU : Methodes appelees automatiquement par les evenements MapManager
     private void OnLocationChanged(MapLocationDefinition newLocation)
     {
         if (gameObject.activeInHierarchy)
         {
 
-            StartCoroutine(RefreshPanelSmooth()); // MODIFIÉ : Refresh smooth sans flash
+            StartCoroutine(RefreshPanelSmooth()); // MODIFIE : Refresh smooth sans flash
         }
     }
 
@@ -113,7 +113,7 @@ public class LocationDetailsPanel : MonoBehaviour
         if (gameObject.activeInHierarchy)
         {
 
-            StartCoroutine(RefreshPanelSmooth()); // MODIFIÉ : Refresh smooth sans flash
+            StartCoroutine(RefreshPanelSmooth()); // MODIFIE : Refresh smooth sans flash
         }
     }
 
@@ -122,7 +122,7 @@ public class LocationDetailsPanel : MonoBehaviour
         if (gameObject.activeInHierarchy)
         {
 
-            StartCoroutine(RefreshPanelSmooth()); // MODIFIÉ : Refresh smooth sans flash
+            StartCoroutine(RefreshPanelSmooth()); // MODIFIE : Refresh smooth sans flash
         }
     }
 
@@ -130,17 +130,17 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         if (gameObject.activeInHierarchy)
         {
-            // Mettre à jour seulement la section info pour éviter de tout recalculer
+            // Mettre à jour seulement la section info pour eviter de tout recalculer
             PopulateInfoSection();
         }
     }
 
     /// <summary>
-    /// NOUVEAU : Refresh le panel sans flash visuel désagréable
+    /// NOUVEAU : Refresh le panel sans flash visuel desagreable
     /// </summary>
     private IEnumerator RefreshPanelSmooth()
     {
-        // 1. Cacher temporairement le contenu principal pour éviter le flash
+        // 1. Cacher temporairement le contenu principal pour eviter le flash
         if (locationDescriptionText != null)
             locationDescriptionText.gameObject.SetActive(false);
         if (activitiesSection != null)
@@ -160,7 +160,7 @@ public class LocationDetailsPanel : MonoBehaviour
             descriptionScrollRect.verticalNormalizedPosition = 1f;
         }
 
-        // 5. Réafficher le contenu maintenant que tout est bien placé
+        // 5. Reafficher le contenu maintenant que tout est bien place
         if (locationDescriptionText != null)
             locationDescriptionText.gameObject.SetActive(true);
         if (activitiesSection != null)
@@ -292,7 +292,7 @@ public class LocationDetailsPanel : MonoBehaviour
 
         var availableActivities = currentLocation.GetAvailableActivities();
 
-        // Debug chaque activité
+        // Debug chaque activite
         if (currentLocation.AvailableActivities != null)
         {
             for (int i = 0; i < currentLocation.AvailableActivities.Count; i++)
@@ -304,7 +304,7 @@ public class LocationDetailsPanel : MonoBehaviour
         // Update section title
         if (activitiesSectionTitle != null)
         {
-            activitiesSectionTitle.text = $"Activités disponibles ({availableActivities.Count})";
+            activitiesSectionTitle.text = $"Activites disponibles ({availableActivities.Count})";
         }
 
         // Show/hide based on availability
@@ -462,7 +462,7 @@ public class LocationDetailsPanel : MonoBehaviour
         if (noActivitiesText != null)
         {
             noActivitiesText.gameObject.SetActive(true);
-            noActivitiesText.text = "Aucune activité disponible dans cette location.";
+            noActivitiesText.text = "Aucune activite disponible dans cette location.";
         }
     }
 
@@ -483,8 +483,8 @@ public class LocationDetailsPanel : MonoBehaviour
         {
             if (item != null)
             {
-                item.SetActive(false);          // on ne détruit plus
-                activityItemPool.Enqueue(item); // on stocke pour ré-emploi
+                item.SetActive(false);          // on ne detruit plus
+                activityItemPool.Enqueue(item); // on stocke pour re-emploi
             }
         }
         instantiatedActivityItems.Clear();
@@ -549,12 +549,12 @@ public class LocationDetailsPanel : MonoBehaviour
 
     /// <summary>
     /// Attendre une frame que le Canvas soit actif, puis forcer le layout.
-    /// Évite que texte et image se superposent et que le ScrollRect reste bloqué.
+    /// Evite que texte et image se superposent et que le ScrollRect reste bloque.
     /// </summary>
     private IEnumerator DelayedLayoutFix()
     {
         yield return null;                    // attendre la fin de frame courante
-        Canvas.ForceUpdateCanvases();         // pousse Unity à recalculer immédiatement
+        Canvas.ForceUpdateCanvases();         // pousse Unity à recalculer immediatement
 
         if (descriptionScrollRect != null && descriptionScrollRect.content != null)
         {

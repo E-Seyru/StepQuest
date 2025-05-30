@@ -24,16 +24,16 @@ public class TravelSpriteAnimator : MonoBehaviour
     [SerializeField] private bool showDebugPath = false;
     [SerializeField] private Color debugPathColor = Color.yellow;
 
-    // NOUVEAU : Cache des positions POI pour éviter les recherches répétées
+    // NOUVEAU : Cache des positions POI pour eviter les recherches repetees
     private Dictionary<string, Vector3> poiPositionsCache = new Dictionary<string, Vector3>();
     private bool isCacheInitialized = false;
 
-    // Références
+    // References
     private MapManager mapManager;
     private DataManager dataManager;
     private LocationRegistry locationRegistry;
 
-    // État du voyage
+    // Etat du voyage
     private Vector3 startPosition;
     private Vector3 endPosition;
     private bool isAnimating = false;
@@ -62,7 +62,7 @@ public class TravelSpriteAnimator : MonoBehaviour
 
     void Start()
     {
-        // Obtenir les références
+        // Obtenir les references
         mapManager = MapManager.Instance;
         dataManager = DataManager.Instance;
 
@@ -70,7 +70,7 @@ public class TravelSpriteAnimator : MonoBehaviour
         {
             locationRegistry = mapManager.LocationRegistry;
 
-            // S'abonner aux événements de voyage
+            // S'abonner aux evenements de voyage
             mapManager.OnTravelStarted += OnTravelStarted;
             mapManager.OnTravelCompleted += OnTravelCompleted;
             mapManager.OnTravelProgress += OnTravelProgress;
@@ -86,12 +86,12 @@ public class TravelSpriteAnimator : MonoBehaviour
         // NOUVEAU : Initialiser le cache des positions POI
         InitializePOICache();
 
-        // Positionner le personnage à sa location actuelle au démarrage
+        // Positionner le personnage à sa location actuelle au demarrage
         StartCoroutine(PositionPlayerAfterDelay());
     }
 
     /// <summary>
-    /// NOUVEAU : Initialise le cache des positions POI une seule fois au démarrage
+    /// NOUVEAU : Initialise le cache des positions POI une seule fois au demarrage
     /// </summary>
     private void InitializePOICache()
     {
@@ -105,10 +105,10 @@ public class TravelSpriteAnimator : MonoBehaviour
             return;
         }
 
-        // Sauvegarder l'état actuel de la carte
+        // Sauvegarder l'etat actuel de la carte
         bool wasMapActive = worldMapObject.activeInHierarchy;
 
-        // Activer temporairement la WorldMap si elle était désactivée
+        // Activer temporairement la WorldMap si elle etait desactivee
         if (!wasMapActive)
         {
 
@@ -116,7 +116,7 @@ public class TravelSpriteAnimator : MonoBehaviour
         }
 
         // OPTIMISATION : Chercher les POI seulement dans WorldMap au lieu de toute la scène
-        POI[] allPOIs = worldMapObject.GetComponentsInChildren<POI>(true); // 'true' pour inclure les POI désactivés
+        POI[] allPOIs = worldMapObject.GetComponentsInChildren<POI>(true); // 'true' pour inclure les POI desactives
 
 
 
@@ -136,7 +136,7 @@ public class TravelSpriteAnimator : MonoBehaviour
             }
         }
 
-        // Remettre la WorldMap dans son état d'origine
+        // Remettre la WorldMap dans son etat d'origine
         if (!wasMapActive)
         {
             worldMapObject.SetActive(false);
@@ -148,11 +148,11 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// MODIFIÉ : Utilise maintenant le cache au lieu de chercher dans la scène
+    /// MODIFIE : Utilise maintenant le cache au lieu de chercher dans la scène
     /// </summary>
     private Vector3 FindPOITravelStartPosition(string locationId)
     {
-        // Vérifier que le cache est initialisé
+        // Verifier que le cache est initialise
         if (!isCacheInitialized)
         {
             Logger.LogWarning("TravelSpriteAnimator: POI cache not initialized! Trying to initialize now...", Logger.LogCategory.MapLog);
@@ -166,7 +166,7 @@ public class TravelSpriteAnimator : MonoBehaviour
             return cachedPosition;
         }
 
-        // Si pas trouvé dans le cache, logger une erreur détaillée
+        // Si pas trouve dans le cache, logger une erreur detaillee
         string availableLocations = string.Join(", ", poiPositionsCache.Keys);
         Logger.LogError($"TravelSpriteAnimator: POI position not found in cache for location '{locationId}'. " +
                        $"Available cached locations: [{availableLocations}]", Logger.LogCategory.MapLog);
@@ -175,7 +175,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// NOUVEAU : Méthode utilitaire pour rafraîchir le cache si nécessaire
+    /// NOUVEAU : Methode utilitaire pour rafraîchir le cache si necessaire
     /// (utile si vous ajoutez des POI dynamiquement)
     /// </summary>
     public void RefreshPOICache()
@@ -282,7 +282,7 @@ public class TravelSpriteAnimator : MonoBehaviour
             return;
         }
 
-        // MODIFIÉ : Utilise le cache au lieu de chercher dans la scène
+        // MODIFIE : Utilise le cache au lieu de chercher dans la scène
         startPosition = FindPOITravelStartPosition(mapManager.CurrentLocation.LocationID);
         endPosition = FindPOITravelStartPosition(destinationId);
 
@@ -314,7 +314,7 @@ public class TravelSpriteAnimator : MonoBehaviour
             return;
         }
 
-        // MODIFIÉ : Utilise le cache
+        // MODIFIE : Utilise le cache
         Vector3 currentPos = FindPOITravelStartPosition(mapManager.CurrentLocation.LocationID);
 
         if (currentPos == Vector3.zero)
