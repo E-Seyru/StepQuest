@@ -2754,7 +2754,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 12, y: -104}
+  m_AnchoredPosition: {x: 12.003, y: -29}
   m_SizeDelta: {x: -140.6674, y: -463.4282}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &510052554
@@ -3786,8 +3786,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0.0009765625, y: -771.85}
-  m_SizeDelta: {x: 0.0020752, y: -1543.7}
+  m_AnchoredPosition: {x: -0.0009765625, y: -769.49646}
+  m_SizeDelta: {x: 0.0021, y: -1538.9929}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &678133030
 MonoBehaviour:
@@ -3808,8 +3808,8 @@ MonoBehaviour:
   stopActivityButton: {fileID: 1623702192}
   progressBarBackground: {fileID: 1355588976}
   progressBarFill: {fileID: 860349219}
-  progressFillColor: {r: 0.3, g: 0.8, b: 0.3, a: 1}
-  progressBackgroundColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.8}
+  progressFillColor: {r: 0.4844942, g: 0.8238993, b: 0.4844942, a: 1}
+  progressBackgroundColor: {r: 0.5283019, g: 0.5283019, b: 0.5283019, a: 0.8}
   activityIcon: {fileID: 900850023}
 --- !u!114 &678133031
 MonoBehaviour:
@@ -5636,7 +5636,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.0009346, y: 22.095}
+  m_AnchoredPosition: {x: 12, y: 69}
   m_SizeDelta: {x: 210.116, y: 44.1909}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &962806661
@@ -6789,8 +6789,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 12.002, y: -254.98885}
-  m_SizeDelta: {x: 837.62, y: 48.9834}
+  m_AnchoredPosition: {x: 12.004, y: -233}
+  m_SizeDelta: {x: 837.62, y: 82.8545}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1116766864
 MonoBehaviour:
@@ -10127,8 +10127,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 12.000992, y: -193.43124}
-  m_SizeDelta: {x: 837.62, y: 48.0224}
+  m_AnchoredPosition: {x: 12, y: -138.09563}
+  m_SizeDelta: {x: 837.62, y: 88.2135}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1594857293
 MonoBehaviour:
@@ -11756,7 +11756,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1932863424
 RectTransform:
   m_ObjectHideFlags: 0
