@@ -97,10 +97,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
         permissionCheckCounter++;
         if (hasPermission != lastPermissionResult || permissionCheckCounter >= LOG_FREQUENCY)
         {
-            if (hasPermission != lastPermissionResult)
-            {
-                Logger.LogInfo($"RecordingAPIStepCounter: Permission status changed to: {hasPermission}", Logger.LogCategory.StepLog);
-            }
+          
             lastPermissionResult = hasPermission;
         }
 
@@ -130,7 +127,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
             return;
         }
 
-        Logger.LogInfo("RecordingAPIStepCounter: Attempting to subscribe to API Recording.", Logger.LogCategory.StepLog);
+      
         stepPluginClass.CallStatic("subscribeToRecordingAPI");
         isSubscribedToApi = true;
 #endif
@@ -255,12 +252,9 @@ public class RecordingAPIStepCounter : MonoBehaviour
         {
             clearSuccess = stepPluginClass.CallStatic<bool>("clearStoredStepsForCustomRange");
 
-            if (clearSuccess)
+            if (!clearSuccess)
             {
-                Logger.LogInfo("RecordingAPIStepCounter: Successfully cleared stored range in plugin.", Logger.LogCategory.StepLog);
-            }
-            else
-            {
+          
                 HandleClearFailure();
                 Logger.LogWarning("RecordingAPIStepCounter: Plugin reported failure to clear stored range. Using fallback mechanism.", Logger.LogCategory.StepLog);
             }
@@ -317,7 +311,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
             Logger.LogWarning("RecordingAPIStepCounter: StartDirectSensorListener - plugin not ready or no permission.", Logger.LogCategory.StepLog);
             return;
         }
-        Logger.LogInfo("RecordingAPIStepCounter: Requesting plugin to start direct step counter listener.", Logger.LogCategory.StepLog);
+        
         stepPluginClass.CallStatic("startDirectStepCounterListener");
 #endif
     }
@@ -334,7 +328,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
             Logger.LogWarning("RecordingAPIStepCounter: StopDirectSensorListener - plugin class not initialized.", Logger.LogCategory.StepLog);
             return;
         }
-        Logger.LogInfo("RecordingAPIStepCounter: Requesting plugin to stop direct step counter listener.", Logger.LogCategory.StepLog);
+      
         stepPluginClass.CallStatic("stopDirectStepCounterListener");
 #endif
     }
