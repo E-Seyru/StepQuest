@@ -168,7 +168,7 @@ public class ActivityVariant : ScriptableObject
     }
 
     /// <summary>
-    /// Try to find parent activity by searching all activities with improved matching
+    /// Try to find parent activity by searching all activities
     /// </summary>
     private void TryFindParentActivity()
     {
@@ -181,59 +181,17 @@ public class ActivityVariant : ScriptableObject
 
             if (activity != null)
             {
-                // Multiple ways to match variant to activity
+                // Check if this variant's name suggests it belongs to this activity
                 string variantLower = VariantName.ToLower();
-                string activityNameLower = activity.ActivityName.ToLower();
-                string activityIdLower = activity.ActivityID.ToLower();
+                string activityLower = activity.ActivityName.ToLower();
 
-                // Method 1: Direct name contains check
-                if (variantLower.Contains(activityNameLower) || activityNameLower.Contains(variantLower))
+                if (variantLower.Contains(activityLower) || activityLower.Contains(variantLower))
                 {
                     ParentActivityID = activity.ActivityID;
-                    Logger.LogInfo($"ActivityVariant: Auto-detected parent '{ParentActivityID}' for variant '{VariantName}' (name match)", Logger.LogCategory.General);
-                    break;
-                }
-
-                // Method 2: Check for common mining keywords
-                if ((variantLower.Contains("mine") || variantLower.Contains("copper") || variantLower.Contains("iron") || variantLower.Contains("ore"))
-                    && activityNameLower.Contains("mining"))
-                {
-                    ParentActivityID = activity.ActivityID;
-                    Logger.LogInfo($"ActivityVariant: Auto-detected parent '{ParentActivityID}' for variant '{VariantName}' (mining match)", Logger.LogCategory.General);
-                    break;
-                }
-
-                // Method 3: Check for woodcutting keywords  
-                if ((variantLower.Contains("couper") || variantLower.Contains("wood") || variantLower.Contains("pin") || variantLower.Contains("arbre"))
-                    && (activityNameLower.Contains("bucheron") || activityNameLower.Contains("bûcheron") || activityNameLower.Contains("woodcut")))
-                {
-                    ParentActivityID = activity.ActivityID;
-                    Logger.LogInfo($"ActivityVariant: Auto-detected parent '{ParentActivityID}' for variant '{VariantName}' (woodcutting match)", Logger.LogCategory.General);
-                    break;
-                }
-
-                // Method 4: Check for exploration keywords
-                if ((variantLower.Contains("explorer") || variantLower.Contains("explore") || variantLower.Contains("découvrir"))
-                    && (activityNameLower.Contains("explorer") || activityNameLower.Contains("exploration")))
-                {
-                    ParentActivityID = activity.ActivityID;
-                    Logger.LogInfo($"ActivityVariant: Auto-detected parent '{ParentActivityID}' for variant '{VariantName}' (exploration match)", Logger.LogCategory.General);
-                    break;
-                }
-
-                // Method 5: Exact ID match (case insensitive)
-                if (activityIdLower == variantLower || activityIdLower.Replace("_", "").Replace(" ", "") == variantLower.Replace("_", "").Replace(" ", ""))
-                {
-                    ParentActivityID = activity.ActivityID;
-                    Logger.LogInfo($"ActivityVariant: Auto-detected parent '{ParentActivityID}' for variant '{VariantName}' (ID match)", Logger.LogCategory.General);
+                    Logger.LogInfo($"ActivityVariant: Auto-detected parent '{ParentActivityID}' for variant '{VariantName}'", Logger.LogCategory.General);
                     break;
                 }
             }
-        }
-
-        if (string.IsNullOrEmpty(ParentActivityID))
-        {
-            Logger.LogWarning($"ActivityVariant: Could not auto-detect parent activity for variant '{VariantName}'. Please set manually.", Logger.LogCategory.General);
         }
     }
 
@@ -242,9 +200,6 @@ public class ActivityVariant : ScriptableObject
     /// </summary>
     private void AutoRegisterVariant()
     {
-        // Fix known mappings first
-        FixKnownMappings();
-
         if (string.IsNullOrEmpty(ParentActivityID)) return;
 
         // Find the parent activity

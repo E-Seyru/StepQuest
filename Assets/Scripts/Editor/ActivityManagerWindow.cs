@@ -272,49 +272,8 @@ public class ActivityManagerWindow : EditorWindow
 
         EditorGUILayout.EndVertical();
 
-        // Add variant to existing activity section
-        DrawAddVariantSection();
-
         // Quick Templates
         DrawQuickTemplates();
-    }
-
-    private void DrawAddVariantSection()
-    {
-        EditorGUILayout.Space();
-        EditorGUILayout.LabelField("➕ Add Variant to Existing Activity", EditorStyles.boldLabel);
-
-        EditorGUILayout.BeginVertical("box");
-
-        // Select parent activity
-        selectedParentActivity = (ActivityDefinition)EditorGUILayout.ObjectField("Parent Activity", selectedParentActivity, typeof(ActivityDefinition), false);
-
-        if (selectedParentActivity != null)
-        {
-            EditorGUILayout.LabelField($"Selected: {selectedParentActivity.GetDisplayName()}", EditorStyles.miniLabel);
-
-            // Variant details
-            newVariantName = EditorGUILayout.TextField("Variant Name", newVariantName);
-            newVariantDescription = EditorGUILayout.TextField("Variant Description", newVariantDescription);
-            newVariantPrimaryResource = (ItemDefinition)EditorGUILayout.ObjectField("Primary Resource", newVariantPrimaryResource, typeof(ItemDefinition), false);
-            newVariantActionCost = EditorGUILayout.IntField("Action Cost (Steps)", newVariantActionCost);
-            newVariantSuccessRate = EditorGUILayout.IntSlider("Success Rate %", newVariantSuccessRate, 0, 100);
-
-            EditorGUILayout.Space();
-
-            GUI.enabled = !string.IsNullOrEmpty(newVariantName) && newVariantPrimaryResource != null;
-            if (GUILayout.Button($"Add Variant to {selectedParentActivity.GetDisplayName()}"))
-            {
-                CreateVariantForExistingActivity();
-            }
-            GUI.enabled = true;
-        }
-        else
-        {
-            EditorGUILayout.HelpBox("Select an activity above to add a variant to it", MessageType.Info);
-        }
-
-        EditorGUILayout.EndVertical();
     }
 
     private void DrawQuickTemplates()
@@ -449,11 +408,6 @@ public class ActivityManagerWindow : EditorWindow
             ExportActivityReport();
         }
 
-        if (GUILayout.Button("Fix Activity-Variant Mappings"))
-        {
-            FixActivityVariantMappings();
-        }
-
         EditorGUILayout.EndVertical();
     }
 
@@ -571,62 +525,7 @@ public class ActivityManagerWindow : EditorWindow
     {
         selectedParentActivity = activity;
         selectedTab = 1; // Switch to create tab
-        newActivityName = ""; // Clear this since we're just adding variant
-    }
-
-    private void CreateVariantForExistingActivity()
-    {
-        if (selectedParentActivity == null)
-        {
-            Debug.LogError("No parent activity selected!");
-            return;
-        }
-
-        // Create the variant asset
-        ActivityVariant newVariant = CreateInstance<ActivityVariant>();
-        newVariant.VariantName = newVariantName;
-        newVariant.VariantDescription = newVariantDescription;
-        newVariant.ParentActivityID = selectedParentActivity.ActivityID;
-        newVariant.PrimaryResource = newVariantPrimaryResource;
-        newVariant.ActionCost = newVariantActionCost;
-        newVariant.SuccessRate = newVariantSuccessRate;
-
-        // Save the variant in a subfolder
-        string activityName = selectedParentActivity.ActivityName;
-        string variantDir = $"Assets/ScriptableObjects/Activities/ActivitiesVariant/{activityName}";
-        if (!AssetDatabase.IsValidFolder(variantDir))
-        {
-            string parentDir = $"Assets/ScriptableObjects/Activities/ActivitiesVariant";
-            if (!AssetDatabase.IsValidFolder(parentDir))
-            {
-                AssetDatabase.CreateFolder("Assets/ScriptableObjects/Activities", "ActivitiesVariant");
-            }
-            AssetDatabase.CreateFolder(parentDir, activityName);
-        }
-
-        string variantPath = $"{variantDir}/{newVariantName}.asset";
-        AssetDatabase.CreateAsset(newVariant, variantPath);
-
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
-
-        // Select the new variant
-        Selection.activeObject = newVariant;
-
-        // Clear variant form but keep parent activity selected
-        ClearVariantForm();
-
-        // Show success message
-        Debug.Log($"✅ Created variant '{newVariantName}' for activity '{selectedParentActivity.GetDisplayName()}'");
-    }
-
-    private void ClearVariantForm()
-    {
-        newVariantName = "";
-        newVariantDescription = "";
-        newVariantPrimaryResource = null;
-        newVariantActionCost = 10;
-        newVariantSuccessRate = 100;
+        newActivityName = activity.ActivityName; // Pre-fill for context
     }
 
     private void ClearCreateForm()
@@ -635,8 +534,12 @@ public class ActivityManagerWindow : EditorWindow
         newActivityDescription = "";
         newActivityIcon = null;
         newActivityColor = Color.white;
+        newVariantName = "";
+        newVariantDescription = "";
+        newVariantPrimaryResource = null;
+        newVariantActionCost = 10;
+        newVariantSuccessRate = 100;
         selectedParentActivity = null;
-        ClearVariantForm();
     }
 
     private void FillTemplate(string activityName, string description, string type)
@@ -709,32 +612,6 @@ public class ActivityManagerWindow : EditorWindow
     private int GetActivityCount()
     {
         return activityRegistry?.AllActivities?.Count(a => a?.ActivityReference != null) ?? 0;
-    }
-
-    private void FixActivityVariantMappings()
-    {
-        int fixedCount = 0;
-
-        // Find all ActivityVariant assets
-        string[] variantGuids = AssetDatabase.FindAssets("t:ActivityVariant");
-
-        foreach (string guid in variantGuids)
-        {
-            string path = AssetDatabase.GUIDToAssetPath(guid);
-            ActivityVariant variant = AssetDatabase.LoadAssetAtPath<ActivityVariant>(path);
-
-            if (variant != null)
-            {
-                string oldParentId = variant.ParentActivityID;
-
-                // Force re-detection
-                EditorUtility.SetDirty(variant);
-                fixedCount++;
-            }
-        }
-
-        AssetDatabase.SaveAssets();
-        Debug.Log($"🔧 Fixed {fixedCount} activity-variant mappings. Check console for results.");
     }
 
     private int GetVariantCount()
