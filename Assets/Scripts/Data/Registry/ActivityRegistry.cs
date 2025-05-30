@@ -159,7 +159,7 @@ public class ActivityRegistry : ScriptableObject
             }
         }
 
-        Logger.LogInfo($"ActivityRegistry: Cache initialized with {activityLookup.Count} activities and {variantLookup.Count} variants", Logger.LogCategory.General);
+
     }
 
     /// <summary>
@@ -256,13 +256,13 @@ public class ActivityRegistry : ScriptableObject
         // Update validation status
         if (issues.Count == 0)
         {
-            ValidationStatus = $"✅ Registry validation passed!\n" +
+            ValidationStatus = $"Registry validation passed!\n" +
                              $"Found {AllActivities.Count(a => a != null)} valid activity(ies).\n" +
                              $"Total variants: {GetTotalVariantCount()}";
         }
         else
         {
-            ValidationStatus = $"❌ Registry validation failed ({issues.Count} issue(s)):\n\n" +
+            ValidationStatus = $"Registry validation failed ({issues.Count} issue(s)):\n\n" +
                              string.Join("\n", issues.Take(10)); // Limit to first 10 issues
 
             if (issues.Count > 10)

@@ -103,7 +103,7 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         if (gameObject.activeInHierarchy)
         {
-            Logger.LogInfo($"LocationDetailsPanel: Location changed to {newLocation?.DisplayName}, refreshing panel", Logger.LogCategory.General);
+
             StartCoroutine(RefreshPanelSmooth()); // MODIFIÉ : Refresh smooth sans flash
         }
     }
@@ -112,7 +112,7 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         if (gameObject.activeInHierarchy)
         {
-            Logger.LogInfo($"LocationDetailsPanel: Travel completed to {arrivedLocationId}, refreshing panel", Logger.LogCategory.General);
+
             StartCoroutine(RefreshPanelSmooth()); // MODIFIÉ : Refresh smooth sans flash
         }
     }
@@ -121,7 +121,7 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         if (gameObject.activeInHierarchy)
         {
-            Logger.LogInfo($"LocationDetailsPanel: Travel started to {destinationId}, refreshing panel", Logger.LogCategory.General);
+
             StartCoroutine(RefreshPanelSmooth()); // MODIFIÉ : Refresh smooth sans flash
         }
     }
@@ -248,7 +248,7 @@ public class LocationDetailsPanel : MonoBehaviour
         // Info section
         PopulateInfoSection();
 
-        Logger.LogInfo($"LocationDetailsPanel: Populated panel for {currentLocation.DisplayName}", Logger.LogCategory.General);
+
     }
 
     /// <summary>
@@ -280,13 +280,13 @@ public class LocationDetailsPanel : MonoBehaviour
 
         if (activitiesSection == null)
         {
-            Debug.Log("ERROR: activitiesSection is NULL!");
+            Debug.LogError("ERROR: activitiesSection is NULL!");
             return;
         }
 
         if (currentLocation == null)
         {
-            Debug.Log("ERROR: currentLocation is NULL!");
+            Debug.LogError("ERROR: currentLocation is NULL!");
             return;
         }
 
@@ -310,7 +310,7 @@ public class LocationDetailsPanel : MonoBehaviour
         // Show/hide based on availability
         if (availableActivities.Count == 0)
         {
-            Debug.Log("No valid activities found - showing no activities message");
+
             ShowNoActivitiesMessage();
         }
         else
@@ -393,7 +393,7 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     private void OnActivityClicked(LocationActivity activity)
     {
-        Logger.LogInfo($"LocationDetailsPanel: Activity clicked: {activity.GetDisplayName()}", Logger.LogCategory.General);
+
 
         // Ouvrir le panel des variants
         if (ActivityVariantsPanel.Instance != null)
@@ -505,7 +505,7 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     private void ClosePanel()
     {
-        Logger.LogInfo("LocationDetailsPanel: Closing panel", Logger.LogCategory.General);
+
 
         if (panelManager != null)
         {

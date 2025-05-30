@@ -88,7 +88,7 @@ public class ActivityDisplayPanel : MonoBehaviour
             progressBarFill.fillAmount = 0f; // Commence vide
         }
 
-        Logger.LogInfo("ActivityDisplayPanel: Initialized", Logger.LogCategory.General);
+
     }
 
     /// <summary>
@@ -131,7 +131,7 @@ public class ActivityDisplayPanel : MonoBehaviour
         ShowPanel();
         UpdateDisplay();
 
-        Logger.LogInfo($"ActivityDisplayPanel: Activity started - {variant?.GetDisplayName()}", Logger.LogCategory.General);
+
     }
 
     /// <summary>
@@ -140,7 +140,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     private void OnActivityStopped(ActivityData activity, ActivityVariant variant)
     {
         HidePanel();
-        Logger.LogInfo("ActivityDisplayPanel: Activity stopped", Logger.LogCategory.General);
+
     }
 
     /// <summary>
@@ -200,10 +200,7 @@ public class ActivityDisplayPanel : MonoBehaviour
         if (ActivityManager.Instance != null)
         {
             bool success = ActivityManager.Instance.StopActivity();
-            if (success)
-            {
-                Logger.LogInfo("ActivityDisplayPanel: User stopped activity", Logger.LogCategory.General);
-            }
+
         }
     }
 
@@ -293,7 +290,7 @@ public class ActivityDisplayPanel : MonoBehaviour
         // - Texte qui apparaît pour montrer les récompenses
         // - Son ou vibration
 
-        Logger.LogInfo($"ActivityDisplayPanel: {ticksCompleted} ticks completed!", Logger.LogCategory.General);
+
 
         // Exemple simple : effet visuel sur la barre custom
         if (progressBarFill != null)
@@ -322,7 +319,7 @@ public class ActivityDisplayPanel : MonoBehaviour
                 ShowPanel();
                 UpdateDisplay();
 
-                Logger.LogInfo($"ActivityDisplayPanel: Resumed display for ongoing activity: {variant.GetDisplayName()}", Logger.LogCategory.General);
+
             }
         }
     }

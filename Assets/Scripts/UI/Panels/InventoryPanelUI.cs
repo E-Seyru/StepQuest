@@ -53,8 +53,7 @@ public class InventoryPanelUI : MonoBehaviour
 
         // Subscribe to inventory events
         inventoryManager.OnContainerChanged += OnInventoryChanged;
-        inventoryManager.OnItemAdded += OnItemAdded;
-        inventoryManager.OnItemRemoved += OnItemRemoved;
+
 
         // Initial setup
         CreateSlotUIs();
@@ -69,8 +68,7 @@ public class InventoryPanelUI : MonoBehaviour
         if (inventoryManager != null)
         {
             inventoryManager.OnContainerChanged -= OnInventoryChanged;
-            inventoryManager.OnItemAdded -= OnItemAdded;
-            inventoryManager.OnItemRemoved -= OnItemRemoved;
+
         }
     }
 
@@ -208,7 +206,7 @@ public class InventoryPanelUI : MonoBehaviour
         selectedSlot.SetSelected(true);
 
         RefreshInfo();
-        Debug.Log($"Selected slot {index}: {slotUI.GetSlotData()?.ItemID ?? "Empty"}");
+
     }
 
     /// <summary>
@@ -218,7 +216,7 @@ public class InventoryPanelUI : MonoBehaviour
     {
         gameObject.SetActive(true);
         RefreshDisplay();
-        Debug.Log("InventoryPanelUI: Panel opened");
+
     }
 
     /// <summary>
@@ -235,7 +233,7 @@ public class InventoryPanelUI : MonoBehaviour
             selectedSlot = null;
         }
 
-        Debug.Log("InventoryPanelUI: Panel closed");
+
     }
 
     // Event handlers
@@ -247,27 +245,11 @@ public class InventoryPanelUI : MonoBehaviour
         }
     }
 
-    private void OnItemAdded(string containerId, string itemId, int quantity)
-    {
-        if (containerId == currentContainerId)
-        {
-            Debug.Log($"UI: Added {quantity}x {itemId} to {containerId}");
-        }
-    }
-
-    private void OnItemRemoved(string containerId, string itemId, int quantity)
-    {
-        if (containerId == currentContainerId)
-        {
-            Debug.Log($"UI: Removed {quantity}x {itemId} from {containerId}");
-        }
-    }
-
     // Test methods (remove later)
     private void TestAddItem(string itemId, int quantity)
     {
         bool success = inventoryManager.AddItem(currentContainerId, itemId, quantity);
-        Debug.Log($"Test Add: {itemId} x{quantity} - Success: {success}");
+
     }
 
     private void TestRemoveSelectedItem()
@@ -276,7 +258,7 @@ public class InventoryPanelUI : MonoBehaviour
         {
             var slot = selectedSlot.GetSlotData();
             bool success = inventoryManager.RemoveItem(currentContainerId, slot.ItemID, 1);
-            Debug.Log($"Test Remove: {slot.ItemID} - Success: {success}");
+
         }
         else
         {
@@ -291,7 +273,7 @@ public class InventoryPanelUI : MonoBehaviour
         {
             container.Clear();
             inventoryManager.TriggerContainerChanged(currentContainerId);
-            Debug.Log("Test: Inventory cleared");
+
         }
     }
 
@@ -309,7 +291,7 @@ public class InventoryPanelUI : MonoBehaviour
         if (inventoryManager != null)
         {
             inventoryManager.AddItem(currentContainerId, "Pin", 1);
-            Debug.Log("Added 1 wood to inventory");
+
         }
         else
         {

@@ -111,14 +111,14 @@ public class TravelSpriteAnimator : MonoBehaviour
         // Activer temporairement la WorldMap si elle était désactivée
         if (!wasMapActive)
         {
-            Logger.LogInfo("TravelSpriteAnimator: Temporarily activating WorldMap to scan POIs...", Logger.LogCategory.MapLog);
+
             worldMapObject.SetActive(true);
         }
 
         // OPTIMISATION : Chercher les POI seulement dans WorldMap au lieu de toute la scène
         POI[] allPOIs = worldMapObject.GetComponentsInChildren<POI>(true); // 'true' pour inclure les POI désactivés
 
-        Logger.LogInfo($"TravelSpriteAnimator: Found {allPOIs.Length} POIs in WorldMap", Logger.LogCategory.MapLog);
+
 
         // Mettre en cache toutes les positions
         foreach (POI poi in allPOIs)
@@ -128,7 +128,7 @@ public class TravelSpriteAnimator : MonoBehaviour
                 Vector3 poiPosition = poi.GetTravelPathStartPosition();
                 poiPositionsCache[poi.LocationID] = poiPosition;
 
-                Logger.LogInfo($"TravelSpriteAnimator: Cached position for '{poi.LocationID}': {poiPosition}", Logger.LogCategory.MapLog);
+
             }
             else
             {
@@ -140,11 +140,11 @@ public class TravelSpriteAnimator : MonoBehaviour
         if (!wasMapActive)
         {
             worldMapObject.SetActive(false);
-            Logger.LogInfo("TravelSpriteAnimator: WorldMap restored to inactive state", Logger.LogCategory.MapLog);
+
         }
 
         isCacheInitialized = true;
-        Logger.LogInfo($"TravelSpriteAnimator: POI cache initialized successfully with {poiPositionsCache.Count} positions", Logger.LogCategory.MapLog);
+
     }
 
     /// <summary>
@@ -162,7 +162,7 @@ public class TravelSpriteAnimator : MonoBehaviour
         // Chercher dans le cache
         if (poiPositionsCache.TryGetValue(locationId, out Vector3 cachedPosition))
         {
-            Logger.LogInfo($"TravelSpriteAnimator: Found cached position for '{locationId}': {cachedPosition}", Logger.LogCategory.MapLog);
+
             return cachedPosition;
         }
 
@@ -180,24 +180,12 @@ public class TravelSpriteAnimator : MonoBehaviour
     /// </summary>
     public void RefreshPOICache()
     {
-        Logger.LogInfo("TravelSpriteAnimator: Refreshing POI cache...", Logger.LogCategory.MapLog);
+
         poiPositionsCache.Clear();
         isCacheInitialized = false;
         InitializePOICache();
     }
 
-    /// <summary>
-    /// NOUVEAU : Méthode pour débugger le cache (utile pour le développement)
-    /// </summary>
-    [System.Diagnostics.Conditional("UNITY_EDITOR")]
-    public void DebugPrintCache()
-    {
-        Logger.LogInfo($"TravelSpriteAnimator: POI Cache contains {poiPositionsCache.Count} entries:", Logger.LogCategory.MapLog);
-        foreach (var kvp in poiPositionsCache)
-        {
-            Logger.LogInfo($"  - '{kvp.Key}': {kvp.Value}", Logger.LogCategory.MapLog);
-        }
-    }
 
     // === LE RESTE DU CODE RESTE IDENTIQUE ===
 
@@ -207,7 +195,7 @@ public class TravelSpriteAnimator : MonoBehaviour
 
         if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            Logger.LogInfo("TravelSpriteAnimator: Found ongoing travel at startup - restoring travel animation", Logger.LogCategory.MapLog);
+
 
             string destinationId = dataManager.PlayerData.TravelDestinationId;
             SetupTravelPath(destinationId);
@@ -224,7 +212,7 @@ public class TravelSpriteAnimator : MonoBehaviour
                 Vector3 currentPos = Vector3.Lerp(startPosition, endPosition, progress);
                 travelSprite.transform.position = currentPos;
 
-                Logger.LogInfo($"TravelSpriteAnimator: Positioned player at travel progress {progress:F2} ({progressSteps}/{requiredSteps})", Logger.LogCategory.MapLog);
+
             }
 
             if (bounceAnimation)
@@ -283,7 +271,7 @@ public class TravelSpriteAnimator : MonoBehaviour
         AnimateToDestination();
         StopBounceAnimation();
 
-        Logger.LogInfo($"TravelSpriteAnimator: Player arrived at {arrivedLocationId}", Logger.LogCategory.MapLog);
+
     }
 
     private void SetupTravelPath(string destinationId)
@@ -337,12 +325,12 @@ public class TravelSpriteAnimator : MonoBehaviour
 
         currentPos += spriteOffset;
 
-        Logger.LogInfo($"TravelSpriteAnimator: Positioning player at {currentPos} for location {mapManager.CurrentLocation.DisplayName}", Logger.LogCategory.MapLog);
+
 
         travelSprite.transform.position = currentPos;
         travelSprite.SetActive(true);
 
-        Logger.LogInfo($"TravelSpriteAnimator: Player positioned at {mapManager.CurrentLocation.DisplayName}. Sprite active: {travelSprite.activeSelf}", Logger.LogCategory.MapLog);
+
     }
 
     private void UpdateSpritePosition(float progress)

@@ -1,5 +1,7 @@
 ﻿// Filepath: Assets/Scripts/Data/DataManager.cs
+using Newtonsoft.Json;
 using System;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class DataManager : MonoBehaviour
@@ -98,6 +100,20 @@ public class DataManager : MonoBehaviour
     public void CheckAndResetDailySteps()
     {
         Logger.LogInfo("DataManager: CheckAndResetDailySteps called but ignored - this functionality is now handled by StepManager", Logger.LogCategory.General);
+    }
+
+    public async Task SaveGameAsync()
+    {
+        // Bail out fast if something is obviously wrong
+        if (PlayerData == null || _localDatabase == null) return;
+
+        // ---- TAKE A SNAPSHOT ON THE MAIN THREAD ----
+        // Serialise & deserialise is the quickest “poor-man's deep clone”
+        PlayerData snapshot = JsonConvert.DeserializeObject<PlayerData>(
+            JsonConvert.SerializeObject(PlayerData));
+
+        // ---- RUN THE SQLITE WRITE ON A WORKER THREAD ----
+        await Task.Run(() => _localDatabase.SavePlayerData(snapshot));
     }
 
     public void SaveGame()
@@ -350,4 +366,7 @@ public class DataManager : MonoBehaviour
             SaveGame();
         }
     }
+
+
+
 }

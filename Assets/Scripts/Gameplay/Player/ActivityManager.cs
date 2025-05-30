@@ -10,7 +10,7 @@ public class ActivityManager : MonoBehaviour
 
     [Header("Settings")]
     [SerializeField] private float autoSaveInterval = 30f; // Auto-save every 30 seconds during activity
-    [SerializeField] private bool enableDebugLogs = true;
+    [SerializeField] private bool enableDebugLogs = false;
 
     // References to other managers
     private DataManager dataManager;
@@ -29,6 +29,12 @@ public class ActivityManager : MonoBehaviour
     // Current activity cache (for performance)
     private ActivityData currentActivityCache;
     private ActivityVariant currentVariantCache;
+
+    // --- AUTO-SAVE COROUTINE ---
+    private Coroutine autoSaveCoroutine;
+
+    private void OnEnable() => autoSaveCoroutine = StartCoroutine(AutoSaveLoop());
+
 
     // Events for UI
     public event Action<ActivityData, ActivityVariant> OnActivityStarted;
@@ -182,7 +188,7 @@ public class ActivityManager : MonoBehaviour
         RefreshActivityCache();
 
         // Save immediately
-        dataManager.SaveGame();
+        _ = dataManager.SaveGameAsync();
 
         // Trigger events
         OnActivityStarted?.Invoke(currentActivityCache, currentVariantCache);
@@ -216,7 +222,7 @@ public class ActivityManager : MonoBehaviour
         ClearActivityCache();
 
         // Save immediately
-        dataManager.SaveGame();
+        _ = dataManager.SaveGameAsync();
 
         // Trigger events
         OnActivityStopped?.Invoke(activityToStop, variantToStop);
@@ -527,5 +533,25 @@ public class ActivityManager : MonoBehaviour
     void OnDestroy()
     {
         // Clean up any subscriptions if needed
+    }
+
+    private void OnDisable()
+    {
+        if (autoSaveCoroutine != null) StopCoroutine(autoSaveCoroutine);
+    }
+
+    private IEnumerator AutoSaveLoop()
+    {
+        var wait = new WaitForSeconds(autoSaveInterval);   // one GC-free object
+        while (true)
+        {
+            yield return wait;
+
+            if (hasUnsavedProgress)
+            {
+                _ = dataManager.SaveGameAsync();           // fire-and-forget
+                hasUnsavedProgress = false;
+            }
+        }
     }
 }

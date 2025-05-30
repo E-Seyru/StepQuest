@@ -1,9 +1,10 @@
 ﻿// Purpose: Main manager for all inventory operations across different container types
 // Filepath: Assets/Scripts/Gameplay/Player/InventoryManager.cs
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
-
 public class InventoryManager : MonoBehaviour
 {
     public static InventoryManager Instance { get; private set; }
@@ -78,16 +79,23 @@ public class InventoryManager : MonoBehaviour
         Logger.LogInfo($"InventoryManager: Initialized with {itemRegistry.AllItems.Count} item definitions", Logger.LogCategory.InventoryLog);
     }
 
-    void Update()
+    private Coroutine autoSaveCo;
+
+    void OnEnable() => autoSaveCo = StartCoroutine(AutoSaveLoop());
+    void OnDisable()
     {
-        // Auto-save logic
-        if (enableAutoSave && hasUnsavedChanges)
+        if (autoSaveCo != null) StopCoroutine(autoSaveCo);
+    }
+
+    private IEnumerator AutoSaveLoop()
+    {
+        var wait = new WaitForSeconds(autoSaveInterval);   // une seule alloc
+        while (true)
         {
-            timeSinceLastSave += Time.deltaTime;
-            if (timeSinceLastSave >= autoSaveInterval)
-            {
-                SaveInventoryData();
-            }
+            yield return wait;
+
+            if (enableAutoSave && hasUnsavedChanges)
+                _ = SaveInventoryDataAsync();              // fire-and-forget
         }
     }
 
@@ -449,18 +457,50 @@ public class InventoryManager : MonoBehaviour
     /// <summary>
     /// Save inventory data to database
     /// </summary>
-    public void SaveInventoryData()
+    /// 
+
+    public async Task SaveInventoryDataAsync()
     {
-        if (!hasUnsavedChanges)
+        if (!hasUnsavedChanges) return;
+
+        /* --------- SNAPSHOT sur le thread principal --------- */
+        var snapshot = new List<InventoryContainerData>();
+        foreach (var pair in containers)
+            snapshot.Add(InventoryContainerData.FromInventoryContainer(pair.Value));
+
+        /* --------- I/O sur un worker thread --------- */
+        try
         {
-            return; // Pas de changements à sauvegarder
+            await Task.Run(() =>
+            {
+                foreach (var data in snapshot)
+                    dataManager.LocalDatabase.SaveInventoryContainer(data);
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"InventoryManager: Async save error: {ex.Message}",
+                            Logger.LogCategory.InventoryLog);
+            return;                     // on garde hasUnsavedChanges = true → retentera plus tard
         }
 
-        Logger.LogInfo("InventoryManager: Saving inventory data to database...", Logger.LogCategory.InventoryLog);
+        /* --------- reset des flags --------- */
+        hasUnsavedChanges = false;
+        timeSinceLastSave = 0f;         // reste valable si vous l'affichez dans le debug
+    }
+
+
+    public void SaveInventoryData()
+    {
+        if (!hasUnsavedChanges) return;
+
+        Logger.LogInfo("InventoryManager: Saving inventory data to database...",
+                       Logger.LogCategory.InventoryLog);
 
         if (dataManager?.LocalDatabase == null)
         {
-            Logger.LogError("InventoryManager: LocalDatabase not available!", Logger.LogCategory.InventoryLog);
+            Logger.LogError("InventoryManager: LocalDatabase not available!",
+                            Logger.LogCategory.InventoryLog);
             return;
         }
 
@@ -468,24 +508,23 @@ public class InventoryManager : MonoBehaviour
         {
             int savedCount = 0;
 
-            foreach (var kvp in containers)
+            foreach (var pair in containers)
             {
-                var container = kvp.Value;
-                var containerData = InventoryContainerData.FromInventoryContainer(container);
-
-                dataManager.LocalDatabase.SaveInventoryContainer(containerData);
+                var data = InventoryContainerData.FromInventoryContainer(pair.Value);
+                dataManager.LocalDatabase.SaveInventoryContainer(data);
                 savedCount++;
             }
 
-            // Reset auto-save tracking
             hasUnsavedChanges = false;
             timeSinceLastSave = 0f;
 
-            Logger.LogInfo($"InventoryManager: Successfully saved {savedCount} containers to database", Logger.LogCategory.InventoryLog);
+            Logger.LogInfo($"InventoryManager: Successfully saved {savedCount} containers",
+                           Logger.LogCategory.InventoryLog);
         }
         catch (Exception ex)
         {
-            Logger.LogError($"InventoryManager: Error saving inventory data: {ex.Message}", Logger.LogCategory.InventoryLog);
+            Logger.LogError($"InventoryManager: Error saving inventory data: {ex.Message}",
+                            Logger.LogCategory.InventoryLog);
         }
     }
 
