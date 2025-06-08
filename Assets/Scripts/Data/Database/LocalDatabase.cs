@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class LocalDatabase
@@ -320,7 +321,7 @@ public class LocalDatabase
         }
     }
 
-    public void SavePlayerData(PlayerData data)
+    public async System.Threading.Tasks.Task SavePlayerData(PlayerData data)
     {
         // AJOUT: Protection contre les appels après fermeture
         if (_connection == null)
@@ -337,42 +338,45 @@ public class LocalDatabase
 
         try
         {
-            if (data.Id <= 0)
-                data.Id = 1;
-
-            if (data.LastSyncEpochMs <= 0 && data.TotalPlayerSteps > 0)
+            await System.Threading.Tasks.Task.Run(() =>
             {
-                Logger.LogWarning("LocalDatabase: LastSyncEpochMs needs initialization");
-                data.LastSyncEpochMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            }
+                if (data.Id <= 0)
+                    data.Id = 1;
 
-            if (string.IsNullOrEmpty(data.LastDailyResetDate))
-            {
-                data.LastDailyResetDate = DateTime.Now.ToString("yyyy-MM-dd");
-                Logger.LogWarning($"LocalDatabase: LastDailyResetDate was empty, initialized to {data.LastDailyResetDate}");
-            }
+                if (data.LastSyncEpochMs <= 0 && data.TotalPlayerSteps > 0)
+                {
+                    Logger.LogWarning("LocalDatabase: LastSyncEpochMs needs initialization");
+                    data.LastSyncEpochMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                }
 
-            if (data.LastApiCatchUpEpochMs <= 0 && data.LastSyncEpochMs > 0)
-            {
-                data.LastApiCatchUpEpochMs = data.LastSyncEpochMs;
-                Logger.LogWarning($"LocalDatabase: LastApiCatchUpEpochMs was 0, initialized to LastSyncEpochMs: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}");
-            }
+                if (string.IsNullOrEmpty(data.LastDailyResetDate))
+                {
+                    data.LastDailyResetDate = DateTime.Now.ToString("yyyy-MM-dd");
+                    Logger.LogWarning($"LocalDatabase: LastDailyResetDate was empty, initialized to {data.LastDailyResetDate}");
+                }
 
-            int result = _connection.InsertOrReplace(data);
-            Logger.LogInfo($"LocalDatabase: PlayerData saved - TotalSteps: {data.TotalPlayerSteps}, " +
-                           $"LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}, " +
-                           $"LastPause: {GetReadableDateFromEpoch(data.LastPauseEpochMs)}, " +
-                           $"LastDelta: {data.LastStepsDelta}, " +
-                           $"LastChange: {GetReadableDateFromEpoch(data.LastStepsChangeEpochMs)}, " +
-                           $"DailySteps: {data.DailySteps}, " +
-                           $"LastReset: {data.LastDailyResetDate}, " +
-                           $"LastApiCatchUp: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}, " +
-                           $"Activity: {(data.HasActiveActivity() ? data.CurrentActivity.ActivityId : "None")}, " +
-                           $"Result: {result}");
+                if (data.LastApiCatchUpEpochMs <= 0 && data.LastSyncEpochMs > 0)
+                {
+                    data.LastApiCatchUpEpochMs = data.LastSyncEpochMs;
+                    Logger.LogWarning($"LocalDatabase: LastApiCatchUpEpochMs was 0, initialized to LastSyncEpochMs: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}");
+                }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD 
-            VerifySaveSuccess(data);
+                int result = _connection.InsertOrReplace(data);
+                Logger.LogInfo($"LocalDatabase: PlayerData saved - TotalSteps: {data.TotalPlayerSteps}, " +
+                               $"LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}, " +
+                               $"LastPause: {GetReadableDateFromEpoch(data.LastPauseEpochMs)}, " +
+                               $"LastDelta: {data.LastStepsDelta}, " +
+                               $"LastChange: {GetReadableDateFromEpoch(data.LastStepsChangeEpochMs)}, " +
+                               $"DailySteps: {data.DailySteps}, " +
+                               $"LastReset: {data.LastDailyResetDate}, " +
+                               $"LastApiCatchUp: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}, " +
+                               $"Activity: {(data.HasActiveActivity() ? data.CurrentActivity.ActivityId : "None")}, " +
+                               $"Result: {result}");
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                VerifySaveSuccess(data);
 #endif
+            });
         }
         catch (Exception ex)
         {
@@ -417,7 +421,7 @@ public class LocalDatabase
     /// <summary>
     /// Sauvegarder un conteneur d'inventaire
     /// </summary>
-    public void SaveInventoryContainer(InventoryContainerData containerData)
+    public async System.Threading.Tasks.Task SaveInventoryContainer(InventoryContainerData containerData)
     {
         // AJOUT: Protection contre les appels après fermeture
         if (_connection == null)
@@ -434,8 +438,11 @@ public class LocalDatabase
 
         try
         {
-            int result = _connection.InsertOrReplace(containerData);
-            Logger.LogInfo($"LocalDatabase: Container '{containerData.ContainerID}' saved - Type: {containerData.ContainerType}, MaxSlots: {containerData.MaxSlots}, Result: {result}");
+            await System.Threading.Tasks.Task.Run(() =>
+            {
+                int result = _connection.InsertOrReplace(containerData);
+                Logger.LogInfo($"LocalDatabase: Container '{containerData.ContainerID}' saved - Type: {containerData.ContainerType}, MaxSlots: {containerData.MaxSlots}, Result: {result}");
+            });
         }
         catch (Exception ex)
         {

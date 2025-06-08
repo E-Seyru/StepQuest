@@ -1,6 +1,7 @@
 // Filepath: Assets/Scripts/Services/StepTracking/RecordingAPIStepCounter.cs
 using System;
 using System.Collections;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class RecordingAPIStepCounter : MonoBehaviour
@@ -133,6 +134,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
 #endif
     }
 
+    [System.Obsolete("Use GetDeltaSinceFromAPIAsync instead.")]
     public IEnumerator GetDeltaSinceFromAPI(long fromEpochMs, long toEpochMs, System.Action<long> onResultCallback)
     {
 #if UNITY_EDITOR
@@ -197,6 +199,69 @@ public class RecordingAPIStepCounter : MonoBehaviour
         ClearStoredRange();
 #endif
     }
+
+    public async Task<long> GetDeltaSinceFromAPIAsync(long fromEpochMs, long toEpochMs)
+    {
+#if UNITY_EDITOR
+        await Task.Delay(TimeSpan.FromSeconds(0.1));
+        Logger.LogInfo($"RecordingAPIStepCounter: [EDITOR] Async API call simulated, returning 0 steps", Logger.LogCategory.StepLog);
+        return 0;
+#else
+        if (!isPluginClassInitialized || stepPluginClass == null || !HasPermission())
+        {
+            Logger.LogError("RecordingAPIStepCounter: GetDeltaSinceFromAPIAsync cannot execute - plugin not ready or no permission.", Logger.LogCategory.StepLog);
+            return -1;
+        }
+
+        if (ShouldSkipRange(fromEpochMs, toEpochMs))
+        {
+            Logger.LogWarning($"RecordingAPIStepCounter: Skipping already read range from {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)} to {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}", Logger.LogCategory.StepLog);
+            return 0;
+        }
+
+        if (fromEpochMs <= 1)
+        {
+            Logger.LogInfo($"RecordingAPIStepCounter: GetDeltaSinceFromAPIAsync called with very old/initial fromEpochMs={fromEpochMs}. Getting all available history.", Logger.LogCategory.StepLog);
+        }
+        else if (fromEpochMs >= toEpochMs)
+        {
+            Logger.LogWarning($"RecordingAPIStepCounter: GetDeltaSinceFromAPIAsync called with fromEpochMs ({LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)}) >= toEpochMs ({LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}). Returning 0 steps.", Logger.LogCategory.StepLog);
+            return 0;
+        }
+
+        Logger.LogInfo($"RecordingAPIStepCounter: Requesting readStepsForTimeRange from plugin for GetDeltaSinceFromAPIAsync (from: {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)}, to: {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}).", Logger.LogCategory.StepLog);
+        stepPluginClass.CallStatic("readStepsForTimeRange", fromEpochMs, toEpochMs);
+        lastReadStartMs = fromEpochMs; // Store for potential fallback in HandleClearFailure
+        lastReadEndMs = toEpochMs;
+
+        int attempts = 0;
+        long lastResult = -1;
+        long currentResult = -1;
+
+        while (attempts < MAX_API_READ_ATTEMPTS)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(BASE_API_WAIT_TIME * (attempts + 1)));
+
+            currentResult = stepPluginClass.CallStatic<long>("getStoredStepsForCustomRange");
+            Logger.LogInfo($"RecordingAPIStepCounter: Async API read attempt {attempts + 1}/{MAX_API_READ_ATTEMPTS}, value: {currentResult}", Logger.LogCategory.StepLog);
+
+            if (currentResult >= 0 && (currentResult == lastResult || attempts >= MAX_API_READ_ATTEMPTS - 1))
+            {
+                Logger.LogInfo($"RecordingAPIStepCounter: GetDeltaSinceAsync stable result after {attempts + 1} attempts: {currentResult}", Logger.LogCategory.StepLog);
+                break;
+            }
+
+            lastResult = currentResult;
+            attempts++;
+        }
+
+        Logger.LogInfo($"RecordingAPIStepCounter: GetDeltaSinceFromAPIAsync received {currentResult} steps from plugin for time range {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)} to {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}.", Logger.LogCategory.StepLog);
+
+        ClearStoredRange();
+        return currentResult >= 0 ? currentResult : 0;
+#endif
+    }
+
 
     private bool ShouldSkipRange(long fromEpochMs, long toEpochMs)
     {
@@ -288,10 +353,17 @@ public class RecordingAPIStepCounter : MonoBehaviour
     private long lastReadStartMs = 0;
     private long lastReadEndMs = 0;
 
+    [System.Obsolete("Use GetDeltaSinceFromAPIAsync instead.")]
     public IEnumerator GetDeltaSinceFromAPI(long fromEpochMs, System.Action<long> onResultCallback)
     {
         long nowEpochMs = GetLocalEpochMs();
         return GetDeltaSinceFromAPI(fromEpochMs, nowEpochMs, onResultCallback);
+    }
+
+    public async Task<long> GetDeltaSinceFromAPIAsync(long fromEpochMs)
+    {
+        long nowEpochMs = GetLocalEpochMs();
+        return await GetDeltaSinceFromAPIAsync(fromEpochMs, nowEpochMs);
     }
 
     private long GetLocalEpochMs()

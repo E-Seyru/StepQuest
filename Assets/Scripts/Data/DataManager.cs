@@ -113,10 +113,10 @@ public class DataManager : MonoBehaviour
             JsonConvert.SerializeObject(PlayerData));
 
         // ---- RUN THE SQLITE WRITE ON A WORKER THREAD ----
-        await Task.Run(() => _localDatabase.SavePlayerData(snapshot));
+        await _localDatabase.SavePlayerData(snapshot);
     }
 
-    public void SaveGame()
+    public async System.Threading.Tasks.Task SaveGame()
     {
         if (PlayerData == null)
         {
@@ -157,7 +157,13 @@ public class DataManager : MonoBehaviour
                               $"StartSteps={PlayerData.TravelStartSteps}", Logger.LogCategory.General);
             }
 
-            _localDatabase.SavePlayerData(PlayerData);
+            await _localDatabase.SavePlayerData(PlayerData);
+            // Assuming Inventory saving is handled elsewhere or not part of this specific SaveGame() method's direct responsibility
+            // based on current file content and subtask description.
+            // If InventoryContainerData also needs saving here, that would be:
+            // foreach (var container in GetAllInventoryContainers()) { // Pseudocode for getting containers
+            //    await _localDatabase.SaveInventoryContainer(container);
+            // }
         }
         catch (System.Exception ex)
         {
@@ -165,7 +171,7 @@ public class DataManager : MonoBehaviour
         }
     }
 
-    public void SaveTravelProgress()
+    public async System.Threading.Tasks.Task SaveTravelProgress()
     {
         if (!PlayerData.IsCurrentlyTraveling())
         {
@@ -189,7 +195,7 @@ public class DataManager : MonoBehaviour
 
             if (_localDatabase != null)
             {
-                _localDatabase.SavePlayerData(PlayerData);
+                await _localDatabase.SavePlayerData(PlayerData);
             }
 
             Logger.LogInfo("DataManager: Travel progress saved successfully", Logger.LogCategory.General);
@@ -315,7 +321,7 @@ public class DataManager : MonoBehaviour
     public void ForceSave()
     {
         Logger.LogInfo("DataManager: Force save requested", Logger.LogCategory.General);
-        SaveGame();
+        SaveGame().GetAwaiter().GetResult();
     }
 
     public void ForceSaveTravelProgress()
@@ -327,7 +333,7 @@ public class DataManager : MonoBehaviour
         }
 
         Logger.LogInfo("DataManager: Force save travel progress requested", Logger.LogCategory.General);
-        SaveTravelProgress();
+        SaveTravelProgress().GetAwaiter().GetResult();
     }
 
     void OnApplicationQuit()
@@ -342,7 +348,7 @@ public class DataManager : MonoBehaviour
                 ForceSaveTravelProgress();
             }
 
-            SaveGame();
+            SaveGame().GetAwaiter().GetResult();
         }
 
         if (_localDatabase != null)
@@ -363,7 +369,7 @@ public class DataManager : MonoBehaviour
                 ForceSaveTravelProgress();
             }
 
-            SaveGame();
+            SaveGame().GetAwaiter().GetResult();
         }
     }
 
