@@ -153,7 +153,8 @@ public class InventorySlotUI : MonoBehaviour
                 {
                     // Mélange la couleur de rareté avec la couleur de base
                     Color rarityColor = itemDef.GetRarityColor();
-                    background.color = Color.Lerp(filledColor, rarityColor, 0.3f); // 30% de couleur de rareté
+                    background.color = Color.Lerp(filledColor, rarityColor, 0.3f); // 30
+                                                                                   // de couleur de rareté
                 }
                 else
                 {

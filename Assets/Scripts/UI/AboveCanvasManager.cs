@@ -327,8 +327,7 @@ public class AboveCanvasManager : MonoBehaviour
         float progressValue = Mathf.Clamp01((float)current / required);
         fillBar.fillAmount = progressValue;
 
-        // Debug optionnel
-        Logger.LogInfo($"AboveCanvasManager: Progress updated - {current}/{required} ({progressValue:P})", Logger.LogCategory.General);
+
     }
 
     // === MÉTHODES PUBLIQUES ===
