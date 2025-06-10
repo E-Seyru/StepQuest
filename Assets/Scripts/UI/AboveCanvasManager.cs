@@ -1,4 +1,4 @@
-// Purpose: Manages the always-visible UI elements above the main canvas
+Ôªø// Purpose: Manages the always-visible UI elements above the main canvas
 // Filepath: Assets/Scripts/UI/AboveCanvasManager.cs
 using TMPro;
 using UnityEngine;
@@ -15,12 +15,12 @@ public class AboveCanvasManager : MonoBehaviour
 
     [Header("UI References - Activity/Travel Bar")]
     [SerializeField] private GameObject activityBar;
-    [SerializeField] private Image leftIcon;          // POI dÈpart ou icÙne activitÈ
-    [SerializeField] private Image rightIcon;         // POI arrivÈe (uniquement pour voyage)
+    [SerializeField] private Image leftIcon;          // POI d√©part ou ic√¥ne activit√©
+    [SerializeField] private Image rightIcon;         // POI arriv√©e (uniquement pour voyage)
     [SerializeField] private TextMeshProUGUI activityText;
     [SerializeField] private Image backgroundBar;     // Image de fond de la barre
     [SerializeField] private Image fillBar;           // Image de remplissage (fillAmount)
-    [SerializeField] private GameObject arrowIcon;    // FlËche entre les POIs
+    [SerializeField] private GameObject arrowIcon;    // Fl√®che entre les POIs
 
     [Header("UI References - Navigation Bar")]
     [SerializeField] private GameObject navigationBar;
@@ -28,7 +28,7 @@ public class AboveCanvasManager : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private bool hideNavigationOnMap = true;
 
-    // RÈfÈrences aux managers
+    // R√©f√©rences aux managers
     private GameManager gameManager;
     private DataManager dataManager;
     private MapManager mapManager;
@@ -65,14 +65,14 @@ public class AboveCanvasManager : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
         }
 
-        // RÈcupÈrer les rÈfÈrences
+        // R√©cup√©rer les r√©f√©rences
         gameManager = GameManager.Instance;
         dataManager = DataManager.Instance;
         mapManager = MapManager.Instance;
         activityManager = ActivityManager.Instance;
         locationRegistry = mapManager.LocationRegistry;
 
-        // S'abonner aux ÈvÈnements
+        // S'abonner aux √©v√©nements
         SubscribeToEvents();
 
         // Configuration du bouton carte
@@ -92,10 +92,10 @@ public class AboveCanvasManager : MonoBehaviour
 
     private void SetupProgressBar()
     {
-        // S'assurer que la fillBar est configurÈe correctement
+        // S'assurer que la fillBar est configur√©e correctement
         if (fillBar != null)
         {
-            // Configurer en mode Filled si ce n'est pas dÈj‡ fait
+            // Configurer en mode Filled si ce n'est pas d√©j√† fait
             if (fillBar.type != Image.Type.Filled)
             {
                 fillBar.type = Image.Type.Filled;
@@ -117,13 +117,13 @@ public class AboveCanvasManager : MonoBehaviour
 
     private void SubscribeToEvents()
     {
-        // …couter les changements d'Ètat du jeu
+        // √âcouter les changements d'√©tat du jeu
         if (gameManager != null)
         {
             gameManager.OnGameStateChanged += OnGameStateChanged;
         }
 
-        // …couter les ÈvÈnements spÈcifiques pour les mises ‡ jour
+        // √âcouter les √©v√©nements sp√©cifiques pour les mises √† jour
         if (mapManager != null)
         {
             mapManager.OnLocationChanged += OnLocationChanged;
@@ -136,7 +136,7 @@ public class AboveCanvasManager : MonoBehaviour
         }
     }
 
-    // === GESTIONNAIRES D'…V…NEMENTS ===
+    // === GESTIONNAIRES D'√âV√âNEMENTS ===
 
     private void OnGameStateChanged(GameState oldState, GameState newState)
     {
@@ -161,17 +161,17 @@ public class AboveCanvasManager : MonoBehaviour
 
     private void OnMapButtonClicked()
     {
-        // GÈrer l'affichage de la barre de navigation si besoin
+        // G√©rer l'affichage de la barre de navigation si besoin
         if (hideNavigationOnMap && navigationBar != null)
         {
             navigationBar.SetActive(false);
         }
 
-        // Le reste sera gÈrÈ par le PanelManager ou MapManager
+        // Le reste sera g√©r√© par le PanelManager ou MapManager
         Logger.LogInfo("AboveCanvasManager: Map button clicked", Logger.LogCategory.General);
     }
 
-    // === M…THODES DE MISE ¿ JOUR ===
+    // === M√âTHODES DE MISE √Ä JOUR ===
 
     private void RefreshDisplay()
     {
@@ -217,14 +217,14 @@ public class AboveCanvasManager : MonoBehaviour
 
         activityBar.SetActive(true);
 
-        // RÈcupÈrer les infos de voyage
+        // R√©cup√©rer les infos de voyage
         string currentLocationId = dataManager.PlayerData.CurrentLocationId;
         string destinationId = dataManager.PlayerData.TravelDestinationId;
 
         var currentLocation = locationRegistry.GetLocationById(currentLocationId);
         var destinationLocation = locationRegistry.GetLocationById(destinationId);
 
-        // Configurer les icÙnes
+        // Configurer les ic√¥nes
         if (leftIcon != null && currentLocation?.LocationIcon != null)
         {
             leftIcon.sprite = currentLocation.LocationIcon;
@@ -237,7 +237,7 @@ public class AboveCanvasManager : MonoBehaviour
             rightIcon.gameObject.SetActive(true);
         }
 
-        // Afficher la flËche
+        // Afficher la fl√®che
         if (arrowIcon != null)
         {
             arrowIcon.SetActive(true);
@@ -264,31 +264,43 @@ public class AboveCanvasManager : MonoBehaviour
 
         activityBar.SetActive(true);
 
-        // Configurer l'icÙne de l'activitÈ
+        // Configurer l'ic√¥ne de gauche avec l'activit√© g√©n√©rale
         if (leftIcon != null)
         {
-            leftIcon.sprite = activityInfo.variant.GetIcon();
+            // R√©cup√©rer l'ActivityDefinition via le registry
+            var locationActivity = activityManager.ActivityRegistry?.GetActivity(activityInfo.activity.ActivityId);
+            if (locationActivity?.ActivityReference != null && locationActivity.ActivityReference.GetIcon() != null)
+            {
+                leftIcon.sprite = locationActivity.ActivityReference.GetIcon();
+            }
+            else
+            {
+                // Fallback: ic√¥ne du variant si pas d'ic√¥ne d'activit√©
+                leftIcon.sprite = activityInfo.variant.GetIcon();
+            }
             leftIcon.gameObject.SetActive(true);
         }
 
-        // Masquer l'icÙne de droite et la flËche (pas besoin pour une activitÈ)
+        // NOUVEAU: Configurer l'ic√¥ne de droite avec le variant sp√©cifique
         if (rightIcon != null)
         {
-            rightIcon.gameObject.SetActive(false);
+            rightIcon.sprite = activityInfo.variant.GetIcon();
+            rightIcon.gameObject.SetActive(true); // ‚úÖ Maintenant activ√©e !
         }
 
+        // Masquer la fl√®che (pas de voyage entre lieux)
         if (arrowIcon != null)
         {
             arrowIcon.SetActive(false);
         }
 
-        // Texte
+        // Texte de l'activit√©
         if (activityText != null)
         {
             activityText.text = activityInfo.variant.GetDisplayName();
         }
 
-        // Progression
+        // Progression de l'activit√©
         UpdateActivityProgress(activityInfo.activity, activityInfo.variant);
     }
 
@@ -330,7 +342,7 @@ public class AboveCanvasManager : MonoBehaviour
 
     }
 
-    // === M…THODES PUBLIQUES ===
+    // === M√âTHODES PUBLIQUES ===
 
     public void ShowNavigationBar()
     {
@@ -357,7 +369,7 @@ public class AboveCanvasManager : MonoBehaviour
 
     void OnDestroy()
     {
-        // Se dÈsabonner des ÈvÈnements
+        // Se d√©sabonner des √©v√©nements
         if (gameManager != null)
         {
             gameManager.OnGameStateChanged -= OnGameStateChanged;

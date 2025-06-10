@@ -18,6 +18,7 @@ public class ActivityManager : MonoBehaviour
     private InventoryManager inventoryManager;
     private MapManager mapManager;
 
+
     // Activity registries (to be assigned in inspector)
     [Header("Activity Data")]
     [SerializeField] private ActivityRegistry activityRegistry;
@@ -40,6 +41,7 @@ public class ActivityManager : MonoBehaviour
     public event Action<ActivityData, ActivityVariant> OnActivityStopped;
     public event Action<ActivityData, ActivityVariant, int> OnActivityTick; // activity, variant, ticks completed
     public event Action<ActivityData, ActivityVariant> OnActivityProgress; // for UI updates
+    public ActivityRegistry ActivityRegistry => activityRegistry;
 
     void Awake()
     {
