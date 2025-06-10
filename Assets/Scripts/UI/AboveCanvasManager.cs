@@ -87,7 +87,32 @@ public class AboveCanvasManager : MonoBehaviour
         // Initialiser l'affichage
         RefreshDisplay();
 
+        // NOUVEAU: Vérification retardée pour s'assurer que l'affichage est correct
+        StartCoroutine(DelayedDisplayRefresh());
+
         Logger.LogInfo("AboveCanvasManager: Initialized successfully", Logger.LogCategory.General);
+    }
+
+    /// <summary>
+    /// Vérification retardée pour corriger les problèmes d'ordre d'initialisation
+    /// </summary>
+    private System.Collections.IEnumerator DelayedDisplayRefresh()
+    {
+        // Attendre quelques frames pour que tous les managers soient complètement initialisés
+        yield return new WaitForSeconds(1f);
+
+        // Forcer une mise à jour de l'affichage
+        RefreshDisplay();
+
+        // Si une activité est en cours mais que la barre n'est pas affichée, la corriger
+        if (activityManager != null && activityManager.HasActiveActivity())
+        {
+            if (activityBar != null && !activityBar.activeSelf)
+            {
+                Logger.LogInfo("AboveCanvasManager: Correcting activity bar display after startup", Logger.LogCategory.General);
+                RefreshDisplay();
+            }
+        }
     }
 
     private void SetupProgressBar()
@@ -133,6 +158,7 @@ public class AboveCanvasManager : MonoBehaviour
         if (activityManager != null)
         {
             activityManager.OnActivityProgress += OnActivityProgress;
+            activityManager.OnActivityStopped += OnActivityStopped;
         }
     }
 
@@ -157,6 +183,12 @@ public class AboveCanvasManager : MonoBehaviour
     private void OnActivityProgress(ActivityData activity, ActivityVariant variant)
     {
         UpdateActivityProgress(activity, variant);
+    }
+
+    private void OnActivityStopped(ActivityData activity, ActivityVariant variant)
+    {
+        Logger.LogInfo("AboveCanvasManager: Activity stopped, refreshing display", Logger.LogCategory.General);
+        RefreshDisplay();
     }
 
     private void OnMapButtonClicked()
@@ -192,22 +224,39 @@ public class AboveCanvasManager : MonoBehaviour
 
         GameState currentState = gameManager.CurrentState;
 
-        switch (currentState)
+        // NOUVEAU: Vérification directe de l'activité en cours pour pallier aux problèmes d'état
+        bool hasActiveActivity = activityManager?.HasActiveActivity() == true;
+        bool isCurrentlyTraveling = dataManager?.PlayerData?.IsCurrentlyTraveling() == true;
+
+        if (isCurrentlyTraveling)
         {
-            case GameState.Traveling:
-                SetupTravelDisplay();
-                break;
+            SetupTravelDisplay();
+        }
+        else if (hasActiveActivity)
+        {
+            // Afficher la barre d'activité même si GameState n'est pas encore à jour
+            SetupActivityDisplay();
+        }
+        else
+        {
+            // Utiliser la logique d'état pour les autres cas
+            switch (currentState)
+            {
+                case GameState.Traveling:
+                    SetupTravelDisplay();
+                    break;
 
-            case GameState.DoingActivity:
-                SetupActivityDisplay();
-                break;
+                case GameState.DoingActivity:
+                    SetupActivityDisplay();
+                    break;
 
-            case GameState.Idle:
-            case GameState.Loading:
-            case GameState.Paused:
-            default:
-                HideActivityBar();
-                break;
+                case GameState.Idle:
+                case GameState.Loading:
+                case GameState.Paused:
+                default:
+                    HideActivityBar();
+                    break;
+            }
         }
     }
 
@@ -294,13 +343,13 @@ public class AboveCanvasManager : MonoBehaviour
             arrowIcon.SetActive(false);
         }
 
-        // Texte de l'activité
+        // Texte
         if (activityText != null)
         {
             activityText.text = activityInfo.variant.GetDisplayName();
         }
 
-        // Progression de l'activité
+        // Progression
         UpdateActivityProgress(activityInfo.activity, activityInfo.variant);
     }
 
@@ -314,7 +363,8 @@ public class AboveCanvasManager : MonoBehaviour
 
     private void UpdateTravelProgress(int currentSteps, int requiredSteps)
     {
-        if (gameManager.CurrentState == GameState.Traveling)
+        // CORRIGÉ: Ne plus dépendre du GameState, vérifier directement le voyage
+        if (dataManager?.PlayerData?.IsCurrentlyTraveling() == true)
         {
             UpdateProgressBar(currentSteps, requiredSteps);
         }
@@ -322,13 +372,17 @@ public class AboveCanvasManager : MonoBehaviour
 
     private void UpdateActivityProgress(ActivityData activity, ActivityVariant variant)
     {
-        if (gameManager.CurrentState == GameState.DoingActivity && activity != null && variant != null)
+        // CORRIGÉ: Ne plus dépendre du GameState, vérifier directement l'activité
+        if (activity != null && variant != null && activityManager.HasActiveActivity())
         {
             float progress = activity.GetProgressToNextTick(variant);
             int currentSteps = activity.AccumulatedSteps;
             int requiredSteps = variant.ActionCost;
 
             UpdateProgressBar(currentSteps, requiredSteps);
+
+            // Optionnel: Log pour debug
+
         }
     }
 
@@ -339,6 +393,7 @@ public class AboveCanvasManager : MonoBehaviour
         float progressValue = Mathf.Clamp01((float)current / required);
         fillBar.fillAmount = progressValue;
 
+        // Debug optionnel
 
     }
 
@@ -384,6 +439,7 @@ public class AboveCanvasManager : MonoBehaviour
         if (activityManager != null)
         {
             activityManager.OnActivityProgress -= OnActivityProgress;
+            activityManager.OnActivityStopped -= OnActivityStopped;
         }
     }
 }
