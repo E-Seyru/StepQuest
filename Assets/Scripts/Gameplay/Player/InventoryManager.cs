@@ -1,18 +1,51 @@
 ﻿// ===============================================
-// 1. NOUVEAU InventoryManager (Facade Pattern)
+// InventoryManager.cs - Version Complète Corrigée
+// Thread-Safe, Robuste, Zero-Impact API
 // ===============================================
-// Purpose: Main manager for all inventory operations - REFACTORED
+// Purpose: Main manager for all inventory operations - REFACTORED & SECURED
 // Filepath: Assets/Scripts/Gameplay/Player/InventoryManager.cs
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using UnityEngine;
 
 public class InventoryManager : MonoBehaviour
 {
-    public static InventoryManager Instance { get; private set; }
+    private static InventoryManager instance;
+    private static readonly object instanceLock = new object();
+
+    public static InventoryManager Instance
+    {
+        get
+        {
+            // Double-checked locking pour thread safety
+            if (instance == null)
+            {
+                lock (instanceLock)
+                {
+                    if (instance == null)
+                    {
+                        var existing = FindObjectOfType<InventoryManager>();
+                        if (existing != null)
+                        {
+                            instance = existing;
+                        }
+                        else
+                        {
+                            Logger.LogWarning("InventoryManager: Instance accessed before Awake! Creating emergency instance.", Logger.LogCategory.InventoryLog);
+                            var go = new GameObject("InventoryManager");
+                            instance = go.AddComponent<InventoryManager>();
+                            DontDestroyOnLoad(go);
+                        }
+                    }
+                }
+            }
+            return instance;
+        }
+    }
 
     [Header("Settings")]
     [SerializeField] private int defaultPlayerSlots = 20;
@@ -40,16 +73,20 @@ public class InventoryManager : MonoBehaviour
 
     void Awake()
     {
-        if (Instance == null)
+        lock (instanceLock)
         {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            InitializeServices();
-        }
-        else
-        {
-            Logger.LogWarning("InventoryManager: Multiple instances detected! Destroying duplicate.", Logger.LogCategory.InventoryLog);
-            Destroy(gameObject);
+            if (instance == null)
+            {
+                instance = this;
+                DontDestroyOnLoad(gameObject);
+                InitializeServices();
+            }
+            else if (instance != this)
+            {
+                Logger.LogWarning("InventoryManager: Multiple instances detected! Destroying duplicate.", Logger.LogCategory.InventoryLog);
+                Destroy(gameObject);
+                return;
+            }
         }
     }
 
@@ -73,6 +110,9 @@ public class InventoryManager : MonoBehaviour
         // CRITIQUE: Load data PUIS ensure default containers
         persistenceService.LoadInventoryData();
         persistenceService.EnsureDefaultContainers();
+
+        // Validate integrity
+        ValidateAndRepairInventoryState();
 
         Logger.LogInfo($"InventoryManager: Initialized with {itemRegistry.AllItems.Count} item definitions", Logger.LogCategory.InventoryLog);
     }
@@ -124,7 +164,13 @@ public class InventoryManager : MonoBehaviour
 
     public bool TransferItem(string fromContainerId, string toContainerId, string itemId, int quantity)
     {
-        return containerService.TransferItem(fromContainerId, toContainerId, itemId, quantity, itemRegistry);
+        bool success = containerService.TransferItem(fromContainerId, toContainerId, itemId, quantity, itemRegistry);
+        if (success)
+        {
+            persistenceService.MarkDirty(fromContainerId);
+            persistenceService.MarkDirty(toContainerId);
+        }
+        return success;
     }
 
     public bool CanAddItem(string containerId, string itemId, int quantity)
@@ -203,6 +249,51 @@ public class InventoryManager : MonoBehaviour
         return info.ToString();
     }
 
+    // === DIAGNOSTIC AND REPAIR ===
+    public bool ValidateAndRepairInventoryState()
+    {
+        bool hasIssues = false;
+
+        try
+        {
+            var containers = containerService.GetAllContainers();
+            foreach (var container in containers.Values)
+            {
+                // Vérifier l'intégrité de chaque container
+                if (container.Slots == null)
+                {
+                    Logger.LogError($"InventoryManager: Container '{container.ContainerID}' has null slots!", Logger.LogCategory.InventoryLog);
+                    hasIssues = true;
+                    container.Slots = new List<InventorySlot>();
+                    for (int i = 0; i < container.MaxSlots; i++)
+                    {
+                        container.Slots.Add(new InventorySlot());
+                    }
+                }
+
+                // Vérifier le nombre de slots
+                if (container.Slots.Count != container.MaxSlots)
+                {
+                    Logger.LogWarning($"InventoryManager: Container '{container.ContainerID}' has incorrect slot count. Fixing...", Logger.LogCategory.InventoryLog);
+                    container.Resize(container.MaxSlots);
+                    hasIssues = true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"InventoryManager: Error during validation: {ex.Message}", Logger.LogCategory.InventoryLog);
+            hasIssues = true;
+        }
+
+        if (hasIssues)
+        {
+            ForceSave(); // Sauvegarder les réparations
+        }
+
+        return !hasIssues;
+    }
+
     // === LIFECYCLE ===
     void OnEnable() => persistenceService?.StartAutoSave();
     void OnDisable() => persistenceService?.StopAutoSave();
@@ -217,11 +308,12 @@ public class InventoryManager : MonoBehaviour
 }
 
 // ===============================================
-// 2. SERVICE: Container Management
+// SERVICE: Container Management - THREAD SAFE
 // ===============================================
 public class InventoryContainerService
 {
     private Dictionary<string, InventoryContainer> containers;
+    private readonly object containersLock = new object();
 
     public event Action<string> OnContainerChanged;
     public event Action<string, string, int> OnItemAdded;
@@ -239,174 +331,255 @@ public class InventoryContainerService
         Logger.LogInfo("InventoryContainerService: Initialized (containers will be loaded/created later)", Logger.LogCategory.InventoryLog);
     }
 
+    // CORRECTION: Retourner ReadOnly pour éviter la fuite d'état
+    public IReadOnlyDictionary<string, InventoryContainer> GetAllContainers()
+    {
+        lock (containersLock)
+        {
+            return new ReadOnlyDictionary<string, InventoryContainer>(
+                new Dictionary<string, InventoryContainer>(containers)
+            );
+        }
+    }
+
+    // Méthode interne pour accès direct (thread-safe)
+    internal Dictionary<string, InventoryContainer> GetContainersInternal()
+    {
+        lock (containersLock)
+        {
+            return containers;
+        }
+    }
+
+    // CORRECTION: Snapshot thread-safe pour sauvegarde
+    public Dictionary<string, InventoryContainer> CreateSnapshotForSave()
+    {
+        lock (containersLock)
+        {
+            var snapshot = new Dictionary<string, InventoryContainer>();
+            foreach (var kvp in containers)
+            {
+                // Copie via sérialisation/désérialisation pour éviter les références partagées
+                var containerData = InventoryContainerData.FromInventoryContainer(kvp.Value);
+                var containerCopy = containerData.ToInventoryContainer();
+                snapshot[kvp.Key] = containerCopy;
+            }
+            return snapshot;
+        }
+    }
+
     public InventoryContainer CreateContainer(InventoryContainerType type, string id, int maxSlots)
     {
-        if (containers.ContainsKey(id))
+        lock (containersLock)
         {
-            Logger.LogWarning($"InventoryContainerService: Container '{id}' already exists!", Logger.LogCategory.InventoryLog);
-            return containers[id];
+            if (containers.ContainsKey(id))
+            {
+                Logger.LogWarning($"InventoryContainerService: Container '{id}' already exists!", Logger.LogCategory.InventoryLog);
+                return containers[id];
+            }
+
+            var container = new InventoryContainer(type, id, maxSlots);
+            containers[id] = container;
+
+            Logger.LogInfo($"InventoryContainerService: Created container '{id}' ({type}) with {maxSlots} slots", Logger.LogCategory.InventoryLog);
+            return container;
         }
-
-        var container = new InventoryContainer(type, id, maxSlots);
-        containers[id] = container;
-
-        Logger.LogInfo($"InventoryContainerService: Created container '{id}' ({type}) with {maxSlots} slots", Logger.LogCategory.InventoryLog);
-        return container;
     }
 
     public InventoryContainer GetContainer(string containerId)
     {
-        containers.TryGetValue(containerId, out InventoryContainer container);
-        return container;
+        lock (containersLock)
+        {
+            containers.TryGetValue(containerId, out InventoryContainer container);
+            return container;
+        }
     }
 
     public bool AddItem(string containerId, string itemId, int quantity, ItemRegistry registry)
     {
-        var container = GetContainer(containerId);
-        if (container == null) return false;
-
-        var itemDef = registry.GetItem(itemId);
-        if (itemDef == null) return false;
-
-        int remainingToAdd = quantity;
-
-        // Try to add to existing stacks first
-        if (itemDef.IsStackable)
+        lock (containersLock)
         {
-            foreach (var slot in container.Slots)
+            var container = containers.TryGetValue(containerId, out var cont) ? cont : null;
+            if (container == null) return false;
+
+            var itemDef = registry.GetItem(itemId);
+            if (itemDef == null) return false;
+
+            int remainingToAdd = quantity;
+
+            // Try to add to existing stacks first
+            if (itemDef.IsStackable)
             {
-                if (slot.HasItem(itemId))
+                foreach (var slot in container.Slots)
                 {
-                    int canAddToStack = itemDef.MaxStackSize - slot.Quantity;
-                    int toAdd = Mathf.Min(remainingToAdd, canAddToStack);
-                    if (toAdd > 0)
+                    if (slot.HasItem(itemId))
                     {
-                        slot.AddQuantity(toAdd);
-                        remainingToAdd -= toAdd;
-                        if (remainingToAdd <= 0) break;
+                        int canAddToStack = itemDef.MaxStackSize - slot.Quantity;
+                        int toAdd = Mathf.Min(remainingToAdd, canAddToStack);
+                        if (toAdd > 0)
+                        {
+                            slot.AddQuantity(toAdd);
+                            remainingToAdd -= toAdd;
+                            if (remainingToAdd <= 0) break;
+                        }
                     }
                 }
             }
+
+            // Add to empty slots
+            while (remainingToAdd > 0)
+            {
+                int emptySlotIndex = container.FindFirstEmptySlot();
+                if (emptySlotIndex == -1) break;
+
+                int toAdd = itemDef.IsStackable ? Mathf.Min(remainingToAdd, itemDef.MaxStackSize) : 1;
+                container.Slots[emptySlotIndex].SetItem(itemId, toAdd);
+                remainingToAdd -= toAdd;
+            }
+
+            int actuallyAdded = quantity - remainingToAdd;
+            if (actuallyAdded > 0)
+            {
+                OnItemAdded?.Invoke(containerId, itemId, actuallyAdded);
+                OnContainerChanged?.Invoke(containerId);
+            }
+
+            return remainingToAdd == 0;
         }
-
-        // Add to empty slots
-        while (remainingToAdd > 0)
-        {
-            int emptySlotIndex = container.FindFirstEmptySlot();
-            if (emptySlotIndex == -1) break;
-
-            int toAdd = itemDef.IsStackable ? Mathf.Min(remainingToAdd, itemDef.MaxStackSize) : 1;
-            container.Slots[emptySlotIndex].SetItem(itemId, toAdd);
-            remainingToAdd -= toAdd;
-        }
-
-        int actuallyAdded = quantity - remainingToAdd;
-        if (actuallyAdded > 0)
-        {
-            OnItemAdded?.Invoke(containerId, itemId, actuallyAdded);
-            OnContainerChanged?.Invoke(containerId);
-        }
-
-        return remainingToAdd == 0;
     }
 
     public bool RemoveItem(string containerId, string itemId, int quantity, ItemRegistry registry)
     {
-        var container = GetContainer(containerId);
-        if (container == null || !container.HasItem(itemId, quantity)) return false;
-
-        int remainingToRemove = quantity;
-        for (int i = 0; i < container.Slots.Count && remainingToRemove > 0; i++)
+        lock (containersLock)
         {
-            var slot = container.Slots[i];
-            if (slot.HasItem(itemId))
-            {
-                int toRemove = Mathf.Min(remainingToRemove, slot.Quantity);
-                slot.RemoveQuantity(toRemove);
-                remainingToRemove -= toRemove;
-            }
-        }
+            var container = containers.TryGetValue(containerId, out var cont) ? cont : null;
+            if (container == null || !container.HasItem(itemId, quantity)) return false;
 
-        OnItemRemoved?.Invoke(containerId, itemId, quantity);
-        OnContainerChanged?.Invoke(containerId);
-        return true;
+            int remainingToRemove = quantity;
+            for (int i = 0; i < container.Slots.Count && remainingToRemove > 0; i++)
+            {
+                var slot = container.Slots[i];
+                if (slot.HasItem(itemId))
+                {
+                    int toRemove = Mathf.Min(remainingToRemove, slot.Quantity);
+                    slot.RemoveQuantity(toRemove);
+                    remainingToRemove -= toRemove;
+                }
+            }
+
+            OnItemRemoved?.Invoke(containerId, itemId, quantity);
+            OnContainerChanged?.Invoke(containerId);
+            return true;
+        }
     }
 
+    // CORRECTION: Transaction atomique avec rollback vérifié
     public bool TransferItem(string fromId, string toId, string itemId, int quantity, ItemRegistry registry)
     {
-        if (CanAddItem(toId, itemId, quantity, registry) &&
-            GetContainer(fromId)?.HasItem(itemId, quantity) == true)
+        // Vérifications préalables (sans lock pour éviter les deadlocks)
+        if (!CanAddItem(toId, itemId, quantity, registry))
         {
-            if (RemoveItem(fromId, itemId, quantity, registry))
-            {
-                if (AddItem(toId, itemId, quantity, registry))
-                {
-                    return true;
-                }
-                else
-                {
-                    // Rollback
-                    AddItem(fromId, itemId, quantity, registry);
-                }
-            }
+            Logger.LogWarning($"InventoryContainerService: Cannot transfer - destination '{toId}' cannot accept {quantity} of '{itemId}'", Logger.LogCategory.InventoryLog);
+            return false;
         }
-        return false;
+
+        var fromContainer = GetContainer(fromId);
+        if (fromContainer?.HasItem(itemId, quantity) != true)
+        {
+            Logger.LogWarning($"InventoryContainerService: Cannot transfer - not enough '{itemId}' in '{fromId}'", Logger.LogCategory.InventoryLog);
+            return false;
+        }
+
+        // Transaction atomique avec rollback vérifié
+        lock (containersLock)
+        {
+            // Étape 1: Retirer les items
+            if (!RemoveItem(fromId, itemId, quantity, registry))
+            {
+                Logger.LogError($"InventoryContainerService: Transfer failed - could not remove items from '{fromId}'", Logger.LogCategory.InventoryLog);
+                return false;
+            }
+
+            // Étape 2: Ajouter les items
+            if (!AddItem(toId, itemId, quantity, registry))
+            {
+                // CORRECTION: Rollback vérifié
+                Logger.LogWarning($"InventoryContainerService: Transfer failed - rolling back removal from '{fromId}'", Logger.LogCategory.InventoryLog);
+
+                bool rollbackSuccess = AddItem(fromId, itemId, quantity, registry);
+                if (!rollbackSuccess)
+                {
+                    // CRITIQUE: Perte d'items détectée !
+                    Logger.LogError($"InventoryContainerService: CRITICAL - Rollback failed! {quantity} of '{itemId}' may be lost!", Logger.LogCategory.InventoryLog);
+
+                    // TODO: Ajouter un système de récupération d'urgence
+                    // Par exemple, log dans un fichier spécial pour récupération manuelle
+                }
+
+                return false;
+            }
+
+            // Succès complet
+            var itemDef = registry.GetItem(itemId);
+            string itemName = itemDef?.GetDisplayName() ?? itemId;
+            Logger.LogInfo($"InventoryContainerService: Successfully transferred {quantity} of '{itemName}' from '{fromId}' to '{toId}'", Logger.LogCategory.InventoryLog);
+            return true;
+        }
     }
 
     public bool CanAddItem(string containerId, string itemId, int quantity, ItemRegistry registry)
     {
-        var container = GetContainer(containerId);
-        if (container == null) return false;
-
-        var itemDef = registry.GetItem(itemId);
-        if (itemDef == null) return false;
-
-        int availableSlots = container.GetAvailableSlots();
-        if (!itemDef.IsStackable)
+        lock (containersLock)
         {
-            return quantity <= availableSlots;
-        }
+            var container = containers.TryGetValue(containerId, out var cont) ? cont : null;
+            if (container == null) return false;
 
-        // Calculate space in existing stacks
-        int spaceInExistingStacks = 0;
-        foreach (var slot in container.Slots)
-        {
-            if (slot.HasItem(itemId))
+            var itemDef = registry.GetItem(itemId);
+            if (itemDef == null) return false;
+
+            int availableSlots = container.GetAvailableSlots();
+            if (!itemDef.IsStackable)
             {
-                spaceInExistingStacks += (itemDef.MaxStackSize - slot.Quantity);
+                return quantity <= availableSlots;
             }
-        }
 
-        int spaceNeeded = Mathf.Max(0, quantity - spaceInExistingStacks);
-        int slotsNeeded = Mathf.CeilToInt((float)spaceNeeded / itemDef.MaxStackSize);
-        return slotsNeeded <= availableSlots;
+            // Calculate space in existing stacks
+            int spaceInExistingStacks = 0;
+            foreach (var slot in container.Slots)
+            {
+                if (slot.HasItem(itemId))
+                {
+                    spaceInExistingStacks += (itemDef.MaxStackSize - slot.Quantity);
+                }
+            }
+
+            int spaceNeeded = Mathf.Max(0, quantity - spaceInExistingStacks);
+            int slotsNeeded = Mathf.CeilToInt((float)spaceNeeded / itemDef.MaxStackSize);
+            return slotsNeeded <= availableSlots;
+        }
     }
 
     public void UpdateContainerCapacity(string containerId, int newCapacity)
     {
-        var container = GetContainer(containerId);
-        if (container != null)
+        lock (containersLock)
         {
-            container.Resize(newCapacity);
-            OnContainerChanged?.Invoke(containerId);
+            if (containers.TryGetValue(containerId, out var container))
+            {
+                container.Resize(newCapacity);
+                OnContainerChanged?.Invoke(containerId);
+            }
         }
-    }
-
-    public Dictionary<string, InventoryContainer> GetAllContainers()
-    {
-        // CRITIQUE: Retourner la référence directe, pas une copie !
-        // Sinon les modifications ne sont pas persistées
-        return containers;
     }
 }
 
 // ===============================================
-// 3. SERVICE: Persistence
+// SERVICE: Persistence - THREAD SAFE
 // ===============================================
 public class InventoryPersistenceService
 {
     private InventoryContainerService containerService;
     private HashSet<string> dirtyContainers;
+    private readonly object dirtyLock = new object();
     private Coroutine autoSaveCoroutine;
     private float autoSaveInterval;
     private bool enableAutoSave;
@@ -421,7 +594,18 @@ public class InventoryPersistenceService
 
     public void MarkDirty(string containerId)
     {
-        dirtyContainers.Add(containerId);
+        lock (dirtyLock)
+        {
+            dirtyContainers.Add(containerId);
+        }
+    }
+
+    public bool HasUnsavedChanges()
+    {
+        lock (dirtyLock)
+        {
+            return dirtyContainers.Count > 0;
+        }
     }
 
     public void StartAutoSave()
@@ -448,7 +632,7 @@ public class InventoryPersistenceService
         {
             yield return wait;
             // CRITIQUE: Sauvegarder seulement si on a des changements non sauvegardés
-            if (dirtyContainers.Count > 0)
+            if (HasUnsavedChanges())
             {
                 Logger.LogInfo("InventoryPersistenceService: Auto-save triggered", Logger.LogCategory.InventoryLog);
                 _ = SaveInventoryDataAsync();
@@ -456,43 +640,64 @@ public class InventoryPersistenceService
         }
     }
 
+    // CORRECTION: Sauvegarde avec snapshot thread-safe
     public async Task SaveInventoryDataAsync()
     {
-        if (dirtyContainers.Count == 0) return;
-
-        var snapshot = new List<InventoryContainerData>();
-        var containers = containerService.GetAllContainers();
-
-        foreach (var containerId in dirtyContainers)
+        bool hasDirtyContainers;
+        lock (dirtyLock)
         {
-            if (containers.TryGetValue(containerId, out var container))
-            {
-                snapshot.Add(InventoryContainerData.FromInventoryContainer(container));
-            }
+            hasDirtyContainers = dirtyContainers.Count > 0;
+        }
+
+        if (!hasDirtyContainers) return;
+
+        // CORRECTION: Créer un snapshot thread-safe
+        Dictionary<string, InventoryContainer> snapshot;
+        HashSet<string> dirtySnapshot;
+
+        // Créer le snapshot de manière atomique
+        lock (dirtyLock)
+        {
+            snapshot = containerService.CreateSnapshotForSave();
+            dirtySnapshot = new HashSet<string>(dirtyContainers);
         }
 
         try
         {
+            // I/O sur worker thread avec snapshot
             await Task.Run(() =>
             {
-                foreach (var data in snapshot)
+                foreach (var containerId in dirtySnapshot)
                 {
-                    DataManager.Instance.LocalDatabase.SaveInventoryContainer(data);
+                    if (snapshot.TryGetValue(containerId, out var container))
+                    {
+                        var data = InventoryContainerData.FromInventoryContainer(container);
+                        DataManager.Instance.LocalDatabase.SaveInventoryContainer(data);
+                    }
                 }
             });
 
-            dirtyContainers.Clear();
+            // Clear dirty flags seulement après succès
+            lock (dirtyLock)
+            {
+                foreach (var containerId in dirtySnapshot)
+                {
+                    dirtyContainers.Remove(containerId);
+                }
+            }
+
+            Logger.LogInfo($"InventoryPersistenceService: Successfully saved {dirtySnapshot.Count} containers (async)", Logger.LogCategory.InventoryLog);
         }
         catch (Exception ex)
         {
-            Logger.LogError($"InventoryPersistenceService: Save error: {ex.Message}", Logger.LogCategory.InventoryLog);
+            Logger.LogError($"InventoryPersistenceService: Async save error: {ex.Message}", Logger.LogCategory.InventoryLog);
+            // Les dirty flags restent en place pour retry plus tard
         }
     }
 
+    // CORRECTION: Sauvegarde synchrone thread-safe
     public void SaveInventoryData()
     {
-        // CRITIQUE: Sauvegarder TOUS les containers, pas seulement les dirty
-        // pour maintenir la compatibilité avec l'ancien comportement
         Logger.LogInfo("InventoryPersistenceService: Saving inventory data to database...", Logger.LogCategory.InventoryLog);
 
         if (DataManager.Instance?.LocalDatabase == null)
@@ -503,17 +708,23 @@ public class InventoryPersistenceService
 
         try
         {
-            var containers = containerService.GetAllContainers();
+            // Créer un snapshot thread-safe
+            var snapshot = containerService.CreateSnapshotForSave();
             int savedCount = 0;
 
-            foreach (var container in containers.Values)
+            foreach (var container in snapshot.Values)
             {
                 var data = InventoryContainerData.FromInventoryContainer(container);
                 DataManager.Instance.LocalDatabase.SaveInventoryContainer(data);
                 savedCount++;
             }
 
-            dirtyContainers.Clear();
+            // Clear dirty flags après succès
+            lock (dirtyLock)
+            {
+                dirtyContainers.Clear();
+            }
+
             Logger.LogInfo($"InventoryPersistenceService: Successfully saved {savedCount} containers", Logger.LogCategory.InventoryLog);
         }
         catch (Exception ex)
@@ -535,7 +746,7 @@ public class InventoryPersistenceService
         try
         {
             var containerDataList = DataManager.Instance.LocalDatabase.LoadAllInventoryContainers();
-            var containers = containerService.GetAllContainers();
+            var containers = containerService.GetContainersInternal();
 
             foreach (var containerData in containerDataList)
             {
@@ -555,7 +766,7 @@ public class InventoryPersistenceService
 
     public void EnsureDefaultContainers()
     {
-        var containers = containerService.GetAllContainers();
+        var containers = containerService.GetContainersInternal();
 
         // CRITIQUE: Vérifier si les containers par défaut existent
         if (!containers.ContainsKey("player"))
@@ -575,21 +786,16 @@ public class InventoryPersistenceService
         }
     }
 
+    // CRITIQUE: Force save = sauvegarder immédiatement TOUS les containers
     public void ForceSave()
     {
-        // CRITIQUE: Force save = sauvegarder immédiatement TOUS les containers
         Logger.LogInfo("InventoryPersistenceService: Force save requested", Logger.LogCategory.InventoryLog);
         SaveInventoryData(); // Sauvegarde tous les containers
-    }
-
-    public bool HasUnsavedChanges()
-    {
-        return dirtyContainers.Count > 0;
     }
 }
 
 // ===============================================
-// 4. SERVICE: Capacity Calculation
+// SERVICE: Capacity Calculation
 // ===============================================
 public class InventoryCapacityService
 {
@@ -609,7 +815,7 @@ public class InventoryCapacityService
 }
 
 // ===============================================
-// 5. SERVICE: Validation
+// SERVICE: Validation
 // ===============================================
 public class InventoryValidationService
 {
