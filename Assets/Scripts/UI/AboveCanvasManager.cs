@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+
 public class AboveCanvasManager : MonoBehaviour
 {
     public static AboveCanvasManager Instance { get; private set; }
@@ -35,6 +36,12 @@ public class AboveCanvasManager : MonoBehaviour
     [SerializeField] private float pulseDuration = 0.2f;
     [SerializeField] private Color pulseColor = new Color(0.8f, 0.8f, 0.8f, 1f); // Plus sombre
 
+    [Header("Shake Settings")]
+    [SerializeField] private float shakeIntensity = 10f;     // Intensité du shake en pixels
+    [SerializeField] private float shakeDuration = 0.4f;    // Durée du shake
+    [SerializeField] private int shakeVibrato = 8;          // Nombre de vibrations
+    [SerializeField] private float shakeRandomness = 90f;   // Randomness des directions
+
     // Références aux managers
     private GameManager gameManager;
     private DataManager dataManager;
@@ -48,6 +55,10 @@ public class AboveCanvasManager : MonoBehaviour
     private int currentPulseId = -1;        // ID de l'animation de pulse en cours
     private Color originalFillColor;        // Couleur originale de la barre
     private Vector3 originalFillScale;      // Échelle originale de la barre
+
+    // Variables privées pour le shake
+    private Vector3 originalRightIconPosition;              // Position originale de l'icône droite
+    private int currentShakeId = -1;                        // ID de l'animation de shake
 
     void Awake()
     {
@@ -157,6 +168,12 @@ public class AboveCanvasManager : MonoBehaviour
             backgroundBar.type = Image.Type.Simple;
             Logger.LogInfo("AboveCanvasManager: Configured backgroundBar as Simple", Logger.LogCategory.General);
         }
+
+        // NOUVEAU: Sauvegarder la position originale de l'icône droite pour le shake
+        if (rightIcon != null)
+        {
+            originalRightIconPosition = rightIcon.transform.localPosition;
+        }
     }
 
     private void SubscribeToEvents()
@@ -178,6 +195,7 @@ public class AboveCanvasManager : MonoBehaviour
         {
             activityManager.OnActivityProgress += OnActivityProgress;
             activityManager.OnActivityStopped += OnActivityStopped;
+            activityManager.OnActivityTick += OnActivityTick; // NOUVEAU : Écouter les ticks d'activité
         }
     }
 
@@ -208,6 +226,19 @@ public class AboveCanvasManager : MonoBehaviour
     {
         Logger.LogInfo("AboveCanvasManager: Activity stopped, refreshing display", Logger.LogCategory.General);
         RefreshDisplay();
+    }
+
+    // NOUVELLE méthode pour gérer les ticks d'activité
+    private void OnActivityTick(ActivityData activity, ActivityVariant variant, int ticksCompleted)
+    {
+        // Déclencher le shake quand l'activité progresse (tick complété)
+        if (ticksCompleted > 0)
+        {
+            ShakeRightIcon();
+
+            // Log pour debug (optionnel)
+            Logger.LogInfo($"AboveCanvasManager: Activity tick completed - shaking right icon", Logger.LogCategory.General);
+        }
     }
 
     private void OnMapButtonClicked()
@@ -274,9 +305,9 @@ public class AboveCanvasManager : MonoBehaviour
         if (leftIcon != null && mapManager.LocationRegistry != null)
         {
             var currentLocation = mapManager.LocationRegistry.GetLocationById(currentLocationId);
-            if (currentLocation?.LocationIcon != null)
+            if (currentLocation != null)
             {
-                leftIcon.sprite = currentLocation.LocationIcon;
+                leftIcon.sprite = currentLocation.GetIcon();
             }
             leftIcon.gameObject.SetActive(true);
         }
@@ -284,9 +315,9 @@ public class AboveCanvasManager : MonoBehaviour
         if (rightIcon != null && mapManager.LocationRegistry != null)
         {
             var destinationLocation = mapManager.LocationRegistry.GetLocationById(destinationId);
-            if (destinationLocation?.LocationIcon != null)
+            if (destinationLocation != null)
             {
-                rightIcon.sprite = destinationLocation.LocationIcon;
+                rightIcon.sprite = destinationLocation.GetIcon();
             }
             rightIcon.gameObject.SetActive(true);
         }
@@ -427,9 +458,8 @@ public class AboveCanvasManager : MonoBehaviour
             {
                 if (fillBar != null)
                 {
-                    // 1. PROGRESSION du fillAmount
-                    float currentFillAmount = Mathf.Lerp(startValue, newProgressValue, t);
-                    fillBar.fillAmount = currentFillAmount;
+                    // 1. Progression du fillAmount
+                    fillBar.fillAmount = Mathf.Lerp(startValue, newProgressValue, t);
 
                     // 2. PULSE d'échelle (seulement si progression)
                     if (isProgression)
@@ -462,7 +492,40 @@ public class AboveCanvasManager : MonoBehaviour
         lastProgressValue = newProgressValue;
     }
 
+    // === MÉTHODE DE SHAKE POUR L'ICÔNE DROITE ===
 
+    /// <summary>
+    /// Déclenche un effet de shake sur l'icône de droite
+    /// </summary>
+    private void ShakeRightIcon()
+    {
+        if (rightIcon == null) return;
+
+        // Annuler le shake précédent s'il y en a un
+        if (currentShakeId >= 0)
+        {
+            LeanTween.cancel(currentShakeId);
+        }
+
+        // Remettre en position originale
+        rightIcon.transform.localPosition = originalRightIconPosition;
+
+        // Alternative simple : shake avec moveLocal + loop
+        Vector3 shakeOffset = new Vector3(shakeIntensity, 0f, 0f);
+
+        currentShakeId = LeanTween.moveLocal(rightIcon.gameObject, originalRightIconPosition + shakeOffset, shakeDuration / 4f)
+            .setEase(LeanTweenType.easeShake)
+            .setLoopPingPong(2) // Va et vient 2 fois = 4 mouvements au total
+            .setOnComplete(() =>
+            {
+                // S'assurer que l'icône revient exactement à sa position
+                if (rightIcon != null)
+                {
+                    rightIcon.transform.localPosition = originalRightIconPosition;
+                }
+                currentShakeId = -1;
+            }).id;
+    }
 
     // === MÉTHODES PUBLIQUES ===
 
@@ -500,6 +563,10 @@ public class AboveCanvasManager : MonoBehaviour
         {
             LeanTween.cancel(currentPulseId);
         }
+        if (currentShakeId >= 0) // NOUVEAU : Annuler le shake
+        {
+            LeanTween.cancel(currentShakeId);
+        }
 
         // Arrêter les animations sur les GameObjects
         if (fillBar != null)
@@ -523,6 +590,7 @@ public class AboveCanvasManager : MonoBehaviour
         {
             activityManager.OnActivityProgress -= OnActivityProgress;
             activityManager.OnActivityStopped -= OnActivityStopped;
+            activityManager.OnActivityTick -= OnActivityTick; // NOUVEAU : Nettoyer l'événement tick
         }
     }
 }

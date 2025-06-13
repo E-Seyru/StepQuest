@@ -186,6 +186,31 @@ public class MapLocationDefinition : ScriptableObject
         return true;
     }
 
+    /// <summary>
+    /// Get the location icon with fallback logic
+    /// </summary>
+    public Sprite GetIcon()
+    {
+        // Retourne l'icône spécifique de la location (vérification Unity-safe)
+        if (LocationIcon != null) return LocationIcon;
+
+        // Fallback possible : icône par défaut selon le type de location
+        // if (Type == LocationType.Village && defaultVillageIcon != null) return defaultVillageIcon;
+        // if (Type == LocationType.Forest && defaultForestIcon != null) return defaultForestIcon;
+
+        // Fallback final : aucune icône
+        return null;
+    }
+
+    /// <summary>
+    /// Version alternative avec icône par défaut
+    /// </summary>
+    public Sprite GetIconWithFallback(Sprite defaultIcon = null)
+    {
+        if (LocationIcon != null) return LocationIcon;
+        return defaultIcon;
+    }
+
 #if UNITY_EDITOR
     void OnValidate()
     {
