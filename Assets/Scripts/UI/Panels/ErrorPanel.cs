@@ -163,8 +163,11 @@ public class ErrorPanel : MonoBehaviour
         // Calculer la position cible avec l'offset normal
         Vector3 targetScreenPosition = poiScreenPosition + new Vector3(poiOffset.x, poiOffset.y, 0f);
 
-        // Vérifier si le panel sortirait à droite de l'écran
-        if (targetScreenPosition.x + panelWidth > Screen.width)
+        // Calculer combien de pixels du panel seraient cachés à droite
+        float hiddenWidth = (targetScreenPosition.x + panelWidth) - Screen.width;
+
+        // Changer de côté seulement si 25% ou plus du panel serait caché
+        if (hiddenWidth > 0 && hiddenWidth > panelWidth * 0.25f)
         {
             // Décaler vers la gauche : utiliser un offset négatif
             currentOffset.x = -Mathf.Abs(poiOffset.x);
