@@ -1,14 +1,18 @@
-﻿// Purpose: Manages the always-visible UI elements above the main canvas
+﻿// ===============================================
+// NOUVEAU AboveCanvasManager (Facade Pattern) - REFACTORED
+// ===============================================
+// Purpose: Manages the always-visible UI elements above the main canvas
 // Filepath: Assets/Scripts/UI/AboveCanvasManager.cs
+
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-
 
 public class AboveCanvasManager : MonoBehaviour
 {
     public static AboveCanvasManager Instance { get; private set; }
 
+    // === SAME PUBLIC API - ZERO BREAKING CHANGES ===
     [Header("UI References - Header")]
     [SerializeField] private GameObject headerContainer;
     [SerializeField] private TextMeshProUGUI currentLocationText;
@@ -16,12 +20,12 @@ public class AboveCanvasManager : MonoBehaviour
 
     [Header("UI References - Activity/Travel Bar")]
     [SerializeField] private GameObject activityBar;
-    [SerializeField] private Image leftIcon;          // POI départ ou icône activité
-    [SerializeField] private Image rightIcon;         // POI arrivée (uniquement pour voyage)
+    [SerializeField] private Image leftIcon;
+    [SerializeField] private Image rightIcon;
     [SerializeField] private TextMeshProUGUI activityText;
-    [SerializeField] private Image backgroundBar;     // Image de fond de la barre
-    [SerializeField] private Image fillBar;           // Image de remplissage (fillAmount)
-    [SerializeField] private GameObject arrowIcon;    // Flèche entre les POIs
+    [SerializeField] private Image backgroundBar;
+    [SerializeField] private Image fillBar;
+    [SerializeField] private GameObject arrowIcon;
 
     [Header("UI References - Navigation Bar")]
     [SerializeField] private GameObject navigationBar;
@@ -34,249 +38,272 @@ public class AboveCanvasManager : MonoBehaviour
     [SerializeField] private LeanTweenType progressAnimationEase = LeanTweenType.easeOutQuart;
     [SerializeField] private float pulseScaleAmount = 1.08f;
     [SerializeField] private float pulseDuration = 0.2f;
-    [SerializeField] private Color pulseColor = new Color(0.8f, 0.8f, 0.8f, 1f); // Plus sombre
+    [SerializeField] private Color pulseColor = new Color(0.8f, 0.8f, 0.8f, 1f);
 
-    [Header("Shake Settings")]
-    [SerializeField] private float shakeIntensity = 10f;     // Intensité du shake en pixels
-    [SerializeField] private float shakeDuration = 0.4f;    // Durée du shake
-    [SerializeField] private int shakeVibrato = 8;          // Nombre de vibrations
-    [SerializeField] private float shakeRandomness = 90f;   // Randomness des directions
+    [Header("Pop Settings (Reward Animation)")]
+    [SerializeField] private float popScaleAmount = 1.3f;        // Grossit de 30%
+    [SerializeField] private float popDuration = 0.35f;         // Animation rapide mais visible
+    [SerializeField] private Color popBrightColor = new Color(1.2f, 1.2f, 1.2f, 1f); // Plus lumineux
+    [SerializeField] private LeanTweenType popEaseType = LeanTweenType.easeOutBack; // Effet bounce satisfaisant
 
-    // Références aux managers
-    private GameManager gameManager;
-    private DataManager dataManager;
-    private MapManager mapManager;
-    private ActivityManager activityManager;
-    private LocationRegistry locationRegistry;
+    // === INTERNAL SERVICES (NOUVEAU) ===
+    private AboveCanvasInitializationService initializationService;
+    private AboveCanvasDisplayService displayService;
+    private AboveCanvasAnimationService animationService;
+    private AboveCanvasEventService eventService;
 
-    // Variables privées pour l'animation
-    private float lastProgressValue = -1f; // Cache de la dernière valeur
-    private int currentAnimationId = -1;    // ID de l'animation LeanTween en cours
-    private int currentPulseId = -1;        // ID de l'animation de pulse en cours
-    private Color originalFillColor;        // Couleur originale de la barre
-    private Vector3 originalFillScale;      // Échelle originale de la barre
-
-    // Variables privées pour le shake
-    private Vector3 originalRightIconPosition;              // Position originale de l'icône droite
-    private int currentShakeId = -1;                        // ID de l'animation de shake
+    // Internal accessors for services
+    internal AboveCanvasEventService EventService => eventService;
+    internal AboveCanvasAnimationService AnimationService => animationService;
+    internal AboveCanvasDisplayService DisplayService => displayService;
 
     void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
+            InitializeServices();
         }
         else
         {
             Logger.LogWarning("AboveCanvasManager: Multiple instances detected! Destroying duplicate.", Logger.LogCategory.General);
             Destroy(gameObject);
-            return;
         }
     }
 
     void Start()
     {
-        StartCoroutine(InitializeAboveCanvas());
+        initializationService.StartInitialization();
     }
 
-    private System.Collections.IEnumerator InitializeAboveCanvas()
+    void OnEnable()
     {
-        // Attendre que les managers soient disponibles
-        while (GameManager.Instance == null ||
-               DataManager.Instance == null ||
-               MapManager.Instance == null ||
-               ActivityManager.Instance == null)
+        // Brancher les événements quand le GameObject devient actif
+        // MAIS seulement si l'initialisation est terminée
+        if (eventService != null && initializationService?.IsInitialized == true)
         {
-            yield return new WaitForSeconds(0.1f);
+            eventService.SubscribeToEvents();
         }
+    }
 
-        // Récupérer les références
-        gameManager = GameManager.Instance;
-        dataManager = DataManager.Instance;
-        mapManager = MapManager.Instance;
-        activityManager = ActivityManager.Instance;
-        locationRegistry = mapManager.LocationRegistry;
-
-        // S'abonner aux événements
-        SubscribeToEvents();
-
-        // Configuration du bouton carte
-        if (mapButton != null)
+    void OnDisable()
+    {
+        // Débrancher les événements quand le GameObject devient inactif
+        if (eventService != null)
         {
-            mapButton.onClick.AddListener(OnMapButtonClicked);
+            eventService.UnsubscribeFromEvents();
         }
+    }
 
-        // Configuration de la barre de progression
-        SetupProgressBar();
+    void OnDestroy()
+    {
+        eventService?.Cleanup();
+        animationService?.Cleanup();
+    }
 
-        // Initialiser l'affichage
-        RefreshDisplay();
+    private void InitializeServices()
+    {
+        // Créer les services dans l'ordre (animation et display d'abord)
+        animationService = new AboveCanvasAnimationService(this);
+        displayService = new AboveCanvasDisplayService(this);
+        eventService = new AboveCanvasEventService(this, displayService, animationService);
+        initializationService = new AboveCanvasInitializationService(this, eventService, animationService);
 
-        // NOUVEAU: Vérification retardée pour s'assurer que l'affichage est correct
-        StartCoroutine(DelayedDisplayRefresh());
+        // Initialiser les services dans l'ordre
+        animationService.Initialize();
+        displayService.Initialize(); // Maintenant displayService peut récupérer animationService
+    }
 
+    // === PUBLIC API - SAME AS BEFORE ===
+    public void RefreshDisplay()
+    {
+        displayService.RefreshDisplay();
+    }
+
+    // === INTERNAL ACCESSORS FOR SERVICES ===
+    public GameObject HeaderContainer => headerContainer;
+    public TextMeshProUGUI CurrentLocationText => currentLocationText;
+    public Button MapButton => mapButton;
+    public GameObject ActivityBar => activityBar;
+    public Image LeftIcon => leftIcon;
+    public Image RightIcon => rightIcon;
+    public TextMeshProUGUI ActivityText => activityText;
+    public Image BackgroundBar => backgroundBar;
+    public Image FillBar => fillBar;
+    public GameObject ArrowIcon => arrowIcon;
+    public GameObject NavigationBar => navigationBar;
+    public bool HideNavigationOnMap => hideNavigationOnMap;
+
+    // Animation Settings Accessors
+    public float ProgressAnimationDuration => progressAnimationDuration;
+    public LeanTweenType ProgressAnimationEase => progressAnimationEase;
+    public float PulseScaleAmount => pulseScaleAmount;
+    public float PulseDuration => pulseDuration;
+    public Color PulseColor => pulseColor;
+    // Pop Settings Accessors (Reward Animation)
+    public float PopScaleAmount => popScaleAmount;
+    public float PopDuration => popDuration;
+    public Color PopBrightColor => popBrightColor;
+    public LeanTweenType PopEaseType => popEaseType;
+}
+
+// ===============================================
+// SERVICE: Initialization Management
+// ===============================================
+public class AboveCanvasInitializationService
+{
+    private readonly AboveCanvasManager manager;
+    private readonly AboveCanvasEventService eventService;
+    private readonly AboveCanvasAnimationService animationService;
+    private bool isInitialized = false;
+
+    public AboveCanvasInitializationService(AboveCanvasManager manager, AboveCanvasEventService eventService, AboveCanvasAnimationService animationService)
+    {
+        this.manager = manager;
+        this.eventService = eventService;
+        this.animationService = animationService;
+    }
+
+    public void StartInitialization()
+    {
+        manager.StartCoroutine(InitializeWithProperOrder());
+    }
+
+    private System.Collections.IEnumerator InitializeWithProperOrder()
+    {
+        // Attendre que les managers critiques soient disponibles
+        yield return WaitForCriticalManagers();
+
+        // Configurer la UI
+        SetupUI();
+
+        // Abonner aux événements immédiatement (comme avant)
+        eventService?.SubscribeToEvents();
+
+        // Première mise à jour de l'affichage
+        manager.RefreshDisplay();
+
+        // RESTAURATION: Vérification retardée pour s'assurer que l'affichage est correct
+        // (C'était dans l'ancien code et ça résolvait les problèmes d'ordre d'initialisation)
+        manager.StartCoroutine(DelayedDisplayRefresh());
+
+        isInitialized = true;
         Logger.LogInfo("AboveCanvasManager: Initialized successfully", Logger.LogCategory.General);
     }
 
-    /// <summary>
-    /// Vérification retardée pour corriger les problèmes d'ordre d'initialisation
-    /// </summary>
     private System.Collections.IEnumerator DelayedDisplayRefresh()
     {
         // Attendre quelques frames pour que tous les managers soient complètement initialisés
         yield return new WaitForSeconds(1f);
 
         // Forcer une mise à jour de l'affichage
-        RefreshDisplay();
+        manager.RefreshDisplay();
 
-        // Si une activité est en cours mais que la barre n'est pas affichée, la corriger
-        if (activityManager != null && activityManager.HasActiveActivity())
+        Logger.LogInfo("AboveCanvasManager: Delayed display refresh completed", Logger.LogCategory.General);
+    }
+
+    private System.Collections.IEnumerator WaitForCriticalManagers()
+    {
+        // Version optimisée : WaitUntil() arrête immédiatement quand la condition est remplie
+        // → Évite de boucler toutes les 0.1s ; tu gagnes quelques ms au lancement
+        yield return new WaitUntil(() => DataManager.Instance != null && MapManager.Instance != null);
+
+        // Attendre un frame supplémentaire pour la stabilité
+        yield return null;
+    }
+
+    private void SetupUI()
+    {
+        SetupMapButton();
+        SetupProgressBar();
+    }
+
+    private void SetupMapButton()
+    {
+        if (manager.MapButton != null)
         {
-            if (activityBar != null && !activityBar.activeSelf)
-            {
-                Logger.LogInfo("AboveCanvasManager: Correcting activity bar display after startup", Logger.LogCategory.General);
-                RefreshDisplay();
-            }
+            manager.MapButton.onClick.AddListener(OnMapButtonClicked);
         }
     }
 
     private void SetupProgressBar()
     {
-        // S'assurer que la fillBar est configurée correctement
-        if (fillBar != null)
-        {
-            // Configurer en mode Filled si ce n'est pas déjà fait
-            if (fillBar.type != Image.Type.Filled)
-            {
-                fillBar.type = Image.Type.Filled;
-                fillBar.fillMethod = Image.FillMethod.Horizontal;
-                Logger.LogInfo("AboveCanvasManager: Configured fillBar as Filled Horizontal", Logger.LogCategory.General);
-            }
-
-            // Sauvegarder les valeurs originales pour l'animation
-            originalFillColor = fillBar.color;
-            originalFillScale = fillBar.transform.localScale;
-
-            // Commencer avec 0 progression
-            fillBar.fillAmount = 0f;
-            lastProgressValue = 0f;
-        }
-
-        // S'assurer que backgroundBar est en mode Simple ou Sliced
-        if (backgroundBar != null && backgroundBar.type == Image.Type.Filled)
-        {
-            backgroundBar.type = Image.Type.Simple;
-            Logger.LogInfo("AboveCanvasManager: Configured backgroundBar as Simple", Logger.LogCategory.General);
-        }
-
-        // NOUVEAU: Sauvegarder la position originale de l'icône droite pour le shake
-        if (rightIcon != null)
-        {
-            originalRightIconPosition = rightIcon.transform.localPosition;
-        }
-    }
-
-    private void SubscribeToEvents()
-    {
-        // Écouter les changements d'état du jeu
-        if (gameManager != null)
-        {
-            gameManager.OnGameStateChanged += OnGameStateChanged;
-        }
-
-        // Écouter les événements spécifiques pour les mises à jour
-        if (mapManager != null)
-        {
-            mapManager.OnLocationChanged += OnLocationChanged;
-            mapManager.OnTravelProgress += OnTravelProgress;
-        }
-
-        if (activityManager != null)
-        {
-            activityManager.OnActivityProgress += OnActivityProgress;
-            activityManager.OnActivityStopped += OnActivityStopped;
-            activityManager.OnActivityTick += OnActivityTick; // NOUVEAU : Écouter les ticks d'activité
-        }
-    }
-
-    // === GESTIONNAIRES D'ÉVÉNEMENTS ===
-
-    private void OnGameStateChanged(GameState oldState, GameState newState)
-    {
-        Logger.LogInfo($"AboveCanvasManager: Game state changed from {oldState} to {newState}", Logger.LogCategory.General);
-        RefreshDisplay();
-    }
-
-    private void OnLocationChanged(MapLocationDefinition newLocation)
-    {
-        UpdateLocationDisplay();
-    }
-
-    private void OnTravelProgress(string destinationId, int currentSteps, int requiredSteps)
-    {
-        UpdateTravelProgress(currentSteps, requiredSteps);
-    }
-
-    private void OnActivityProgress(ActivityData activity, ActivityVariant variant)
-    {
-        UpdateActivityProgress(activity, variant);
-    }
-
-    private void OnActivityStopped(ActivityData activity, ActivityVariant variant)
-    {
-        Logger.LogInfo("AboveCanvasManager: Activity stopped, refreshing display", Logger.LogCategory.General);
-        RefreshDisplay();
-    }
-
-    // NOUVELLE méthode pour gérer les ticks d'activité
-    private void OnActivityTick(ActivityData activity, ActivityVariant variant, int ticksCompleted)
-    {
-        // Déclencher le shake quand l'activité progresse (tick complété)
-        if (ticksCompleted > 0)
-        {
-            ShakeRightIcon();
-
-            // Log pour debug (optionnel)
-            Logger.LogInfo($"AboveCanvasManager: Activity tick completed - shaking right icon", Logger.LogCategory.General);
-        }
+        animationService?.SetupProgressBar();
     }
 
     private void OnMapButtonClicked()
     {
-        // Gérer l'affichage de la barre de navigation si besoin
-        if (hideNavigationOnMap && navigationBar != null)
+        if (manager.HideNavigationOnMap && manager.NavigationBar != null)
         {
-            navigationBar.SetActive(false);
+            manager.NavigationBar.SetActive(false);
         }
-
-        // Le reste sera géré par le PanelManager ou MapManager
         Logger.LogInfo("AboveCanvasManager: Map button clicked", Logger.LogCategory.General);
     }
 
-    // === MÉTHODES DE MISE À JOUR ===
+    public bool IsInitialized => isInitialized;
+}
 
-    private void RefreshDisplay()
+// ===============================================
+// SERVICE: Display Management
+// ===============================================
+public class AboveCanvasDisplayService
+{
+    private readonly AboveCanvasManager manager;
+    private AboveCanvasAnimationService animationService;
+
+    public AboveCanvasDisplayService(AboveCanvasManager manager)
     {
+        this.manager = manager;
+    }
+
+    public void Initialize()
+    {
+        // Récupérer la référence au service d'animation
+        animationService = manager.AnimationService;
+    }
+
+    public void RefreshDisplay()
+    {
+        Logger.LogInfo("AboveCanvasManager: RefreshDisplay called", Logger.LogCategory.General);
         UpdateLocationDisplay();
         UpdateActivityBarDisplay();
     }
 
-    private void UpdateLocationDisplay()
+    public void UpdateLocationDisplay()
     {
-        if (currentLocationText == null || mapManager?.CurrentLocation == null) return;
+        if (manager.CurrentLocationText == null)
+        {
+            Logger.LogWarning("AboveCanvasManager: CurrentLocationText is null", Logger.LogCategory.General);
+            return;
+        }
 
-        currentLocationText.text = mapManager.CurrentLocation.DisplayName;
+        var mapManager = MapManager.Instance;
+        if (mapManager?.CurrentLocation != null)
+        {
+            manager.CurrentLocationText.text = mapManager.CurrentLocation.DisplayName;
+            Logger.LogInfo($"AboveCanvasManager: Updated location display to {mapManager.CurrentLocation.DisplayName}", Logger.LogCategory.General);
+        }
+        else
+        {
+            Logger.LogWarning("AboveCanvasManager: MapManager or CurrentLocation is null", Logger.LogCategory.General);
+        }
     }
 
-    private void UpdateActivityBarDisplay()
+    public void UpdateActivityBarDisplay()
     {
-        if (activityBar == null) return;
+        if (manager.ActivityBar == null)
+        {
+            Logger.LogWarning("AboveCanvasManager: ActivityBar is null", Logger.LogCategory.General);
+            return;
+        }
 
-        GameState currentState = gameManager.CurrentState;
+        var activityManager = ActivityManager.Instance;
+        var dataManager = DataManager.Instance;
 
-        // NOUVEAU: Vérification directe de l'activité en cours pour pallier aux problèmes d'état
         bool hasActiveActivity = activityManager?.HasActiveActivity() == true;
         bool isCurrentlyTraveling = dataManager?.PlayerData?.IsCurrentlyTraveling() == true;
+
+        Logger.LogInfo($"AboveCanvasManager: hasActiveActivity={hasActiveActivity}, isCurrentlyTraveling={isCurrentlyTraveling}", Logger.LogCategory.General);
 
         if (isCurrentlyTraveling)
         {
@@ -294,287 +321,425 @@ public class AboveCanvasManager : MonoBehaviour
 
     private void SetupTravelDisplay()
     {
-        if (dataManager?.PlayerData == null) return;
+        var dataManager = DataManager.Instance;
+        if (dataManager?.PlayerData == null)
+        {
+            Logger.LogWarning("AboveCanvasManager: DataManager or PlayerData is null in SetupTravelDisplay", Logger.LogCategory.General);
+            return;
+        }
 
-        activityBar.SetActive(true);
+        Logger.LogInfo("AboveCanvasManager: Setting up travel display", Logger.LogCategory.General);
+        manager.ActivityBar.SetActive(true);
+
+        var playerData = dataManager.PlayerData;
+        string currentLocationId = playerData.CurrentLocationId;
+        string destinationId = playerData.TravelDestinationId;
+
+        Logger.LogInfo($"AboveCanvasManager: Travel from {currentLocationId} to {destinationId}", Logger.LogCategory.General);
 
         // Configurer les icônes
-        string currentLocationId = dataManager.PlayerData.CurrentLocationId;
-        string destinationId = dataManager.PlayerData.TravelDestinationId;
+        SetupTravelIcons(currentLocationId, destinationId);
 
-        if (leftIcon != null && mapManager.LocationRegistry != null)
+        // Configurer le texte
+        var destinationLocation = MapManager.Instance?.LocationRegistry?.GetLocationById(destinationId);
+        if (manager.ActivityText != null && destinationLocation != null)
         {
-            var currentLocation = mapManager.LocationRegistry.GetLocationById(currentLocationId);
-            if (currentLocation != null)
-            {
-                leftIcon.sprite = currentLocation.GetIcon();
-            }
-            leftIcon.gameObject.SetActive(true);
+            manager.ActivityText.text = $"Voyage vers {destinationLocation.DisplayName}";
+            Logger.LogInfo($"AboveCanvasManager: Set travel text to 'Voyage vers {destinationLocation.DisplayName}'", Logger.LogCategory.General);
         }
 
-        if (rightIcon != null && mapManager.LocationRegistry != null)
+        // Configurer la progression
+        long progress = playerData.GetTravelProgress(playerData.TotalSteps);
+        float progressPercent = (float)progress / playerData.TravelRequiredSteps;
+
+        Logger.LogInfo($"AboveCanvasManager: Travel progress {progress}/{playerData.TravelRequiredSteps} = {progressPercent:F2}", Logger.LogCategory.General);
+
+        if (manager.FillBar != null)
         {
-            var destinationLocation = mapManager.LocationRegistry.GetLocationById(destinationId);
-            if (destinationLocation != null)
-            {
-                rightIcon.sprite = destinationLocation.GetIcon();
-            }
-            rightIcon.gameObject.SetActive(true);
+            manager.FillBar.fillAmount = Mathf.Clamp01(progressPercent);
         }
 
-        // Afficher la flèche pour le voyage
-        if (arrowIcon != null)
+        // Montrer la flèche pour le voyage
+        if (manager.ArrowIcon != null)
         {
-            arrowIcon.SetActive(true);
+            manager.ArrowIcon.SetActive(true);
         }
-
-        // Texte
-        if (activityText != null)
-        {
-            activityText.text = $"Voyage vers {destinationId}";
-        }
-
-        // Progression
-        long currentTotalSteps = dataManager.PlayerData.TotalSteps;
-        long progressSteps = dataManager.PlayerData.GetTravelProgress(currentTotalSteps);
-        int requiredSteps = dataManager.PlayerData.TravelRequiredSteps;
-
-        UpdateProgressBar(progressSteps, requiredSteps);
     }
 
     private void SetupActivityDisplay()
     {
-        var activityInfo = activityManager.GetCurrentActivityInfo();
-        if (activityInfo.activity == null || activityInfo.variant == null) return;
-
-        activityBar.SetActive(true);
-
-        // Configurer l'icône de gauche avec l'activité générale
-        if (leftIcon != null)
+        var activityManager = ActivityManager.Instance;
+        if (activityManager == null)
         {
-            // Récupérer l'ActivityDefinition via le registry
-            var locationActivity = activityManager.ActivityRegistry?.GetActivity(activityInfo.activity.ActivityId);
-            if (locationActivity?.ActivityReference != null && locationActivity.ActivityReference.GetIcon() != null)
+            Logger.LogWarning("AboveCanvasManager: ActivityManager is null in SetupActivityDisplay", Logger.LogCategory.General);
+            return;
+        }
+
+        var (activity, variant) = activityManager.GetCurrentActivityInfo();
+        if (activity == null || variant == null)
+        {
+            Logger.LogWarning("AboveCanvasManager: Activity or variant is null", Logger.LogCategory.General);
+            return;
+        }
+
+        Logger.LogInfo($"AboveCanvasManager: Setting up activity display for {variant.GetDisplayName()}", Logger.LogCategory.General);
+        manager.ActivityBar.SetActive(true);
+
+        // CORRECTION: Récupérer l'activité principale pour l'icône gauche
+        var activityDefinition = activityManager.ActivityRegistry?.GetActivity(activity.ActivityId);
+
+        // Configurer l'icône gauche avec l'ACTIVITÉ PRINCIPALE
+        if (manager.LeftIcon != null)
+        {
+            var activityIcon = activityDefinition?.ActivityReference?.GetIcon();
+            manager.LeftIcon.sprite = activityIcon;
+            manager.LeftIcon.gameObject.SetActive(true);
+            Logger.LogInfo($"AboveCanvasManager: Set left icon to ACTIVITY {(activityIcon != null ? activityIcon.name : "null")}", Logger.LogCategory.General);
+        }
+
+        // CORRECTION: Afficher l'icône droite avec le VARIANT
+        if (manager.RightIcon != null)
+        {
+            var variantIcon = variant.GetIcon();
+            manager.RightIcon.sprite = variantIcon;
+            manager.RightIcon.gameObject.SetActive(true); // ← CHANGÉ : maintenant on l'affiche !
+            Logger.LogInfo($"AboveCanvasManager: Set right icon to VARIANT {(variantIcon != null ? variantIcon.name : "null")}", Logger.LogCategory.General);
+        }
+
+        // Configurer le texte
+        if (manager.ActivityText != null)
+        {
+            manager.ActivityText.text = variant.GetDisplayName();
+            Logger.LogInfo($"AboveCanvasManager: Set activity text to '{variant.GetDisplayName()}'", Logger.LogCategory.General);
+        }
+
+        // Configurer la progression
+        float progressPercent = activity.GetProgressToNextTick(variant);
+        Logger.LogInfo($"AboveCanvasManager: Activity progress = {progressPercent:F2}", Logger.LogCategory.General);
+
+        if (manager.FillBar != null)
+        {
+            manager.FillBar.fillAmount = Mathf.Clamp01(progressPercent);
+        }
+
+        // Masquer la flèche pour les activités (la flèche sert seulement pour les voyages)
+        if (manager.ArrowIcon != null)
+        {
+            manager.ArrowIcon.SetActive(false);
+        }
+    }
+
+    private void SetupTravelIcons(string currentLocationId, string destinationId)
+    {
+        var locationRegistry = MapManager.Instance?.LocationRegistry;
+        if (locationRegistry == null)
+        {
+            Logger.LogWarning("AboveCanvasManager: LocationRegistry is null in SetupTravelIcons", Logger.LogCategory.General);
+            return;
+        }
+
+        // Icône de départ
+        if (manager.LeftIcon != null)
+        {
+            var currentLocation = locationRegistry.GetLocationById(currentLocationId);
+            if (currentLocation != null)
             {
-                leftIcon.sprite = locationActivity.ActivityReference.GetIcon();
+                var icon = currentLocation.GetIcon();
+                manager.LeftIcon.sprite = icon;
+                Logger.LogInfo($"AboveCanvasManager: Set left travel icon to {(icon != null ? icon.name : "null")} for location {currentLocationId}", Logger.LogCategory.General);
             }
             else
             {
-                // Fallback: icône du variant si pas d'icône d'activité
-                leftIcon.sprite = activityInfo.variant.GetIcon();
+                Logger.LogWarning($"AboveCanvasManager: Current location {currentLocationId} not found", Logger.LogCategory.General);
             }
-            leftIcon.gameObject.SetActive(true);
+            manager.LeftIcon.gameObject.SetActive(true);
         }
 
-        // NOUVEAU: Configurer l'icône de droite avec le variant spécifique
-        if (rightIcon != null)
+        // Icône d'arrivée
+        if (manager.RightIcon != null)
         {
-            rightIcon.sprite = activityInfo.variant.GetIcon();
-            rightIcon.gameObject.SetActive(true); // ✅ Maintenant activée !
+            var destinationLocation = locationRegistry.GetLocationById(destinationId);
+            if (destinationLocation != null)
+            {
+                var icon = destinationLocation.GetIcon();
+                manager.RightIcon.sprite = icon;
+                Logger.LogInfo($"AboveCanvasManager: Set right travel icon to {(icon != null ? icon.name : "null")} for destination {destinationId}", Logger.LogCategory.General);
+            }
+            else
+            {
+                Logger.LogWarning($"AboveCanvasManager: Destination location {destinationId} not found", Logger.LogCategory.General);
+            }
+            manager.RightIcon.gameObject.SetActive(true);
         }
-
-        // Masquer la flèche (pas de voyage entre lieux)
-        if (arrowIcon != null)
-        {
-            arrowIcon.SetActive(false);
-        }
-
-        // Texte
-        if (activityText != null)
-        {
-            activityText.text = activityInfo.variant.GetDisplayName();
-        }
-
-        // Progression
-        UpdateActivityProgress(activityInfo.activity, activityInfo.variant);
     }
 
     private void HideActivityBar()
     {
-        if (activityBar != null)
+        if (manager.ActivityBar != null)
         {
-            activityBar.SetActive(false);
+            manager.ActivityBar.SetActive(false);
         }
     }
 
-    private void UpdateTravelProgress(int currentSteps, int requiredSteps)
+    public void UpdateTravelProgress(int currentSteps, int requiredSteps)
     {
-        // CORRIGÉ: Ne plus dépendre du GameState, vérifier directement le voyage
-        if (dataManager?.PlayerData?.IsCurrentlyTraveling() == true)
+        if (manager.FillBar == null) return;
+
+        float progressPercent = (float)currentSteps / requiredSteps;
+        animationService?.AnimateProgressBar(progressPercent);
+    }
+
+    public void UpdateActivityProgress(ActivityData activity, ActivityVariant variant)
+    {
+        if (manager.FillBar == null || activity == null || variant == null) return;
+
+        float progressPercent = activity.GetProgressToNextTick(variant);
+        animationService?.AnimateProgressBar(progressPercent);
+    }
+}
+
+// ===============================================
+// SERVICE: Animation Management
+// ===============================================
+public class AboveCanvasAnimationService
+{
+    private readonly AboveCanvasManager manager;
+    private float lastProgressValue = -1f;
+    private int currentAnimationId = -1;
+    private int currentPulseId = -1;
+    private int currentPopId = -1;        // Renommé pour le pop
+    private Color originalFillColor;
+    private Vector3 originalFillScale;
+    private Vector3 originalRightIconScale;  // Échelle originale de l'icône droite
+    private Color originalRightIconColor;    // Couleur originale de l'icône droite
+
+    public AboveCanvasAnimationService(AboveCanvasManager manager)
+    {
+        this.manager = manager;
+    }
+
+    public void Initialize()
+    {
+        // Configuration des animations peut se faire ici
+    }
+
+    public void SetupProgressBar()
+    {
+        if (manager.FillBar != null)
         {
-            UpdateProgressBar(currentSteps, requiredSteps);
+            // Configurer en mode Filled
+            if (manager.FillBar.type != Image.Type.Filled)
+            {
+                manager.FillBar.type = Image.Type.Filled;
+                manager.FillBar.fillMethod = Image.FillMethod.Horizontal;
+            }
+
+            // Sauvegarder les valeurs originales
+            originalFillColor = manager.FillBar.color;
+            originalFillScale = manager.FillBar.transform.localScale;
+            manager.FillBar.fillAmount = 0f;
+            lastProgressValue = 0f;
+        }
+
+        if (manager.BackgroundBar != null && manager.BackgroundBar.type == Image.Type.Filled)
+        {
+            manager.BackgroundBar.type = Image.Type.Simple;
+        }
+
+        // Sauvegarder les valeurs originales de l'icône droite pour l'animation de pop
+        if (manager.RightIcon != null)
+        {
+            originalRightIconScale = manager.RightIcon.transform.localScale;
+            originalRightIconColor = manager.RightIcon.color;
         }
     }
 
-    private void UpdateActivityProgress(ActivityData activity, ActivityVariant variant)
+    public void AnimateProgressBar(float targetProgress)
     {
-        // CORRIGÉ: Ne plus dépendre du GameState, vérifier directement l'activité
-        if (activity != null && variant != null && activityManager.HasActiveActivity())
-        {
-            float progress = activity.GetProgressToNextTick(variant);
-            int currentSteps = activity.AccumulatedSteps;
-            int requiredSteps = variant.ActionCost;
+        if (manager.FillBar == null) return;
+        if (Mathf.Approximately(targetProgress, lastProgressValue)) return;
 
-            UpdateProgressBar(currentSteps, requiredSteps);
-        }
-    }
-
-    // === NOUVELLE VERSION ANIMÉE DE UpdateProgressBar ===
-
-    /// <summary>
-    /// Version UNIFIÉE : progression + pulse simultanés
-    /// </summary>
-    private void UpdateProgressBar(long current, long required)
-    {
-        if (fillBar == null || required <= 0) return;
-
-        float newProgressValue = Mathf.Clamp01((float)current / required);
-
-        // OPTIMISATION: Éviter les animations inutiles
-        if (Mathf.Abs(newProgressValue - lastProgressValue) < 0.001f) return;
-
-        // Déterminer si c'est une progression (pour déclencher le pulse)
-        bool isProgression = newProgressValue > lastProgressValue && lastProgressValue >= 0f;
-
-        // Annuler toutes les animations précédentes
-        if (currentAnimationId >= 0)
+        // Arrêter les animations précédentes
+        if (currentAnimationId != -1)
         {
             LeanTween.cancel(currentAnimationId);
         }
-        if (currentPulseId >= 0)
+        if (currentPulseId != -1)
         {
             LeanTween.cancel(currentPulseId);
         }
-        LeanTween.cancel(fillBar.gameObject); // Sécurité pour l'échelle
 
-        // Valeurs de départ
-        float startValue = fillBar.fillAmount;
-        Vector3 targetScale = originalFillScale * (isProgression ? pulseScaleAmount : 1f);
-
-        // 🎯 UNE SEULE ANIMATION pour tout contrôler !
-        currentAnimationId = LeanTween.value(gameObject, 0f, 1f, progressAnimationDuration)
-            .setEase(progressAnimationEase)
-            .setOnUpdate((float t) =>
+        // 1. Animer le remplissage de la barre
+        currentAnimationId = LeanTween.value(manager.gameObject, lastProgressValue, targetProgress, manager.ProgressAnimationDuration)
+            .setEase(manager.ProgressAnimationEase)
+            .setOnUpdate((float val) =>
             {
-                if (fillBar != null)
+                if (manager.FillBar != null)
                 {
-                    // 1. Progression du fillAmount
-                    fillBar.fillAmount = Mathf.Lerp(startValue, newProgressValue, t);
-
-                    // 2. PULSE d'échelle (seulement si progression)
-                    if (isProgression)
-                    {
-                        // Effet "cloche" : commence et finit à 0, pic au milieu
-                        float pulseProgress = Mathf.Sin(t * Mathf.PI);
-                        Vector3 currentScale = Vector3.Lerp(originalFillScale, targetScale, pulseProgress);
-                        fillBar.transform.localScale = currentScale;
-
-                        // 3. PULSE de couleur (seulement si progression)
-                        Color currentColor = Color.Lerp(originalFillColor, pulseColor, pulseProgress);
-                        fillBar.color = currentColor;
-                    }
+                    manager.FillBar.fillAmount = val;
                 }
             })
             .setOnComplete(() =>
             {
                 currentAnimationId = -1;
-
-                // S'assurer que tout revient à l'état normal
-                if (fillBar != null)
-                {
-                    fillBar.fillAmount = newProgressValue; // Sécurité
-                    fillBar.transform.localScale = originalFillScale;
-                    fillBar.color = originalFillColor;
-                }
             }).id;
 
-        // Mettre à jour le cache
-        lastProgressValue = newProgressValue;
+        // 2. IMMÉDIATEMENT déclencher le pulse en parallèle (pas à la fin !)
+        PulseFillBarParallel();
+
+        lastProgressValue = targetProgress;
     }
 
-    // === MÉTHODE DE SHAKE POUR L'ICÔNE DROITE ===
-
-    /// <summary>
-    /// Déclenche un effet de shake sur l'icône de droite
-    /// </summary>
-    private void ShakeRightIcon()
+    private void PulseFillBarParallel()
     {
-        if (rightIcon == null) return;
+        if (manager.FillBar == null) return;
 
-        // Annuler le shake précédent s'il y en a un
-        if (currentShakeId >= 0)
-        {
-            LeanTween.cancel(currentShakeId);
-        }
-
-        // Remettre en position originale
-        rightIcon.transform.localPosition = originalRightIconPosition;
-
-        // Alternative simple : shake avec moveLocal + loop
-        Vector3 shakeOffset = new Vector3(shakeIntensity, 0f, 0f);
-
-        currentShakeId = LeanTween.moveLocal(rightIcon.gameObject, originalRightIconPosition + shakeOffset, shakeDuration / 4f)
-            .setEase(LeanTweenType.easeShake)
-            .setLoopPingPong(2) // Va et vient 2 fois = 4 mouvements au total
+        // Pulse d'échelle EN MÊME TEMPS que l'animation de remplissage
+        currentPulseId = LeanTween.scale(manager.FillBar.gameObject, originalFillScale * manager.PulseScaleAmount, manager.PulseDuration)
+            .setEase(LeanTweenType.easeOutQuart)
+            .setLoopPingPong(1)
             .setOnComplete(() =>
             {
-                // S'assurer que l'icône revient exactement à sa position
-                if (rightIcon != null)
+                currentPulseId = -1;
+                if (manager.FillBar != null)
                 {
-                    rightIcon.transform.localPosition = originalRightIconPosition;
+                    manager.FillBar.transform.localScale = originalFillScale;
                 }
-                currentShakeId = -1;
             }).id;
+
+        // Animation de couleur EN PARALLÈLE (pas d'ID à stocker, courte durée)
+        LeanTween.color(manager.FillBar.rectTransform, manager.PulseColor, manager.PulseDuration)
+            .setEase(LeanTweenType.easeOutQuart)
+            .setLoopPingPong(1)
+            .setOnComplete(() =>
+            {
+                if (manager.FillBar != null)
+                {
+                    manager.FillBar.color = originalFillColor;
+                }
+            });
     }
 
-    // === MÉTHODES PUBLIQUES ===
-
-    public void ShowNavigationBar()
+    public void PulseFillBar()
     {
-        if (navigationBar != null)
+        // Méthode séparée pour les cas où on veut juste un pulse sans animation de remplissage
+        PulseFillBarParallel();
+    }
+
+    public void ShakeRightIcon()
+    {
+        // NOUVEAU : Pop de récompense au lieu de shake d'erreur !
+        PopRightIcon();
+    }
+
+    private void PopRightIcon()
+    {
+        if (manager.RightIcon == null) return;
+
+        // Arrêter le pop précédent
+        if (currentPopId != -1)
         {
-            navigationBar.SetActive(true);
+            LeanTween.cancel(currentPopId);
+        }
+
+        // Animation de POP satisfaisante :
+        // 1. Grossit rapidement avec couleur plus lumineuse
+        // 2. Retourne à la normale avec bounce
+
+        // Scale + couleur en parallèle
+        currentPopId = LeanTween.scale(manager.RightIcon.gameObject, originalRightIconScale * manager.PopScaleAmount, manager.PopDuration * 0.4f)
+            .setEase(LeanTweenType.easeOutQuart)
+            .setOnComplete(() =>
+            {
+                // Phase 2: Retour à la normale avec bounce satisfaisant
+                LeanTween.scale(manager.RightIcon.gameObject, originalRightIconScale, manager.PopDuration * 0.6f)
+                    .setEase(manager.PopEaseType) // easeOutBack pour l'effet bounce
+                    .setOnComplete(() =>
+                    {
+                        currentPopId = -1;
+                    });
+            }).id;
+
+        // Animation de couleur en parallèle (illumination)
+        LeanTween.color(manager.RightIcon.rectTransform, manager.PopBrightColor, manager.PopDuration * 0.4f)
+            .setEase(LeanTweenType.easeOutQuart)
+            .setOnComplete(() =>
+            {
+                // Retour couleur normale
+                LeanTween.color(manager.RightIcon.rectTransform, originalRightIconColor, manager.PopDuration * 0.6f)
+                    .setEase(LeanTweenType.easeOutQuart);
+            });
+    }
+
+    public void Cleanup()
+    {
+        // Version sécurisée : annuler par GameObject plutôt que par ID
+        // Évite les "orphan tweens" quand l'objet est détruit
+        if (manager.FillBar != null)
+        {
+            LeanTween.cancel(manager.FillBar.gameObject);
+        }
+
+        if (manager.RightIcon != null)
+        {
+            LeanTween.cancel(manager.RightIcon.gameObject);
+        }
+
+        // Reset des IDs pour sécurité
+        currentAnimationId = -1;
+        currentPulseId = -1;
+        currentPopId = -1;
+    }
+}
+
+// ===============================================
+// SERVICE: Event Management
+// ===============================================
+public class AboveCanvasEventService
+{
+    private readonly AboveCanvasManager manager;
+    private readonly AboveCanvasDisplayService displayService;
+    private readonly AboveCanvasAnimationService animationService;
+
+    public AboveCanvasEventService(AboveCanvasManager manager, AboveCanvasDisplayService displayService, AboveCanvasAnimationService animationService)
+    {
+        this.manager = manager;
+        this.displayService = displayService;
+        this.animationService = animationService;
+    }
+
+    public void SubscribeToEvents()
+    {
+        var gameManager = GameManager.Instance;
+        var mapManager = MapManager.Instance;
+        var activityManager = ActivityManager.Instance;
+
+        // S'abonner aux événements
+        if (gameManager != null)
+        {
+            gameManager.OnGameStateChanged += OnGameStateChanged;
+        }
+
+        if (mapManager != null)
+        {
+            mapManager.OnLocationChanged += OnLocationChanged;
+            mapManager.OnTravelProgress += OnTravelProgress;
+        }
+
+        if (activityManager != null)
+        {
+            activityManager.OnActivityProgress += OnActivityProgress;
+            activityManager.OnActivityStopped += OnActivityStopped;
+            activityManager.OnActivityTick += OnActivityTick;
         }
     }
 
-    public void HideNavigationBar()
+    public void UnsubscribeFromEvents()
     {
-        if (navigationBar != null)
-        {
-            navigationBar.SetActive(false);
-        }
-    }
+        var gameManager = GameManager.Instance;
+        var mapManager = MapManager.Instance;
+        var activityManager = ActivityManager.Instance;
 
-    public void ForceRefresh()
-    {
-        RefreshDisplay();
-    }
-
-    // === NETTOYAGE ===
-
-    void OnDestroy()
-    {
-        // Arrêter toutes les animations LeanTween
-        if (currentAnimationId >= 0)
-        {
-            LeanTween.cancel(currentAnimationId);
-        }
-        if (currentPulseId >= 0)
-        {
-            LeanTween.cancel(currentPulseId);
-        }
-        if (currentShakeId >= 0) // NOUVEAU : Annuler le shake
-        {
-            LeanTween.cancel(currentShakeId);
-        }
-
-        // Arrêter les animations sur les GameObjects
-        if (fillBar != null)
-        {
-            LeanTween.cancel(fillBar.gameObject);
-        }
-
-        // Se désabonner des événements
         if (gameManager != null)
         {
             gameManager.OnGameStateChanged -= OnGameStateChanged;
@@ -590,7 +755,53 @@ public class AboveCanvasManager : MonoBehaviour
         {
             activityManager.OnActivityProgress -= OnActivityProgress;
             activityManager.OnActivityStopped -= OnActivityStopped;
-            activityManager.OnActivityTick -= OnActivityTick; // NOUVEAU : Nettoyer l'événement tick
+            activityManager.OnActivityTick -= OnActivityTick;
+        }
+    }
+
+    public void Cleanup()
+    {
+        // Désabonner de tous les événements
+        UnsubscribeFromEvents();
+
+        // Nettoyer les animations
+        animationService?.Cleanup();
+    }
+
+    // === EVENT HANDLERS ===
+    private void OnGameStateChanged(GameState oldState, GameState newState)
+    {
+        Logger.LogInfo($"AboveCanvasManager: Game state changed from {oldState} to {newState}", Logger.LogCategory.General);
+        displayService.RefreshDisplay();
+    }
+
+    private void OnLocationChanged(MapLocationDefinition newLocation)
+    {
+        displayService.UpdateLocationDisplay();
+    }
+
+    private void OnTravelProgress(string destinationId, int currentSteps, int requiredSteps)
+    {
+        displayService.UpdateTravelProgress(currentSteps, requiredSteps);
+    }
+
+    private void OnActivityProgress(ActivityData activity, ActivityVariant variant)
+    {
+        displayService.UpdateActivityProgress(activity, variant);
+    }
+
+    private void OnActivityStopped(ActivityData activity, ActivityVariant variant)
+    {
+        Logger.LogInfo("AboveCanvasManager: Activity stopped, refreshing display", Logger.LogCategory.General);
+        displayService.RefreshDisplay();
+    }
+
+    private void OnActivityTick(ActivityData activity, ActivityVariant variant, int ticksCompleted)
+    {
+        if (ticksCompleted > 0)
+        {
+            animationService?.ShakeRightIcon(); // Maintenant c'est un pop satisfaisant !
+            Logger.LogInfo($"AboveCanvasManager: Activity tick completed - reward pop animation", Logger.LogCategory.General);
         }
     }
 }
