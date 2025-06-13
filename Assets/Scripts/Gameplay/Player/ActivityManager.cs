@@ -1,5 +1,9 @@
+// ===============================================
+// NOUVEAU ActivityManager (Facade Pattern) - REFACTORED
+// ===============================================
 // Purpose: Manages player activities (mining, gathering, etc.) with step-based progression
-// Filepath: Assets/Scripts/Gameplay/Activities/ActivityManager.cs
+// Filepath: Assets/Scripts/Gameplay/Player/ActivityManager.cs
+
 using System;
 using System.Collections;
 using UnityEngine;
@@ -8,40 +12,29 @@ public class ActivityManager : MonoBehaviour
 {
     public static ActivityManager Instance { get; private set; }
 
+    // === SAME PUBLIC API - ZERO BREAKING CHANGES ===
     [Header("Settings")]
-    [SerializeField] private float autoSaveInterval = 30f; // Auto-save every 30 seconds during activity
+    [SerializeField] private float autoSaveInterval = 30f;
     [SerializeField] private bool enableDebugLogs = false;
 
-    // References to other managers
-    private DataManager dataManager;
-    private StepManager stepManager;
-    private InventoryManager inventoryManager;
-    private MapManager mapManager;
-
-
-    // Activity registries (to be assigned in inspector)
     [Header("Activity Data")]
     [SerializeField] private ActivityRegistry activityRegistry;
 
-    // Auto-save tracking
-    private float timeSinceLastSave = 0f;
-    private bool hasUnsavedProgress = false;
-
-    // Current activity cache (for performance)
-    private ActivityData currentActivityCache;
-    private ActivityVariant currentVariantCache;
-
-    // --- AUTO-SAVE COROUTINE ---
-    private Coroutine autoSaveCoroutine;
-
-    private void OnEnable() => autoSaveCoroutine = StartCoroutine(AutoSaveLoop());
-
-    // Events for UI
+    // === PUBLIC EVENTS - SAME AS BEFORE ===
     public event Action<ActivityData, ActivityVariant> OnActivityStarted;
     public event Action<ActivityData, ActivityVariant> OnActivityStopped;
-    public event Action<ActivityData, ActivityVariant, int> OnActivityTick; // activity, variant, ticks completed
-    public event Action<ActivityData, ActivityVariant> OnActivityProgress; // for UI updates
+    public event Action<ActivityData, ActivityVariant, int> OnActivityTick;
+    public event Action<ActivityData, ActivityVariant> OnActivityProgress;
+
+    // === PUBLIC ACCESSORS - SAME AS BEFORE ===
     public ActivityRegistry ActivityRegistry => activityRegistry;
+
+    // === INTERNAL SERVICES (NOUVEAU) ===
+    private ActivityExecutionService executionService;
+    private ActivityProgressService progressService;
+    private ActivityValidationService validationService;
+    private ActivityCacheService cacheService;
+    public ActivityPersistenceService PersistenceService { get; private set; }
 
     void Awake()
     {
@@ -49,6 +42,7 @@ public class ActivityManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            InitializeServices();
         }
         else
         {
@@ -57,97 +51,137 @@ public class ActivityManager : MonoBehaviour
         }
     }
 
+    private void InitializeServices()
+    {
+        // Initialize services with dependency injection
+        validationService = new ActivityValidationService();
+        cacheService = new ActivityCacheService(activityRegistry);
+        progressService = new ActivityProgressService(cacheService, enableDebugLogs);
+        executionService = new ActivityExecutionService(cacheService, progressService, validationService, enableDebugLogs);
+        PersistenceService = new ActivityPersistenceService(autoSaveInterval);
+
+        // Wire events from services to public events
+        executionService.OnActivityStarted += (activity, variant) => OnActivityStarted?.Invoke(activity, variant);
+        executionService.OnActivityStopped += (activity, variant) => OnActivityStopped?.Invoke(activity, variant);
+        progressService.OnActivityTick += (activity, variant, ticks) => OnActivityTick?.Invoke(activity, variant, ticks);
+        progressService.OnActivityProgress += (activity, variant) => OnActivityProgress?.Invoke(activity, variant);
+    }
+
     void Start()
     {
-        // Get references to other managers
-        dataManager = DataManager.Instance;
-        stepManager = StepManager.Instance;
-        inventoryManager = InventoryManager.Instance;
-        mapManager = MapManager.Instance;
+        // Initialize all services
+        validationService.Initialize();
+        cacheService.Initialize();
+        progressService.Initialize();
+        executionService.Initialize();
+        PersistenceService.Initialize();
 
         // Validate dependencies
-        if (!ValidateDependencies())
+        if (!validationService.ValidateAllDependencies(activityRegistry))
         {
             Logger.LogError("ActivityManager: Critical dependencies missing! ActivityManager will not function properly.", Logger.LogCategory.General);
             return;
         }
 
-        // Subscribe to step updates
-        if (stepManager != null)
-        {
-            // Note: StepManager doesn't have OnStepsUpdated event in the provided code
-            // We'll need to check for step changes in Update() instead
-            Logger.LogInfo("ActivityManager: Will monitor steps via Update() loop", Logger.LogCategory.General);
-        }
-
         // Process any offline activity progress
-        StartCoroutine(ProcessOfflineProgressDelayed());
+        Invoke(nameof(ProcessOfflineProgressInvoke), 1f);
 
         Logger.LogInfo("ActivityManager: Initialized successfully", Logger.LogCategory.General);
     }
 
+    private void ProcessOfflineProgressInvoke()
+    {
+        progressService.ProcessOfflineProgress();
+    }
+
     void Update()
     {
-        // Monitor for step changes and auto-save
+        // Monitor for step changes only
         if (HasActiveActivity())
         {
-            CheckForStepUpdates();
-            HandleAutoSave();
+            progressService.CheckForStepUpdates();
         }
     }
 
-    /// <summary>
-    /// Process offline progress after a short delay to ensure all managers are ready
-    /// </summary>
-    private IEnumerator ProcessOfflineProgressDelayed()
+    void OnEnable() => PersistenceService?.StartAutoSave();
+    void OnDisable() => PersistenceService?.StopAutoSave();
+
+    void OnApplicationPause(bool pauseStatus)
     {
-        yield return new WaitForSeconds(1f); // Wait for other managers to initialize
-
-        if (HasActiveActivity())
-        {
-            ProcessOfflineProgress();
-        }
+        if (pauseStatus) PersistenceService?.ForceSave();
     }
 
-    /// <summary>
-    /// Validate that all required dependencies are available
-    /// </summary>
-    private bool ValidateDependencies()
+    void OnApplicationQuit() => PersistenceService?.ForceSave();
+
+    // === SAME PUBLIC API - EXACTLY THE SAME ===
+    public bool StartActivity(string activityId, string variantId)
     {
-        bool isValid = true;
-
-        if (dataManager == null)
-        {
-            Logger.LogError("ActivityManager: DataManager not found!", Logger.LogCategory.General);
-            isValid = false;
-        }
-
-        if (stepManager == null)
-        {
-            Logger.LogError("ActivityManager: StepManager not found!", Logger.LogCategory.General);
-            isValid = false;
-        }
-
-        if (inventoryManager == null)
-        {
-            Logger.LogError("ActivityManager: InventoryManager not found!", Logger.LogCategory.General);
-            isValid = false;
-        }
-
-        if (activityRegistry == null)
-        {
-            Logger.LogError("ActivityManager: ActivityRegistry not assigned in inspector!", Logger.LogCategory.General);
-            isValid = false;
-        }
-
-        return isValid;
+        return executionService.StartActivity(activityId, variantId);
     }
 
-    // === PUBLIC ACTIVITY CONTROL METHODS ===
+    public bool StopActivity()
+    {
+        return executionService.StopActivity();
+    }
 
-    /// <summary>
-    /// Start a new activity
-    /// </summary>
+    public bool CanStartActivity()
+    {
+        return executionService.CanStartActivity();
+    }
+
+    public bool HasActiveActivity()
+    {
+        return executionService.HasActiveActivity();
+    }
+
+    public (ActivityData activity, ActivityVariant variant) GetCurrentActivityInfo()
+    {
+        return executionService.GetCurrentActivityInfo();
+    }
+
+    public bool ShouldBlockTravel()
+    {
+        return HasActiveActivity();
+    }
+
+    public string GetDebugInfo()
+    {
+        return executionService.GetDebugInfo();
+    }
+
+    void OnDestroy()
+    {
+        PersistenceService?.Cleanup();
+    }
+}
+
+// ===============================================
+// SERVICE: ActivityExecutionService
+// ===============================================
+public class ActivityExecutionService
+{
+    private readonly ActivityCacheService cacheService;
+    private readonly ActivityProgressService progressService;
+    private readonly ActivityValidationService validationService;
+    private readonly bool enableDebugLogs;
+
+    public event Action<ActivityData, ActivityVariant> OnActivityStarted;
+    public event Action<ActivityData, ActivityVariant> OnActivityStopped;
+
+    public ActivityExecutionService(ActivityCacheService cacheService, ActivityProgressService progressService,
+                                  ActivityValidationService validationService, bool enableDebugLogs)
+    {
+        this.cacheService = cacheService;
+        this.progressService = progressService;
+        this.validationService = validationService;
+        this.enableDebugLogs = enableDebugLogs;
+    }
+
+    public void Initialize()
+    {
+        // Service initialization if needed
+    }
+
     public bool StartActivity(string activityId, string variantId)
     {
         if (!CanStartActivity())
@@ -157,8 +191,8 @@ public class ActivityManager : MonoBehaviour
         }
 
         // Get activity definition and variant
-        var activityDef = GetActivityDefinition(activityId);
-        var variant = GetActivityVariant(activityId, variantId);
+        var activityDef = cacheService.GetActivityDefinition(activityId);
+        var variant = cacheService.GetActivityVariant(activityId, variantId);
 
         if (activityDef == null || variant == null)
         {
@@ -166,19 +200,14 @@ public class ActivityManager : MonoBehaviour
             return false;
         }
 
-        if (!variant.IsValidVariant())
+        if (!validationService.ValidateVariant(variant) || !validationService.ValidateActivity(activityDef))
         {
-            Logger.LogError($"ActivityManager: Activity variant {activityId}/{variantId} is not valid!", Logger.LogCategory.General);
-            return false;
-        }
-
-        if (!activityDef.IsValidActivity())
-        {
-            Logger.LogError($"ActivityManager: Activity {activityId} is not valid!", Logger.LogCategory.General);
+            Logger.LogError($"ActivityManager: Activity {activityId}/{variantId} validation failed!", Logger.LogCategory.General);
             return false;
         }
 
         // Get current location and steps
+        var dataManager = DataManager.Instance;
         string currentLocationId = dataManager.PlayerData.CurrentLocationId;
         long currentSteps = dataManager.PlayerData.TotalSteps;
 
@@ -186,13 +215,17 @@ public class ActivityManager : MonoBehaviour
         dataManager.PlayerData.StartActivity(activityId, variantId, currentSteps, currentLocationId);
 
         // Update cache
-        RefreshActivityCache();
+        cacheService.RefreshActivityCache();
 
         // Save immediately
         _ = dataManager.SaveGameAsync();
 
+        // Mark as dirty in case save fails
+        ActivityManager.Instance.PersistenceService.MarkDirty();
+
         // Trigger events
-        OnActivityStarted?.Invoke(currentActivityCache, currentVariantCache);
+        var (activity, variantCache) = cacheService.GetCurrentActivityInfo();
+        OnActivityStarted?.Invoke(activity, variantCache);
 
         if (enableDebugLogs)
         {
@@ -202,9 +235,6 @@ public class ActivityManager : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// Stop the current activity
-    /// </summary>
     public bool StopActivity()
     {
         if (!HasActiveActivity())
@@ -213,17 +243,19 @@ public class ActivityManager : MonoBehaviour
             return false;
         }
 
-        var activityToStop = currentActivityCache;
-        var variantToStop = currentVariantCache;
+        var (activityToStop, variantToStop) = cacheService.GetCurrentActivityInfo();
 
         // Stop the activity in PlayerData
-        dataManager.PlayerData.StopActivity();
+        DataManager.Instance.PlayerData.StopActivity();
 
         // Clear cache
-        ClearActivityCache();
+        cacheService.ClearActivityCache();
 
         // Save immediately
-        _ = dataManager.SaveGameAsync();
+        _ = DataManager.Instance.SaveGameAsync();
+
+        // Mark as dirty in case save fails
+        ActivityManager.Instance.PersistenceService.MarkDirty();
 
         // Trigger events
         OnActivityStopped?.Invoke(activityToStop, variantToStop);
@@ -236,65 +268,92 @@ public class ActivityManager : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// Check if player can start an activity
-    /// </summary>
     public bool CanStartActivity()
     {
         if (HasActiveActivity())
         {
-            Logger.LogInfo("ActivityManager: Cannot start - already has active activity", Logger.LogCategory.General);
+            if (enableDebugLogs)
+                Logger.LogInfo("ActivityManager: Cannot start - already has active activity", Logger.LogCategory.General);
             return false;
         }
 
-        if (dataManager.PlayerData.IsCurrentlyTraveling())
+        var dataManager = DataManager.Instance;
+        if (dataManager?.PlayerData?.IsCurrentlyTraveling() == true)
         {
-            Logger.LogInfo("ActivityManager: Cannot start - currently traveling", Logger.LogCategory.General);
+            if (enableDebugLogs)
+                Logger.LogInfo("ActivityManager: Cannot start - currently traveling", Logger.LogCategory.General);
             return false;
         }
 
         return true;
     }
 
-    /// <summary>
-    /// Check if player has an active activity
-    /// </summary>
     public bool HasActiveActivity()
     {
-        return dataManager?.PlayerData?.HasActiveActivity() == true;
+        return DataManager.Instance?.PlayerData?.HasActiveActivity() == true;
     }
 
-    /// <summary>
-    /// Get current activity info for UI
-    /// </summary>
     public (ActivityData activity, ActivityVariant variant) GetCurrentActivityInfo()
     {
         if (!HasActiveActivity())
             return (null, null);
 
-        RefreshActivityCache();
-        return (currentActivityCache, currentVariantCache);
+        return cacheService.GetCurrentActivityInfo();
     }
 
-    // === STEP PROCESSING ===
-
-    /// <summary>
-    /// CORRIGE : Check for step updates and process them
-    /// Utilise LastProcessedTotalSteps de l'activite au lieu d'une variable non-sauvegardee
-    /// </summary>
-    private void CheckForStepUpdates()
+    public string GetDebugInfo()
     {
-        if (!HasActiveActivity() || stepManager == null) return;
+        if (!HasActiveActivity())
+            return "No active activity";
+
+        var (currentActivityCache, currentVariantCache) = cacheService.GetCurrentActivityInfo();
+        if (currentActivityCache == null || currentVariantCache == null)
+            return "Activity cache error";
+
+        float progress = currentActivityCache.GetProgressToNextTick(currentVariantCache);
+        return $"Activity: {currentVariantCache.GetDisplayName()}\n" +
+               $"Progress: {currentActivityCache.AccumulatedSteps}/{currentVariantCache.ActionCost} steps ({progress:P})\n" +
+               $"Location: {currentActivityCache.LocationId}\n" +
+               $"Elapsed: {TimeSpan.FromMilliseconds(currentActivityCache.GetElapsedTimeMs()).TotalMinutes:F1} min";
+    }
+}
+
+// ===============================================
+// SERVICE: ActivityProgressService
+// ===============================================
+public class ActivityProgressService
+{
+    private readonly ActivityCacheService cacheService;
+    private readonly bool enableDebugLogs;
+
+    public event Action<ActivityData, ActivityVariant, int> OnActivityTick;
+    public event Action<ActivityData, ActivityVariant> OnActivityProgress;
+
+    public ActivityProgressService(ActivityCacheService cacheService, bool enableDebugLogs)
+    {
+        this.cacheService = cacheService;
+        this.enableDebugLogs = enableDebugLogs;
+    }
+
+    public void Initialize()
+    {
+        // Service initialization if needed
+    }
+
+    public void CheckForStepUpdates()
+    {
+        var dataManager = DataManager.Instance;
+        var stepManager = StepManager.Instance;
+
+        if (!dataManager?.PlayerData?.HasActiveActivity() == true || stepManager == null) return;
 
         long currentSteps = stepManager.TotalSteps;
+        var (currentActivityCache, _) = cacheService.GetCurrentActivityInfo();
 
-        RefreshActivityCache();
         if (currentActivityCache == null) return;
 
-        // Utiliser LastProcessedTotalSteps de l'activite au lieu de lastProcessedSteps local
         long lastProcessed = currentActivityCache.LastProcessedTotalSteps;
 
-        // Check if steps have increased
         if (currentSteps > lastProcessed)
         {
             int newSteps = (int)(currentSteps - lastProcessed);
@@ -302,14 +361,12 @@ public class ActivityManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Process new steps for the current activity
-    /// </summary>
-    private void ProcessNewSteps(int newSteps)
+    public void ProcessNewSteps(int newSteps)
     {
-        if (!HasActiveActivity() || newSteps <= 0) return;
+        var dataManager = DataManager.Instance;
+        if (!dataManager?.PlayerData?.HasActiveActivity() == true || newSteps <= 0) return;
 
-        RefreshActivityCache();
+        var (currentActivityCache, currentVariantCache) = cacheService.GetCurrentActivityInfo();
         if (currentActivityCache == null || currentVariantCache == null) return;
 
         // Add steps to activity
@@ -320,12 +377,14 @@ public class ActivityManager : MonoBehaviour
 
         if (completedTicks > 0)
         {
-            ProcessActivityTicks(completedTicks);
+            ProcessActivityTicks(completedTicks, currentActivityCache, currentVariantCache);
         }
 
         // Update progress
         dataManager.PlayerData.CurrentActivity = currentActivityCache;
-        hasUnsavedProgress = true;
+
+        // Mark as dirty for persistence
+        ActivityManager.Instance.PersistenceService.MarkDirty();
 
         // Trigger progress event for UI
         OnActivityProgress?.Invoke(currentActivityCache, currentVariantCache);
@@ -337,10 +396,7 @@ public class ActivityManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Process completed ticks and give rewards
-    /// </summary>
-    private void ProcessActivityTicks(int ticksCompleted)
+    private void ProcessActivityTicks(int ticksCompleted, ActivityData currentActivityCache, ActivityVariant currentVariantCache)
     {
         if (ticksCompleted <= 0 || currentVariantCache == null) return;
 
@@ -355,17 +411,20 @@ public class ActivityManager : MonoBehaviour
         }
 
         // Give rewards to inventory
+        var inventoryManager = InventoryManager.Instance;
         bool rewardSuccess = inventoryManager.AddItem("player", resourceId, totalRewards);
 
         if (!rewardSuccess)
         {
             Logger.LogWarning($"ActivityManager: Failed to add {totalRewards} {resourceId} to inventory - inventory full?", Logger.LogCategory.General);
-            // TODO: Handle full inventory (pause activity? drop items?)
         }
 
         // Update activity progress
         currentActivityCache.ProcessTicks(currentVariantCache, ticksCompleted);
-        dataManager.PlayerData.CurrentActivity = currentActivityCache;
+        DataManager.Instance.PlayerData.CurrentActivity = currentActivityCache;
+
+        // Mark as dirty for persistence
+        ActivityManager.Instance.PersistenceService.MarkDirty();
 
         // Trigger tick event
         OnActivityTick?.Invoke(currentActivityCache, currentVariantCache, ticksCompleted);
@@ -374,26 +433,21 @@ public class ActivityManager : MonoBehaviour
         {
             Logger.LogInfo($"ActivityManager: Completed {ticksCompleted} ticks, gained {totalRewards} {resourceId}", Logger.LogCategory.General);
         }
-
-        hasUnsavedProgress = true;
     }
 
-    /// <summary>
-    /// CORRIGE : Process offline activity progress
-    /// Utilise LastProcessedTotalSteps pour calculer seulement les pas offline
-    /// </summary>
-    private void ProcessOfflineProgress()
+    public void ProcessOfflineProgress()
     {
-        if (!HasActiveActivity()) return;
+        var dataManager = DataManager.Instance;
+        if (!dataManager?.PlayerData?.HasActiveActivity() == true) return;
 
-        RefreshActivityCache();
+        var (currentActivityCache, currentVariantCache) = cacheService.GetCurrentActivityInfo();
         if (currentActivityCache == null || currentVariantCache == null) return;
 
         // Calculate offline time
         long offlineTimeMs = currentActivityCache.GetElapsedTimeMs();
         if (offlineTimeMs <= 0) return;
 
-        // CORRIGE : Utiliser LastProcessedTotalSteps au lieu de recalculer depuis StartSteps
+        // Calculate steps to process
         long currentTotalSteps = dataManager.PlayerData.TotalSteps;
         long stepsToProcess = currentTotalSteps - currentActivityCache.LastProcessedTotalSteps;
 
@@ -409,15 +463,154 @@ public class ActivityManager : MonoBehaviour
             Logger.LogInfo($"ActivityManager: Processed offline progress - Time: {offlineTime.TotalMinutes:F1} minutes", Logger.LogCategory.General);
         }
     }
+}
 
-    // === CACHE MANAGEMENT ===
+// ===============================================
+// SERVICE: ActivityPersistenceService
+// ===============================================
+public class ActivityPersistenceService
+{
+    private readonly float autoSaveInterval;
+    private bool hasUnsavedProgress = false;
+    private Coroutine autoSaveCoroutine;
 
-    /// <summary>
-    /// Refresh the activity cache from PlayerData
-    /// </summary>
-    private void RefreshActivityCache()
+    public ActivityPersistenceService(float autoSaveInterval)
     {
-        if (!HasActiveActivity())
+        this.autoSaveInterval = autoSaveInterval;
+    }
+
+    public void Initialize()
+    {
+        // Service initialization if needed
+    }
+
+    public void StartAutoSave()
+    {
+        if (autoSaveCoroutine == null)
+        {
+            autoSaveCoroutine = ActivityManager.Instance.StartCoroutine(AutoSaveLoop());
+        }
+    }
+
+    public void StopAutoSave()
+    {
+        if (autoSaveCoroutine != null)
+        {
+            ActivityManager.Instance.StopCoroutine(autoSaveCoroutine);
+            autoSaveCoroutine = null;
+        }
+    }
+
+    public void MarkDirty()
+    {
+        hasUnsavedProgress = true;
+    }
+
+    public void ForceSave()
+    {
+        if (hasUnsavedProgress)
+        {
+            DataManager.Instance.SaveGame();
+            hasUnsavedProgress = false;
+        }
+    }
+
+    public void Cleanup()
+    {
+        StopAutoSave();
+    }
+
+    private IEnumerator AutoSaveLoop()
+    {
+        var wait = new WaitForSeconds(autoSaveInterval);
+        while (true)
+        {
+            yield return wait;
+
+            if (hasUnsavedProgress)
+            {
+                _ = DataManager.Instance.SaveGameAsync();
+                hasUnsavedProgress = false;
+            }
+        }
+    }
+}
+
+// ===============================================
+// SERVICE: ActivityValidationService
+// ===============================================
+public class ActivityValidationService
+{
+    public void Initialize()
+    {
+        // Service initialization if needed
+    }
+
+    public bool ValidateAllDependencies(ActivityRegistry activityRegistry)
+    {
+        bool isValid = true;
+
+        if (DataManager.Instance == null)
+        {
+            Logger.LogError("ActivityManager: DataManager not found!", Logger.LogCategory.General);
+            isValid = false;
+        }
+
+        if (StepManager.Instance == null)
+        {
+            Logger.LogError("ActivityManager: StepManager not found!", Logger.LogCategory.General);
+            isValid = false;
+        }
+
+        if (InventoryManager.Instance == null)
+        {
+            Logger.LogError("ActivityManager: InventoryManager not found!", Logger.LogCategory.General);
+            isValid = false;
+        }
+
+        if (activityRegistry == null)
+        {
+            Logger.LogError("ActivityManager: ActivityRegistry not assigned in inspector!", Logger.LogCategory.General);
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    public bool ValidateVariant(ActivityVariant variant)
+    {
+        return variant?.IsValidVariant() == true;
+    }
+
+    public bool ValidateActivity(LocationActivity activity)
+    {
+        return activity?.ActivityReference?.IsValidActivity() == true;
+    }
+}
+
+// ===============================================
+// SERVICE: ActivityCacheService
+// ===============================================
+public class ActivityCacheService
+{
+    private readonly ActivityRegistry activityRegistry;
+    private ActivityData currentActivityCache;
+    private ActivityVariant currentVariantCache;
+
+    public ActivityCacheService(ActivityRegistry activityRegistry)
+    {
+        this.activityRegistry = activityRegistry;
+    }
+
+    public void Initialize()
+    {
+        RefreshActivityCache();
+    }
+
+    public void RefreshActivityCache()
+    {
+        var dataManager = DataManager.Instance;
+        if (!dataManager?.PlayerData?.HasActiveActivity() == true)
         {
             ClearActivityCache();
             return;
@@ -427,129 +620,27 @@ public class ActivityManager : MonoBehaviour
         currentVariantCache = GetActivityVariant(currentActivityCache.ActivityId, currentActivityCache.VariantId);
     }
 
-    /// <summary>
-    /// Clear the activity cache
-    /// </summary>
-    private void ClearActivityCache()
+    public void ClearActivityCache()
     {
         currentActivityCache = null;
         currentVariantCache = null;
     }
 
-    // === ACTIVITY REGISTRY ACCESS ===
+    public (ActivityData activity, ActivityVariant variant) GetCurrentActivityInfo()
+    {
+        RefreshActivityCache();
+        return (currentActivityCache, currentVariantCache);
+    }
 
-    /// <summary>
-    /// Get activity definition from registry
-    /// </summary>
-    private LocationActivity GetActivityDefinition(string activityId)
+    public LocationActivity GetActivityDefinition(string activityId)
     {
         if (activityRegistry == null) return null;
         return activityRegistry.GetActivity(activityId);
     }
 
-    /// <summary>
-    /// Get activity variant from registry
-    /// </summary>
-    private ActivityVariant GetActivityVariant(string activityId, string variantId)
+    public ActivityVariant GetActivityVariant(string activityId, string variantId)
     {
         if (activityRegistry == null) return null;
         return activityRegistry.GetActivityVariant(activityId, variantId);
-    }
-
-    // === AUTO-SAVE ===
-
-    /// <summary>
-    /// Handle auto-save during activity
-    /// </summary>
-    private void HandleAutoSave()
-    {
-        if (!hasUnsavedProgress) return;
-
-        timeSinceLastSave += Time.deltaTime;
-
-        if (timeSinceLastSave >= autoSaveInterval)
-        {
-            dataManager.SaveGame();
-            hasUnsavedProgress = false;
-            timeSinceLastSave = 0f;
-
-            if (enableDebugLogs)
-            {
-                Logger.LogInfo("ActivityManager: Auto-saved activity progress", Logger.LogCategory.General);
-            }
-        }
-    }
-
-    // === INTEGRATION WITH OTHER SYSTEMS ===
-
-    /// <summary>
-    /// Check if travel should be blocked due to active activity
-    /// </summary>
-    public bool ShouldBlockTravel()
-    {
-        return HasActiveActivity();
-    }
-
-    /// <summary>
-    /// Get debug info about current activity
-    /// </summary>
-    public string GetDebugInfo()
-    {
-        if (!HasActiveActivity())
-            return "No active activity";
-
-        RefreshActivityCache();
-        if (currentActivityCache == null || currentVariantCache == null)
-            return "Activity cache error";
-
-        float progress = currentActivityCache.GetProgressToNextTick(currentVariantCache);
-        return $"Activity: {currentVariantCache.GetDisplayName()}\n" +
-               $"Progress: {currentActivityCache.AccumulatedSteps}/{currentVariantCache.ActionCost} steps ({progress:P})\n" +
-               $"Location: {currentActivityCache.LocationId}\n" +
-               $"Elapsed: {TimeSpan.FromMilliseconds(currentActivityCache.GetElapsedTimeMs()).TotalMinutes:F1} min";
-    }
-
-    // === CLEANUP ===
-
-    void OnApplicationPause(bool pauseStatus)
-    {
-        if (pauseStatus && hasUnsavedProgress)
-        {
-            dataManager.SaveGame();
-            hasUnsavedProgress = false;
-        }
-    }
-
-    void OnApplicationQuit()
-    {
-        if (hasUnsavedProgress)
-        {
-            dataManager.SaveGame();
-        }
-    }
-
-    void OnDestroy()
-    {
-        // Clean up any subscriptions if needed
-    }
-
-    private void OnDisable()
-    {
-        if (autoSaveCoroutine != null) StopCoroutine(autoSaveCoroutine);
-    }
-
-    private IEnumerator AutoSaveLoop()
-    {
-        var wait = new WaitForSeconds(autoSaveInterval);   // one GC-free object
-        while (true)
-        {
-            yield return wait;
-
-            if (hasUnsavedProgress)
-            {
-                _ = dataManager.SaveGameAsync();           // fire-and-forget
-                hasUnsavedProgress = false;
-            }
-        }
     }
 }
