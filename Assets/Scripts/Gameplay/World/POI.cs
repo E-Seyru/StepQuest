@@ -33,6 +33,10 @@ public class POI : MonoBehaviour, IPointerClickHandler
     [Tooltip("LeanTween ease type for the animation")]
     [SerializeField] private LeanTweenType clickAnimationEase = LeanTweenType.easeOutBack;
 
+    [Header("Error Display")]
+    [Tooltip("Le panel d'erreur sera géré automatiquement via ErrorPanel.Instance")]
+    [SerializeField] private bool enableErrorMessages = true;
+
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
 
@@ -45,7 +49,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     private bool isCurrentLocation = false;
     private bool canTravelHere = false;
 
-    // NOUVEAU : Variables pour l'animation
+    // Variables pour l'animation
     private Vector3 originalScale;
     private bool isAnimating = false;
 
@@ -79,7 +83,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     void Start()
     {
-        // NOUVEAU : Sauvegarder l'échelle originale
+        // Sauvegarder l'échelle originale
         originalScale = transform.localScale;
 
         // Get MapManager reference
@@ -139,7 +143,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     void OnDestroy()
     {
-        // NOUVEAU : Arrêter toutes les animations LeanTween sur cet objet
+        // Arrêter toutes les animations LeanTween sur cet objet
         LeanTween.cancel(gameObject);
 
         // Unsubscribe from events
@@ -164,7 +168,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// NOUVEAU : Lance l'animation de clic (effet punch scale)
+    /// Lance l'animation de clic (effet punch scale)
     /// </summary>
     private void PlayClickAnimation()
     {
@@ -201,34 +205,9 @@ public class POI : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    /// <summary>
-    /// NOUVEAU : Version alternative avec une seule animation "punch"
-    /// Tu peux remplacer PlayClickAnimation() par celle-ci si tu préfères
-    /// </summary>
-    private void PlayClickAnimationPunch()
-    {
-        if (!enableClickAnimation || isAnimating)
-            return;
-
-        isAnimating = true;
-
-        // Annuler toute animation en cours
-        LeanTween.cancel(gameObject);
-
-        // Animation "punch" : utilise LeanTween.punch pour un effet plus naturel
-        LeanTween.scale(gameObject, originalScale + Vector3.one * (clickScaleAmount - 1f), clickAnimationDuration)
-            .setEase(clickAnimationEase)
-            .setLoopPingPong(1) // Fait l'aller-retour automatiquement
-            .setOnComplete(() =>
-            {
-                transform.localScale = originalScale; // S'assurer qu'on revient exactement à l'original
-                isAnimating = false;
-            });
-    }
-
     private void HandleClick()
     {
-        // NOUVEAU : Jouer l'effet d'animation en premier
+        // Jouer l'effet d'animation en premier
         PlayClickAnimation();
 
         if (mapManager == null)
@@ -283,120 +262,115 @@ public class POI : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// Affiche un message ou des détails quand le voyage n'est pas possible
+    /// Affiche un panel d'erreur quand le voyage n'est pas possible
     /// </summary>
     private void ShowTravelUnavailableMessage()
     {
         var destinationLocation = locationRegistry.GetLocationById(LocationID);
-        string reason = "raison inconnue";
+        string errorMessage = "Impossible de voyager !";
 
         if (mapManager.CurrentLocation == null)
         {
-            reason = "aucune location de joueur définie.";
+            errorMessage = "Impossible - aucune location définie !";
         }
         else if (dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            reason = $"déjà en voyage vers {dataManager.PlayerData.TravelDestinationId}.";
+            errorMessage = "Impossible - vous êtes déjà en train de voyager !";
+        }
+        else if (ActivityManager.Instance?.HasActiveActivity() == true)
+        {
+            errorMessage = "Impossible - vous êtes en activité !";
         }
         else if (destinationLocation == null)
         {
-            reason = $"destination '{LocationID}' introuvable.";
+            errorMessage = $"Impossible - destination '{LocationID}' introuvable !";
         }
         else if (mapManager.CurrentLocation.LocationID == LocationID)
         {
-            reason = $"déjà à '{destinationLocation.DisplayName}'.";
+            errorMessage = $"Impossible - déjà à '{destinationLocation.DisplayName}' !";
         }
         else if (!locationRegistry.CanTravelBetween(mapManager.CurrentLocation.LocationID, LocationID))
         {
-            reason = $"pas connecté à '{destinationLocation.DisplayName}'.";
+            errorMessage = $"Impossible - pas connecté à '{destinationLocation.DisplayName}' !";
         }
 
-        Logger.LogInfo($"POI ({LocationID}): Voyage impossible vers '{destinationLocation?.DisplayName ?? LocationID}'. Raison: {reason}", Logger.LogCategory.MapLog);
+        // Afficher le panel d'erreur
+        ShowErrorPanel(errorMessage);
+
+        // Garder le log pour debug
+        Logger.LogInfo($"POI ({LocationID}): {errorMessage}", Logger.LogCategory.MapLog);
     }
 
     /// <summary>
-    /// Optionnel - Affiche les détails de la location actuelle
+    /// Affiche le panel d'erreur via le singleton
     /// </summary>
-    private void ShowLocationDetails()
+    private void ShowErrorPanel(string message)
     {
-        var currentLocation = locationRegistry.GetLocationById(LocationID);
-        if (currentLocation != null)
+        if (!enableErrorMessages)
         {
+            return;
+        }
+
+        if (ErrorPanel.Instance != null)
+        {
+            ErrorPanel.Instance.ShowError(message, transform);
+
             if (enableDebugLogs)
             {
-                Logger.LogInfo($"POI ({LocationID}): Showing details for current location: {currentLocation.DisplayName}", Logger.LogCategory.MapLog);
-            }
-        }
-    }
-
-    private void UpdateVisualState()
-    {
-        if (spriteRenderer == null || mapManager == null || dataManager == null || locationRegistry == null)
-            return;
-
-        bool isPlayerCurrentlyTraveling = dataManager.PlayerData.IsCurrentlyTraveling();
-        MapLocationDefinition referenceLocation = mapManager.CurrentLocation;
-
-        isCurrentLocation = false;
-        canTravelHere = false;
-
-        if (isPlayerCurrentlyTraveling)
-        {
-            isCurrentLocation = false;
-            canTravelHere = false;
-
-            if (referenceLocation == null)
-            {
-                spriteRenderer.color = unavailableColor;
-                return;
-            }
-
-            if (referenceLocation.LocationID == this.LocationID)
-            {
-                spriteRenderer.color = normalColor;
-            }
-            else
-            {
-                if (locationRegistry.CanTravelBetween(referenceLocation.LocationID, this.LocationID))
-                {
-                    spriteRenderer.color = normalColor;
-                }
-                else
-                {
-                    spriteRenderer.color = unavailableColor;
-                }
+                Logger.LogInfo($"POI ({LocationID}): Showing error panel with message: {message}", Logger.LogCategory.MapLog);
             }
         }
         else
         {
-            if (referenceLocation != null && referenceLocation.LocationID == this.LocationID)
-            {
-                isCurrentLocation = true;
-                canTravelHere = false;
-                spriteRenderer.color = highlightColor;
-            }
-            else
-            {
-                isCurrentLocation = false;
-                canTravelHere = mapManager.CanTravelTo(this.LocationID);
+            Logger.LogWarning($"POI ({LocationID}): ErrorPanel.Instance not found!", Logger.LogCategory.MapLog);
+        }
+    }
 
-                if (canTravelHere)
-                {
-                    spriteRenderer.color = normalColor;
-                }
-                else
-                {
-                    spriteRenderer.color = unavailableColor;
-                }
-            }
+    /// <summary>
+    /// Show location details popup when clicking on current location
+    /// </summary>
+    private void ShowLocationDetails()
+    {
+        // Implementation would open location details panel
+        if (enableDebugLogs)
+        {
+            Logger.LogInfo($"POI ({LocationID}): Showing location details", Logger.LogCategory.MapLog);
+        }
+
+        // You could trigger a location details panel here if you have one
+        // LocationDetailsPanel.Instance?.ShowLocation(LocationID);
+    }
+
+    private void UpdateVisualState()
+    {
+        if (spriteRenderer == null || mapManager?.CurrentLocation == null) return;
+
+        // Check if this POI represents the current location
+        isCurrentLocation = (mapManager.CurrentLocation.LocationID == LocationID);
+
+        // Check if we can travel here
+        canTravelHere = mapManager.CanTravelTo(LocationID);
+
+        // Set color based on state
+        if (isCurrentLocation && !dataManager.PlayerData.IsCurrentlyTraveling())
+        {
+            spriteRenderer.color = highlightColor; // Highlight current location
+        }
+        else if (canTravelHere)
+        {
+            spriteRenderer.color = normalColor; // Available for travel
+        }
+        else
+        {
+            spriteRenderer.color = unavailableColor; // Cannot travel here
         }
     }
 
     private void OnPlayerLocationChanged(MapLocationDefinition newLocation)
     {
-        if (enableDebugLogs && newLocation != null && newLocation.LocationID == LocationID)
+        if (enableDebugLogs && newLocation?.LocationID == LocationID)
         {
-            Logger.LogInfo($"POI ({LocationID}): Player's location is now here.", Logger.LogCategory.MapLog);
+            Logger.LogInfo($"POI ({LocationID}): Player ARRIVED at this location!", Logger.LogCategory.MapLog);
         }
         UpdateVisualState();
     }
@@ -450,7 +424,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
             spriteRenderer = GetComponent<SpriteRenderer>();
         }
 
-        // NOUVEAU : Validation des paramètres d'animation
+        // Validation des paramètres d'animation
         if (clickScaleAmount < 1.0f)
         {
             Debug.LogWarning($"POI ({LocationID}): clickScaleAmount should be >= 1.0 for a growing effect");
@@ -466,35 +440,17 @@ public class POI : MonoBehaviour, IPointerClickHandler
     void OnDrawGizmosSelected()
     {
         // POI Gizmo
-        Gizmos.color = (spriteRenderer != null && spriteRenderer.color == normalColor) ? Color.green : Color.red;
-        Gizmos.DrawWireSphere(transform.position, 0.5f);
+        Gizmos.color = (spriteRenderer != null && spriteRenderer.color == normalColor) ?
+                      Color.green : Color.red;
+        Gizmos.DrawWireCube(transform.position, Vector3.one * 0.5f);
 
-        // Travel Start Point Gizmo
+        // Travel start point gizmo
         if (showTravelStartPoint)
         {
             Vector3 startPos = GetTravelPathStartPosition();
             Gizmos.color = travelStartPointColor;
-            Gizmos.DrawWireSphere(startPos, 0.3f);
-
-            if (travelPathStartPoint != null)
-            {
-                Gizmos.color = Color.white;
-                Gizmos.DrawLine(transform.position, startPos);
-            }
+            Gizmos.DrawWireSphere(startPos, 0.2f);
+            Gizmos.DrawLine(transform.position, startPos);
         }
-
-#if UNITY_EDITOR
-        if (!string.IsNullOrEmpty(LocationID))
-        {
-            UnityEditor.Handles.Label(transform.position + Vector3.up * 0.7f, LocationID);
-
-            if (travelPathStartPoint != null && showTravelStartPoint)
-            {
-                Vector3 startPos = GetTravelPathStartPosition();
-                UnityEditor.Handles.color = travelStartPointColor;
-                UnityEditor.Handles.Label(startPos + Vector3.up * 0.5f, "Start");
-            }
-        }
-#endif
     }
 }
