@@ -390,6 +390,9 @@ public class AboveCanvasManager : MonoBehaviour
 
     // === NOUVELLE VERSION ANIMÉE DE UpdateProgressBar ===
 
+    /// <summary>
+    /// Version UNIFIÉE : progression + pulse simultanés
+    /// </summary>
     private void UpdateProgressBar(long current, long required)
     {
         if (fillBar == null || required <= 0) return;
@@ -397,38 +400,61 @@ public class AboveCanvasManager : MonoBehaviour
         float newProgressValue = Mathf.Clamp01((float)current / required);
 
         // OPTIMISATION: Éviter les animations inutiles
-        // Seuil de tolérance pour éviter les micro-animations
         if (Mathf.Abs(newProgressValue - lastProgressValue) < 0.001f) return;
 
         // Déterminer si c'est une progression (pour déclencher le pulse)
         bool isProgression = newProgressValue > lastProgressValue && lastProgressValue >= 0f;
 
-        // Annuler l'animation précédente si elle existe
+        // Annuler toutes les animations précédentes
         if (currentAnimationId >= 0)
         {
             LeanTween.cancel(currentAnimationId);
         }
+        if (currentPulseId >= 0)
+        {
+            LeanTween.cancel(currentPulseId);
+        }
+        LeanTween.cancel(fillBar.gameObject); // Sécurité pour l'échelle
 
-        // Démarrer l'animation fluide
+        // Valeurs de départ
         float startValue = fillBar.fillAmount;
+        Vector3 targetScale = originalFillScale * (isProgression ? pulseScaleAmount : 1f);
 
-        currentAnimationId = LeanTween.value(gameObject, startValue, newProgressValue, progressAnimationDuration)
+        // 🎯 UNE SEULE ANIMATION pour tout contrôler !
+        currentAnimationId = LeanTween.value(gameObject, 0f, 1f, progressAnimationDuration)
             .setEase(progressAnimationEase)
-            .setOnUpdate((float value) =>
+            .setOnUpdate((float t) =>
             {
                 if (fillBar != null)
                 {
-                    fillBar.fillAmount = value;
+                    // 1. PROGRESSION du fillAmount
+                    float currentFillAmount = Mathf.Lerp(startValue, newProgressValue, t);
+                    fillBar.fillAmount = currentFillAmount;
+
+                    // 2. PULSE d'échelle (seulement si progression)
+                    if (isProgression)
+                    {
+                        // Effet "cloche" : commence et finit à 0, pic au milieu
+                        float pulseProgress = Mathf.Sin(t * Mathf.PI);
+                        Vector3 currentScale = Vector3.Lerp(originalFillScale, targetScale, pulseProgress);
+                        fillBar.transform.localScale = currentScale;
+
+                        // 3. PULSE de couleur (seulement si progression)
+                        Color currentColor = Color.Lerp(originalFillColor, pulseColor, pulseProgress);
+                        fillBar.color = currentColor;
+                    }
                 }
             })
             .setOnComplete(() =>
             {
                 currentAnimationId = -1;
 
-                // Déclencher l'effet de pulse seulement en cas de progression
-                if (isProgression)
+                // S'assurer que tout revient à l'état normal
+                if (fillBar != null)
                 {
-                    TriggerProgressPulse();
+                    fillBar.fillAmount = newProgressValue; // Sécurité
+                    fillBar.transform.localScale = originalFillScale;
+                    fillBar.color = originalFillColor;
                 }
             }).id;
 
@@ -436,57 +462,7 @@ public class AboveCanvasManager : MonoBehaviour
         lastProgressValue = newProgressValue;
     }
 
-    /// <summary>
-    /// Déclenche un effet de pulse subtil quand la barre progresse
-    /// </summary>
-    private void TriggerProgressPulse()
-    {
-        if (fillBar == null) return;
 
-        // Annuler le pulse précédent s'il existe
-        if (currentPulseId >= 0)
-        {
-            LeanTween.cancel(currentPulseId);
-        }
-
-        // Animation de pulse d'échelle
-        Vector3 targetScale = originalFillScale * pulseScaleAmount;
-
-        LeanTween.scale(fillBar.gameObject, targetScale, pulseDuration * 0.5f)
-            .setEase(LeanTweenType.easeOutQuad)
-            .setOnComplete(() =>
-            {
-                // Retour à l'échelle normale
-                LeanTween.scale(fillBar.gameObject, originalFillScale, pulseDuration * 0.5f)
-                    .setEase(LeanTweenType.easeInQuad);
-            });
-
-        // Animation de pulse de couleur (plus sombre puis retour)
-        currentPulseId = LeanTween.value(gameObject, 0f, 1f, pulseDuration)
-            .setEase(LeanTweenType.easeInOutQuad)
-            .setOnUpdate((float t) =>
-            {
-                if (fillBar != null)
-                {
-                    // Interpolation vers la couleur plus sombre puis retour
-                    Color currentColor = Color.Lerp(
-                        originalFillColor,
-                        pulseColor,
-                        Mathf.Sin(t * Mathf.PI) // Effet de "cloche" pour aller-retour
-                    );
-                    fillBar.color = currentColor;
-                }
-            })
-            .setOnComplete(() =>
-            {
-                currentPulseId = -1;
-                // S'assurer que la couleur revient à l'original
-                if (fillBar != null)
-                {
-                    fillBar.color = originalFillColor;
-                }
-            }).id;
-    }
 
     // === MÉTHODES PUBLIQUES ===
 
