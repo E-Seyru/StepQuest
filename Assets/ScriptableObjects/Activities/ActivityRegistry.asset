@@ -56,6 +56,8 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
+  enableFallbackSearch: 1
+  logMissingVariants: 0
   ValidationStatus: 'Registry validation passed!
 
     Found 5 valid activity(ies).

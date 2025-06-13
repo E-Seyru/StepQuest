@@ -1,4 +1,4 @@
-// Purpose: Enhanced ActivityVariant with auto-registration capabilities
+// Purpose: Enhanced ActivityVariant with auto-registration capabilities - ROBUST VERSION
 // Filepath: Assets/Scripts/Data/Models/ActivityVariant.cs
 using System.Collections.Generic;
 using System.Linq;
@@ -57,13 +57,15 @@ public class ActivityVariant : ScriptableObject
     }
 
     /// <summary>
-    /// Get the parent activity ID
+    /// Get the parent activity ID - FIXED VERSION with editor guards
     /// </summary>
     public string GetParentActivityID()
     {
         if (AutoDetectParent)
         {
+#if UNITY_EDITOR
             DetectParentFromPath();
+#endif
         }
         return ParentActivityID;
     }

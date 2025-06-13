@@ -1,4 +1,4 @@
-﻿// Purpose: Script pour débugger les données de joueur et trouver les références Mining
+﻿// Purpose: Diagnostic et réparation des données joueur corrompues
 // Filepath: Assets/Scripts/Debug/PlayerDataDebugger.cs
 #if UNITY_EDITOR
 using UnityEditor;
@@ -14,121 +14,168 @@ public class PlayerDataDebugger : EditorWindow
         window.Show();
     }
 
+    private Vector2 scrollPosition;
+
     void OnGUI()
     {
-        GUILayout.Label("Player Data Debugger", EditorStyles.boldLabel);
-
-        EditorGUILayout.HelpBox("Ce script va analyser tes données sauvegardées pour trouver des références à 'Mining'", MessageType.Info);
-
-        if (GUILayout.Button("Analyser les données de joueur"))
-        {
-            AnalyzePlayerData();
-        }
-
-        EditorGUILayout.Space();
-
-        if (GUILayout.Button("Nettoyer l'activité corrompue"))
-        {
-            CleanCorruptedActivity();
-        }
-
-        EditorGUILayout.Space();
-
-        if (GUILayout.Button("Reset complet des données de joueur"))
-        {
-            if (EditorUtility.DisplayDialog("Attention",
-                "Cela va supprimer TOUTES tes données de joueur sauvegardées. Es-tu sûr ?",
-                "Oui, supprimer", "Annuler"))
-            {
-                ResetPlayerData();
-            }
-        }
-    }
-
-    private void AnalyzePlayerData()
-    {
-        Debug.Log("=== ANALYSE DES DONNÉES DE JOUEUR ===");
+        GUILayout.Label("Player Data Debugger & Repair Tool", EditorStyles.boldLabel);
 
         if (!Application.isPlaying)
         {
-            Debug.LogWarning("Lance le jeu en mode Play pour analyser les données !");
-            EditorUtility.DisplayDialog("Mode Play requis",
-                "Tu dois être en mode Play pour analyser les données de joueur.", "OK");
+            EditorGUILayout.HelpBox("WARNING: Cette tool nécessite le mode Play pour accéder aux données joueur", MessageType.Warning);
             return;
         }
 
+        EditorGUILayout.Space();
+
+        if (GUILayout.Button("DIAGNOSTIQUER L'ETAT JOUEUR", GUILayout.Height(30)))
+        {
+            DiagnosePlayerState();
+        }
+
+        EditorGUILayout.Space();
+
+        if (GUILayout.Button("REPARER L'ETAT DE VOYAGE", GUILayout.Height(30)))
+        {
+            RepairTravelState();
+        }
+
+        if (GUILayout.Button("REPARER L'ETAT D'ACTIVITE", GUILayout.Height(30)))
+        {
+            RepairActivityState();
+        }
+
+        if (GUILayout.Button("REPARATION COMPLETE", GUILayout.Height(30)))
+        {
+            FullRepair();
+        }
+
+        EditorGUILayout.Space();
+
+        if (GUILayout.Button("FORCER SAUVEGARDE", GUILayout.Height(25)))
+        {
+            ForceSave();
+        }
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Etat Actuel:", EditorStyles.boldLabel);
+
+        scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+        DisplayCurrentState();
+        EditorGUILayout.EndScrollView();
+    }
+
+    private void DiagnosePlayerState()
+    {
+        Debug.Log("=== DIAGNOSTIC COMPLET DE L'ETAT JOUEUR ===");
+
         var dataManager = DataManager.Instance;
+        var mapManager = MapManager.Instance;
+        var activityManager = ActivityManager.Instance;
+
         if (dataManager?.PlayerData == null)
         {
-            Debug.LogError("DataManager ou PlayerData non trouvé !");
+            Debug.LogError("ERROR: DataManager ou PlayerData non disponible !");
             return;
         }
 
         var playerData = dataManager.PlayerData;
 
-        Debug.Log($"=== DONNÉES ACTUELLES ===");
-        Debug.Log($"Location actuelle : {playerData.CurrentLocationId}");
-        Debug.Log($"En voyage : {playerData.IsCurrentlyTraveling()}");
+        Debug.Log("POSITION & VOYAGE:");
+        Debug.Log($"   CurrentLocationId: '{playerData.CurrentLocationId}'");
+        Debug.Log($"   TravelDestinationId: '{playerData.TravelDestinationId}' {(string.IsNullOrEmpty(playerData.TravelDestinationId) ? "(NULL - OK)" : "(NON-NULL - PROBLEME POTENTIEL)")}");
+        Debug.Log($"   TravelStartSteps: {playerData.TravelStartSteps}");
+        Debug.Log($"   TravelRequiredSteps: {playerData.TravelRequiredSteps}");
+        Debug.Log($"   IsCurrentlyTraveling(): {playerData.IsCurrentlyTraveling()} {(playerData.IsCurrentlyTraveling() ? "PROBLEME !" : "OK")}");
 
         if (playerData.IsCurrentlyTraveling())
         {
-            Debug.Log($"Destination : {playerData.TravelDestinationId}");
+            long progress = playerData.GetTravelProgress(playerData.TotalSteps);
+            Debug.Log($"   Progres voyage: {progress}/{playerData.TravelRequiredSteps} steps");
+            Debug.Log($"   Voyage termine?: {playerData.IsTravelComplete(playerData.TotalSteps)}");
         }
 
-        // VÉRIFIER L'ACTIVITÉ COURANTE
+        Debug.Log("ACTIVITE:");
+        Debug.Log($"   HasActiveActivity(): {playerData.HasActiveActivity()} {(playerData.HasActiveActivity() ? "Activite en cours" : "Pas d'activite")}");
+
         if (playerData.HasActiveActivity())
         {
-            var activity = playerData.CurrentActivity;
-            Debug.Log($"=== ACTIVITÉ ACTIVE TROUVÉE ===");
-            Debug.Log($"ActivityId : '{activity.ActivityId}'");
-            Debug.Log($"VariantId : '{activity.VariantId}'");
-            Debug.Log($"LocationId : '{activity.LocationId}'");
-
-            // BINGO ! Si l'ActivityId contient "Mining", on a trouvé le problème !
-            if (activity.ActivityId.Contains("Mining"))
-            {
-                Debug.LogError($"❌ PROBLÈME TROUVÉ ! L'activité active référence '{activity.ActivityId}' au lieu de 'Miner' !");
-                Debug.LogError($"C'est ça qui cause l'erreur dans GetActivityVariant() !");
-            }
-            else
-            {
-                Debug.Log($"✅ L'activité active semble correcte : '{activity.ActivityId}'");
-            }
+            Debug.Log($"   Activite: {playerData.CurrentActivity.ActivityId}/{playerData.CurrentActivity.VariantId}");
+            Debug.Log($"   Location: {playerData.CurrentActivity.LocationId}");
+            Debug.Log($"   Steps accumules: {playerData.CurrentActivity.AccumulatedSteps}");
         }
-        else
+
+        Debug.Log("CONDITIONS DE BLOCAGE:");
+        Debug.Log($"   CanStartActivity(): {activityManager?.CanStartActivity()} {(activityManager?.CanStartActivity() == false ? "BLOQUE !" : "OK")}");
+
+        if (mapManager?.CurrentLocation != null)
         {
-            Debug.Log("Aucune activité active");
+            string currentLoc = mapManager.CurrentLocation.LocationID;
+            bool canTravelToVillage = mapManager.CanTravelTo("Village");
+            Debug.Log($"   CanTravelTo('Village'): {canTravelToVillage} {(canTravelToVillage ? "OK" : "BLOQUE !")}");
         }
 
-        // Vérifier les données JSON brutes
-        string activityJson = playerData.CurrentActivityJson;
-        if (!string.IsNullOrEmpty(activityJson))
-        {
-            Debug.Log($"JSON brut de l'activité : {activityJson}");
+        Debug.Log("STATS GENERALES:");
+        Debug.Log($"   TotalSteps: {playerData.TotalSteps}");
+        Debug.Log($"   DailySteps: {playerData.DailySteps}");
+        Debug.Log($"   ID: {playerData.Id}");
 
-            if (activityJson.Contains("Mining"))
-            {
-                Debug.LogError($"❌ Le JSON contient 'Mining' ! Voici le JSON complet : {activityJson}");
-            }
-        }
+        Debug.Log("=== FIN DIAGNOSTIC ===");
     }
 
-    private void CleanCorruptedActivity()
+    private void RepairTravelState()
     {
-        Debug.Log("=== NETTOYAGE DE L'ACTIVITÉ CORROMPUE ===");
+        Debug.Log("=== REPARATION DE L'ETAT DE VOYAGE ===");
 
-        if (!Application.isPlaying)
+        var dataManager = DataManager.Instance;
+        var mapManager = MapManager.Instance;
+
+        if (dataManager?.PlayerData == null)
         {
-            Debug.LogWarning("Lance le jeu en mode Play pour nettoyer les données !");
-            EditorUtility.DisplayDialog("Mode Play requis",
-                "Tu dois être en mode Play pour nettoyer les données.", "OK");
+            Debug.LogError("ERROR: DataManager non disponible !");
             return;
         }
 
+        var playerData = dataManager.PlayerData;
+
+        if (playerData.IsCurrentlyTraveling())
+        {
+            Debug.Log("Etat de voyage detecte - Nettoyage...");
+
+            string oldDest = playerData.TravelDestinationId;
+            long oldStart = playerData.TravelStartSteps;
+            int oldRequired = playerData.TravelRequiredSteps;
+
+            // Clear travel state
+            playerData.TravelDestinationId = null;
+            playerData.TravelStartSteps = 0;
+            playerData.TravelRequiredSteps = 0;
+
+            Debug.Log($"   FIXED: Supprime: Destination='{oldDest}', StartSteps={oldStart}, RequiredSteps={oldRequired}");
+
+            // Clear MapManager state too
+            mapManager?.ClearTravelState();
+
+            Debug.Log("SUCCESS: Etat de voyage nettoye avec succes !");
+        }
+        else
+        {
+            Debug.Log("INFO: Aucun etat de voyage a reparer");
+        }
+
+        Debug.Log("=== FIN REPARATION VOYAGE ===");
+    }
+
+    private void RepairActivityState()
+    {
+        Debug.Log("=== REPARATION DE L'ETAT D'ACTIVITE ===");
+
         var dataManager = DataManager.Instance;
+        var activityManager = ActivityManager.Instance;
+
         if (dataManager?.PlayerData == null)
         {
-            Debug.LogError("DataManager ou PlayerData non trouvé !");
+            Debug.LogError("ERROR: DataManager non disponible !");
             return;
         }
 
@@ -136,63 +183,108 @@ public class PlayerDataDebugger : EditorWindow
 
         if (playerData.HasActiveActivity())
         {
-            var activity = playerData.CurrentActivity;
+            Debug.Log("Activite active detectee - Arret...");
 
-            if (activity.ActivityId.Contains("Mining"))
-            {
-                Debug.Log($"Nettoyage de l'activité corrompue : {activity.ActivityId}");
+            string oldActivity = $"{playerData.CurrentActivity.ActivityId}/{playerData.CurrentActivity.VariantId}";
 
-                // Arrêter l'activité corrompue
-                playerData.StopActivity();
+            playerData.StopActivity();
 
-                // Sauvegarder
-                dataManager.SaveGame();
-
-                Debug.Log("✅ Activité corrompue supprimée et données sauvegardées !");
-                EditorUtility.DisplayDialog("Nettoyage terminé",
-                    "L'activité corrompue a été supprimée. L'erreur devrait disparaître.", "OK");
-            }
-            else
-            {
-                Debug.Log("Aucune activité corrompue trouvée à nettoyer.");
-                EditorUtility.DisplayDialog("Rien à nettoyer",
-                    "Aucune activité corrompue n'a été trouvée.", "OK");
-            }
+            Debug.Log($"   FIXED: Arrete: {oldActivity}");
+            Debug.Log("SUCCESS: Etat d'activite nettoye avec succes !");
         }
         else
         {
-            Debug.Log("Aucune activité active à nettoyer.");
+            Debug.Log("INFO: Aucune activite active a arreter");
+        }
+
+        Debug.Log("=== FIN REPARATION ACTIVITE ===");
+    }
+
+    private void FullRepair()
+    {
+        Debug.Log("=== REPARATION COMPLETE ===");
+
+        RepairTravelState();
+        RepairActivityState();
+        ForceSave();
+
+        Debug.Log("SUCCESS: REPARATION COMPLETE TERMINEE !");
+        Debug.Log("INFO: Teste maintenant sur ton telephone - tu devrais pouvoir voyager et faire des activites !");
+    }
+
+    private void ForceSave()
+    {
+        Debug.Log("=== SAUVEGARDE FORCEE ===");
+
+        var dataManager = DataManager.Instance;
+        if (dataManager != null)
+        {
+            dataManager.ForceSave();
+            Debug.Log("SUCCESS: Sauvegarde reussie !");
+        }
+        else
+        {
+            Debug.LogError("ERROR: DataManager non disponible !");
         }
     }
 
-    private void ResetPlayerData()
+    private void DisplayCurrentState()
     {
-        Debug.Log("=== RESET COMPLET DES DONNÉES ===");
-
-        if (!Application.isPlaying)
-        {
-            Debug.LogWarning("Lance le jeu en mode Play pour reset les données !");
-            EditorUtility.DisplayDialog("Mode Play requis",
-                "Tu dois être en mode Play pour reset les données.", "OK");
-            return;
-        }
-
         var dataManager = DataManager.Instance;
-        if (dataManager?.LocalDatabase == null)
+        var mapManager = MapManager.Instance;
+        var activityManager = ActivityManager.Instance;
+
+        if (dataManager?.PlayerData == null)
         {
-            Debug.LogError("DataManager ou LocalDatabase non trouvé !");
+            EditorGUILayout.LabelField("ERROR: DataManager non disponible", EditorStyles.miniLabel);
             return;
         }
 
-        // Créer nouvelles données propres
-        var newPlayerData = new PlayerData();
+        var playerData = dataManager.PlayerData;
 
-        // Sauvegarder les nouvelles données
-        dataManager.LocalDatabase.SavePlayerData(newPlayerData);
+        // État de voyage
+        EditorGUILayout.LabelField("VOYAGE:", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField($"   Location: {playerData.CurrentLocationId}", EditorStyles.miniLabel);
+        EditorGUILayout.LabelField($"   En voyage: {(playerData.IsCurrentlyTraveling() ? "PROBLEME - OUI" : "OK - Non")}", EditorStyles.miniLabel);
 
-        Debug.Log("✅ Données de joueur complètement resetées !");
-        EditorUtility.DisplayDialog("Reset terminé",
-            "Les données de joueur ont été complètement resetées. Redémarre le jeu.", "OK");
+        if (playerData.IsCurrentlyTraveling())
+        {
+            EditorGUILayout.LabelField($"   Vers: {playerData.TravelDestinationId}", EditorStyles.miniLabel);
+            long progress = playerData.GetTravelProgress(playerData.TotalSteps);
+            EditorGUILayout.LabelField($"   Progres: {progress}/{playerData.TravelRequiredSteps}", EditorStyles.miniLabel);
+        }
+
+        EditorGUILayout.Space();
+
+        // État d'activité
+        EditorGUILayout.LabelField("ACTIVITE:", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField($"   Activite active: {(playerData.HasActiveActivity() ? "Oui" : "Non")}", EditorStyles.miniLabel);
+
+        if (playerData.HasActiveActivity())
+        {
+            var activity = playerData.CurrentActivity;
+            EditorGUILayout.LabelField($"   Type: {activity.ActivityId}/{activity.VariantId}", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField($"   Steps: {activity.AccumulatedSteps}", EditorStyles.miniLabel);
+        }
+
+        EditorGUILayout.Space();
+
+        // Conditions
+        EditorGUILayout.LabelField("CONDITIONS:", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField($"   Peut commencer activite: {(activityManager?.CanStartActivity() == true ? "OK - Oui" : "PROBLEME - Non")}", EditorStyles.miniLabel);
+
+        if (mapManager?.CurrentLocation != null)
+        {
+            bool canTravel = mapManager.CanTravelTo("Village");
+            EditorGUILayout.LabelField($"   Peut voyager: {(canTravel ? "OK - Oui" : "PROBLEME - Non")}", EditorStyles.miniLabel);
+        }
+
+        EditorGUILayout.Space();
+
+        // Stats
+        EditorGUILayout.LabelField("STATS:", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField($"   Total Steps: {playerData.TotalSteps:N0}", EditorStyles.miniLabel);
+        EditorGUILayout.LabelField($"   Daily Steps: {playerData.DailySteps:N0}", EditorStyles.miniLabel);
     }
 }
 #endif

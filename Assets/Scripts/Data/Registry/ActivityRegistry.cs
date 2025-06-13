@@ -1,4 +1,4 @@
-﻿// Purpose: Central registry for all game activities and their variants
+﻿// Purpose: Central registry for all game activities and their variants - ROBUST VERSION
 // Filepath: Assets/Scripts/Data/Registry/ActivityRegistry.cs
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +11,10 @@ public class ActivityRegistry : ScriptableObject
     [Tooltip("Drag all your LocationActivity assets here")]
     public List<LocationActivity> AllActivities = new List<LocationActivity>();
 
+    [Header("Robustness Settings")]
+    [SerializeField] private bool enableFallbackSearch = true;
+    [SerializeField] private bool logMissingVariants = false; // Désactivé par défaut pour éviter le spam
+
     [Header("Debug Info")]
     [Tooltip("Shows validation errors if any")]
     [TextArea(3, 6)]
@@ -21,20 +25,15 @@ public class ActivityRegistry : ScriptableObject
     private Dictionary<string, ActivityVariant> variantLookup; // Key format: "activityId_variantId"
 
     /// <summary>
-    /// Get activity by ID (fast lookup via cache)
+    /// Get activity by ID (fast lookup via cache) - ROBUST VERSION
     /// </summary>
     public LocationActivity GetActivity(string activityId)
     {
-        // Initialize cache if needed
-        if (activityLookup == null)
-        {
-            InitializeLookupCache();
-        }
+        InitializeLookupCache();
 
         if (string.IsNullOrEmpty(activityId))
         {
-            Logger.LogError("ActivityRegistry: GetActivity called with null/empty activityId", Logger.LogCategory.General);
-            return null;
+            return null; // Pas de log pour éviter le spam
         }
 
         // Try to get activity from cache
@@ -43,123 +42,169 @@ public class ActivityRegistry : ScriptableObject
             return activity;
         }
 
-        Logger.LogWarning($"ActivityRegistry: Activity '{activityId}' not found in registry", Logger.LogCategory.General);
+        // Fallback: cherche par nom si ID pas trouvé
+        if (enableFallbackSearch)
+        {
+            activity = FindActivityByNameFallback(activityId);
+            if (activity != null)
+            {
+                return activity;
+            }
+        }
+
+        if (logMissingVariants)
+        {
+            Logger.LogWarning($"ActivityRegistry: Activity '{activityId}' not found in registry", Logger.LogCategory.General);
+        }
         return null;
     }
 
     /// <summary>
-    /// Get activity variant by activity ID and variant ID
+    /// Get activity variant by activity ID and variant ID - ROBUST VERSION
     /// </summary>
     public ActivityVariant GetActivityVariant(string activityId, string variantId)
     {
-        // Initialize cache if needed
-        if (variantLookup == null)
-        {
-            InitializeLookupCache();
-        }
+        InitializeLookupCache();
 
         if (string.IsNullOrEmpty(activityId) || string.IsNullOrEmpty(variantId))
         {
-            Logger.LogError("ActivityRegistry: GetActivityVariant called with null/empty parameters", Logger.LogCategory.General);
-            return null;
+            return null; // Pas de log pour éviter le spam
         }
 
         // Create lookup key
         string lookupKey = $"{activityId}_{variantId}";
 
-        // Try to get variant from cache
+        // Try cache first
         if (variantLookup.TryGetValue(lookupKey, out ActivityVariant variant))
         {
             return variant;
         }
 
-        Logger.LogWarning($"ActivityRegistry: Activity variant '{activityId}/{variantId}' not found in registry", Logger.LogCategory.General);
+        // NOUVEAU : Fallback intelligent - cherche par nom
+        if (enableFallbackSearch)
+        {
+            variant = FindVariantByNameFallback(activityId, variantId);
+            if (variant != null)
+            {
+                return variant;
+            }
+        }
+
+        if (logMissingVariants)
+        {
+            Logger.LogWarning($"ActivityRegistry: Activity variant '{activityId}/{variantId}' not found in registry", Logger.LogCategory.General);
+        }
         return null;
     }
 
     /// <summary>
-    /// Check if an activity exists in registry
+    /// Cherche un variant par nom si l'ID exact n'est pas trouvé
     /// </summary>
-    public bool HasActivity(string activityId)
+    private ActivityVariant FindVariantByNameFallback(string activityId, string variantId)
     {
-        return GetActivity(activityId) != null;
-    }
-
-    /// <summary>
-    /// Check if an activity variant exists in registry
-    /// </summary>
-    public bool HasActivityVariant(string activityId, string variantId)
-    {
-        return GetActivityVariant(activityId, variantId) != null;
-    }
-
-    /// <summary>
-    /// Get all variants for a specific activity
-    /// </summary>
-    public List<ActivityVariant> GetVariantsForActivity(string activityId)
-    {
-        var activity = GetActivity(activityId);
-        if (activity == null) return new List<ActivityVariant>();
-
-        return activity.ActivityVariants?.Where(v => v != null && v.IsValidVariant()).ToList() ?? new List<ActivityVariant>();
-    }
-
-    /// <summary>
-    /// Get all available activities (those that are valid and available)
-    /// </summary>
-    public List<LocationActivity> GetAvailableActivities()
-    {
-        return AllActivities.Where(activity => activity != null && activity.IsValidActivity()).ToList();
-    }
-
-    /// <summary>
-    /// Initialize the lookup cache for fast access
-    /// </summary>
-    private void InitializeLookupCache()
-    {
-        activityLookup = new Dictionary<string, LocationActivity>();
-        variantLookup = new Dictionary<string, ActivityVariant>();
-
-        foreach (var activity in AllActivities)
+        foreach (var activity in AllActivities?.Where(a => a?.ActivityReference != null) ?? Enumerable.Empty<LocationActivity>())
         {
-            if (activity != null && !string.IsNullOrEmpty(activity.ActivityId))
+            if (activity.ActivityReference.ActivityID == activityId && activity.ActivityVariants != null)
             {
-                // Add activity to lookup
-                if (!activityLookup.ContainsKey(activity.ActivityId))
+                foreach (var variant in activity.ActivityVariants.Where(v => v != null))
                 {
-                    activityLookup[activity.ActivityId] = activity;
-                }
-                else
-                {
-                    Logger.LogError($"ActivityRegistry: Duplicate ActivityId '{activity.ActivityId}' found! Check your LocationActivity assets.", Logger.LogCategory.General);
-                }
-
-                // Add variants to lookup
-                if (activity.ActivityVariants != null)
-                {
-                    foreach (var variant in activity.ActivityVariants)
+                    // Essaie plusieurs variations du nom
+                    if (MatchesVariantName(variant, variantId))
                     {
-                        if (variant != null && !string.IsNullOrEmpty(variant.VariantName))
-                        {
-                            // Use variant name as ID (you might want to add a VariantId field to ActivityVariant)
-                            string variantId = variant.VariantName.ToLower().Replace(" ", "_");
-                            string lookupKey = $"{activity.ActivityId}_{variantId}";
-
-                            if (!variantLookup.ContainsKey(lookupKey))
-                            {
-                                variantLookup[lookupKey] = variant;
-                            }
-                            else
-                            {
-                                Logger.LogError($"ActivityRegistry: Duplicate variant key '{lookupKey}' found!", Logger.LogCategory.General);
-                            }
-                        }
+                        return variant;
                     }
                 }
             }
         }
 
+        return null;
+    }
 
+    /// <summary>
+    /// Cherche une activité par nom si l'ID exact n'est pas trouvé
+    /// </summary>
+    private LocationActivity FindActivityByNameFallback(string activityId)
+    {
+        foreach (var activity in AllActivities?.Where(a => a?.ActivityReference != null) ?? Enumerable.Empty<LocationActivity>())
+        {
+            if (MatchesActivityName(activity.ActivityReference, activityId))
+            {
+                return activity;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Matching flexible pour les noms de variants
+    /// </summary>
+    private bool MatchesVariantName(ActivityVariant variant, string searchName)
+    {
+        if (variant?.VariantName == null) return false;
+
+        string variantName = variant.VariantName.ToLower().Replace(" ", "_");
+        string search = searchName.ToLower().Replace(" ", "_");
+
+        return variantName == search ||
+               variant.VariantName.Equals(searchName, System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Matching flexible pour les noms d'activités
+    /// </summary>
+    private bool MatchesActivityName(ActivityDefinition activity, string searchName)
+    {
+        if (activity == null) return false;
+
+        return activity.ActivityID.Equals(searchName, System.StringComparison.OrdinalIgnoreCase) ||
+               (!string.IsNullOrEmpty(activity.ActivityName) &&
+                activity.ActivityName.Equals(searchName, System.StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Initialize lookup cache - ROBUST VERSION qui ignore les nulls silencieusement
+    /// </summary>
+    private void InitializeLookupCache()
+    {
+        if (activityLookup != null) return;
+
+        activityLookup = new Dictionary<string, LocationActivity>();
+        variantLookup = new Dictionary<string, ActivityVariant>();
+
+        if (AllActivities == null) return;
+
+        foreach (var activity in AllActivities.Where(a => a?.ActivityReference != null))
+        {
+            var activityRef = activity.ActivityReference;
+
+            // Add to activity lookup
+            if (!string.IsNullOrEmpty(activityRef.ActivityID))
+            {
+                if (!activityLookup.ContainsKey(activityRef.ActivityID))
+                {
+                    activityLookup[activityRef.ActivityID] = activity;
+                }
+            }
+
+            // Add variants to lookup - IGNORE silencieusement les nulls
+            if (activity.ActivityVariants != null)
+            {
+                foreach (var variant in activity.ActivityVariants.Where(v => v != null))
+                {
+                    if (!string.IsNullOrEmpty(variant.VariantName))
+                    {
+                        // Use variant name as ID (normalized)
+                        string variantId = variant.VariantName.ToLower().Replace(" ", "_");
+                        string lookupKey = $"{activityRef.ActivityID}_{variantId}";
+
+                        if (!variantLookup.ContainsKey(lookupKey))
+                        {
+                            variantLookup[lookupKey] = variant;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -173,7 +218,42 @@ public class ActivityRegistry : ScriptableObject
     }
 
     /// <summary>
-    /// Validate all activities in the registry and update status
+    /// Clean null references automatically - SAFE VERSION
+    /// </summary>
+    public int CleanNullReferences()
+    {
+        if (AllActivities == null) return 0;
+
+        int removedCount = 0;
+
+        // Clean null LocationActivities
+        for (int i = AllActivities.Count - 1; i >= 0; i--)
+        {
+            if (AllActivities[i] == null || AllActivities[i].ActivityReference == null)
+            {
+                AllActivities.RemoveAt(i);
+                removedCount++;
+            }
+        }
+
+        // Clean null variants in each activity
+        foreach (var activity in AllActivities.Where(a => a?.ActivityVariants != null))
+        {
+            int beforeCount = activity.ActivityVariants.Count;
+            activity.ActivityVariants.RemoveAll(v => v == null);
+            removedCount += beforeCount - activity.ActivityVariants.Count;
+        }
+
+        if (removedCount > 0)
+        {
+            RefreshCache();
+        }
+
+        return removedCount;
+    }
+
+    /// <summary>
+    /// Validate all activities in the registry and update status - ROBUST VERSION
     /// </summary>
     [ContextMenu("Validate Registry")]
     public void ValidateRegistry()
@@ -181,160 +261,103 @@ public class ActivityRegistry : ScriptableObject
         var issues = new List<string>();
         var activityIds = new HashSet<string>();
 
+        // Auto-clean first
+        int cleanedCount = CleanNullReferences();
+        if (cleanedCount > 0)
+        {
+            issues.Add($"Auto-cleaned {cleanedCount} null references");
+        }
+
         // Check for null activities
-        var nullCount = AllActivities.Count(activity => activity == null);
+        var nullCount = AllActivities?.Count(activity => activity == null) ?? 0;
         if (nullCount > 0)
         {
             issues.Add($"{nullCount} null activity(ies) in registry");
         }
 
         // Validate each activity
-        foreach (var activity in AllActivities)
+        foreach (var activity in AllActivities?.Where(a => a != null) ?? Enumerable.Empty<LocationActivity>())
         {
-            if (activity == null) continue;
+            if (activity.ActivityReference == null)
+            {
+                issues.Add($"Activity with null reference found");
+                continue;
+            }
 
             // Check if activity is valid
-            if (!activity.IsValidActivity())
+            if (!activity.ActivityReference.IsValidActivity())
             {
-                issues.Add($"Activity '{activity.GetDisplayName()}' failed validation");
+                issues.Add($"Activity '{activity.ActivityReference.GetDisplayName()}' failed validation");
             }
 
             // Check for duplicate IDs
-            if (!string.IsNullOrEmpty(activity.ActivityId))
+            if (!string.IsNullOrEmpty(activity.ActivityReference.ActivityID))
             {
-                if (activityIds.Contains(activity.ActivityId))
+                if (activityIds.Contains(activity.ActivityReference.ActivityID))
                 {
-                    issues.Add($"Duplicate ActivityId: '{activity.ActivityId}'");
+                    issues.Add($"Duplicate activity ID: '{activity.ActivityReference.ActivityID}'");
                 }
                 else
                 {
-                    activityIds.Add(activity.ActivityId);
+                    activityIds.Add(activity.ActivityReference.ActivityID);
                 }
-            }
-            else
-            {
-                issues.Add($"Activity '{activity.GetDisplayName()}' has empty ActivityId");
             }
 
             // Validate variants
             if (activity.ActivityVariants != null)
             {
-                var variantNames = new HashSet<string>();
-                foreach (var variant in activity.ActivityVariants)
+                foreach (var variant in activity.ActivityVariants.Where(v => v != null))
                 {
-                    if (variant == null)
-                    {
-                        issues.Add($"Activity '{activity.ActivityId}' has null variant");
-                        continue;
-                    }
-
                     if (!variant.IsValidVariant())
                     {
-                        issues.Add($"Activity '{activity.ActivityId}' has invalid variant '{variant.VariantName}'");
-                    }
-
-                    // Check for duplicate variant names within activity
-                    if (!string.IsNullOrEmpty(variant.VariantName))
-                    {
-                        if (variantNames.Contains(variant.VariantName))
-                        {
-                            issues.Add($"Activity '{activity.ActivityId}' has duplicate variant name: '{variant.VariantName}'");
-                        }
-                        else
-                        {
-                            variantNames.Add(variant.VariantName);
-                        }
+                        issues.Add($"Variant '{variant.VariantName}' in activity '{activity.ActivityReference.ActivityID}' failed validation");
                     }
                 }
-            }
-            else
-            {
-                issues.Add($"Activity '{activity.ActivityId}' has no variants");
             }
         }
 
         // Update validation status
         if (issues.Count == 0)
         {
-            ValidationStatus = $"Registry validation passed!\n" +
-                             $"Found {AllActivities.Count(a => a != null)} valid activity(ies).\n" +
-                             $"Total variants: {GetTotalVariantCount()}";
+            ValidationStatus = $"✅ Registry is valid! ({AllActivities?.Count ?? 0} activities)";
         }
         else
         {
-            ValidationStatus = $"Registry validation failed ({issues.Count} issue(s)):\n\n" +
-                             string.Join("\n", issues.Take(10)); // Limit to first 10 issues
-
-            if (issues.Count > 10)
-            {
-                ValidationStatus += $"\n... and {issues.Count - 10} more issue(s)";
-            }
+            ValidationStatus = $"⚠️ Issues found:\n• " + string.Join("\n• ", issues);
         }
 
-        Logger.LogInfo($"ActivityRegistry: Validation complete. {issues.Count} issue(s) found.", Logger.LogCategory.General);
-
-        // Refresh cache after validation
+        // Force refresh cache
         RefreshCache();
+
+        Logger.LogInfo($"ActivityRegistry validation complete. {issues.Count} issues found.", Logger.LogCategory.General);
     }
 
     /// <summary>
-    /// Get total number of variants across all activities
+    /// Get all activities (filtered for null references)
     /// </summary>
-    private int GetTotalVariantCount()
+    public List<LocationActivity> GetAllValidActivities()
     {
-        int count = 0;
-        foreach (var activity in AllActivities)
-        {
-            if (activity?.ActivityVariants != null)
-            {
-                count += activity.ActivityVariants.Count(v => v != null);
-            }
-        }
-        return count;
+        return AllActivities?.Where(a => a?.ActivityReference != null).ToList() ?? new List<LocationActivity>();
     }
 
     /// <summary>
-    /// Get debug info about the registry
-    /// </summary>
-    public string GetDebugInfo()
-    {
-        var validActivities = AllActivities.Count(a => a != null);
-        var totalActivities = AllActivities.Count;
-        var totalVariants = GetTotalVariantCount();
-
-        return $"ActivityRegistry: {validActivities}/{totalActivities} valid activities loaded\n" +
-               $"Cache: {(activityLookup?.Count ?? 0)} activities, {(variantLookup?.Count ?? 0)} variants\n" +
-               $"Total variants: {totalVariants}";
-    }
-
-    /// <summary>
-    /// Helper method to generate variant ID from variant name (for consistent lookup)
+    /// Generate a normalized variant ID from variant name
     /// </summary>
     public static string GenerateVariantId(string variantName)
     {
-        if (string.IsNullOrEmpty(variantName)) return "";
-        return variantName.ToLower().Replace(" ", "_").Replace("'", "");
+        if (string.IsNullOrEmpty(variantName))
+            return string.Empty;
+
+        return variantName.ToLower().Replace(" ", "_").Replace("'", "").Replace("-", "_");
     }
 
     /// <summary>
-    /// Get all activities that can be performed at a specific location
+    /// Runtime initialization - auto-cleans and validates
     /// </summary>
-    public List<LocationActivity> GetActivitiesForLocation(string locationId)
+    void OnEnable()
     {
-        // This would require integration with your location system
-        // For now, return all available activities
-        return GetAvailableActivities();
+        // Auto-clean silencieusement au démarrage
+        CleanNullReferences();
+        RefreshCache();
     }
-
-#if UNITY_EDITOR
-    void OnValidate()
-    {
-        // Auto-validate when something changes in the editor
-        if (AllActivities != null && AllActivities.Count > 0)
-        {
-            // Don't auto-validate too often to avoid performance issues
-            UnityEditor.EditorApplication.delayCall += () => ValidateRegistry();
-        }
-    }
-#endif
 }

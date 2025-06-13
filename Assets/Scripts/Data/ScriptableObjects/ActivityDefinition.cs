@@ -1,4 +1,4 @@
-// Purpose: Enhanced ActivityDefinition with auto-registration capabilities
+// Purpose: Enhanced ActivityDefinition with auto-registration capabilities - ROBUST VERSION
 // Filepath: Assets/Scripts/Data/ScriptableObjects/ActivityDefinition.cs
 using System.Collections.Generic;
 using System.Linq;
@@ -66,13 +66,15 @@ public class ActivityDefinition : ScriptableObject
     }
 
     /// <summary>
-    /// Get all variants for this activity (including auto-discovered)
+    /// Get all variants for this activity (including auto-discovered) - FIXED VERSION
     /// </summary>
     public List<ActivityVariant> GetAllVariants()
     {
         if (AutoFindVariants)
         {
+#if UNITY_EDITOR
             RefreshVariantList();
+#endif
         }
         return discoveredVariants.Where(v => v != null).ToList();
     }

@@ -1,4 +1,4 @@
-﻿// Purpose: Central registry for all game items, provides fast lookup and validation
+﻿// Purpose: Central registry for all game items, provides fast lookup and validation - ROBUST VERSION
 // Filepath: Assets/Scripts/Data/Registry/ItemRegistry.cs
 using System.Collections.Generic;
 using System.Linq;
@@ -11,16 +11,21 @@ public class ItemRegistry : ScriptableObject
     [Tooltip("Drag all your ItemDefinition assets here")]
     public List<ItemDefinition> AllItems = new List<ItemDefinition>();
 
+    [Header("Robustness Settings")]
+    [SerializeField] private bool enableFallbackSearch = true;
+    [SerializeField] private bool logMissingItems = false; // Désactivé par défaut pour éviter le spam
+
     [Header("Debug Info")]
     [Tooltip("Shows validation errors if any")]
     [TextArea(3, 6)]
     public string ValidationStatus = "Click 'Validate Registry' to check for issues";
 
-    // Cache for fast lookup - sera rempli automatiquement
+    // Cache for fast lookup
     private Dictionary<string, ItemDefinition> itemLookup;
+    private HashSet<string> loggedMissingItems = new HashSet<string>(); // Pour éviter le spam de logs
 
     /// <summary>
-    /// Get item by ID (fast lookup via cache)
+    /// Get item by ID (fast lookup via cache) - ROBUST VERSION
     /// </summary>
     public ItemDefinition GetItem(string itemId)
     {
@@ -32,8 +37,7 @@ public class ItemRegistry : ScriptableObject
 
         if (string.IsNullOrEmpty(itemId))
         {
-            Logger.LogError("ItemRegistry: GetItem called with null/empty itemId", Logger.LogCategory.InventoryLog);
-            return null;
+            return null; // Pas de log pour éviter le spam
         }
 
         // Try to get item from cache
@@ -42,12 +46,60 @@ public class ItemRegistry : ScriptableObject
             return item;
         }
 
-        Logger.LogWarning($"ItemRegistry: Item '{itemId}' not found in registry", Logger.LogCategory.InventoryLog);
+        // NOUVEAU : Fallback intelligent - cherche par nom similaire
+        if (enableFallbackSearch)
+        {
+            item = FindItemByNameFallback(itemId);
+            if (item != null)
+            {
+                return item;
+            }
+        }
+
+        // Log une seule fois par item manquant
+        if (logMissingItems && !loggedMissingItems.Contains(itemId))
+        {
+            Logger.LogWarning($"ItemRegistry: Item '{itemId}' not found in registry", Logger.LogCategory.InventoryLog);
+            loggedMissingItems.Add(itemId);
+        }
+
         return null;
     }
 
     /// <summary>
-    /// Check if an item exists in registry
+    /// Cherche un item par nom si l'ID exact n'est pas trouvé
+    /// </summary>
+    private ItemDefinition FindItemByNameFallback(string itemId)
+    {
+        foreach (var item in AllItems?.Where(i => i != null) ?? Enumerable.Empty<ItemDefinition>())
+        {
+            if (MatchesItemName(item, itemId))
+            {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Matching flexible pour les noms d'items
+    /// </summary>
+    private bool MatchesItemName(ItemDefinition item, string searchName)
+    {
+        if (item?.ItemID == null) return false;
+
+        string itemName = item.ItemID.ToLower().Replace(" ", "_");
+        string itemDisplayName = item.ItemName?.ToLower().Replace(" ", "_") ?? "";
+        string search = searchName.ToLower().Replace(" ", "_");
+
+        return itemName == search ||
+               itemDisplayName == search ||
+               itemName.Contains(search) ||
+               search.Contains(itemName);
+    }
+
+    /// <summary>
+    /// Check if an item exists in registry - SAFE VERSION
     /// </summary>
     public bool HasItem(string itemId)
     {
@@ -59,7 +111,7 @@ public class ItemRegistry : ScriptableObject
     /// </summary>
     public List<ItemDefinition> GetItemsByType(ItemType itemType)
     {
-        return AllItems.Where(item => item != null && item.Type == itemType).ToList();
+        return AllItems?.Where(item => item != null && item.Type == itemType).ToList() ?? new List<ItemDefinition>();
     }
 
     /// <summary>
@@ -67,7 +119,7 @@ public class ItemRegistry : ScriptableObject
     /// </summary>
     public List<ItemDefinition> GetItemsByRarity(int rarityTier)
     {
-        return AllItems.Where(item => item != null && item.RarityTier == rarityTier).ToList();
+        return AllItems?.Where(item => item != null && item.RarityTier == rarityTier).ToList() ?? new List<ItemDefinition>();
     }
 
     /// <summary>
@@ -75,9 +127,9 @@ public class ItemRegistry : ScriptableObject
     /// </summary>
     public List<ItemDefinition> GetEquipmentBySlot(EquipmentType slotType)
     {
-        return AllItems
+        return AllItems?
             .Where(item => item != null && item.EquipmentSlot == slotType)
-            .ToList();
+            .ToList() ?? new List<ItemDefinition>();
     }
 
     /// <summary>
@@ -85,19 +137,21 @@ public class ItemRegistry : ScriptableObject
     /// </summary>
     public List<ItemDefinition> GetStackableItems()
     {
-        return AllItems.Where(item => item != null && item.IsStackable).ToList();
+        return AllItems?.Where(item => item != null && item.IsStackable).ToList() ?? new List<ItemDefinition>();
     }
 
     /// <summary>
-    /// Initialize the lookup cache for fast access
+    /// Initialize the lookup cache for fast access - ROBUST VERSION
     /// </summary>
     private void InitializeLookupCache()
     {
         itemLookup = new Dictionary<string, ItemDefinition>();
 
-        foreach (var item in AllItems)
+        if (AllItems == null) return;
+
+        foreach (var item in AllItems.Where(i => i != null))
         {
-            if (item != null && !string.IsNullOrEmpty(item.ItemID))
+            if (!string.IsNullOrEmpty(item.ItemID))
             {
                 if (!itemLookup.ContainsKey(item.ItemID))
                 {
@@ -114,16 +168,44 @@ public class ItemRegistry : ScriptableObject
     }
 
     /// <summary>
+    /// Clean null references automatically - SAFE VERSION
+    /// </summary>
+    public int CleanNullReferences()
+    {
+        if (AllItems == null) return 0;
+
+        int removedCount = 0;
+
+        // Clean null items
+        for (int i = AllItems.Count - 1; i >= 0; i--)
+        {
+            if (AllItems[i] == null)
+            {
+                AllItems.RemoveAt(i);
+                removedCount++;
+            }
+        }
+
+        if (removedCount > 0)
+        {
+            RefreshCache();
+        }
+
+        return removedCount;
+    }
+
+    /// <summary>
     /// Force refresh the lookup cache (call this if you modify items at runtime)
     /// </summary>
     public void RefreshCache()
     {
         itemLookup = null;
+        loggedMissingItems.Clear(); // Reset les logs pour permettre de nouveaux warnings
         InitializeLookupCache();
     }
 
     /// <summary>
-    /// Validate all items in the registry and update status
+    /// Validate all items in the registry and update status - ROBUST VERSION
     /// </summary>
     [ContextMenu("Validate Registry")]
     public void ValidateRegistry()
@@ -131,18 +213,23 @@ public class ItemRegistry : ScriptableObject
         var issues = new List<string>();
         var itemIds = new HashSet<string>();
 
+        // Auto-clean first
+        int cleanedCount = CleanNullReferences();
+        if (cleanedCount > 0)
+        {
+            issues.Add($"Auto-cleaned {cleanedCount} null references");
+        }
+
         // Check for null items
-        var nullCount = AllItems.Count(item => item == null);
+        var nullCount = AllItems?.Count(item => item == null) ?? 0;
         if (nullCount > 0)
         {
             issues.Add($"{nullCount} null item(s) in registry");
         }
 
         // Validate each item
-        foreach (var item in AllItems)
+        foreach (var item in AllItems?.Where(i => i != null) ?? Enumerable.Empty<ItemDefinition>())
         {
-            if (item == null) continue;
-
             // Check if item definition itself is valid
             if (!item.IsValid())
             {
@@ -182,19 +269,11 @@ public class ItemRegistry : ScriptableObject
         // Update validation status
         if (issues.Count == 0)
         {
-            ValidationStatus = $"✅ Registry validation passed!\n" +
-                             $"Found {AllItems.Count(i => i != null)} valid item(s).\n" +
-                             $"Types: {GetItemTypesSummary()}";
+            ValidationStatus = $"✅ Registry is valid! ({AllItems?.Count ?? 0} items)";
         }
         else
         {
-            ValidationStatus = $"❌ Registry validation failed ({issues.Count} issue(s)):\n\n" +
-                             string.Join("\n", issues.Take(10)); // Limit to first 10 issues
-
-            if (issues.Count > 10)
-            {
-                ValidationStatus += $"\n... and {issues.Count - 10} more issue(s)";
-            }
+            ValidationStatus = $"⚠️ Issues found:\n• " + string.Join("\n• ", issues);
         }
 
         Logger.LogInfo($"ItemRegistry: Validation complete. {issues.Count} issue(s) found.", Logger.LogCategory.InventoryLog);
@@ -208,10 +287,10 @@ public class ItemRegistry : ScriptableObject
     /// </summary>
     private string GetItemTypesSummary()
     {
-        var typeCounts = AllItems
+        var typeCounts = AllItems?
             .Where(item => item != null)
             .GroupBy(item => item.Type)
-            .ToDictionary(g => g.Key, g => g.Count());
+            .ToDictionary(g => g.Key, g => g.Count()) ?? new Dictionary<ItemType, int>();
 
         return string.Join(", ", typeCounts.Select(kvp => $"{kvp.Key}({kvp.Value})"));
     }
@@ -221,8 +300,8 @@ public class ItemRegistry : ScriptableObject
     /// </summary>
     public string GetDebugInfo()
     {
-        var validItems = AllItems.Count(i => i != null);
-        var totalItems = AllItems.Count;
+        var validItems = AllItems?.Count(i => i != null) ?? 0;
+        var totalItems = AllItems?.Count ?? 0;
 
         return $"ItemRegistry: {validItems}/{totalItems} valid items loaded\n" +
                $"Cache: {(itemLookup?.Count ?? 0)} items\n" +
@@ -230,19 +309,21 @@ public class ItemRegistry : ScriptableObject
     }
 
     /// <summary>
-    /// Create some example items for testing (call this from a test script)
+    /// Get all valid items (filtered for null references)
     /// </summary>
-    [ContextMenu("Log Example Items For Testing")]
-    public void LogExampleItems()
+    public List<ItemDefinition> GetAllValidItems()
     {
-        Debug.Log("=== Example Items for Testing ===");
-        Debug.Log("Create these ItemDefinitions in your project:");
-        Debug.Log("• wood (Material, stackable x99)");
-        Debug.Log("• iron_ore (Material, stackable x99)");
-        Debug.Log("• iron_sword (Equipment/Weapon, not stackable)");
-        Debug.Log("• leather_backpack (Equipment/Backpack, +10 slots)");
-        Debug.Log("• health_potion (Consumable, stackable x20)");
-        Debug.Log("• gold_coin (Currency, stackable x999)");
+        return AllItems?.Where(i => i != null).ToList() ?? new List<ItemDefinition>();
+    }
+
+    /// <summary>
+    /// Runtime initialization - auto-cleans and validates
+    /// </summary>
+    void OnEnable()
+    {
+        // Auto-clean silencieusement au démarrage
+        CleanNullReferences();
+        RefreshCache();
     }
 
 #if UNITY_EDITOR
