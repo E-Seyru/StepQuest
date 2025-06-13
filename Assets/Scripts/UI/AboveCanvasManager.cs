@@ -28,12 +28,26 @@ public class AboveCanvasManager : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private bool hideNavigationOnMap = true;
 
+    [Header("Animation Settings")]
+    [SerializeField] private float progressAnimationDuration = 0.3f;
+    [SerializeField] private LeanTweenType progressAnimationEase = LeanTweenType.easeOutQuart;
+    [SerializeField] private float pulseScaleAmount = 1.08f;
+    [SerializeField] private float pulseDuration = 0.2f;
+    [SerializeField] private Color pulseColor = new Color(0.8f, 0.8f, 0.8f, 1f); // Plus sombre
+
     // Références aux managers
     private GameManager gameManager;
     private DataManager dataManager;
     private MapManager mapManager;
     private ActivityManager activityManager;
     private LocationRegistry locationRegistry;
+
+    // Variables privées pour l'animation
+    private float lastProgressValue = -1f; // Cache de la dernière valeur
+    private int currentAnimationId = -1;    // ID de l'animation LeanTween en cours
+    private int currentPulseId = -1;        // ID de l'animation de pulse en cours
+    private Color originalFillColor;        // Couleur originale de la barre
+    private Vector3 originalFillScale;      // Échelle originale de la barre
 
     void Awake()
     {
@@ -128,8 +142,13 @@ public class AboveCanvasManager : MonoBehaviour
                 Logger.LogInfo("AboveCanvasManager: Configured fillBar as Filled Horizontal", Logger.LogCategory.General);
             }
 
+            // Sauvegarder les valeurs originales pour l'animation
+            originalFillColor = fillBar.color;
+            originalFillScale = fillBar.transform.localScale;
+
             // Commencer avec 0 progression
             fillBar.fillAmount = 0f;
+            lastProgressValue = 0f;
         }
 
         // S'assurer que backgroundBar est en mode Simple ou Sliced
@@ -234,59 +253,45 @@ public class AboveCanvasManager : MonoBehaviour
         }
         else if (hasActiveActivity)
         {
-            // Afficher la barre d'activité même si GameState n'est pas encore à jour
             SetupActivityDisplay();
         }
         else
         {
-            // Utiliser la logique d'état pour les autres cas
-            switch (currentState)
-            {
-                case GameState.Traveling:
-                    SetupTravelDisplay();
-                    break;
-
-                case GameState.DoingActivity:
-                    SetupActivityDisplay();
-                    break;
-
-                case GameState.Idle:
-                case GameState.Loading:
-                case GameState.Paused:
-                default:
-                    HideActivityBar();
-                    break;
-            }
+            HideActivityBar();
         }
     }
 
     private void SetupTravelDisplay()
     {
-        if (!dataManager.PlayerData.IsCurrentlyTraveling()) return;
+        if (dataManager?.PlayerData == null) return;
 
         activityBar.SetActive(true);
 
-        // Récupérer les infos de voyage
+        // Configurer les icônes
         string currentLocationId = dataManager.PlayerData.CurrentLocationId;
         string destinationId = dataManager.PlayerData.TravelDestinationId;
 
-        var currentLocation = locationRegistry.GetLocationById(currentLocationId);
-        var destinationLocation = locationRegistry.GetLocationById(destinationId);
-
-        // Configurer les icônes
-        if (leftIcon != null && currentLocation?.LocationIcon != null)
+        if (leftIcon != null && mapManager.LocationRegistry != null)
         {
-            leftIcon.sprite = currentLocation.LocationIcon;
+            var currentLocation = mapManager.LocationRegistry.GetLocationById(currentLocationId);
+            if (currentLocation?.LocationIcon != null)
+            {
+                leftIcon.sprite = currentLocation.LocationIcon;
+            }
             leftIcon.gameObject.SetActive(true);
         }
 
-        if (rightIcon != null && destinationLocation?.LocationIcon != null)
+        if (rightIcon != null && mapManager.LocationRegistry != null)
         {
-            rightIcon.sprite = destinationLocation.LocationIcon;
+            var destinationLocation = mapManager.LocationRegistry.GetLocationById(destinationId);
+            if (destinationLocation?.LocationIcon != null)
+            {
+                rightIcon.sprite = destinationLocation.LocationIcon;
+            }
             rightIcon.gameObject.SetActive(true);
         }
 
-        // Afficher la flèche
+        // Afficher la flèche pour le voyage
         if (arrowIcon != null)
         {
             arrowIcon.SetActive(true);
@@ -295,7 +300,7 @@ public class AboveCanvasManager : MonoBehaviour
         // Texte
         if (activityText != null)
         {
-            activityText.text = $"Vers {destinationLocation?.DisplayName ?? destinationId}";
+            activityText.text = $"Voyage vers {destinationId}";
         }
 
         // Progression
@@ -380,21 +385,107 @@ public class AboveCanvasManager : MonoBehaviour
             int requiredSteps = variant.ActionCost;
 
             UpdateProgressBar(currentSteps, requiredSteps);
-
-            // Optionnel: Log pour debug
-
         }
     }
+
+    // === NOUVELLE VERSION ANIMÉE DE UpdateProgressBar ===
 
     private void UpdateProgressBar(long current, long required)
     {
         if (fillBar == null || required <= 0) return;
 
-        float progressValue = Mathf.Clamp01((float)current / required);
-        fillBar.fillAmount = progressValue;
+        float newProgressValue = Mathf.Clamp01((float)current / required);
 
-        // Debug optionnel
+        // OPTIMISATION: Éviter les animations inutiles
+        // Seuil de tolérance pour éviter les micro-animations
+        if (Mathf.Abs(newProgressValue - lastProgressValue) < 0.001f) return;
 
+        // Déterminer si c'est une progression (pour déclencher le pulse)
+        bool isProgression = newProgressValue > lastProgressValue && lastProgressValue >= 0f;
+
+        // Annuler l'animation précédente si elle existe
+        if (currentAnimationId >= 0)
+        {
+            LeanTween.cancel(currentAnimationId);
+        }
+
+        // Démarrer l'animation fluide
+        float startValue = fillBar.fillAmount;
+
+        currentAnimationId = LeanTween.value(gameObject, startValue, newProgressValue, progressAnimationDuration)
+            .setEase(progressAnimationEase)
+            .setOnUpdate((float value) =>
+            {
+                if (fillBar != null)
+                {
+                    fillBar.fillAmount = value;
+                }
+            })
+            .setOnComplete(() =>
+            {
+                currentAnimationId = -1;
+
+                // Déclencher l'effet de pulse seulement en cas de progression
+                if (isProgression)
+                {
+                    TriggerProgressPulse();
+                }
+            }).id;
+
+        // Mettre à jour le cache
+        lastProgressValue = newProgressValue;
+    }
+
+    /// <summary>
+    /// Déclenche un effet de pulse subtil quand la barre progresse
+    /// </summary>
+    private void TriggerProgressPulse()
+    {
+        if (fillBar == null) return;
+
+        // Annuler le pulse précédent s'il existe
+        if (currentPulseId >= 0)
+        {
+            LeanTween.cancel(currentPulseId);
+        }
+
+        // Animation de pulse d'échelle
+        Vector3 targetScale = originalFillScale * pulseScaleAmount;
+
+        LeanTween.scale(fillBar.gameObject, targetScale, pulseDuration * 0.5f)
+            .setEase(LeanTweenType.easeOutQuad)
+            .setOnComplete(() =>
+            {
+                // Retour à l'échelle normale
+                LeanTween.scale(fillBar.gameObject, originalFillScale, pulseDuration * 0.5f)
+                    .setEase(LeanTweenType.easeInQuad);
+            });
+
+        // Animation de pulse de couleur (plus sombre puis retour)
+        currentPulseId = LeanTween.value(gameObject, 0f, 1f, pulseDuration)
+            .setEase(LeanTweenType.easeInOutQuad)
+            .setOnUpdate((float t) =>
+            {
+                if (fillBar != null)
+                {
+                    // Interpolation vers la couleur plus sombre puis retour
+                    Color currentColor = Color.Lerp(
+                        originalFillColor,
+                        pulseColor,
+                        Mathf.Sin(t * Mathf.PI) // Effet de "cloche" pour aller-retour
+                    );
+                    fillBar.color = currentColor;
+                }
+            })
+            .setOnComplete(() =>
+            {
+                currentPulseId = -1;
+                // S'assurer que la couleur revient à l'original
+                if (fillBar != null)
+                {
+                    fillBar.color = originalFillColor;
+                }
+            }).id;
     }
 
     // === MÉTHODES PUBLIQUES ===
@@ -424,6 +515,22 @@ public class AboveCanvasManager : MonoBehaviour
 
     void OnDestroy()
     {
+        // Arrêter toutes les animations LeanTween
+        if (currentAnimationId >= 0)
+        {
+            LeanTween.cancel(currentAnimationId);
+        }
+        if (currentPulseId >= 0)
+        {
+            LeanTween.cancel(currentPulseId);
+        }
+
+        // Arrêter les animations sur les GameObjects
+        if (fillBar != null)
+        {
+            LeanTween.cancel(fillBar.gameObject);
+        }
+
         // Se désabonner des événements
         if (gameManager != null)
         {
