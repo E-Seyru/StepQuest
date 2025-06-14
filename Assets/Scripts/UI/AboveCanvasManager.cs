@@ -402,15 +402,26 @@ public class AboveCanvasDisplayService
         {
             var variantIcon = variant.GetIcon();
             manager.RightIcon.sprite = variantIcon;
-            manager.RightIcon.gameObject.SetActive(true); // ← CHANGÉ : maintenant on l'affiche !
+            manager.RightIcon.gameObject.SetActive(true);
             Logger.LogInfo($"AboveCanvasManager: Set right icon to VARIANT {(variantIcon != null ? variantIcon.name : "null")}", Logger.LogCategory.General);
         }
 
-        // Configurer le texte
+        // NOUVEAU : Texte adapté selon le type d'activité
         if (manager.ActivityText != null)
         {
-            manager.ActivityText.text = variant.GetDisplayName();
-            Logger.LogInfo($"AboveCanvasManager: Set activity text to '{variant.GetDisplayName()}'", Logger.LogCategory.General);
+            if (activity.IsTimeBased)
+            {
+                // Pour les activités temporelles, afficher le temps restant
+                long remainingTimeMs = activity.RequiredTimeMs - activity.AccumulatedTimeMs;
+                string timeRemaining = FormatTime(remainingTimeMs);
+                manager.ActivityText.text = $"{variant.GetDisplayName()} ({timeRemaining})";
+            }
+            else
+            {
+                // Pour les activités de pas, affichage standard
+                manager.ActivityText.text = variant.GetDisplayName();
+            }
+            Logger.LogInfo($"AboveCanvasManager: Set activity text to '{manager.ActivityText.text}'", Logger.LogCategory.General);
         }
 
         // Configurer la progression
@@ -420,6 +431,13 @@ public class AboveCanvasDisplayService
         if (manager.FillBar != null)
         {
             manager.FillBar.fillAmount = Mathf.Clamp01(progressPercent);
+
+            // NOUVEAU : Couleur différente pour les activités temporelles
+            if (activity.IsTimeBased)
+            {
+                manager.FillBar.color = Color.Lerp(Color.cyan, Color.yellow, progressPercent);
+            }
+
         }
 
         // Masquer la flèche pour les activités (la flèche sert seulement pour les voyages)
@@ -427,6 +445,17 @@ public class AboveCanvasDisplayService
         {
             manager.ArrowIcon.SetActive(false);
         }
+    }
+    private string FormatTime(long timeMs)
+    {
+        if (timeMs <= 0) return "Terminé";
+
+        if (timeMs < 1000)
+            return $"{timeMs}ms";
+        else if (timeMs < 60000)
+            return $"{timeMs / 1000f:F0}s";
+        else
+            return $"{timeMs / 60000f:F1}min";
     }
 
     private void SetupTravelIcons(string currentLocationId, string destinationId)
@@ -495,6 +524,14 @@ public class AboveCanvasDisplayService
 
         float progressPercent = activity.GetProgressToNextTick(variant);
         animationService?.AnimateProgressBar(progressPercent);
+
+        // NOUVEAU : Mettre à jour le texte pour les activités temporelles
+        if (activity.IsTimeBased && manager.ActivityText != null)
+        {
+            long remainingTimeMs = activity.RequiredTimeMs - activity.AccumulatedTimeMs;
+            string timeRemaining = FormatTime(remainingTimeMs);
+            manager.ActivityText.text = $"{variant.GetDisplayName()} ({timeRemaining})";
+        }
     }
 }
 

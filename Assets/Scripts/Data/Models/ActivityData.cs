@@ -1,4 +1,4 @@
-// Purpose: Data structure representing an active activity session state (mining, gathering, etc.)
+// Purpose: Data structure representing an active activity session state (mining, gathering, crafting, etc.)
 // Filepath: Assets/Scripts/Data/Models/ActivityData.cs
 using System;
 
@@ -9,10 +9,16 @@ public class ActivityData
     public string ActivityId;          // Reference vers ActivityDefinition (ex: "mining")
     public string VariantId;           // Reference vers ActivityVariant (ex: "iron_ore_variant")
 
-    // === ETAT DE LA SESSION ===
+    // === ETAT DE LA SESSION - PAS ===
     public long StartSteps;            // Nombre de pas totaux quand l'activite a commence
     public int AccumulatedSteps;       // Pas accumules depuis le dernier tic
-    public long LastProcessedTotalSteps; // NOUVEAU : Dernier TotalSteps qu'on a traite
+    public long LastProcessedTotalSteps; // Dernier TotalSteps qu'on a traite
+
+    // === NOUVEAU: ETAT DE LA SESSION - TEMPS ===
+    public bool IsTimeBased;           // Flag pour identifier le type d'activité
+    public long AccumulatedTimeMs;     // Temps accumulé (pour activités temporelles)
+    public long RequiredTimeMs;        // Temps total requis (ex: 30000ms = 30s de craft)
+    public long LastProcessedTimeMs;   // Dernier timestamp traité (pour calculs offline)
 
     // === METADONNEES DE SESSION ===
     public long StartTimeMs;           // Timestamp Unix de debut (pour calculs offline)
@@ -28,12 +34,16 @@ public class ActivityData
         StartSteps = 0;
         AccumulatedSteps = 0;
         LastProcessedTotalSteps = 0;
+        IsTimeBased = false;
+        AccumulatedTimeMs = 0;
+        RequiredTimeMs = 0;
+        LastProcessedTimeMs = 0;
         StartTimeMs = 0;
         LocationId = string.Empty;
     }
 
     /// <summary>
-    /// Constructeur pour creer une nouvelle session d'activite
+    /// Constructeur pour creer une nouvelle session d'activite basée sur les pas
     /// </summary>
     public ActivityData(string activityId, string variantId, long startSteps, string locationId)
     {
@@ -41,7 +51,29 @@ public class ActivityData
         VariantId = variantId;
         StartSteps = startSteps;
         AccumulatedSteps = 0;
-        LastProcessedTotalSteps = startSteps; // NOUVEAU : Initialiser avec StartSteps
+        LastProcessedTotalSteps = startSteps;
+        IsTimeBased = false;
+        AccumulatedTimeMs = 0;
+        RequiredTimeMs = 0;
+        LastProcessedTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        StartTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        LocationId = locationId;
+    }
+
+    /// <summary>
+    /// NOUVEAU: Constructeur pour creer une nouvelle session d'activite basée sur le temps
+    /// </summary>
+    public ActivityData(string activityId, string variantId, long requiredTimeMs, string locationId, bool isTimeBased)
+    {
+        ActivityId = activityId;
+        VariantId = variantId;
+        StartSteps = 0;
+        AccumulatedSteps = 0;
+        LastProcessedTotalSteps = 0;
+        IsTimeBased = isTimeBased; // Utiliser le paramètre
+        AccumulatedTimeMs = 0;
+        RequiredTimeMs = requiredTimeMs;
+        LastProcessedTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         StartTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         LocationId = locationId;
     }
@@ -55,51 +87,110 @@ public class ActivityData
     {
         return !string.IsNullOrEmpty(ActivityId) &&
                !string.IsNullOrEmpty(VariantId) &&
-               StartSteps >= 0;
+               (IsTimeBased ? RequiredTimeMs > 0 : StartSteps >= 0);
     }
 
     /// <summary>
     /// Calcule le progrès vers le prochain tic (0.0 à 1.0)
-    /// Necessite le ActivityVariant pour connaître le ActionCost (steps per tick)
+    /// Pour les activités pas: utilise le ActivityVariant pour connaître le ActionCost
+    /// Pour les activités temps: utilise RequiredTimeMs
     /// </summary>
     public float GetProgressToNextTick(ActivityVariant variant)
     {
-        if (variant == null || variant.ActionCost <= 0) return 0f;
-        return (float)AccumulatedSteps / variant.ActionCost;
-    }
-
-    /// <summary>
-    /// Calcule combien de tics complets peuvent être effectues avec les pas donnes
-    /// </summary>
-    public int CalculateCompleteTicks(ActivityVariant variant, int additionalSteps)
-    {
-        if (variant == null || variant.ActionCost <= 0) return 0;
-
-        int totalSteps = AccumulatedSteps + additionalSteps;
-        return totalSteps / variant.ActionCost;
-    }
-
-    /// <summary>
-    /// Met à jour les pas accumules après avoir effectue des tics
-    /// </summary>
-    public void ProcessTicks(ActivityVariant variant, int ticksCompleted)
-    {
-        if (ticksCompleted > 0 && variant != null && variant.ActionCost > 0)
+        if (IsTimeBased)
         {
-            int stepsUsed = ticksCompleted * variant.ActionCost;
-            AccumulatedSteps = Math.Max(0, AccumulatedSteps - stepsUsed);
+            if (RequiredTimeMs <= 0) return 0f;
+            return Math.Min(1f, (float)AccumulatedTimeMs / RequiredTimeMs);
+        }
+        else
+        {
+            if (variant == null || variant.ActionCost <= 0) return 0f;
+            return (float)AccumulatedSteps / variant.ActionCost;
         }
     }
 
     /// <summary>
-    /// Ajoute des pas à l'accumulation et met à jour LastProcessedTotalSteps
+    /// MODIFIE: Calcule combien de tics complets peuvent être effectues
+    /// Pour les pas: utilise les pas donnés
+    /// Pour le temps: vérifie si le temps requis est atteint
+    /// </summary>
+    public int CalculateCompleteTicks(ActivityVariant variant, int additionalSteps)
+    {
+        if (IsTimeBased)
+        {
+            // Pour les activités temporelles, on ne peut compléter qu'1 seul "tick" (le craft complet)
+            return (AccumulatedTimeMs >= RequiredTimeMs) ? 1 : 0;
+        }
+        else
+        {
+            if (variant == null || variant.ActionCost <= 0) return 0;
+            int totalSteps = AccumulatedSteps + additionalSteps;
+            return totalSteps / variant.ActionCost;
+        }
+    }
+
+    /// <summary>
+    /// MODIFIE: Met à jour après avoir effectue des tics
+    /// </summary>
+    public void ProcessTicks(ActivityVariant variant, int ticksCompleted)
+    {
+        if (ticksCompleted <= 0) return;
+
+        if (IsTimeBased)
+        {
+            // Pour les activités temporelles, compléter un tick = activité terminée
+            if (ticksCompleted > 0)
+            {
+                AccumulatedTimeMs = RequiredTimeMs; // Marquer comme terminé
+            }
+        }
+        else
+        {
+            if (variant != null && variant.ActionCost > 0)
+            {
+                int stepsUsed = ticksCompleted * variant.ActionCost;
+                AccumulatedSteps = Math.Max(0, AccumulatedSteps - stepsUsed);
+            }
+        }
+    }
+
+    /// <summary>
+    /// EXISTANT: Ajoute des pas à l'accumulation
     /// </summary>
     public void AddSteps(int steps)
     {
-        if (steps > 0)
+        if (steps > 0 && !IsTimeBased) // Seulement pour les activités basées sur les pas
         {
             AccumulatedSteps += steps;
-            LastProcessedTotalSteps += steps; // NOUVEAU : Garder trace des pas traites
+            LastProcessedTotalSteps += steps;
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU: Ajoute du temps à l'accumulation
+    /// </summary>
+    public void AddTime(long timeMs)
+    {
+        if (timeMs > 0 && IsTimeBased)
+        {
+            AccumulatedTimeMs += timeMs;
+            LastProcessedTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU: Vérifie si l'activité est terminée
+    /// </summary>
+    public bool IsComplete()
+    {
+        if (IsTimeBased)
+        {
+            return AccumulatedTimeMs >= RequiredTimeMs;
+        }
+        else
+        {
+            // Pour les activités pas, on ne peut pas savoir sans le variant
+            return false; // Sera géré par CalculateCompleteTicks
         }
     }
 
@@ -113,22 +204,42 @@ public class ActivityData
     }
 
     /// <summary>
-    /// Valide que les donnees de l'activite sont coherentes
+    /// NOUVEAU: Calcule combien de temps non-traité on a (pour les activités temporelles)
+    /// </summary>
+    public long GetUnprocessedTimeMs()
+    {
+        if (!IsTimeBased) return 0;
+
+        long currentTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        return Math.Max(0, currentTime - LastProcessedTimeMs);
+    }
+
+    /// <summary>
+    /// MODIFIE: Valide que les donnees de l'activite sont coherentes
     /// </summary>
     public bool IsValid()
     {
         // Verifications de base
         if (string.IsNullOrEmpty(ActivityId)) return false;
         if (string.IsNullOrEmpty(VariantId)) return false;
-        if (AccumulatedSteps < 0) return false;
-        if (StartSteps < 0) return false;
-        if (LastProcessedTotalSteps < StartSteps) return false; // NOUVEAU
+
+        if (IsTimeBased)
+        {
+            if (RequiredTimeMs <= 0) return false;
+            if (AccumulatedTimeMs < 0) return false;
+        }
+        else
+        {
+            if (AccumulatedSteps < 0) return false;
+            if (StartSteps < 0) return false;
+            if (LastProcessedTotalSteps < StartSteps) return false;
+        }
 
         return true;
     }
 
     /// <summary>
-    /// Remet à zero l'activite (pour arrêter proprement)
+    /// MODIFIE: Remet à zero l'activite (pour arrêter proprement)
     /// </summary>
     public void Clear()
     {
@@ -136,24 +247,35 @@ public class ActivityData
         VariantId = string.Empty;
         StartSteps = 0;
         AccumulatedSteps = 0;
-        LastProcessedTotalSteps = 0; // NOUVEAU
+        LastProcessedTotalSteps = 0;
+        IsTimeBased = false;
+        AccumulatedTimeMs = 0;
+        RequiredTimeMs = 0;
+        LastProcessedTimeMs = 0;
         StartTimeMs = 0;
         LocationId = string.Empty;
     }
 
     /// <summary>
-    /// Affichage pour le debug - version simple sans ActivityVariant
+    /// MODIFIE: Affichage pour le debug - version simple
     /// </summary>
     public override string ToString()
     {
         if (!IsActive())
             return "[No Active Activity]";
 
-        return $"[Activity: {ActivityId}/{VariantId} - Steps: {AccumulatedSteps} accumulated - Location: {LocationId}]";
+        if (IsTimeBased)
+        {
+            return $"[Time Activity: {ActivityId}/{VariantId} - Time: {AccumulatedTimeMs}/{RequiredTimeMs}ms - Location: {LocationId}]";
+        }
+        else
+        {
+            return $"[Step Activity: {ActivityId}/{VariantId} - Steps: {AccumulatedSteps} accumulated - Location: {LocationId}]";
+        }
     }
 
     /// <summary>
-    /// Affichage detaille pour le debug avec les informations du variant
+    /// MODIFIE: Affichage detaille pour le debug avec les informations du variant
     /// </summary>
     public string ToString(ActivityVariant variant)
     {
@@ -163,6 +285,14 @@ public class ActivityData
         if (variant == null)
             return ToString(); // Fallback
 
-        return $"[Activity: {variant.GetDisplayName()} - Progress: {AccumulatedSteps}/{variant.ActionCost} steps - Resource: {variant.PrimaryResource?.GetDisplayName() ?? "Unknown"}]";
+        if (IsTimeBased)
+        {
+            float progressPercent = GetProgressToNextTick(variant) * 100f;
+            return $"[Time Activity: {variant.GetDisplayName()} - Progress: {progressPercent:F1}% ({AccumulatedTimeMs}/{RequiredTimeMs}ms)]";
+        }
+        else
+        {
+            return $"[Step Activity: {variant.GetDisplayName()} - Progress: {AccumulatedSteps}/{variant.ActionCost} steps - Resource: {variant.PrimaryResource?.GetDisplayName() ?? "Unknown"}]";
+        }
     }
 }

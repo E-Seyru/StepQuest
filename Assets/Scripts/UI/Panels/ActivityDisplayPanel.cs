@@ -221,34 +221,17 @@ public class ActivityDisplayPanel : MonoBehaviour
             activityNameText.text = currentVariant.GetDisplayName();
         }
 
-        // Progression (pas jusqu'au prochain tick)
-        int stepsToNext = currentVariant.ActionCost - currentActivity.AccumulatedSteps;
-        float progressPercent = currentActivity.GetProgressToNextTick(currentVariant);
-
-        if (progressText != null)
+        // NOUVEAU : Affichage différent selon le type d'activité
+        if (currentActivity.IsTimeBased)
         {
-            progressText.text = $"Prochain tick dans {stepsToNext} pas\n" +
-                               $"Progression: {currentActivity.AccumulatedSteps}/{currentVariant.ActionCost}";
+            UpdateTimedActivityDisplay();
+        }
+        else
+        {
+            UpdateStepBasedActivityDisplay();
         }
 
-        // Barre de progression custom
-        if (progressBarFill != null)
-        {
-            progressBarFill.fillAmount = progressPercent;
-
-            // Optionnel : changer la couleur selon la progression
-            Color currentColor = Color.Lerp(progressFillColor, Color.yellow, progressPercent * 0.5f);
-            progressBarFill.color = currentColor;
-        }
-
-        // Récompenses
-        if (rewardText != null)
-        {
-            string rewardInfo = GetRewardInfo();
-            rewardText.text = $"Récompense par tick:\n{rewardInfo}";
-        }
-
-        // Icône de l'activité
+        // Icône de l'activité (identique pour les deux types)
         if (activityIcon != null)
         {
             Sprite icon = currentVariant.GetIcon();
@@ -363,7 +346,89 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     // === CLEANUP ===
+    /// <summary>
+    /// NOUVEAU : Affichage pour les activités temporelles (crafting)
+    /// </summary>
+    private void UpdateTimedActivityDisplay()
+    {
+        float progressPercent = currentActivity.GetProgressToNextTick(currentVariant);
 
+        // Temps restant
+        long remainingTimeMs = currentActivity.RequiredTimeMs - currentActivity.AccumulatedTimeMs;
+        string timeRemaining = FormatTime(remainingTimeMs);
+        string totalTime = FormatTime(currentActivity.RequiredTimeMs);
+
+        if (progressText != null)
+        {
+            progressText.text = $"Temps restant: {timeRemaining}\n" +
+                               $"Progression: {currentActivity.AccumulatedTimeMs}ms / {totalTime}";
+        }
+
+        // Barre de progression
+        if (progressBarFill != null)
+        {
+            progressBarFill.fillAmount = progressPercent;
+
+            // Couleur spéciale pour les activités temporelles
+            Color timeColor = Color.Lerp(Color.cyan, Color.yellow, progressPercent);
+            progressBarFill.color = timeColor;
+        }
+
+        // Récompenses
+        if (rewardText != null)
+        {
+            string rewardInfo = GetRewardInfo();
+            progressText.text += $"\nRécompense: {rewardInfo}";
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU : Affichage pour les activités basées sur les pas (existant)
+    /// </summary>
+    private void UpdateStepBasedActivityDisplay()
+    {
+        // Code existant pour les activités de pas
+        int stepsToNext = currentVariant.ActionCost - currentActivity.AccumulatedSteps;
+        float progressPercent = currentActivity.GetProgressToNextTick(currentVariant);
+
+        if (progressText != null)
+        {
+            progressText.text = $"Prochain tick dans {stepsToNext} pas\n" +
+                               $"Progression: {currentActivity.AccumulatedSteps}/{currentVariant.ActionCost}";
+        }
+
+        // Barre de progression
+        if (progressBarFill != null)
+        {
+            progressBarFill.fillAmount = progressPercent;
+
+            // Couleur standard pour les activités de pas
+            Color currentColor = Color.Lerp(progressFillColor, Color.yellow, progressPercent * 0.5f);
+            progressBarFill.color = currentColor;
+        }
+
+        // Récompenses
+        if (rewardText != null)
+        {
+            string rewardInfo = GetRewardInfo();
+            rewardText.text = $"Récompense par tick:\n{rewardInfo}";
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU : Formater le temps en millisecondes en format lisible
+    /// </summary>
+    private string FormatTime(long timeMs)
+    {
+        if (timeMs <= 0) return "0s";
+
+        if (timeMs < 1000)
+            return $"{timeMs}ms";
+        else if (timeMs < 60000)
+            return $"{timeMs / 1000f:F1}s";
+        else
+            return $"{timeMs / 60000f:F1}min";
+    }
     void OnDestroy()
     {
         UnsubscribeFromActivityEvents();

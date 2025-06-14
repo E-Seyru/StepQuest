@@ -150,17 +150,33 @@ public class ActivityVariantsPanel : MonoBehaviour
     /// Handle variant button click
     /// </summary>
     // Dans OnVariantButtonClicked()
+    /// <summary>
+    /// Handle variant button click
+    /// </summary>
     private void OnVariantButtonClicked(ActivityVariant variant)
     {
         Debug.Log($"Variant selected: {variant.VariantName}");
 
-        // AJOUTER : Démarrer l'activité via ActivityManager
+        // MODIFIE : Démarrer l'activité via ActivityManager avec détection automatique du type
         if (ActivityManager.Instance != null && currentActivity != null)
         {
             string activityId = currentActivity.ActivityId;
             string variantId = ActivityRegistry.GenerateVariantId(variant.VariantName);
 
-            bool success = ActivityManager.Instance.StartActivity(activityId, variantId);
+            bool success;
+
+            // NOUVEAU : Vérifier le type d'activité et appeler la bonne méthode
+            if (variant.IsTimeBased)
+            {
+                Debug.Log($"Starting time-based activity: {variant.GetDisplayName()}");
+                success = ActivityManager.Instance.StartTimedActivity(activityId, variantId);
+            }
+            else
+            {
+                Debug.Log($"Starting step-based activity: {variant.GetDisplayName()}");
+                success = ActivityManager.Instance.StartActivity(activityId, variantId);
+            }
+
             if (success)
             {
                 Debug.Log($"Successfully started activity: {variant.GetDisplayName()}");

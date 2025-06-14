@@ -1,4 +1,4 @@
-// Purpose: Enhanced ActivityVariant with auto-registration capabilities - ROBUST VERSION
+// Purpose: Enhanced ActivityVariant with crafting support - EXTENDED VERSION
 // Filepath: Assets/Scripts/Data/Models/ActivityVariant.cs
 using System.Collections.Generic;
 using System.Linq;
@@ -18,9 +18,28 @@ public class ActivityVariant : ScriptableObject
     [Tooltip("Auto-detect parent from folder name")]
     public bool AutoDetectParent = true;
 
-    [Header("Resources")]
+    [Header("Activity Type")]
+    [Tooltip("Is this a time-based activity (crafting) or step-based activity (gathering)?")]
+    public bool IsTimeBased = false;
+
+    [Header("Results/Products")]
     public ItemDefinition PrimaryResource;
     public ItemDefinition[] SecondaryResources;
+
+    [Header("Step-Based Settings")]
+    [Tooltip("How many steps needed for one completion (ignored for time-based activities)")]
+    public int ActionCost = 10;
+    [Tooltip("Success rate percentage (0-100)")]
+    [Range(0, 100)]
+    public int SuccessRate = 100;
+
+    [Header("Time-Based Settings (Crafting)")]
+    [Tooltip("Time required to complete crafting in milliseconds (30000 = 30 seconds)")]
+    public long CraftingTimeMs = 30000;
+    [Tooltip("Materials required for crafting")]
+    public ItemDefinition[] RequiredMaterials;
+    [Tooltip("Quantities needed for each material (must match RequiredMaterials array length)")]
+    public int[] RequiredQuantities;
 
     [Header("Requirements & Availability")]
     public bool IsAvailable = true;
@@ -30,13 +49,6 @@ public class ActivityVariant : ScriptableObject
     [Header("Visual")]
     public Sprite VariantIcon;
     public Color VariantColor = Color.white;
-
-    [Header("Gameplay")]
-    [Tooltip("How many steps needed for one completion")]
-    public int ActionCost = 10;
-    [Tooltip("Success rate percentage (0-100)")]
-    [Range(0, 100)]
-    public int SuccessRate = 100;
 
     /// <summary>
     /// Get display name for UI
@@ -71,14 +83,115 @@ public class ActivityVariant : ScriptableObject
     }
 
     /// <summary>
-    /// Validate this variant
+    /// NOUVEAU: Vérifie si on peut crafter (pour les activités temporelles)
+    /// </summary>
+    public bool CanCraft(InventoryManager inventoryManager, string playerId = "player")
+    {
+        if (!IsTimeBased) return false;
+        if (RequiredMaterials == null || RequiredQuantities == null) return false;
+        if (RequiredMaterials.Length != RequiredQuantities.Length) return false;
+
+        var container = inventoryManager.GetContainer(playerId);
+        if (container == null) return false;
+
+        // Vérifier qu'on a tous les matériaux nécessaires
+        for (int i = 0; i < RequiredMaterials.Length; i++)
+        {
+            if (RequiredMaterials[i] == null) continue;
+
+            // Utiliser HasItem pour vérifier si on a assez de ce matériau
+            if (!container.HasItem(RequiredMaterials[i].ItemID, RequiredQuantities[i]))
+            {
+                return false; // Pas assez de ce matériau
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// NOUVEAU: Consomme les matériaux nécessaires pour le crafting
+    /// </summary>
+    public bool ConsumeCraftingMaterials(InventoryManager inventoryManager, string playerId = "player")
+    {
+        if (!CanCraft(inventoryManager, playerId)) return false;
+
+        // Consommer tous les matériaux
+        for (int i = 0; i < RequiredMaterials.Length; i++)
+        {
+            if (RequiredMaterials[i] == null) continue;
+
+            bool consumed = inventoryManager.RemoveItem(playerId, RequiredMaterials[i].ItemID, RequiredQuantities[i]);
+            if (!consumed)
+            {
+                Logger.LogError($"ActivityVariant: Failed to consume {RequiredQuantities[i]} {RequiredMaterials[i].GetDisplayName()} for crafting", Logger.LogCategory.General);
+                return false;
+            }
+        }
+
+        Logger.LogInfo($"ActivityVariant: Consumed materials for crafting {GetDisplayName()}", Logger.LogCategory.General);
+        return true;
+    }
+
+    /// <summary>
+    /// NOUVEAU: Obtient la liste des matériaux requis sous forme de texte
+    /// </summary>
+    public string GetRequiredMaterialsText()
+    {
+        if (!IsTimeBased || RequiredMaterials == null || RequiredQuantities == null) return "";
+        if (RequiredMaterials.Length != RequiredQuantities.Length) return "Error: Material/Quantity mismatch";
+
+        var materialTexts = new List<string>();
+        for (int i = 0; i < RequiredMaterials.Length; i++)
+        {
+            if (RequiredMaterials[i] != null)
+            {
+                materialTexts.Add($"{RequiredQuantities[i]}x {RequiredMaterials[i].GetDisplayName()}");
+            }
+        }
+
+        return materialTexts.Count > 0 ? string.Join(", ", materialTexts) : "No materials required";
+    }
+
+    /// <summary>
+    /// NOUVEAU: Obtient le temps de crafting sous forme lisible
+    /// </summary>
+    public string GetCraftingTimeText()
+    {
+        if (!IsTimeBased) return "";
+
+        if (CraftingTimeMs < 1000)
+            return $"{CraftingTimeMs}ms";
+        else if (CraftingTimeMs < 60000)
+            return $"{CraftingTimeMs / 1000f:F1}s";
+        else
+            return $"{CraftingTimeMs / 60000f:F1}min";
+    }
+
+    /// <summary>
+    /// MODIFIE: Validate this variant (now includes crafting validation)
     /// </summary>
     public bool IsValidVariant()
     {
         if (string.IsNullOrEmpty(VariantName)) return false;
-        if (ActionCost <= 0) return false;
         if (PrimaryResource == null) return false;
         if (string.IsNullOrEmpty(GetParentActivityID())) return false;
+
+        if (IsTimeBased)
+        {
+            // Validation pour les activités temporelles
+            if (CraftingTimeMs <= 0) return false;
+            if (RequiredMaterials != null && RequiredQuantities != null)
+            {
+                if (RequiredMaterials.Length != RequiredQuantities.Length) return false;
+            }
+        }
+        else
+        {
+            // Validation pour les activités basées sur les pas
+            if (ActionCost <= 0) return false;
+        }
+
         return true;
     }
 
@@ -130,6 +243,15 @@ public class ActivityVariant : ScriptableObject
         if (AutoDetectParent)
         {
             DetectParentFromPath();
+        }
+
+        // Validation des arrays pour le crafting
+        if (IsTimeBased && RequiredMaterials != null && RequiredQuantities != null)
+        {
+            if (RequiredMaterials.Length != RequiredQuantities.Length)
+            {
+                Logger.LogWarning($"ActivityVariant: {VariantName} has mismatched RequiredMaterials and RequiredQuantities arrays", Logger.LogCategory.General);
+            }
         }
 
         // Auto-register this variant
