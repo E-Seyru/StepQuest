@@ -20,5 +20,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 41f7ebf02edb63047ad94e6e56d9a1ae, type: 2}
   - {fileID: 11400000, guid: a7f41c6b5db499343b196e57c1a26619, type: 2}
   - {fileID: 11400000, guid: 9ccf0198cb561b848a03eb636893bdb6, type: 2}
-  ValidationStatus: "\u2705 Registry validation passed!\nFound 7 valid item(s).\nTypes:
-    Material(7)"
+  - {fileID: 11400000, guid: 0574effa80feb8141bf4c1dec5f305ee, type: 2}
+  - {fileID: 11400000, guid: 91fe5f15f5e232645b3a9f9d2cacb9bc, type: 2}
+  - {fileID: 11400000, guid: 7b116284b7357db4fa88394e7c1dd5c3, type: 2}
+  enableFallbackSearch: 1
+  logMissingItems: 0
+  ValidationStatus: "\u2705 Registry is valid! (10 items)"

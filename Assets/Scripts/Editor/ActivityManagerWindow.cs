@@ -1,4 +1,4 @@
-﻿// Purpose: Enhanced tool to manage activities, variants, and POI assignments
+﻿// Purpose: Enhanced tool to manage activities, variants, and POI assignments with creation capabilities
 // Filepath: Assets/Scripts/Editor/ActivityManagerWindow.cs
 #if UNITY_EDITOR
 using System.Collections.Generic;
@@ -30,6 +30,23 @@ public class ActivityManagerWindow : EditorWindow
     private POI[] allPOIs;
     private Dictionary<string, MapLocationDefinition> locationLookup = new Dictionary<string, MapLocationDefinition>();
 
+    // Creation Dialog State
+    private bool showCreateActivityDialog = false;
+    private bool showCreateVariantDialog = false;
+    private bool showCreatePOIDialog = false;
+    private bool showCreateLocationDialog = false;
+
+    private string newActivityName = "";
+    private string newActivityDescription = "";
+    private string newVariantName = "";
+    private string newVariantDescription = "";
+    private string newPOIName = "";
+    private string newLocationID = "";
+    private string newLocationName = "";
+    private string newLocationDescription = "";
+
+    private ActivityDefinition targetActivityForVariant = null;
+
     void OnEnable()
     {
         LoadRegistries();
@@ -57,7 +74,444 @@ public class ActivityManagerWindow : EditorWindow
         }
 
         EditorGUILayout.EndScrollView();
+
+        // Handle creation dialogs
+        HandleCreationDialogs();
     }
+
+    #region Creation Dialogs
+    private void HandleCreationDialogs()
+    {
+        if (showCreateActivityDialog)
+            DrawCreateActivityDialog();
+
+        if (showCreateVariantDialog)
+            DrawCreateVariantDialog();
+
+        if (showCreatePOIDialog)
+            DrawCreatePOIDialog();
+
+        if (showCreateLocationDialog)
+            DrawCreateLocationDialog();
+    }
+
+    private void DrawCreateActivityDialog()
+    {
+        GUILayout.BeginArea(new Rect(50, 100, 400, 250));
+        EditorGUILayout.BeginVertical("box");
+
+        EditorGUILayout.LabelField("Create New Activity", EditorStyles.boldLabel);
+        EditorGUILayout.Space();
+
+        EditorGUILayout.LabelField("Activity Name:");
+        newActivityName = EditorGUILayout.TextField(newActivityName);
+
+        EditorGUILayout.LabelField("Description:");
+        newActivityDescription = EditorGUILayout.TextArea(newActivityDescription, GUILayout.Height(60));
+
+        EditorGUILayout.Space();
+
+        EditorGUILayout.BeginHorizontal();
+
+        if (GUILayout.Button("Create"))
+        {
+            if (!string.IsNullOrEmpty(newActivityName))
+            {
+                CreateNewActivity(newActivityName, newActivityDescription);
+                ResetCreateActivityDialog();
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("Invalid Input", "Activity name cannot be empty.", "OK");
+            }
+        }
+
+        if (GUILayout.Button("Cancel"))
+        {
+            ResetCreateActivityDialog();
+        }
+
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.EndVertical();
+        GUILayout.EndArea();
+    }
+
+    private void DrawCreateVariantDialog()
+    {
+        GUILayout.BeginArea(new Rect(50, 100, 400, 250));
+        EditorGUILayout.BeginVertical("box");
+
+        EditorGUILayout.LabelField("Create New Variant", EditorStyles.boldLabel);
+        EditorGUILayout.Space();
+
+        EditorGUILayout.LabelField("Target Activity:");
+        EditorGUILayout.LabelField(targetActivityForVariant?.GetDisplayName() ?? "None selected", EditorStyles.miniLabel);
+
+        EditorGUILayout.Space();
+
+        EditorGUILayout.LabelField("Variant Name:");
+        newVariantName = EditorGUILayout.TextField(newVariantName);
+
+        EditorGUILayout.LabelField("Description:");
+        newVariantDescription = EditorGUILayout.TextArea(newVariantDescription, GUILayout.Height(60));
+
+        EditorGUILayout.Space();
+
+        EditorGUILayout.BeginHorizontal();
+
+        if (GUILayout.Button("Create"))
+        {
+            if (!string.IsNullOrEmpty(newVariantName) && targetActivityForVariant != null)
+            {
+                CreateNewVariant(targetActivityForVariant, newVariantName, newVariantDescription);
+                ResetCreateVariantDialog();
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("Invalid Input", "Variant name cannot be empty and target activity must be selected.", "OK");
+            }
+        }
+
+        if (GUILayout.Button("Cancel"))
+        {
+            ResetCreateVariantDialog();
+        }
+
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.EndVertical();
+        GUILayout.EndArea();
+    }
+
+    private void DrawCreatePOIDialog()
+    {
+        GUILayout.BeginArea(new Rect(50, 100, 400, 200));
+        EditorGUILayout.BeginVertical("box");
+
+        EditorGUILayout.LabelField("Create New POI", EditorStyles.boldLabel);
+        EditorGUILayout.Space();
+
+        EditorGUILayout.LabelField("POI Name:");
+        newPOIName = EditorGUILayout.TextField(newPOIName);
+
+        EditorGUILayout.LabelField("Location ID:");
+        newLocationID = EditorGUILayout.TextField(newLocationID);
+
+        EditorGUILayout.Space();
+
+        EditorGUILayout.BeginHorizontal();
+
+        if (GUILayout.Button("Create"))
+        {
+            if (!string.IsNullOrEmpty(newPOIName) && !string.IsNullOrEmpty(newLocationID))
+            {
+                CreateNewPOI(newPOIName, newLocationID);
+                ResetCreatePOIDialog();
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("Invalid Input", "POI name and Location ID cannot be empty.", "OK");
+            }
+        }
+
+        if (GUILayout.Button("Cancel"))
+        {
+            ResetCreatePOIDialog();
+        }
+
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.EndVertical();
+        GUILayout.EndArea();
+    }
+
+    private void DrawCreateLocationDialog()
+    {
+        GUILayout.BeginArea(new Rect(50, 100, 400, 250));
+        EditorGUILayout.BeginVertical("box");
+
+        EditorGUILayout.LabelField("Create New Location", EditorStyles.boldLabel);
+        EditorGUILayout.Space();
+
+        EditorGUILayout.LabelField("Location ID:");
+        newLocationID = EditorGUILayout.TextField(newLocationID);
+
+        EditorGUILayout.LabelField("Display Name:");
+        newLocationName = EditorGUILayout.TextField(newLocationName);
+
+        EditorGUILayout.LabelField("Description:");
+        newLocationDescription = EditorGUILayout.TextArea(newLocationDescription, GUILayout.Height(60));
+
+        EditorGUILayout.Space();
+
+        EditorGUILayout.BeginHorizontal();
+
+        if (GUILayout.Button("Create"))
+        {
+            if (!string.IsNullOrEmpty(newLocationID) && !string.IsNullOrEmpty(newLocationName))
+            {
+                CreateNewLocation(newLocationID, newLocationName, newLocationDescription);
+                ResetCreateLocationDialog();
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("Invalid Input", "Location ID and Display Name cannot be empty.", "OK");
+            }
+        }
+
+        if (GUILayout.Button("Cancel"))
+        {
+            ResetCreateLocationDialog();
+        }
+
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.EndVertical();
+        GUILayout.EndArea();
+    }
+
+    private void ResetCreateActivityDialog()
+    {
+        showCreateActivityDialog = false;
+        newActivityName = "";
+        newActivityDescription = "";
+    }
+
+    private void ResetCreateVariantDialog()
+    {
+        showCreateVariantDialog = false;
+        newVariantName = "";
+        newVariantDescription = "";
+        targetActivityForVariant = null;
+    }
+
+    private void ResetCreatePOIDialog()
+    {
+        showCreatePOIDialog = false;
+        newPOIName = "";
+        newLocationID = "";
+    }
+
+    private void ResetCreateLocationDialog()
+    {
+        showCreateLocationDialog = false;
+        newLocationID = "";
+        newLocationName = "";
+        newLocationDescription = "";
+    }
+    #endregion
+
+    #region Creation Logic
+    private void CreateNewActivity(string activityName, string description)
+    {
+        // Generate ActivityID from name
+        string activityID = GenerateIDFromName(activityName);
+
+        // Create the ScriptableObject
+        ActivityDefinition newActivity = CreateInstance<ActivityDefinition>();
+        newActivity.ActivityName = activityName;
+        newActivity.ActivityID = activityID;
+        newActivity.BaseDescription = description;
+        newActivity.IsAvailable = true;
+
+        // Save to appropriate folder
+        string assetPath = $"Assets/ScriptableObjects/Activities/{activityName}.asset";
+        assetPath = AssetDatabase.GenerateUniqueAssetPath(assetPath);
+
+        AssetDatabase.CreateAsset(newActivity, assetPath);
+        AssetDatabase.SaveAssets();
+
+        // Create folder for variants
+        string variantFolderPath = $"Assets/ScriptableObjects/Activities/ActivitiesVariant/{activityName}";
+        if (!AssetDatabase.IsValidFolder(variantFolderPath))
+        {
+            AssetDatabase.CreateFolder("Assets/ScriptableObjects/Activities/ActivitiesVariant", activityName);
+        }
+
+        // Create LocationActivity wrapper and add to registry
+        if (activityRegistry != null)
+        {
+            LocationActivity locationActivity = new LocationActivity
+            {
+                ActivityReference = newActivity,
+                IsAvailable = true,
+                ActivityVariants = new List<ActivityVariant>()
+            };
+
+            // Automatically find and assign existing variants that match this activity
+            AssignExistingVariants(locationActivity, activityID);
+
+            activityRegistry.AllActivities.Add(locationActivity);
+            EditorUtility.SetDirty(activityRegistry);
+            AssetDatabase.SaveAssets();
+        }
+
+        // Select the new activity
+        Selection.activeObject = newActivity;
+        EditorGUIUtility.PingObject(newActivity);
+
+        Debug.Log($"Created new activity: {activityName} (ID: {activityID}) with variant folder");
+        LoadRegistries(); // Refresh
+    }
+
+    private void CreateNewVariant(ActivityDefinition parentActivity, string variantName, string description)
+    {
+        // Create the variant ScriptableObject
+        ActivityVariant newVariant = CreateInstance<ActivityVariant>();
+        newVariant.VariantName = variantName;
+        newVariant.VariantDescription = description;
+        // Note: L'utilisateur peut configurer le reste dans l'Inspector
+
+        // Save to appropriate folder (inside the parent activity's folder)
+        string activityFolderPath = $"Assets/ScriptableObjects/Activities/ActivitiesVariant/{parentActivity.ActivityName}";
+
+        // Create folder if it doesn't exist
+        if (!AssetDatabase.IsValidFolder(activityFolderPath))
+        {
+            AssetDatabase.CreateFolder("Assets/ScriptableObjects/Activities/ActivitiesVariant", parentActivity.ActivityName);
+        }
+
+        string assetPath = $"{activityFolderPath}/{variantName}.asset";
+        assetPath = AssetDatabase.GenerateUniqueAssetPath(assetPath);
+
+        AssetDatabase.CreateAsset(newVariant, assetPath);
+        AssetDatabase.SaveAssets();
+
+        // Select the new variant for editing
+        Selection.activeObject = newVariant;
+        EditorGUIUtility.PingObject(newVariant);
+
+        Debug.Log($"Created new variant: {variantName} for activity {parentActivity.GetDisplayName()} in folder {activityFolderPath}");
+    }
+
+    private void CreateNewPOI(string poiName, string locationID)
+    {
+        // Create GameObject in scene
+        GameObject poiObject = new GameObject(poiName);
+
+        // Add POI component
+        POI poiComponent = poiObject.AddComponent<POI>();
+        poiComponent.LocationID = locationID;
+
+        // Position at center of SceneView
+        SceneView sceneView = SceneView.lastActiveSceneView;
+        if (sceneView != null)
+        {
+            // Position en face de la caméra de la SceneView
+            Vector3 cameraPos = sceneView.camera.transform.position;
+            Vector3 cameraForward = sceneView.camera.transform.forward;
+            poiObject.transform.position = cameraPos + cameraForward * 10f;
+        }
+
+        // Create MapLocationDefinition if it doesn't exist
+        if (locationRegistry != null && !locationLookup.ContainsKey(locationID))
+        {
+            // Suggest creating the location
+            bool createLocation = EditorUtility.DisplayDialog(
+                "Location Not Found",
+                $"Location '{locationID}' doesn't exist in LocationRegistry.\n\nCreate it now?",
+                "Create", "Skip");
+
+            if (createLocation)
+            {
+                newLocationID = locationID;
+                newLocationName = locationID; // Default name
+                showCreateLocationDialog = true;
+            }
+        }
+
+        // Select the new POI
+        Selection.activeObject = poiObject;
+        EditorGUIUtility.PingObject(poiObject);
+
+        Debug.Log($"Created new POI: {poiName} with LocationID: {locationID}");
+        RefreshPOIList(); // Refresh POI list
+    }
+
+    private void CreateNewLocation(string locationID, string displayName, string description)
+    {
+        // Create the MapLocationDefinition ScriptableObject
+        MapLocationDefinition newLocation = CreateInstance<MapLocationDefinition>();
+        newLocation.LocationID = locationID;
+        newLocation.DisplayName = displayName;
+        newLocation.Description = description;
+        newLocation.AvailableActivities = new List<LocationActivity>();
+        newLocation.Connections = new List<LocationConnection>();
+
+        // Save to appropriate folder
+        string assetPath = $"Assets/ScriptableObjects/MapLocation/{displayName}.asset";
+        assetPath = AssetDatabase.GenerateUniqueAssetPath(assetPath);
+
+        AssetDatabase.CreateAsset(newLocation, assetPath);
+        AssetDatabase.SaveAssets();
+
+        // Add to LocationRegistry
+        if (locationRegistry != null)
+        {
+            locationRegistry.AllLocations.Add(newLocation);
+            EditorUtility.SetDirty(locationRegistry);
+            AssetDatabase.SaveAssets();
+        }
+
+        // Select the new location
+        Selection.activeObject = newLocation;
+        EditorGUIUtility.PingObject(newLocation);
+
+        Debug.Log($"Created new location: {displayName} (ID: {locationID})");
+        LoadRegistries(); // Refresh
+    }
+
+    private string GenerateIDFromName(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "";
+
+        return name.ToLower()
+                  .Replace(" ", "_")
+                  .Replace("'", "")
+                  .Replace("-", "_")
+                  .Replace("(", "")
+                  .Replace(")", "");
+    }
+
+    private void AssignExistingVariants(LocationActivity locationActivity, string activityID)
+    {
+        // Find all ActivityVariant assets in the project
+        string[] variantGuids = AssetDatabase.FindAssets("t:ActivityVariant");
+        int assignedCount = 0;
+
+        foreach (string guid in variantGuids)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            ActivityVariant variant = AssetDatabase.LoadAssetAtPath<ActivityVariant>(path);
+
+            if (variant != null && variant.GetParentActivityID() == activityID)
+            {
+                // Check if not already in the list
+                if (!locationActivity.ActivityVariants.Contains(variant))
+                {
+                    locationActivity.ActivityVariants.Add(variant);
+                    assignedCount++;
+                    Debug.Log($"Auto-assigned existing variant '{variant.VariantName}' to activity '{activityID}'");
+                }
+            }
+        }
+
+        // NOUVEAU : Aussi synchroniser ces variants avec toutes les autres locations qui utilisent cette activité
+        if (assignedCount > 0 && locationRegistry != null)
+        {
+            foreach (var variant in locationActivity.ActivityVariants)
+            {
+                SynchronizeVariantAcrossAllLocations(locationActivity.ActivityReference, variant, true);
+            }
+        }
+
+        if (assignedCount > 0)
+        {
+            Debug.Log($"Successfully auto-assigned {assignedCount} existing variants to activity '{activityID}' and synchronized across all locations");
+        }
+        else
+        {
+            Debug.Log($"No existing variants found for activity '{activityID}'");
+        }
+    }
+    #endregion
 
     private void DrawHeader()
     {
@@ -93,7 +547,7 @@ public class ActivityManagerWindow : EditorWindow
         EditorGUILayout.EndVertical();
     }
 
-    #region Activities Tab (Existing Code)
+    #region Activities Tab (Enhanced)
     private void DrawActivitiesTab()
     {
         if (activityRegistry == null)
@@ -101,6 +555,16 @@ public class ActivityManagerWindow : EditorWindow
             EditorGUILayout.HelpBox("Select an ActivityRegistry to manage activities.", MessageType.Info);
             return;
         }
+
+        // Create New Activity button
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.FlexibleSpace();
+        if (GUILayout.Button("Create New Activity", GUILayout.Width(150)))
+        {
+            showCreateActivityDialog = true;
+        }
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.Space();
 
         var filteredActivities = GetFilteredActivities();
 
@@ -148,7 +612,15 @@ public class ActivityManagerWindow : EditorWindow
         EditorGUILayout.Space();
 
         // Variants section
+        EditorGUILayout.BeginHorizontal();
         EditorGUILayout.LabelField("Associated Variants:", EditorStyles.boldLabel);
+        GUILayout.FlexibleSpace();
+        if (GUILayout.Button("Create Variant", GUILayout.Width(100)))
+        {
+            targetActivityForVariant = activity;
+            showCreateVariantDialog = true;
+        }
+        EditorGUILayout.EndHorizontal();
 
         // Current variants list
         if (locationActivity.ActivityVariants != null && locationActivity.ActivityVariants.Count > 0)
@@ -163,9 +635,9 @@ public class ActivityManagerWindow : EditorWindow
             EditorGUILayout.LabelField("  No variants assigned", EditorStyles.miniLabel);
         }
 
-        // Add new variant
+        // Add existing variant
         EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField("Add Variant:", GUILayout.Width(80));
+        EditorGUILayout.LabelField("Add Existing Variant:", GUILayout.Width(130));
 
         ActivityVariant newVariant = (ActivityVariant)EditorGUILayout.ObjectField(null, typeof(ActivityVariant), false);
 
@@ -244,7 +716,7 @@ public class ActivityManagerWindow : EditorWindow
     }
     #endregion
 
-    #region POI Management Tab (New)
+    #region POI Management Tab (Enhanced)
     private void DrawPOIManagementTab()
     {
         if (locationRegistry == null)
@@ -254,6 +726,12 @@ public class ActivityManagerWindow : EditorWindow
         }
 
         EditorGUILayout.BeginHorizontal();
+
+        if (GUILayout.Button("Create New POI", GUILayout.Width(120)))
+        {
+            showCreatePOIDialog = true;
+        }
+
         if (GUILayout.Button("Refresh POI List", GUILayout.Width(120)))
         {
             RefreshPOIList();
@@ -327,9 +805,11 @@ public class ActivityManagerWindow : EditorWindow
         {
             EditorGUILayout.LabelField($"❌ Location '{poi.LocationID}' not found in LocationRegistry!", EditorStyles.miniLabel);
 
-            if (GUILayout.Button("Fix Missing Location"))
+            if (GUILayout.Button("Create Missing Location"))
             {
-                CreateMissingLocation(poi.LocationID);
+                newLocationID = poi.LocationID;
+                newLocationName = poi.LocationID; // Default name
+                showCreateLocationDialog = true;
             }
         }
 
@@ -451,9 +931,9 @@ public class ActivityManagerWindow : EditorWindow
         EditorGUILayout.EndVertical();
     }
 
-    private void DrawLocationVariantEntry(LocationActivity locationActivity, int variantIndex)
+    private void DrawLocationVariantEntry(LocationActivity locationActivity, int index)
     {
-        var variant = locationActivity.ActivityVariants[variantIndex];
+        var variant = locationActivity.ActivityVariants[index];
 
         if (variant == null)
         {
@@ -462,7 +942,7 @@ public class ActivityManagerWindow : EditorWindow
 
             if (GUILayout.Button("Remove", GUILayout.Width(60)))
             {
-                RemoveVariantFromLocationActivity(locationActivity, variantIndex);
+                RemoveVariantFromLocationActivity(locationActivity, index);
             }
 
             EditorGUILayout.EndHorizontal();
@@ -470,12 +950,11 @@ public class ActivityManagerWindow : EditorWindow
         }
 
         EditorGUILayout.BeginHorizontal();
-
-        EditorGUILayout.LabelField($"    • {variant.VariantName}", EditorStyles.miniLabel, GUILayout.Width(120));
+        EditorGUILayout.LabelField($"    • {variant.VariantName}", EditorStyles.miniLabel, GUILayout.Width(150));
 
         if (variant.PrimaryResource != null)
         {
-            EditorGUILayout.LabelField($"→ {variant.PrimaryResource.ItemName}", EditorStyles.miniLabel, GUILayout.Width(80));
+            EditorGUILayout.LabelField($"→ {variant.PrimaryResource.ItemName}", EditorStyles.miniLabel, GUILayout.Width(100));
         }
 
         EditorGUILayout.LabelField($"{variant.ActionCost} steps", EditorStyles.miniLabel, GUILayout.Width(60));
@@ -490,7 +969,7 @@ public class ActivityManagerWindow : EditorWindow
 
         if (GUILayout.Button("Remove", GUILayout.Width(60)))
         {
-            RemoveVariantFromLocationActivity(locationActivity, variantIndex);
+            RemoveVariantFromLocationActivity(locationActivity, index);
         }
 
         EditorGUILayout.EndHorizontal();
@@ -544,14 +1023,6 @@ public class ActivityManagerWindow : EditorWindow
 
         locationLookup.TryGetValue(poi.LocationID, out MapLocationDefinition location);
         return location;
-    }
-
-    private void CreateMissingLocation(string locationId)
-    {
-        // This would create a new MapLocationDefinition - for now just log
-        Debug.LogWarning($"Feature not implemented: Create new location '{locationId}'");
-        EditorUtility.DisplayDialog("Feature Coming Soon",
-            $"Creating new locations automatically is not implemented yet.\n\nPlease create a MapLocationDefinition for '{locationId}' manually.", "OK");
     }
 
     private void AddActivityToLocation(MapLocationDefinition location, ActivityDefinition activity)
@@ -613,8 +1084,12 @@ public class ActivityManagerWindow : EditorWindow
         }
 
         locationActivity.ActivityVariants.Add(variant);
+
+        // NOUVEAU : Synchroniser avec toutes les autres LocationActivity qui utilisent la même ActivityDefinition
+        SynchronizeVariantAcrossAllLocations(locationActivity.ActivityReference, variant, true);
+
         MarkLocationDirty(FindLocationContaining(locationActivity));
-        Debug.Log($"Added variant '{variant.VariantName}' to activity '{locationActivity.ActivityReference.GetDisplayName()}'");
+        Debug.Log($"Added variant '{variant.VariantName}' to activity '{locationActivity.ActivityReference.GetDisplayName()}' and synchronized across all locations");
     }
 
     private void RemoveVariantFromLocationActivity(LocationActivity locationActivity, int index)
@@ -622,10 +1097,17 @@ public class ActivityManagerWindow : EditorWindow
         if (locationActivity.ActivityVariants != null && index >= 0 && index < locationActivity.ActivityVariants.Count)
         {
             var variantName = locationActivity.ActivityVariants[index]?.VariantName ?? "Unknown";
+            var variant = locationActivity.ActivityVariants[index];
             locationActivity.ActivityVariants.RemoveAt(index);
 
+            // NOUVEAU : Synchroniser la suppression avec toutes les autres LocationActivity
+            if (variant != null)
+            {
+                SynchronizeVariantAcrossAllLocations(locationActivity.ActivityReference, variant, false);
+            }
+
             MarkLocationDirty(FindLocationContaining(locationActivity));
-            Debug.Log($"Removed variant '{variantName}' from activity '{locationActivity.ActivityReference.GetDisplayName()}'");
+            Debug.Log($"Removed variant '{variantName}' from activity '{locationActivity.ActivityReference.GetDisplayName()}' and synchronized across all locations");
         }
     }
 
@@ -653,7 +1135,7 @@ public class ActivityManagerWindow : EditorWindow
     }
     #endregion
 
-    #region Utility Methods
+    #region Utility Methods (Legacy)
     private void LoadRegistries()
     {
         if (activityRegistry == null)
@@ -709,6 +1191,9 @@ public class ActivityManagerWindow : EditorWindow
 
         locationActivity.ActivityVariants.Add(variant);
 
+        // NOUVEAU : Synchroniser avec toutes les autres LocationActivity qui utilisent la même ActivityDefinition
+        SynchronizeVariantAcrossAllLocations(locationActivity.ActivityReference, variant, true);
+
         EditorUtility.SetDirty(activityRegistry);
         AssetDatabase.SaveAssets();
 
@@ -717,7 +1202,7 @@ public class ActivityManagerWindow : EditorWindow
             activityRegistry.ValidateRegistry();
         }
 
-        Debug.Log($"Added variant '{variant.VariantName}' to activity '{locationActivity.ActivityReference.GetDisplayName()}'");
+        Debug.Log($"Added variant '{variant.VariantName}' to activity '{locationActivity.ActivityReference.GetDisplayName()}' and synchronized across all locations");
     }
 
     private void RemoveVariantFromActivity(LocationActivity locationActivity, int index)
@@ -725,7 +1210,14 @@ public class ActivityManagerWindow : EditorWindow
         if (locationActivity.ActivityVariants != null && index >= 0 && index < locationActivity.ActivityVariants.Count)
         {
             var variantName = locationActivity.ActivityVariants[index]?.VariantName ?? "Unknown";
+            var variant = locationActivity.ActivityVariants[index];
             locationActivity.ActivityVariants.RemoveAt(index);
+
+            // NOUVEAU : Synchroniser la suppression avec toutes les autres LocationActivity
+            if (variant != null)
+            {
+                SynchronizeVariantAcrossAllLocations(locationActivity.ActivityReference, variant, false);
+            }
 
             EditorUtility.SetDirty(activityRegistry);
             AssetDatabase.SaveAssets();
@@ -735,7 +1227,58 @@ public class ActivityManagerWindow : EditorWindow
                 activityRegistry.ValidateRegistry();
             }
 
-            Debug.Log($"Removed variant '{variantName}' from activity '{locationActivity.ActivityReference.GetDisplayName()}'");
+            Debug.Log($"Removed variant '{variantName}' from activity '{locationActivity.ActivityReference.GetDisplayName()}' and synchronized across all locations");
+        }
+    }
+
+    /// <summary>
+    /// Synchronise l'ajout/suppression d'un variant à travers toutes les LocationActivity qui utilisent la même ActivityDefinition
+    /// </summary>
+    private void SynchronizeVariantAcrossAllLocations(ActivityDefinition activityDef, ActivityVariant variant, bool add)
+    {
+        if (activityDef == null || variant == null || locationRegistry == null) return;
+
+        int syncCount = 0;
+
+        // Parcourir tous les MapLocationDefinition du LocationRegistry
+        foreach (var location in locationRegistry.AllLocations.Where(l => l != null))
+        {
+            if (location.AvailableActivities == null) continue;
+
+            // Trouver les LocationActivity qui utilisent cette ActivityDefinition
+            foreach (var locActivity in location.AvailableActivities.Where(la => la?.ActivityReference == activityDef))
+            {
+                if (locActivity.ActivityVariants == null)
+                {
+                    locActivity.ActivityVariants = new List<ActivityVariant>();
+                }
+
+                if (add)
+                {
+                    // Ajouter le variant s'il n'existe pas déjà
+                    if (!locActivity.ActivityVariants.Contains(variant))
+                    {
+                        locActivity.ActivityVariants.Add(variant);
+                        syncCount++;
+                        EditorUtility.SetDirty(location);
+                    }
+                }
+                else
+                {
+                    // Supprimer le variant s'il existe
+                    if (locActivity.ActivityVariants.Remove(variant))
+                    {
+                        syncCount++;
+                        EditorUtility.SetDirty(location);
+                    }
+                }
+            }
+        }
+
+        if (syncCount > 0)
+        {
+            AssetDatabase.SaveAssets();
+            Debug.Log($"Synchronized variant '{variant.VariantName}' across {syncCount} location activities");
         }
     }
     #endregion

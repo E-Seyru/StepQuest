@@ -36,6 +36,15 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
+  - ActivityReference: {fileID: 11400000, guid: 54ca123aa9fa9684daee276a5dade847, type: 2}
+    LocationSpecificName: 
+    LocationDescription: 
+    ActivityVariants:
+    - {fileID: 11400000, guid: 21241f0aa725f1a4794218d1c81006f5, type: 2}
+    - {fileID: 11400000, guid: 8a1fd8c0c9c5aba45b26888c39f548d4, type: 2}
+    IsAvailable: 1
+    SpecialRequirements: 
+    LocationSpecificIcon: {fileID: 0}
   LocationIcon: {fileID: 21300000, guid: 4ad214f54463ee74dbe67a30f0b45aaa, type: 3}
   POIColor: {r: 1, g: 1, b: 1, a: 1}
   IsAccessible: 1

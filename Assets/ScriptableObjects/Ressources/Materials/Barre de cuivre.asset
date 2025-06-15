@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9be207c3a5ca57c478fb1cdbdb145352, type: 3}
+  m_Name: Barre de cuivre
+  m_EditorClassIdentifier: 
+  ItemID: barre_de_cuivre
+  ItemName: Barre de cuivre
+  Description: "Une barre de cuivre forg\xE9e par vos soins. "
+  ItemIcon: {fileID: 21300000, guid: 0acf2f27a38b5824aba086400d739f84, type: 3}
+  ItemColor: {r: 1, g: 1, b: 1, a: 1}
+  BasePrice: 10
+  RarityTier: 1
+  Type: 1
+  IsStackable: 1
+  MaxStackSize: 99
+  EquipmentSlot: 0
+  InventorySlots: 0
