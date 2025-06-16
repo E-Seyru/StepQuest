@@ -37,6 +37,10 @@ public class POI : MonoBehaviour, IPointerClickHandler
     [Tooltip("Le panel d'erreur sera géré automatiquement via ErrorPanel.Instance")]
     [SerializeField] private bool enableErrorMessages = true;
 
+    [Header("Location Details")]
+    [Tooltip("Nom du panel à afficher pour les détails de la location")]
+    [SerializeField] private string locationDetailsPanelName = "LocationDetailsPanel";
+
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
 
@@ -45,6 +49,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     private DataManager dataManager;
     private LocationRegistry locationRegistry;
     private TravelConfirmationPopup travelPopup;
+    private PanelManager panelManager;
 
     private bool isCurrentLocation = false;
     private bool canTravelHere = false;
@@ -86,9 +91,10 @@ public class POI : MonoBehaviour, IPointerClickHandler
         // Sauvegarder l'échelle originale
         originalScale = transform.localScale;
 
-        // Get MapManager reference
+        // Get manager references
         mapManager = MapManager.Instance;
         dataManager = DataManager.Instance;
+        panelManager = PanelManager.Instance;
 
         if (mapManager == null)
         {
@@ -99,6 +105,12 @@ public class POI : MonoBehaviour, IPointerClickHandler
         if (dataManager == null)
         {
             Logger.LogError($"POI ({LocationID}): DataManager not found!", Logger.LogCategory.MapLog);
+            return;
+        }
+
+        if (panelManager == null)
+        {
+            Logger.LogError($"POI ({LocationID}): PanelManager not found!", Logger.LogCategory.MapLog);
             return;
         }
 
@@ -227,13 +239,20 @@ public class POI : MonoBehaviour, IPointerClickHandler
             Logger.LogInfo($"POI: Clicked on POI '{LocationID}'", Logger.LogCategory.MapLog);
         }
 
+        // Vérifier en temps réel si c'est la location actuelle (évite les problèmes d'ordre d'initialisation)
+        bool isAtCurrentLocation = (mapManager?.CurrentLocation?.LocationID == LocationID);
+
         // Check if this is the current location (when not traveling)
-        if (!dataManager.PlayerData.IsCurrentlyTraveling() && isCurrentLocation)
+        if (!dataManager.PlayerData.IsCurrentlyTraveling() && isAtCurrentLocation)
         {
             if (enableDebugLogs)
             {
-                Logger.LogInfo($"POI ({LocationID}): Already at this location!", Logger.LogCategory.MapLog);
+                Logger.LogInfo($"POI ({LocationID}): At current location - showing location details!", Logger.LogCategory.MapLog);
             }
+
+            // Forcer la mise à jour de l'état visuel au cas où ce ne serait pas fait
+            UpdateVisualState();
+
             ShowLocationDetails();
             return;
         }
@@ -327,18 +346,29 @@ public class POI : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// Show location details popup when clicking on current location
+    /// Affiche le panel de détails de la location quand on clique sur notre location actuelle
     /// </summary>
     private void ShowLocationDetails()
     {
-        // Implementation would open location details panel
-        if (enableDebugLogs)
+        if (panelManager == null)
         {
-            Logger.LogInfo($"POI ({LocationID}): Showing location details", Logger.LogCategory.MapLog);
+            Logger.LogError($"POI ({LocationID}): PanelManager is null!", Logger.LogCategory.MapLog);
+            return;
         }
 
-        // You could trigger a location details panel here if you have one
-        // LocationDetailsPanel.Instance?.ShowLocation(LocationID);
+        if (string.IsNullOrEmpty(locationDetailsPanelName))
+        {
+            Logger.LogWarning($"POI ({LocationID}): locationDetailsPanelName is not set!", Logger.LogCategory.MapLog);
+            return;
+        }
+
+        if (enableDebugLogs)
+        {
+            Logger.LogInfo($"POI ({LocationID}): Hiding map and showing '{locationDetailsPanelName}' panel", Logger.LogCategory.MapLog);
+        }
+
+        // Utiliser la nouvelle méthode du PanelManager pour aller au panel des détails
+        panelManager.HideMapAndGoToPanel(locationDetailsPanelName);
     }
 
     private void UpdateVisualState()
@@ -393,24 +423,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
         UpdateVisualState();
     }
 
-    // Visual feedback for mouse hover (optional)
-    void OnMouseEnter()
-    {
-        if (spriteRenderer != null && !isCurrentLocation && !dataManager.PlayerData.IsCurrentlyTraveling())
-        {
-            if (spriteRenderer.color == normalColor)
-            {
-                Color currentColor = spriteRenderer.color;
-                spriteRenderer.color = new Color(currentColor.r * 1.2f, currentColor.g * 1.2f, currentColor.b * 1.2f, currentColor.a);
-            }
-        }
-    }
-
-    void OnMouseExit()
-    {
-        UpdateVisualState();
-    }
-
     // Editor utility to help set up POIs
     void OnValidate()
     {
@@ -433,6 +445,11 @@ public class POI : MonoBehaviour, IPointerClickHandler
         if (clickAnimationDuration <= 0f)
         {
             Debug.LogWarning($"POI ({LocationID}): clickAnimationDuration should be > 0");
+        }
+
+        if (string.IsNullOrEmpty(locationDetailsPanelName))
+        {
+            Debug.LogWarning($"POI ({LocationID}): locationDetailsPanelName is not set!");
         }
     }
 

@@ -23,6 +23,7 @@ public class PanelManager : MonoBehaviour
 
     [Header("Events")]
     public UnityEvent<int> OnPanelChanged;
+    public UnityEvent<bool> OnMapStateChanged; // Nouvel événement pour notifier les changements d'état de la carte
 
     // Private variables
     private bool mapIsHidden = true;
@@ -39,6 +40,9 @@ public class PanelManager : MonoBehaviour
     private Coroutine inputCoroutine;
 
     public static PanelManager Instance { get; private set; }
+
+    // Propriété publique pour connaître l'état de la carte
+    public bool IsMapVisible => !mapIsHidden;
 
     private void Awake()
     {
@@ -327,40 +331,118 @@ public class PanelManager : MonoBehaviour
         }
     }
 
+    // === NOUVELLES MÉTHODES POUR LA GESTION DE LA CARTE ===
+
+    /// <summary>
+    /// Affiche la carte en cachant le panel actuel
+    /// </summary>
+    public void ShowMap()
+    {
+        if (!mapIsHidden) return; // Déjà visible
+
+        previousPanelIndex = currentPanelIndex;
+        HidePanel();
+        mapPanel.SetActive(true);
+        mapIsHidden = false;
+
+        // OPTIMISATION : Arrêter la détection d'input quand la carte est visible
+        StopInputDetection();
+
+        // Notifier le changement d'état
+        OnMapStateChanged?.Invoke(true);
+    }
+
+    /// <summary>
+    /// Cache la carte et affiche le panel spécifié par son nom
+    /// </summary>
+    /// <param name="panelName">Nom du GameObject panel à afficher</param>
+    public void HideMapAndGoToPanel(string panelName)
+    {
+        int panelIndex = FindPanelIndexByName(panelName);
+        if (panelIndex >= 0)
+        {
+            HideMapAndGoToPanel(panelIndex);
+        }
+        else
+        {
+            Logger.LogWarning($"PanelManager: Panel with name '{panelName}' not found!", Logger.LogCategory.General);
+        }
+    }
+
+    /// <summary>
+    /// Cache la carte et affiche le panel spécifié par son index
+    /// </summary>
+    /// <param name="panelIndex">Index du panel à afficher</param>
+    public void HideMapAndGoToPanel(int panelIndex)
+    {
+        if (mapIsHidden) return; // La carte n'est pas visible
+
+        if (panelIndex < 0 || panelIndex >= panels.Count || panels[panelIndex] == null)
+        {
+            Logger.LogWarning($"PanelManager: Invalid panel index for HideMapAndGoToPanel: {panelIndex}", Logger.LogCategory.General);
+            return;
+        }
+
+        mapPanel.SetActive(false);
+
+        // Afficher le panel demandé
+        if (alwaysActivePanelIndices.Contains(panelIndex))
+        {
+            RectTransform rectTransform = panels[panelIndex].GetComponent<RectTransform>();
+            if (rectTransform != null && originalPositions.ContainsKey(panelIndex))
+                rectTransform.anchoredPosition = originalPositions[panelIndex];
+        }
+
+        currentPanelIndex = panelIndex;
+        panels[panelIndex].SetActive(true);
+        mapIsHidden = true;
+
+        // OPTIMISATION : Relancer la détection d'input
+        StartInputDetection();
+
+        // Notifier les changements
+        OnPanelChanged?.Invoke(currentPanelIndex);
+        OnMapStateChanged?.Invoke(false);
+    }
+
+    /// <summary>
+    /// Cache la carte et retourne au panel précédent
+    /// </summary>
+    public void HideMapAndReturnToPrevious()
+    {
+        HideMapAndGoToPanel(previousPanelIndex);
+    }
+
+    /// <summary>
+    /// Trouve l'index d'un panel par son nom
+    /// </summary>
+    /// <param name="panelName">Nom du GameObject panel à chercher</param>
+    /// <returns>Index du panel ou -1 si non trouvé</returns>
+    private int FindPanelIndexByName(string panelName)
+    {
+        for (int i = 0; i < panels.Count; i++)
+        {
+            if (panels[i] != null && panels[i].name == panelName)
+            {
+                return i;
+            }
+        }
+        return -1; // Not found
+    }
+
+    /// <summary>
+    /// Toggle la carte (affiche si cachée, cache et retourne au précédent si visible)
+    /// Méthode de compatibilité avec l'ancien code
+    /// </summary>
     public void ShowAndHideMapPanel()
     {
         if (mapIsHidden)
         {
-            previousPanelIndex = currentPanelIndex;
-            HidePanel();
-            mapPanel.SetActive(true);
-            mapIsHidden = false;
-
-            // OPTIMISATION : Arrêter la détection d'input quand la carte est visible
-            StopInputDetection();
+            ShowMap();
         }
         else
         {
-            mapPanel.SetActive(false);
-
-            if (previousPanelIndex >= 0 && previousPanelIndex < panels.Count && panels[previousPanelIndex] != null)
-            {
-                if (alwaysActivePanelIndices.Contains(previousPanelIndex))
-                {
-                    RectTransform rectTransform = panels[previousPanelIndex].GetComponent<RectTransform>();
-                    if (rectTransform != null && originalPositions.ContainsKey(previousPanelIndex))
-                        rectTransform.anchoredPosition = originalPositions[previousPanelIndex];
-                }
-
-                currentPanelIndex = previousPanelIndex;
-                panels[previousPanelIndex].SetActive(true);
-                OnPanelChanged?.Invoke(currentPanelIndex);
-            }
-
-            mapIsHidden = true;
-
-            // OPTIMISATION : Relancer la détection d'input
-            StartInputDetection();
+            HideMapAndReturnToPrevious();
         }
     }
 
