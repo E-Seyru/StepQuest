@@ -28,7 +28,7 @@ public class DataManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+
             InitializeServices();
         }
         else

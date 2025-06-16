@@ -74,7 +74,7 @@ public class StepManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+
         }
     }
 

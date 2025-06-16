@@ -42,7 +42,7 @@ public class ActivityManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+
             InitializeServices();
         }
         else

@@ -11,9 +11,9 @@ public class LocationDetailsPanel : MonoBehaviour
     #region Variables Serialized
 
     [Header("Interface - En-tête")]
-    [SerializeField] private TextMeshProUGUI locationNameText;
+
     [SerializeField] private Image locationImage;
-    [SerializeField] private Button closeButton;
+
 
     [Header("Interface - Contenu")]
     [SerializeField] private TextMeshProUGUI locationDescriptionText;
@@ -97,7 +97,6 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         InitializeReferences();
         SetupEventSubscriptions();
-        SetupCloseButton();
         SetupShadowEffect();
         ValidateRequiredReferences();
         RefreshPanel();
@@ -156,16 +155,6 @@ public class LocationDetailsPanel : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Configure le bouton de fermeture
-    /// </summary>
-    private void SetupCloseButton()
-    {
-        if (closeButton != null)
-        {
-            closeButton.onClick.AddListener(() => StartCoroutine(PlayCloseAnimation()));
-        }
-    }
 
     /// <summary>
     /// Configure l'effet d'ombre sur la HeroCard
@@ -458,11 +447,6 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     private void UpdateHeaderSection()
     {
-        // Nom de la location
-        if (locationNameText != null)
-        {
-            locationNameText.text = currentLocation.DisplayName;
-        }
 
         // Image de la location
         UpdateLocationImage();
@@ -682,10 +666,6 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     private void ShowNoLocationMessage()
     {
-        if (locationNameText != null)
-        {
-            locationNameText.text = "Aucune location";
-        }
 
         if (locationDescriptionText != null)
         {
@@ -785,7 +765,7 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         List<string> missing = new List<string>();
 
-        if (locationNameText == null) missing.Add("locationNameText");
+
         if (locationDescriptionText == null) missing.Add("locationDescriptionText");
         if (activitiesContainer == null) missing.Add("activitiesContainer");
         if (heroCard == null) missing.Add("heroCard");
