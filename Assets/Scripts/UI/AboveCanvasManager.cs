@@ -43,6 +43,10 @@ public class AboveCanvasManager : MonoBehaviour
     [SerializeField] private float pulseDuration = 0.2f;
     [SerializeField] private Color pulseColor = new Color(0.8f, 0.8f, 0.8f, 1f);
 
+    [Header("Slide Animation Settings")]
+    [SerializeField] private float slideAnimationDuration = 0.25f;
+    [SerializeField] private LeanTweenType slideAnimationEase = LeanTweenType.easeOutQuart;
+
     [Header("Pop Settings (Reward Animation)")]
     [SerializeField] private float popScaleAmount = 1.3f;        // Grossit de 30%
     [SerializeField] private float popDuration = 0.35f;         // Animation rapide mais visible
@@ -147,6 +151,9 @@ public class AboveCanvasManager : MonoBehaviour
     public float PulseScaleAmount => pulseScaleAmount;
     public float PulseDuration => pulseDuration;
     public Color PulseColor => pulseColor;
+    // Slide Animation Settings Accessors
+    public float SlideAnimationDuration => slideAnimationDuration;
+    public LeanTweenType SlideAnimationEase => slideAnimationEase;
     // Pop Settings Accessors (Reward Animation)
     public float PopScaleAmount => popScaleAmount;
     public float PopDuration => popDuration;
@@ -206,6 +213,9 @@ public class AboveCanvasInitializationService
         // Forcer une mise à jour de l'affichage
         manager.RefreshDisplay();
 
+        // NOUVEAU : Marquer la fin de l'initialisation pour activer les animations
+        manager.DisplayService.FinishInitialization();
+
         Logger.LogInfo("AboveCanvasManager: Delayed display refresh completed", Logger.LogCategory.General);
     }
 
@@ -257,6 +267,7 @@ public class AboveCanvasDisplayService
 {
     private readonly AboveCanvasManager manager;
     private AboveCanvasAnimationService animationService;
+    private bool isInitializing = true; // NOUVEAU : Flag pour éviter animations pendant init
 
     public AboveCanvasDisplayService(AboveCanvasManager manager)
     {
@@ -267,6 +278,12 @@ public class AboveCanvasDisplayService
     {
         // Récupérer la référence au service d'animation
         animationService = manager.AnimationService;
+    }
+
+    // NOUVEAU : Méthode pour marquer la fin de l'initialisation
+    public void FinishInitialization()
+    {
+        isInitializing = false;
     }
 
     public void RefreshDisplay()
@@ -339,7 +356,15 @@ public class AboveCanvasDisplayService
         }
 
         Logger.LogInfo("AboveCanvasManager: Setting up travel display", Logger.LogCategory.General);
-        manager.ActivityBar.SetActive(true);
+
+        if (isInitializing)
+        {
+            manager.ActivityBar.SetActive(true);
+        }
+        else
+        {
+            animationService?.SlideInBar(manager.ActivityBar);
+        }
 
         var playerData = dataManager.PlayerData;
         string currentLocationId = playerData.CurrentLocationId;
@@ -393,7 +418,15 @@ public class AboveCanvasDisplayService
         }
 
         Logger.LogInfo($"AboveCanvasManager: Setting up activity display for {variant.GetDisplayName()}", Logger.LogCategory.General);
-        manager.ActivityBar.SetActive(true);
+
+        if (isInitializing)
+        {
+            manager.ActivityBar.SetActive(true);
+        }
+        else
+        {
+            animationService?.SlideInBar(manager.ActivityBar);
+        }
 
         // CORRECTION: Récupérer l'activité principale pour l'icône gauche
         var activityDefinition = activityManager.ActivityRegistry?.GetActivity(activity.ActivityId);
@@ -515,10 +548,7 @@ public class AboveCanvasDisplayService
 
     private void HideActivityBar()
     {
-        if (manager.ActivityBar != null)
-        {
-            manager.ActivityBar.SetActive(false);
-        }
+        animationService?.HideBar(manager.ActivityBar);
     }
 
     // ===============================================
@@ -530,15 +560,20 @@ public class AboveCanvasDisplayService
         if (manager.IdleBar == null) return;
 
         Logger.LogInfo("AboveCanvasManager: Showing idle bar", Logger.LogCategory.General);
-        manager.IdleBar.SetActive(true);
+
+        if (isInitializing)
+        {
+            manager.IdleBar.SetActive(true);
+        }
+        else
+        {
+            animationService?.SlideInBar(manager.IdleBar);
+        }
     }
 
     private void HideIdleBar()
     {
-        if (manager.IdleBar != null)
-        {
-            manager.IdleBar.SetActive(false);
-        }
+        animationService?.HideBar(manager.IdleBar);
     }
 
     public void UpdateTravelProgress(int currentSteps, int requiredSteps)
@@ -581,6 +616,11 @@ public class AboveCanvasAnimationService
     private Vector3 originalRightIconScale;  // Échelle originale de l'icône droite
     private Color originalRightIconColor;    // Couleur originale de l'icône droite
 
+    // NOUVEAU : Positions originales pour les animations de slide
+    private Vector3 activityBarOriginalPosition;
+    private Vector3 idleBarOriginalPosition;
+    private bool positionsSaved = false;
+
     public AboveCanvasAnimationService(AboveCanvasManager manager)
     {
         this.manager = manager;
@@ -589,6 +629,24 @@ public class AboveCanvasAnimationService
     public void Initialize()
     {
         // Configuration des animations peut se faire ici
+        SaveOriginalPositions();
+    }
+
+    private void SaveOriginalPositions()
+    {
+        if (positionsSaved) return;
+
+        if (manager.ActivityBar != null)
+        {
+            activityBarOriginalPosition = manager.ActivityBar.transform.localPosition;
+        }
+
+        if (manager.IdleBar != null)
+        {
+            idleBarOriginalPosition = manager.IdleBar.transform.localPosition;
+        }
+
+        positionsSaved = true;
     }
 
     public void SetupProgressBar()
@@ -698,6 +756,67 @@ public class AboveCanvasAnimationService
     {
         // NOUVEAU : Pop de récompense au lieu de shake d'erreur !
         PopRightIcon();
+    }
+
+    // NOUVEAU : Animation de slide pour les barres
+    public void SlideInBar(GameObject bar)
+    {
+        if (bar == null) return;
+
+        // Activer la barre d'abord
+        bar.SetActive(true);
+
+        // Déterminer la position originale
+        Vector3 originalPos;
+        if (bar == manager.ActivityBar)
+        {
+            originalPos = activityBarOriginalPosition;
+        }
+        else if (bar == manager.IdleBar)
+        {
+            originalPos = idleBarOriginalPosition;
+        }
+        else
+        {
+            return; // Barre inconnue
+        }
+
+        // Position de départ (au-dessus, cachée)
+        Vector3 startPos = originalPos;
+        startPos.y += 100f; // Décaler vers le haut
+
+        // Positionner la barre en position de départ
+        bar.transform.localPosition = startPos;
+
+        // Animer vers la position originale
+        LeanTween.moveLocal(bar, originalPos, manager.SlideAnimationDuration)
+            .setEase(manager.SlideAnimationEase);
+    }
+
+    public void HideBar(GameObject bar)
+    {
+        if (bar == null) return;
+
+        bar.SetActive(false);
+
+        // Remettre en position cachée pour la prochaine animation
+        Vector3 originalPos;
+        if (bar == manager.ActivityBar)
+        {
+            originalPos = activityBarOriginalPosition;
+        }
+        else if (bar == manager.IdleBar)
+        {
+            originalPos = idleBarOriginalPosition;
+        }
+        else
+        {
+            return; // Barre inconnue
+        }
+
+        Vector3 hiddenPos = originalPos;
+        hiddenPos.y += 100f; // Position cachée au-dessus
+        bar.transform.localPosition = hiddenPos;
     }
 
     private void PopRightIcon()
