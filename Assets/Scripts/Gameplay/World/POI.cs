@@ -19,9 +19,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     [Header("Visual Feedback")]
     [SerializeField] private SpriteRenderer spriteRenderer;
-    [SerializeField] private Color normalColor = Color.white;
-    [SerializeField] private Color highlightColor = Color.yellow;
-    [SerializeField] private Color unavailableColor = Color.gray;
 
     [Header("Click Animation Settings")]
     [Tooltip("Enable click animation effect")]
@@ -50,9 +47,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
     private LocationRegistry locationRegistry;
     private TravelConfirmationPopup travelPopup;
     private PanelManager panelManager;
-
-    private bool isCurrentLocation = false;
-    private bool canTravelHere = false;
 
     // Variables pour l'animation
     private Vector3 originalScale;
@@ -138,13 +132,8 @@ public class POI : MonoBehaviour, IPointerClickHandler
             }
         }
 
-        // Subscribe to MapManager events
-        mapManager.OnLocationChanged += OnPlayerLocationChanged;
-        mapManager.OnTravelStarted += OnTravelStarted;
-        mapManager.OnTravelCompleted += OnTravelCompleted;
-
-        // Set initial state
-        UpdateVisualState();
+        // Subscribe to MapManager events if needed for other functionality
+        // (Actuellement aucun événement nécessaire car plus de changements de couleur)
 
         if (enableDebugLogs)
         {
@@ -158,13 +147,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
         // Arrêter toutes les animations LeanTween sur cet objet
         LeanTween.cancel(gameObject);
 
-        // Unsubscribe from events
-        if (mapManager != null)
-        {
-            mapManager.OnLocationChanged -= OnPlayerLocationChanged;
-            mapManager.OnTravelStarted -= OnTravelStarted;
-            mapManager.OnTravelCompleted -= OnTravelCompleted;
-        }
+        // Plus d'événements à désabonner car plus de changements de couleur
     }
 
     // Mobile-optimized click handling
@@ -249,9 +232,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
             {
                 Logger.LogInfo($"POI ({LocationID}): At current location - showing location details!", Logger.LogCategory.MapLog);
             }
-
-            // Forcer la mise à jour de l'état visuel au cas où ce ne serait pas fait
-            UpdateVisualState();
 
             ShowLocationDetails();
             return;
@@ -371,58 +351,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
         panelManager.HideMapAndGoToPanel(locationDetailsPanelName);
     }
 
-    private void UpdateVisualState()
-    {
-        if (spriteRenderer == null || mapManager?.CurrentLocation == null) return;
-
-        // Check if this POI represents the current location
-        isCurrentLocation = (mapManager.CurrentLocation.LocationID == LocationID);
-
-        // Check if we can travel here
-        canTravelHere = mapManager.CanTravelTo(LocationID);
-
-        // Set color based on state
-        if (isCurrentLocation && !dataManager.PlayerData.IsCurrentlyTraveling())
-        {
-            spriteRenderer.color = highlightColor; // Highlight current location
-        }
-        else if (canTravelHere)
-        {
-            spriteRenderer.color = normalColor; // Available for travel
-        }
-        else
-        {
-            spriteRenderer.color = unavailableColor; // Cannot travel here
-        }
-    }
-
-    private void OnPlayerLocationChanged(MapLocationDefinition newLocation)
-    {
-        if (enableDebugLogs && newLocation?.LocationID == LocationID)
-        {
-            Logger.LogInfo($"POI ({LocationID}): Player ARRIVED at this location!", Logger.LogCategory.MapLog);
-        }
-        UpdateVisualState();
-    }
-
-    private void OnTravelStarted(string destinationId)
-    {
-        if (enableDebugLogs && destinationId == LocationID)
-        {
-            Logger.LogInfo($"POI ({LocationID}): Travel started TOWARD this location!", Logger.LogCategory.MapLog);
-        }
-        UpdateVisualState();
-    }
-
-    private void OnTravelCompleted(string arrivedLocationId)
-    {
-        if (enableDebugLogs && arrivedLocationId == LocationID)
-        {
-            Logger.LogInfo($"POI ({LocationID}): Player ARRIVED at this location!", Logger.LogCategory.MapLog);
-        }
-        UpdateVisualState();
-    }
-
     // Editor utility to help set up POIs
     void OnValidate()
     {
@@ -456,9 +384,8 @@ public class POI : MonoBehaviour, IPointerClickHandler
     // Debug visualization in Scene view
     void OnDrawGizmosSelected()
     {
-        // POI Gizmo
-        Gizmos.color = (spriteRenderer != null && spriteRenderer.color == normalColor) ?
-                      Color.green : Color.red;
+        // POI Gizmo - couleur simple
+        Gizmos.color = Color.green;
         Gizmos.DrawWireCube(transform.position, Vector3.one * 0.5f);
 
         // Travel start point gizmo
