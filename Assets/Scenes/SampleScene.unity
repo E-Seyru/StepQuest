@@ -1853,14 +1853,12 @@ MonoBehaviour:
   showTravelStartPoint: 1
   travelStartPointColor: {r: 0, g: 1, b: 1, a: 1}
   spriteRenderer: {fileID: 272119580}
-  normalColor: {r: 1, g: 1, b: 1, a: 1}
-  highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  unavailableColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   enableClickAnimation: 1
   clickScaleAmount: 1.2
   clickAnimationDuration: 0.15
   clickAnimationEase: 27
   enableErrorMessages: 1
+  locationDetailsPanelName: LocationDetailsPanel
   enableDebugLogs: 1
 --- !u!61 &272119582
 BoxCollider2D:
@@ -6039,7 +6037,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0.000061035156}
-  m_SizeDelta: {x: -0.0002, y: 1385.1536}
+  m_SizeDelta: {x: -0.0002, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &841970996
 MonoBehaviour:
@@ -7061,6 +7059,9 @@ MonoBehaviour:
   OnPanelChanged:
     m_PersistentCalls:
       m_Calls: []
+  OnMapStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1022293411
 GameObject:
   m_ObjectHideFlags: 0
@@ -7279,7 +7280,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 489.13983, y: -1055.2686}
-  m_SizeDelta: {x: 932.9915, y: 619.77}
+  m_SizeDelta: {x: 932.9915, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1037981656
 MonoBehaviour:
@@ -7579,9 +7580,9 @@ RectTransform:
   m_Father: {fileID: 1766167452}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -17, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1078979191
 MonoBehaviour:
@@ -9329,14 +9330,12 @@ MonoBehaviour:
   showTravelStartPoint: 1
   travelStartPointColor: {r: 0, g: 1, b: 1, a: 1}
   spriteRenderer: {fileID: 1250875929}
-  normalColor: {r: 1, g: 1, b: 1, a: 1}
-  highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  unavailableColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   enableClickAnimation: 1
   clickScaleAmount: 1.2
   clickAnimationDuration: 0.15
   clickAnimationEase: 27
   enableErrorMessages: 1
+  locationDetailsPanelName: LocationDetailsPanel
   enableDebugLogs: 1
 --- !u!61 &1250875931
 BoxCollider2D:
@@ -11349,9 +11348,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 841970995}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 489.13983, y: -372.69174}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 749.0151, y: 705.3835}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1564226371
@@ -16070,14 +16069,12 @@ MonoBehaviour:
   showTravelStartPoint: 1
   travelStartPointColor: {r: 0, g: 1, b: 1, a: 1}
   spriteRenderer: {fileID: 2128668516}
-  normalColor: {r: 1, g: 1, b: 1, a: 1}
-  highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  unavailableColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   enableClickAnimation: 1
   clickScaleAmount: 1.2
   clickAnimationDuration: 0.15
   clickAnimationEase: 27
   enableErrorMessages: 1
+  locationDetailsPanelName: LocationDetailsPanel
   enableDebugLogs: 1
 --- !u!61 &2128668518
 BoxCollider2D:
