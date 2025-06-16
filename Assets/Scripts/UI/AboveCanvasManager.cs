@@ -29,6 +29,7 @@ public class AboveCanvasManager : MonoBehaviour
 
     [Header("UI References - Idle Bar")]
     [SerializeField] private GameObject idleBar;
+    [SerializeField] private Image idleBarImage;  // NOUVEAU : L'image à l'intérieur de l'IdleBar pour l'animation
 
     [Header("UI References - Navigation Bar")]
     [SerializeField] private GameObject navigationBar;
@@ -52,6 +53,14 @@ public class AboveCanvasManager : MonoBehaviour
     [SerializeField] private float popDuration = 0.35f;         // Animation rapide mais visible
     [SerializeField] private Color popBrightColor = new Color(1.2f, 1.2f, 1.2f, 1f); // Plus lumineux
     [SerializeField] private LeanTweenType popEaseType = LeanTweenType.easeOutBack; // Effet bounce satisfaisant
+
+    [Header("Idle Bar Animation Settings")]
+    [SerializeField] private float idleAnimationInterval = 2.5f;    // Intervalle entre les ronflements (en secondes)
+    [SerializeField] private float idleSnoreDuration = 1.2f;        // Durée d'un ronflement complet
+    [SerializeField] private float idleSnoreScale = 1.25f;          // Facteur d'agrandissement (25% plus grand)
+    [SerializeField] private float idleShakeIntensity = 5f;         // Intensité de la vibration (en pixels)
+    [SerializeField] private LeanTweenType idleInflateEase = LeanTweenType.easeInSine;   // Animation d'inspiration
+    [SerializeField] private LeanTweenType idleDeflateEase = LeanTweenType.easeOutBounce; // Animation d'expiration
 
     // === INTERNAL SERVICES (NOUVEAU) ===
     private AboveCanvasInitializationService initializationService;
@@ -141,6 +150,7 @@ public class AboveCanvasManager : MonoBehaviour
 
     // NOUVEAU : Accessor pour IdleBar
     public GameObject IdleBar => idleBar;
+    public Image IdleBarImage => idleBarImage;  // NOUVEAU : Accessor pour l'image de l'IdleBar
 
     public GameObject NavigationBar => navigationBar;
     public bool HideNavigationOnMap => hideNavigationOnMap;
@@ -159,6 +169,14 @@ public class AboveCanvasManager : MonoBehaviour
     public float PopDuration => popDuration;
     public Color PopBrightColor => popBrightColor;
     public LeanTweenType PopEaseType => popEaseType;
+
+    // NOUVEAU : Idle Animation Settings Accessors
+    public float IdleAnimationInterval => idleAnimationInterval;
+    public float IdleSnoreDuration => idleSnoreDuration;
+    public float IdleSnoreScale => idleSnoreScale;
+    public float IdleShakeIntensity => idleShakeIntensity;
+    public LeanTweenType IdleInflateEase => idleInflateEase;
+    public LeanTweenType IdleDeflateEase => idleDeflateEase;
 }
 
 // ===============================================
@@ -569,10 +587,15 @@ public class AboveCanvasDisplayService
         {
             animationService?.SlideInBar(manager.IdleBar);
         }
+
+        // NOUVEAU : Démarrer l'animation répétitive d'inactivité
+        animationService?.StartIdleBarAnimation();
     }
 
     private void HideIdleBar()
     {
+        // NOUVEAU : Arrêter l'animation répétitive d'inactivité
+        animationService?.StopIdleBarAnimation();
         animationService?.HideBar(manager.IdleBar);
     }
 
@@ -621,6 +644,14 @@ public class AboveCanvasAnimationService
     private Vector3 idleBarOriginalPosition;
     private bool positionsSaved = false;
 
+    // NOUVEAU : Variables pour l'animation de l'IdleBar
+    private Vector3 idleBarImageOriginalScale;    // Échelle originale de l'image IdleBar
+    private Vector3 idleBarImageOriginalPosition; // Position originale de l'image IdleBar
+    private int idleAnimationTimerId = -1;        // ID du timer pour répéter l'animation
+    private int idleSnoreAnimationId = -1;        // ID de l'animation de ronflement
+    private int idleShakeAnimationId = -1;        // ID de l'animation de vibration
+    private bool isIdleAnimationActive = false;   // Flag pour savoir si l'animation est active
+
     public AboveCanvasAnimationService(AboveCanvasManager manager)
     {
         this.manager = manager;
@@ -630,6 +661,7 @@ public class AboveCanvasAnimationService
     {
         // Configuration des animations peut se faire ici
         SaveOriginalPositions();
+        SaveIdleBarImageOriginalValues();
     }
 
     private void SaveOriginalPositions()
@@ -647,6 +679,16 @@ public class AboveCanvasAnimationService
         }
 
         positionsSaved = true;
+    }
+
+    // NOUVEAU : Sauvegarder les valeurs originales de l'image IdleBar
+    private void SaveIdleBarImageOriginalValues()
+    {
+        if (manager.IdleBarImage != null)
+        {
+            idleBarImageOriginalScale = manager.IdleBarImage.transform.localScale;
+            idleBarImageOriginalPosition = manager.IdleBarImage.transform.localPosition;
+        }
     }
 
     public void SetupProgressBar()
@@ -858,8 +900,172 @@ public class AboveCanvasAnimationService
             });
     }
 
+    // ===============================================
+    // NOUVEAU : GESTION DE L'ANIMATION IDLE BAR
+    // ===============================================
+
+    /// <summary>
+    /// Démarre l'animation répétitive de ronflement de l'IdleBar
+    /// </summary>
+    public void StartIdleBarAnimation()
+    {
+        if (manager.IdleBarImage == null || isIdleAnimationActive) return;
+
+        isIdleAnimationActive = true;
+        Logger.LogInfo("AboveCanvasManager: Starting idle bar snore animation", Logger.LogCategory.General);
+
+        // Démarrer immédiatement le premier ronflement
+        PlayIdleSnoreAnimation();
+
+        // Puis programmer les répétitions
+        ScheduleNextIdleAnimation();
+    }
+
+    /// <summary>
+    /// Arrête l'animation répétitive de ronflement de l'IdleBar
+    /// </summary>
+    public void StopIdleBarAnimation()
+    {
+        if (!isIdleAnimationActive) return;
+
+        isIdleAnimationActive = false;
+        Logger.LogInfo("AboveCanvasManager: Stopping idle bar snore animation", Logger.LogCategory.General);
+
+        // Annuler le timer de répétition
+        if (idleAnimationTimerId != -1)
+        {
+            LeanTween.cancel(idleAnimationTimerId);
+            idleAnimationTimerId = -1;
+        }
+
+        // Annuler les animations en cours
+        if (idleSnoreAnimationId != -1)
+        {
+            LeanTween.cancel(idleSnoreAnimationId);
+            idleSnoreAnimationId = -1;
+        }
+
+        if (idleShakeAnimationId != -1)
+        {
+            LeanTween.cancel(idleShakeAnimationId);
+            idleShakeAnimationId = -1;
+        }
+
+        // Remettre l'image à ses valeurs originales
+        if (manager.IdleBarImage != null)
+        {
+            manager.IdleBarImage.transform.localScale = idleBarImageOriginalScale;
+            manager.IdleBarImage.transform.localPosition = idleBarImageOriginalPosition;
+        }
+    }
+
+    /// <summary>
+    /// Programme la prochaine animation de ronflement
+    /// </summary>
+    private void ScheduleNextIdleAnimation()
+    {
+        if (!isIdleAnimationActive) return;
+
+        // Programmer le prochain ronflement après l'intervalle défini
+        idleAnimationTimerId = LeanTween.delayedCall(manager.IdleAnimationInterval, () =>
+        {
+            if (isIdleAnimationActive) // Vérifier qu'on n'a pas arrêté entre temps
+            {
+                PlayIdleSnoreAnimation();
+                ScheduleNextIdleAnimation(); // Programmer la suivante (récursion)
+            }
+        }).id;
+    }
+
+    /// <summary>
+    /// Joue une animation de "ronflement" sur l'image de l'IdleBar
+    /// Phase 1: Inspiration (grossissement lent)
+    /// Phase 2: Expiration avec vibration (rétrécissement + shake)
+    /// </summary>
+    private void PlayIdleSnoreAnimation()
+    {
+        if (manager.IdleBarImage == null || !isIdleAnimationActive) return;
+
+        float inflateDuration = manager.IdleSnoreDuration * 0.4f;  // 40% du temps pour l'inspiration
+        float deflateDuration = manager.IdleSnoreDuration * 0.6f;  // 60% du temps pour l'expiration + shake
+
+        // Phase 1 : Inspiration (grossissement lent et profond)
+        idleSnoreAnimationId = LeanTween.scale(manager.IdleBarImage.gameObject, idleBarImageOriginalScale * manager.IdleSnoreScale, inflateDuration)
+            .setEase(manager.IdleInflateEase)  // easeInSine pour une inspiration progressive
+            .setOnComplete(() =>
+            {
+                if (manager.IdleBarImage != null && isIdleAnimationActive)
+                {
+                    // Phase 2 : Expiration avec shake (ronflement!)
+                    PlaySnoreDeflateWithShake(deflateDuration);
+                }
+            }).id;
+    }
+
+    /// <summary>
+    /// Joue l'animation d'expiration avec vibration (la partie "ronflement")
+    /// </summary>
+    private void PlaySnoreDeflateWithShake(float duration)
+    {
+        if (manager.IdleBarImage == null || !isIdleAnimationActive) return;
+
+        // Animation de rétrécissement avec bounce (comme un ronflement qui "expire")
+        idleSnoreAnimationId = LeanTween.scale(manager.IdleBarImage.gameObject, idleBarImageOriginalScale, duration)
+            .setEase(manager.IdleDeflateEase)  // easeOutBounce pour l'effet ronflement
+            .setOnComplete(() =>
+            {
+                idleSnoreAnimationId = -1;
+            }).id;
+
+        // EN PARALLÈLE : Animation de shake/vibration pour simuler le ronflement
+        PlaySnoreShakeEffect(duration);
+    }
+
+    /// <summary>
+    /// Crée l'effet de vibration pendant l'expiration (simule le bruit du ronflement)
+    /// VRAIES vibrations continues et rapides !
+    /// </summary>
+    private void PlaySnoreShakeEffect(float duration)
+    {
+        if (manager.IdleBarImage == null || !isIdleAnimationActive) return;
+
+        // VRAIE vibration : mouvement rapide et continu en X (horizontal)
+        // Vibration rapide de gauche à droite pendant toute la durée
+        float vibrateFrequency = 15f; // Hz - très rapide pour effet vibration
+        float totalCycles = duration * vibrateFrequency;
+
+        idleShakeAnimationId = LeanTween.value(manager.IdleBarImage.gameObject, 0f, totalCycles * 2f * Mathf.PI, duration)
+            .setOnUpdate((float value) =>
+            {
+                if (manager.IdleBarImage != null && isIdleAnimationActive)
+                {
+                    // Calculer l'intensité qui diminue progressivement
+                    float progress = value / (totalCycles * 2f * Mathf.PI);
+                    float currentIntensity = manager.IdleShakeIntensity * (1f - progress * 0.7f); // Diminue de 70%
+
+                    // Position oscillante rapide (vibration)
+                    float xOffset = Mathf.Sin(value) * currentIntensity;
+                    Vector3 vibratePosition = idleBarImageOriginalPosition + new Vector3(xOffset, 0f, 0f);
+
+                    manager.IdleBarImage.transform.localPosition = vibratePosition;
+                }
+            })
+            .setOnComplete(() =>
+            {
+                idleShakeAnimationId = -1;
+                // Remettre en position originale
+                if (manager.IdleBarImage != null)
+                {
+                    manager.IdleBarImage.transform.localPosition = idleBarImageOriginalPosition;
+                }
+            }).id;
+    }
+
     public void Cleanup()
     {
+        // Arrêter l'animation de l'IdleBar
+        StopIdleBarAnimation();
+
         // Version sécurisée : annuler par GameObject plutôt que par ID
         // Évite les "orphan tweens" quand l'objet est détruit
         if (manager.FillBar != null)
@@ -872,10 +1078,18 @@ public class AboveCanvasAnimationService
             LeanTween.cancel(manager.RightIcon.gameObject);
         }
 
+        if (manager.IdleBarImage != null)
+        {
+            LeanTween.cancel(manager.IdleBarImage.gameObject);
+        }
+
         // Reset des IDs pour sécurité
         currentAnimationId = -1;
         currentPulseId = -1;
         currentPopId = -1;
+        idleAnimationTimerId = -1;
+        idleSnoreAnimationId = -1;
+        idleShakeAnimationId = -1;
     }
 }
 
