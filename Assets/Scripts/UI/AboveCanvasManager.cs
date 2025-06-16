@@ -27,6 +27,9 @@ public class AboveCanvasManager : MonoBehaviour
     [SerializeField] private Image fillBar;
     [SerializeField] private GameObject arrowIcon;
 
+    [Header("UI References - Idle Bar")]
+    [SerializeField] private GameObject idleBar;
+
     [Header("UI References - Navigation Bar")]
     [SerializeField] private GameObject navigationBar;
 
@@ -131,6 +134,10 @@ public class AboveCanvasManager : MonoBehaviour
     public Image BackgroundBar => backgroundBar;
     public Image FillBar => fillBar;
     public GameObject ArrowIcon => arrowIcon;
+
+    // NOUVEAU : Accessor pour IdleBar
+    public GameObject IdleBar => idleBar;
+
     public GameObject NavigationBar => navigationBar;
     public bool HideNavigationOnMap => hideNavigationOnMap;
 
@@ -308,14 +315,17 @@ public class AboveCanvasDisplayService
         if (isCurrentlyTraveling)
         {
             SetupTravelDisplay();
+            HideIdleBar(); // NOUVEAU : Cacher IdleBar pendant voyage
         }
         else if (hasActiveActivity)
         {
             SetupActivityDisplay();
+            HideIdleBar(); // NOUVEAU : Cacher IdleBar pendant activité
         }
         else
         {
             HideActivityBar();
+            ShowIdleBar(); // NOUVEAU : Afficher IdleBar quand inactif
         }
     }
 
@@ -446,6 +456,7 @@ public class AboveCanvasDisplayService
             manager.ArrowIcon.SetActive(false);
         }
     }
+
     private string FormatTime(long timeMs)
     {
         if (timeMs <= 0) return "Terminé";
@@ -507,6 +518,26 @@ public class AboveCanvasDisplayService
         if (manager.ActivityBar != null)
         {
             manager.ActivityBar.SetActive(false);
+        }
+    }
+
+    // ===============================================
+    // NOUVELLES MÉTHODES POUR IDLEBAR
+    // ===============================================
+
+    private void ShowIdleBar()
+    {
+        if (manager.IdleBar == null) return;
+
+        Logger.LogInfo("AboveCanvasManager: Showing idle bar", Logger.LogCategory.General);
+        manager.IdleBar.SetActive(true);
+    }
+
+    private void HideIdleBar()
+    {
+        if (manager.IdleBar != null)
+        {
+            manager.IdleBar.SetActive(false);
         }
     }
 
