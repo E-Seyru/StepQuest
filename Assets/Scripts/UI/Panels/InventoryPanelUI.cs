@@ -1,4 +1,4 @@
-// Purpose: Main UI controller for the inventory panel
+// Purpose: Main UI controller for the inventory panel (with auto-deselection)
 // Filepath: Assets/Scripts/UI/Panels/InventoryPanelUI.cs
 using System.Collections.Generic;
 using TMPro;
@@ -13,7 +13,6 @@ public class InventoryPanelUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private Button addWoodButton;
 
-
     [Header("Info Display")]
     [SerializeField] private TextMeshProUGUI capacityText;
     [SerializeField] private TextMeshProUGUI selectedItemText;
@@ -23,6 +22,9 @@ public class InventoryPanelUI : MonoBehaviour
     private List<InventorySlotUI> slotUIs = new List<InventorySlotUI>();
     private InventorySlotUI selectedSlot;
     private string currentContainerId = "player";
+
+    // Auto-deselection
+    private bool isPointerOverInventory = false;
 
     public static InventoryPanelUI Instance { get; private set; }
 
@@ -37,7 +39,6 @@ public class InventoryPanelUI : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-
     }
 
     void Start()
@@ -54,12 +55,15 @@ public class InventoryPanelUI : MonoBehaviour
         // Subscribe to inventory events
         inventoryManager.OnContainerChanged += OnInventoryChanged;
 
-
         // Initial setup
         CreateSlotUIs();
         RefreshDisplay();
+    }
 
-
+    void Update()
+    {
+        // Désélectionner automatiquement si on clique/touche en dehors (mobile-friendly)
+        CheckForDeselection();
     }
 
     void OnDestroy()
@@ -68,10 +72,111 @@ public class InventoryPanelUI : MonoBehaviour
         if (inventoryManager != null)
         {
             inventoryManager.OnContainerChanged -= OnInventoryChanged;
-
         }
     }
 
+    /// <summary>
+    /// Vérifier si on doit désélectionner automatiquement (mobile-friendly)
+    /// </summary>
+    private void CheckForDeselection()
+    {
+        if (selectedSlot == null) return;
+
+        // Détecter clic/touch sur mobile et desktop
+        bool inputDetected = false;
+
+        // Pour mobile (touch)
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.GetTouch(0);
+            if (touch.phase == TouchPhase.Began)
+            {
+                inputDetected = true;
+            }
+        }
+        // Pour desktop (mouse)
+        else if (Input.GetMouseButtonDown(0))
+        {
+            inputDetected = true;
+        }
+
+        if (inputDetected)
+        {
+            // Vérifier si le clic/touch est en dehors de l'inventaire
+            if (!IsPointerOverInventoryArea())
+            {
+                DeselectCurrentSlot();
+
+                // Fermer ItemActionPanel si ouvert
+                if (ItemActionPanel.Instance != null)
+                {
+                    ItemActionPanel.Instance.HidePanel();
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Vérifier si le pointeur/touch est sur la zone d'inventaire
+    /// </summary>
+    private bool IsPointerOverInventoryArea()
+    {
+        Vector2 screenPosition;
+
+        // Obtenir la position selon le type d'input
+        if (Input.touchCount > 0)
+        {
+            screenPosition = Input.GetTouch(0).position;
+        }
+        else
+        {
+            screenPosition = Input.mousePosition;
+        }
+
+        // Vérifier si on est sur l'ItemActionPanel (ne pas désélectionner si on clique dessus)
+        if (ItemActionPanel.Instance != null && ItemActionPanel.Instance.gameObject.activeInHierarchy)
+        {
+            RectTransform actionPanelRect = ItemActionPanel.Instance.GetComponent<RectTransform>();
+            if (actionPanelRect != null && RectTransformUtility.RectangleContainsScreenPoint(
+                actionPanelRect, screenPosition, Camera.main))
+            {
+                return true; // On est sur l'ActionPanel, ne pas désélectionner
+            }
+        }
+
+        // Vérifier si on est sur un slot d'inventaire
+        foreach (var slot in slotUIs)
+        {
+            if (slot != null && RectTransformUtility.RectangleContainsScreenPoint(
+                slot.GetRectTransform(), screenPosition, Camera.main))
+            {
+                return true;
+            }
+        }
+
+        // Vérifier si on est sur la zone de l'inventaire en général
+        RectTransform inventoryRect = GetComponent<RectTransform>();
+        if (inventoryRect != null)
+        {
+            return RectTransformUtility.RectangleContainsScreenPoint(
+                inventoryRect, screenPosition, Camera.main);
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Désélectionner le slot actuel
+    /// </summary>
+    private void DeselectCurrentSlot()
+    {
+        if (selectedSlot != null)
+        {
+            selectedSlot.SetSelected(false);
+            selectedSlot = null;
+            RefreshInfo();
+        }
+    }
 
     /// <summary>
     /// Create UI slots based on container capacity
@@ -206,7 +311,6 @@ public class InventoryPanelUI : MonoBehaviour
         selectedSlot.SetSelected(true);
 
         RefreshInfo();
-
     }
 
     /// <summary>
@@ -216,7 +320,6 @@ public class InventoryPanelUI : MonoBehaviour
     {
         gameObject.SetActive(true);
         RefreshDisplay();
-
     }
 
     /// <summary>
@@ -227,13 +330,13 @@ public class InventoryPanelUI : MonoBehaviour
         gameObject.SetActive(false);
 
         // Deselect slot
-        if (selectedSlot != null)
+        DeselectCurrentSlot();
+
+        // Fermer ItemActionPanel si ouvert
+        if (ItemActionPanel.Instance != null)
         {
-            selectedSlot.SetSelected(false);
-            selectedSlot = null;
+            ItemActionPanel.Instance.HidePanel();
         }
-
-
     }
 
     // Event handlers
@@ -249,7 +352,6 @@ public class InventoryPanelUI : MonoBehaviour
     private void TestAddItem(string itemId, int quantity)
     {
         bool success = inventoryManager.AddItem(currentContainerId, itemId, quantity);
-
     }
 
     private void TestRemoveSelectedItem()
@@ -258,7 +360,6 @@ public class InventoryPanelUI : MonoBehaviour
         {
             var slot = selectedSlot.GetSlotData();
             bool success = inventoryManager.RemoveItem(currentContainerId, slot.ItemID, 1);
-
         }
         else
         {
@@ -273,7 +374,6 @@ public class InventoryPanelUI : MonoBehaviour
         {
             container.Clear();
             inventoryManager.TriggerContainerChanged(currentContainerId);
-
         }
     }
 
@@ -291,7 +391,6 @@ public class InventoryPanelUI : MonoBehaviour
         if (inventoryManager != null)
         {
             inventoryManager.AddItem(currentContainerId, "Pin", 1);
-
         }
         else
         {

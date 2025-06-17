@@ -528,7 +528,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemIcon: {fileID: 4352704738492244256}
   quantityText: {fileID: 8708829361570747147}
-  slotButton: {fileID: 853483839511523555}
   background: {fileID: 6330142561913946773}
-  selectedColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  emptySlotSprite: {fileID: 0}
+  selectionHighlight: {fileID: 0}
+  selectedColor: {r: 1, g: 0.9626651, b: 0.53144646, a: 1}
+  dragHoverColor: {r: 0.63529414, g: 0.99607843, b: 0.63529414, a: 0.84313726}
+  hideQuantityIfOne: 1

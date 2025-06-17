@@ -1181,8 +1181,8 @@ public class AboveCanvasAnimationService
     {
         if (manager.IdleBarImage == null || !isIdleAnimationActive) return;
 
-        float inflateDuration = manager.IdleSnoreDuration * 0.4f;  // 40% du temps pour l'inspiration
-        float deflateDuration = manager.IdleSnoreDuration * 0.6f;  // 60% du temps pour l'expiration + shake
+        float inflateDuration = manager.IdleSnoreDuration * 0.7f;  // 70% du temps pour l'inspiration
+        float deflateDuration = manager.IdleSnoreDuration * 0.3f;  // 30% du temps pour l'expiration + shake
 
         // Phase 1 : Inspiration (grossissement lent et profond)
         idleSnoreAnimationId = LeanTween.scale(manager.IdleBarImage.gameObject, idleBarImageOriginalScale * manager.IdleSnoreScale, inflateDuration)
