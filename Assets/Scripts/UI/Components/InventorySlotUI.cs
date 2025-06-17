@@ -14,8 +14,6 @@ public class InventorySlotUI : MonoBehaviour
     [SerializeField] private Image background;
 
     [Header("Visual Settings")]
-    [SerializeField] private Color emptyColor = Color.gray;
-    [SerializeField] private Color filledColor = Color.white;
     [SerializeField] private Color selectedColor = Color.yellow;
     [SerializeField] private Sprite emptySlotSprite; // Sprite à afficher quand le slot est vide
 
@@ -23,6 +21,9 @@ public class InventorySlotUI : MonoBehaviour
     private InventorySlot slotData;
     private int slotIndex;
     private bool isSelected = false;
+
+    // Stockage de la couleur originale du background
+    private Color originalBackgroundColor;
 
     // Events
     public event Action<InventorySlotUI, int> OnSlotClicked; // Slot, Index
@@ -33,6 +34,12 @@ public class InventorySlotUI : MonoBehaviour
         if (slotButton != null)
         {
             slotButton.onClick.AddListener(OnSlotButtonClicked);
+        }
+
+        // Stocker la couleur originale du background
+        if (background != null)
+        {
+            originalBackgroundColor = background.color;
         }
 
         // Validate references
@@ -71,7 +78,7 @@ public class InventorySlotUI : MonoBehaviour
     {
         if (itemIcon != null)
         {
-            // MODIFIÉ: Affiche un sprite vide ou rend transparent
+            // Affiche un sprite vide ou rend transparent
             if (emptySlotSprite != null)
             {
                 itemIcon.sprite = emptySlotSprite;
@@ -89,10 +96,8 @@ public class InventorySlotUI : MonoBehaviour
             quantityText.text = "";
         }
 
-        if (background != null)
-        {
-            background.color = isSelected ? selectedColor : emptyColor;
-        }
+        // CORRIGÉ: Ne pas modifier la couleur du background, juste gérer la sélection
+        UpdateSelectionState();
     }
 
     /// <summary>
@@ -100,7 +105,7 @@ public class InventorySlotUI : MonoBehaviour
     /// </summary>
     private void ShowFilledSlot()
     {
-        // MODIFIÉ: Récupère la vraie icône via ItemRegistry
+        // Récupère la vraie icône via ItemRegistry
         if (itemIcon != null)
         {
             var itemDefinition = GetItemDefinition(slotData.ItemID);
@@ -126,7 +131,7 @@ public class InventorySlotUI : MonoBehaviour
             {
                 quantityText.text = $"x{slotData.Quantity}";
 
-                // NOUVEAU: Couleur du texte basée sur la rareté
+                // Couleur du texte basée sur la rareté
                 var itemDef = GetItemDefinition(slotData.ItemID);
                 if (itemDef != null)
                 {
@@ -139,27 +144,26 @@ public class InventorySlotUI : MonoBehaviour
             }
         }
 
-        // MODIFIÉ: Couleur de fond basée sur la rareté
+        // CORRIGÉ: Ne pas modifier la couleur du background, juste gérer la sélection
+        UpdateSelectionState();
+    }
+
+    /// <summary>
+    /// NOUVEAU: Méthode séparée pour gérer uniquement l'état de sélection
+    /// </summary>
+    private void UpdateSelectionState()
+    {
         if (background != null)
         {
             if (isSelected)
             {
+                // Appliquer la couleur de sélection
                 background.color = selectedColor;
             }
             else
             {
-                var itemDef = GetItemDefinition(slotData.ItemID);
-                if (itemDef != null)
-                {
-                    // Mélange la couleur de rareté avec la couleur de base
-                    Color rarityColor = itemDef.GetRarityColor();
-                    background.color = Color.Lerp(filledColor, rarityColor, 0.3f); // 30
-                                                                                   // de couleur de rareté
-                }
-                else
-                {
-                    background.color = filledColor;
-                }
+                // Remettre la couleur originale du prefab
+                background.color = originalBackgroundColor;
             }
         }
     }
@@ -170,7 +174,7 @@ public class InventorySlotUI : MonoBehaviour
     public void SetSelected(bool selected)
     {
         isSelected = selected;
-        RefreshDisplay();
+        UpdateSelectionState(); // Utiliser la méthode séparée
     }
 
     /// <summary>
@@ -180,10 +184,9 @@ public class InventorySlotUI : MonoBehaviour
     {
         OnSlotClicked?.Invoke(this, slotIndex);
 
-        // MODIFIÉ: Log plus informatif avec le nom de l'objet
+        // Log informatif avec le nom de l'objet
         if (slotData != null && !slotData.IsEmpty())
         {
-
             ShowItemActionPanel();
 
             var itemDef = GetItemDefinition(slotData.ItemID);
@@ -221,7 +224,7 @@ public class InventorySlotUI : MonoBehaviour
     }
 
     /// <summary>
-    /// MODIFIÉ: Get item definition via InventoryManager's ItemRegistry
+    /// Get item definition via InventoryManager's ItemRegistry
     /// </summary>
     private ItemDefinition GetItemDefinition(string itemId)
     {
@@ -235,7 +238,7 @@ public class InventorySlotUI : MonoBehaviour
     }
 
     /// <summary>
-    /// NOUVEAU: Get tooltip text for this slot
+    /// Get tooltip text for this slot
     /// </summary>
     public string GetTooltipText()
     {
@@ -291,7 +294,7 @@ public class InventorySlotUI : MonoBehaviour
             Debug.LogWarning($"InventorySlotUI: background not assigned on {gameObject.name}");
     }
 
-    // <summary>
+    /// <summary>
     /// Show the item action panel for this slot
     /// </summary>
     private void ShowItemActionPanel()
@@ -309,8 +312,6 @@ public class InventorySlotUI : MonoBehaviour
         ItemActionPanel.Instance.ShowPanel(this, slotData, worldPosition);
         Debug.Log("InventorySlotUI: Called ShowPanel on ItemActionPanel");
     }
-
-
 
 #if UNITY_EDITOR
     /// <summary>
