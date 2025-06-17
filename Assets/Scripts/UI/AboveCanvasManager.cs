@@ -17,6 +17,10 @@ public class AboveCanvasManager : MonoBehaviour
     [SerializeField] private GameObject headerContainer;
     [SerializeField] private TextMeshProUGUI currentLocationText;
     [SerializeField] private Button mapButton;
+    [SerializeField] private Button locationButton;
+    [SerializeField] private Image locationButtonIcon; // NOUVEAU : Image du POI dans le LocationButton
+    [SerializeField] private Image locationButtonBackground; // NOUVEAU : Background du LocationButton pour les effets
+    [SerializeField] private Image locationButtonShadow; // NOUVEAU : Ombre du LocationButton (optionnel)
 
     [Header("UI References - Activity/Travel Bar")]
     [SerializeField] private GameObject activityBar;
@@ -61,6 +65,13 @@ public class AboveCanvasManager : MonoBehaviour
     [SerializeField] private float idleShakeIntensity = 5f;         // Intensité de la vibration (en pixels)
     [SerializeField] private LeanTweenType idleInflateEase = LeanTweenType.easeInSine;   // Animation d'inspiration
     [SerializeField] private LeanTweenType idleDeflateEase = LeanTweenType.easeOutBounce; // Animation d'expiration
+
+    [Header("LocationButton Settings")]
+    [SerializeField] private float locationButtonClickScale = 0.95f;     // Facteur de rétrécissement au clic (ex: 0.95 = 5% plus petit)
+    [SerializeField] private float locationButtonClickDuration = 0.1f;   // Durée de l'animation de clic
+    [SerializeField] private LeanTweenType locationButtonClickEase = LeanTweenType.easeOutQuart; // Type d'animation
+    [SerializeField] private Vector2 shadowOffset = new Vector2(3f, -3f); // Décalage de l'ombre (x, y)
+    [SerializeField] private Color shadowColor = new Color(0f, 0f, 0f, 0.3f); // Couleur de l'ombre
 
     // === INTERNAL SERVICES (NOUVEAU) ===
     private AboveCanvasInitializationService initializationService;
@@ -140,6 +151,10 @@ public class AboveCanvasManager : MonoBehaviour
     public GameObject HeaderContainer => headerContainer;
     public TextMeshProUGUI CurrentLocationText => currentLocationText;
     public Button MapButton => mapButton;
+    public Button LocationButton => locationButton;
+    public Image LocationButtonIcon => locationButtonIcon; // NOUVEAU : Accessor pour l'icône du LocationButton
+    public Image LocationButtonBackground => locationButtonBackground; // NOUVEAU : Accessor pour le background
+    public Image LocationButtonShadow => locationButtonShadow; // NOUVEAU : Accessor pour l'ombre
     public GameObject ActivityBar => activityBar;
     public Image LeftIcon => leftIcon;
     public Image RightIcon => rightIcon;
@@ -177,6 +192,13 @@ public class AboveCanvasManager : MonoBehaviour
     public float IdleShakeIntensity => idleShakeIntensity;
     public LeanTweenType IdleInflateEase => idleInflateEase;
     public LeanTweenType IdleDeflateEase => idleDeflateEase;
+
+    // NOUVEAU : LocationButton Settings Accessors
+    public float LocationButtonClickScale => locationButtonClickScale;
+    public float LocationButtonClickDuration => locationButtonClickDuration;
+    public LeanTweenType LocationButtonClickEase => locationButtonClickEase;
+    public Vector2 ShadowOffset => shadowOffset;
+    public Color ShadowColor => shadowColor;
 }
 
 // ===============================================
@@ -250,6 +272,7 @@ public class AboveCanvasInitializationService
     private void SetupUI()
     {
         SetupMapButton();
+        SetupLocationButton(); // NOUVEAU: Ajouter cette ligne
         SetupProgressBar();
     }
 
@@ -259,6 +282,61 @@ public class AboveCanvasInitializationService
         {
             manager.MapButton.onClick.AddListener(OnMapButtonClicked);
         }
+    }
+
+    // NOUVEAU: Méthode pour configurer le LocationButton
+    private void SetupLocationButton()
+    {
+        if (manager.LocationButton != null)
+        {
+            manager.LocationButton.onClick.AddListener(OnLocationButtonClicked);
+
+            // NOUVEAU : Initialiser l'ombre du LocationButton
+            InitializeLocationButtonShadow();
+
+            // NOUVEAU : Initialiser l'icône du LocationButton
+            InitializeLocationButtonIcon();
+
+            Logger.LogInfo("AboveCanvasManager: LocationButton configured", Logger.LogCategory.General);
+        }
+        else
+        {
+            Logger.LogWarning("AboveCanvasManager: LocationButton is null", Logger.LogCategory.General);
+        }
+    }
+
+    // NOUVEAU : Méthode pour initialiser l'ombre du LocationButton
+    private void InitializeLocationButtonShadow()
+    {
+        if (manager.LocationButtonShadow == null) return;
+
+        // Configuration de l'ombre
+        manager.LocationButtonShadow.color = manager.ShadowColor;
+
+        // Positionner l'ombre avec le décalage
+        RectTransform shadowRect = manager.LocationButtonShadow.GetComponent<RectTransform>();
+        if (shadowRect != null)
+        {
+            shadowRect.anchoredPosition = manager.ShadowOffset;
+        }
+
+        Logger.LogInfo("AboveCanvasManager: LocationButton shadow configured", Logger.LogCategory.General);
+    }
+
+    // NOUVEAU : Méthode pour initialiser l'icône du LocationButton
+    private void InitializeLocationButtonIcon()
+    {
+        if (manager.LocationButtonIcon == null)
+        {
+            Logger.LogWarning("AboveCanvasManager: LocationButtonIcon is null - make sure to assign it in the inspector", Logger.LogCategory.General);
+            return;
+        }
+
+        // Configuration initiale de l'image
+        manager.LocationButtonIcon.preserveAspect = true; // S'assurer que Preserve Aspect est activé
+
+        // L'icône sera mise à jour quand UpdateLocationDisplay() sera appelé
+        Logger.LogInfo("AboveCanvasManager: LocationButtonIcon initialized", Logger.LogCategory.General);
     }
 
     private void SetupProgressBar()
@@ -273,6 +351,47 @@ public class AboveCanvasInitializationService
             manager.NavigationBar.SetActive(false);
         }
         Logger.LogInfo("AboveCanvasManager: Map button clicked", Logger.LogCategory.General);
+    }
+
+    // NOUVEAU: Gestionnaire pour le clic sur LocationButton
+    private void OnLocationButtonClicked()
+    {
+        // NOUVEAU : Jouer l'effet de clic d'abord
+        PlayLocationButtonClickEffect();
+
+        // Vérifier que PanelManager est disponible
+        if (PanelManager.Instance == null)
+        {
+            Logger.LogWarning("AboveCanvasManager: PanelManager.Instance is null", Logger.LogCategory.General);
+            return;
+        }
+
+        // Naviguer vers le LocationDetailsPanel
+        // Le nom doit correspondre exactement au nom du GameObject dans Unity
+        PanelManager.Instance.HideMapAndGoToPanel("LocationDetailsPanel");
+
+        Logger.LogInfo("AboveCanvasManager: Navigating to LocationDetailsPanel", Logger.LogCategory.General);
+    }
+
+    // NOUVEAU : Méthode pour l'effet de clic du LocationButton
+    private void PlayLocationButtonClickEffect()
+    {
+        if (manager.LocationButton == null) return;
+
+        // Annuler toute animation en cours sur le bouton
+        LeanTween.cancel(manager.LocationButton.gameObject);
+
+        // Effet de "squeeze" sur tout le bouton : rétrécissement rapide puis retour à la normale
+        LeanTween.scale(manager.LocationButton.gameObject, Vector3.one * manager.LocationButtonClickScale, manager.LocationButtonClickDuration)
+            .setEase(manager.LocationButtonClickEase)
+            .setOnComplete(() =>
+            {
+                // Retour à la taille normale
+                LeanTween.scale(manager.LocationButton.gameObject, Vector3.one, manager.LocationButtonClickDuration)
+                    .setEase(manager.LocationButtonClickEase);
+            });
+
+        Logger.LogInfo("AboveCanvasManager: LocationButton click effect triggered", Logger.LogCategory.General);
     }
 
     public bool IsInitialized => isInitialized;
@@ -323,11 +442,36 @@ public class AboveCanvasDisplayService
         if (mapManager?.CurrentLocation != null)
         {
             manager.CurrentLocationText.text = mapManager.CurrentLocation.DisplayName;
+
+            // NOUVEAU : Mettre à jour l'icône du LocationButton
+            UpdateLocationButtonIcon(mapManager.CurrentLocation);
+
             Logger.LogInfo($"AboveCanvasManager: Updated location display to {mapManager.CurrentLocation.DisplayName}", Logger.LogCategory.General);
         }
         else
         {
             Logger.LogWarning("AboveCanvasManager: MapManager or CurrentLocation is null", Logger.LogCategory.General);
+        }
+    }
+
+    // NOUVEAU : Méthode pour mettre à jour l'icône du LocationButton
+    private void UpdateLocationButtonIcon(MapLocationDefinition location)
+    {
+        if (manager.LocationButtonIcon == null) return;
+
+        var locationIcon = location?.GetIcon();
+        if (locationIcon != null)
+        {
+            manager.LocationButtonIcon.sprite = locationIcon;
+            manager.LocationButtonIcon.color = Color.white; // S'assurer que l'image est visible
+            Logger.LogInfo($"AboveCanvasManager: Updated LocationButton icon to {locationIcon.name}", Logger.LogCategory.General);
+        }
+        else
+        {
+            // Image par défaut ou cacher l'icône si pas d'image
+            manager.LocationButtonIcon.sprite = null;
+            manager.LocationButtonIcon.color = Color.clear; // Ou utiliser une image par défaut
+            Logger.LogInfo("AboveCanvasManager: No icon available for current location", Logger.LogCategory.General);
         }
     }
 
@@ -393,18 +537,19 @@ public class AboveCanvasDisplayService
         // Configurer les icônes
         SetupTravelIcons(currentLocationId, destinationId);
 
-        // Configurer le texte
-        var destinationLocation = MapManager.Instance?.LocationRegistry?.GetLocationById(destinationId);
-        if (manager.ActivityText != null && destinationLocation != null)
-        {
-            manager.ActivityText.text = $"Voyage vers {destinationLocation.DisplayName}";
-            Logger.LogInfo($"AboveCanvasManager: Set travel text to 'Voyage vers {destinationLocation.DisplayName}'", Logger.LogCategory.General);
-        }
-
-        // Configurer la progression
+        // Calculer la progression une seule fois
         long progress = playerData.GetTravelProgress(playerData.TotalSteps);
         float progressPercent = (float)progress / playerData.TravelRequiredSteps;
 
+        // Configurer le texte avec progression de voyage
+        if (manager.ActivityText != null)
+        {
+            string progressText = $"{progress} / {playerData.TravelRequiredSteps}";
+            manager.ActivityText.text = progressText;
+            Logger.LogInfo($"AboveCanvasManager: Set travel text to '{progressText}'", Logger.LogCategory.General);
+        }
+
+        // Configurer la progression
         Logger.LogInfo($"AboveCanvasManager: Travel progress {progress}/{playerData.TravelRequiredSteps} = {progressPercent:F2}", Logger.LogCategory.General);
 
         if (manager.FillBar != null)
@@ -467,21 +612,11 @@ public class AboveCanvasDisplayService
             Logger.LogInfo($"AboveCanvasManager: Set right icon to VARIANT {(variantIcon != null ? variantIcon.name : "null")}", Logger.LogCategory.General);
         }
 
-        // NOUVEAU : Texte adapté selon le type d'activité
+        // NOUVEAU : Affichage du texte avec progression détaillée
         if (manager.ActivityText != null)
         {
-            if (activity.IsTimeBased)
-            {
-                // Pour les activités temporelles, afficher le temps restant
-                long remainingTimeMs = activity.RequiredTimeMs - activity.AccumulatedTimeMs;
-                string timeRemaining = FormatTime(remainingTimeMs);
-                manager.ActivityText.text = $"{variant.GetDisplayName()} ({timeRemaining})";
-            }
-            else
-            {
-                // Pour les activités de pas, affichage standard
-                manager.ActivityText.text = variant.GetDisplayName();
-            }
+            string progressText = FormatActivityProgress(activity, variant);
+            manager.ActivityText.text = progressText; // Juste la progression, sans le nom
             Logger.LogInfo($"AboveCanvasManager: Set activity text to '{manager.ActivityText.text}'", Logger.LogCategory.General);
         }
 
@@ -505,6 +640,60 @@ public class AboveCanvasDisplayService
         if (manager.ArrowIcon != null)
         {
             manager.ArrowIcon.SetActive(false);
+        }
+    }
+
+    // NOUVEAU : Méthode pour formater l'affichage de progression d'activité
+    private string FormatActivityProgress(ActivityData activity, ActivityVariant variant)
+    {
+        if (activity.IsTimeBased)
+        {
+            // Pour les activités temporelles : "5 min 30 s / 10 min"
+            string currentTime = FormatTimeForProgress(activity.AccumulatedTimeMs);
+            string totalTime = FormatTimeForProgress(activity.RequiredTimeMs);
+            return $"{currentTime} / {totalTime}";
+        }
+        else
+        {
+            // Pour les activités à pas : "x / x"
+            int currentSteps = (int)activity.AccumulatedSteps;
+            int totalSteps = variant.ActionCost; // ActionCost = pas requis par tick
+            return $"{currentSteps} / {totalSteps}";
+        }
+    }
+
+    // NOUVEAU : Méthode pour formater le temps de manière intelligente
+    private string FormatTimeForProgress(long timeMs)
+    {
+        if (timeMs <= 0) return "0 s";
+
+        int totalSeconds = Mathf.RoundToInt(timeMs / 1000f);
+        int hours = totalSeconds / 3600;
+        int minutes = (totalSeconds % 3600) / 60;
+        int seconds = totalSeconds % 60;
+
+        if (hours > 0)
+        {
+            // Format avec heures : "1 h 30 min 45 s" ou "2 h 15 min" ou "3 h"
+            if (minutes > 0 && seconds > 0)
+                return $"{hours} h {minutes} min {seconds} s";
+            else if (minutes > 0)
+                return $"{hours} h {minutes} min";
+            else
+                return $"{hours} h";
+        }
+        else if (minutes > 0)
+        {
+            // Format avec minutes : "5 min 30 s" ou "10 min"
+            if (seconds > 0)
+                return $"{minutes} min {seconds} s";
+            else
+                return $"{minutes} min";
+        }
+        else
+        {
+            // Format avec secondes seulement : "45 s"
+            return $"{seconds} s";
         }
     }
 
@@ -605,6 +794,13 @@ public class AboveCanvasDisplayService
 
         float progressPercent = (float)currentSteps / requiredSteps;
         animationService?.AnimateProgressBar(progressPercent);
+
+        // NOUVEAU : Mettre à jour le texte de progression pour les voyages
+        if (manager.ActivityText != null)
+        {
+            string progressText = $"{currentSteps} / {requiredSteps}";
+            manager.ActivityText.text = progressText;
+        }
     }
 
     public void UpdateActivityProgress(ActivityData activity, ActivityVariant variant)
@@ -614,12 +810,11 @@ public class AboveCanvasDisplayService
         float progressPercent = activity.GetProgressToNextTick(variant);
         animationService?.AnimateProgressBar(progressPercent);
 
-        // NOUVEAU : Mettre à jour le texte pour les activités temporelles
-        if (activity.IsTimeBased && manager.ActivityText != null)
+        // NOUVEAU : Mettre à jour le texte avec la progression détaillée
+        if (manager.ActivityText != null)
         {
-            long remainingTimeMs = activity.RequiredTimeMs - activity.AccumulatedTimeMs;
-            string timeRemaining = FormatTime(remainingTimeMs);
-            manager.ActivityText.text = $"{variant.GetDisplayName()} ({timeRemaining})";
+            string progressText = FormatActivityProgress(activity, variant);
+            manager.ActivityText.text = progressText; // Juste la progression, sans le nom
         }
     }
 }

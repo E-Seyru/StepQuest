@@ -354,6 +354,7 @@ public class PanelManager : MonoBehaviour
 
     /// <summary>
     /// Cache la carte et affiche le panel spécifié par son nom
+    /// MODIFIÉ: Fonctionne maintenant depuis n'importe où (carte ou panel)
     /// </summary>
     /// <param name="panelName">Nom du GameObject panel à afficher</param>
     public void HideMapAndGoToPanel(string panelName)
@@ -371,38 +372,124 @@ public class PanelManager : MonoBehaviour
 
     /// <summary>
     /// Cache la carte et affiche le panel spécifié par son index
+    /// MODIFIÉ: Fonctionne maintenant depuis n'importe où + corrige les positions
     /// </summary>
     /// <param name="panelIndex">Index du panel à afficher</param>
     public void HideMapAndGoToPanel(int panelIndex)
     {
-        if (mapIsHidden) return; // La carte n'est pas visible
-
         if (panelIndex < 0 || panelIndex >= panels.Count || panels[panelIndex] == null)
         {
             Logger.LogWarning($"PanelManager: Invalid panel index for HideMapAndGoToPanel: {panelIndex}", Logger.LogCategory.General);
             return;
         }
 
-        mapPanel.SetActive(false);
+        // NOUVEAU: Arrêter toute transition en cours et nettoyer les positions
+        CleanupTransitionsAndPositions();
 
-        // Afficher le panel demandé
+        // NOUVEAU: Gérer les deux cas
+        if (!mapIsHidden)
+        {
+            // CAS 1: On vient de la carte → cacher la carte d'abord
+            mapPanel.SetActive(false);
+            mapIsHidden = true;
+
+            // Notifier le changement d'état de la carte
+            OnMapStateChanged?.Invoke(false);
+
+            // OPTIMISATION : Relancer la détection d'input
+            StartInputDetection();
+        }
+        else
+        {
+            // CAS 2: On vient d'un panel → cacher le panel actuel d'abord
+            HidePanel();
+        }
+
+        // Dans tous les cas : afficher le panel demandé avec sa position correcte
+        ShowPanelAtCorrectPosition(panelIndex);
+
+        currentPanelIndex = panelIndex;
+
+        // Notifier le changement de panel
+        OnPanelChanged?.Invoke(currentPanelIndex);
+
+        Logger.LogInfo($"PanelManager: Navigated to panel {panelIndex} (from {(mapIsHidden ? "panel" : "map")})", Logger.LogCategory.General);
+    }
+
+    /// <summary>
+    /// NOUVEAU: Nettoie toutes les transitions en cours et remet les panels à leur position correcte
+    /// </summary>
+    private void CleanupTransitionsAndPositions()
+    {
+        // Arrêter toute transition en cours
+        if (isTransitioning)
+        {
+            isTransitioning = false;
+
+            // Arrêter la coroutine de transition si elle existe
+            StopAllCoroutines();
+
+            Logger.LogInfo("PanelManager: Stopped ongoing transition", Logger.LogCategory.General);
+        }
+
+        // Remettre tous les panels à leur position correcte
+        for (int i = 0; i < panels.Count; i++)
+        {
+            if (panels[i] == null) continue;
+
+            RectTransform rectTransform = panels[i].GetComponent<RectTransform>();
+            if (rectTransform == null) continue;
+
+            if (alwaysActivePanelIndices.Contains(i))
+            {
+                // Les panels "always active" : soit à leur position originale, soit hors écran
+                if (i == currentPanelIndex && !isTransitioning)
+                {
+                    // Panel actuel : position originale
+                    if (originalPositions.ContainsKey(i))
+                        rectTransform.anchoredPosition = originalPositions[i];
+                }
+                else
+                {
+                    // Autres panels : hors écran
+                    rectTransform.anchoredPosition = offScreenPosition;
+                }
+            }
+            else
+            {
+                // Les panels normaux : position originale s'ils sont actifs
+                if (panels[i].activeSelf && originalPositions.ContainsKey(i))
+                {
+                    rectTransform.anchoredPosition = originalPositions[i];
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU: Affiche un panel à sa position correcte
+    /// </summary>
+    private void ShowPanelAtCorrectPosition(int panelIndex)
+    {
         if (alwaysActivePanelIndices.Contains(panelIndex))
         {
             RectTransform rectTransform = panels[panelIndex].GetComponent<RectTransform>();
             if (rectTransform != null && originalPositions.ContainsKey(panelIndex))
+            {
                 rectTransform.anchoredPosition = originalPositions[panelIndex];
+            }
         }
+        else
+        {
+            panels[panelIndex].SetActive(true);
 
-        currentPanelIndex = panelIndex;
-        panels[panelIndex].SetActive(true);
-        mapIsHidden = true;
-
-        // OPTIMISATION : Relancer la détection d'input
-        StartInputDetection();
-
-        // Notifier les changements
-        OnPanelChanged?.Invoke(currentPanelIndex);
-        OnMapStateChanged?.Invoke(false);
+            // S'assurer que la position est correcte même pour les panels normaux
+            RectTransform rectTransform = panels[panelIndex].GetComponent<RectTransform>();
+            if (rectTransform != null && originalPositions.ContainsKey(panelIndex))
+            {
+                rectTransform.anchoredPosition = originalPositions[panelIndex];
+            }
+        }
     }
 
     /// <summary>
