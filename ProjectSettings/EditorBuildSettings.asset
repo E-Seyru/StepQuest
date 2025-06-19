@@ -6,8 +6,8 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 2cda990e2423bbf4892e6590ba056729
+    path: Assets/StepQuestRPGScene.unity
+    guid: 877f8b264a5367f47ae8a5d44fa66308
   m_configObjects:
     com.unity.adaptiveperformance.google.android.provider_settings: {fileID: 11400000, guid: 74b0236af269dab43a39a9b41c432978, type: 2}
     com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: 265dcdb71381718469f2a323c93eafeb, type: 2}
