@@ -431,12 +431,25 @@ public class MapTravelService
         dataManager.PlayerData.TravelStartSteps = currentSteps;
         dataManager.PlayerData.TravelRequiredSteps = segment.StepCost;
 
-        // Sauvegarder
+        // Sauvegarder le changement de segment
         dataManager.SaveGame();
         saveService.ResetSaveTracking(currentSteps);
 
-        Logger.LogInfo($"MapManager: Starting segment {currentSegmentIndex + 1}/{currentPathDetails.Segments.Count} " +
+        Logger.LogInfo($"MapManager: Started segment {currentSegmentIndex + 1}/{currentPathDetails.Segments.Count} " +
                       $"from {segment.FromLocationId} to {segment.ToLocationId} ({segment.StepCost} steps)", Logger.LogCategory.MapLog);
+
+        // ⭐ NOUVEAU : Déclencher un événement pour notifier l'UI du changement de segment
+        // Cela permettra à l'AboveCanvasManager de mettre à jour l'affichage (icônes gauche/droite)
+        var destinationLocation = manager.LocationRegistry.GetLocationById(segment.ToLocationId);
+        if (destinationLocation != null)
+        {
+            eventService.TriggerTravelStarted(segment.ToLocationId, manager.CurrentLocation, segment.StepCost);
+            Logger.LogInfo($"MapManager: TravelStartedEvent triggered for segment to {destinationLocation.DisplayName}", Logger.LogCategory.MapLog);
+        }
+        else
+        {
+            Logger.LogWarning($"MapManager: Could not find destination location {segment.ToLocationId} for event trigger", Logger.LogCategory.MapLog);
+        }
     }
 
     public void CheckTravelProgress()

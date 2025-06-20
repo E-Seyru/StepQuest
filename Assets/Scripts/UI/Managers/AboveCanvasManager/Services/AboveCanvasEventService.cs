@@ -32,6 +32,7 @@ public class AboveCanvasEventService
         // MapManager events → MapEvents  
         EventBus.Subscribe<LocationChangedEvent>(OnLocationChanged);
         EventBus.Subscribe<TravelProgressEvent>(OnTravelProgress);
+        EventBus.Subscribe<TravelStartedEvent>(OnTravelStarted);
 
         // ActivityManager events → ActivityEvents
         EventBus.Subscribe<ActivityProgressEvent>(OnActivityProgress);
@@ -53,6 +54,7 @@ public class AboveCanvasEventService
         EventBus.Unsubscribe<ActivityProgressEvent>(OnActivityProgress);
         EventBus.Unsubscribe<ActivityStoppedEvent>(OnActivityStopped);
         EventBus.Unsubscribe<ActivityTickEvent>(OnActivityTick);
+        EventBus.Unsubscribe<TravelStartedEvent>(OnTravelStarted);
 
         Logger.LogInfo("AboveCanvasEventService: Unsubscribed from EventBus events", Logger.LogCategory.General);
     }
@@ -88,6 +90,14 @@ public class AboveCanvasEventService
         displayService.UpdateTravelProgress(eventData.CurrentSteps, eventData.RequiredSteps);
     }
 
+
+    private void OnTravelStarted(TravelStartedEvent eventData)
+    {
+        Logger.LogInfo($"AboveCanvasManager: Travel started to {eventData.DestinationLocationId} from {eventData.CurrentLocation?.DisplayName}", Logger.LogCategory.General);
+
+        // Forcer une mise à jour complète de l'affichage pour récupérer les nouvelles icônes
+        displayService.RefreshDisplay();
+    }
     private void OnActivityProgress(ActivityProgressEvent eventData)
     {
         Logger.LogInfo($"AboveCanvasManager: Activity progress {eventData.Activity?.ActivityId}/{eventData.Variant?.VariantName} ({eventData.ProgressPercentage:F1}%)", Logger.LogCategory.General);
