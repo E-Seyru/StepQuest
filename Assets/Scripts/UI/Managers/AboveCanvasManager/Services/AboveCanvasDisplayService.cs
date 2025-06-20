@@ -1,4 +1,4 @@
-using UnityEngine;
+Ôªøusing UnityEngine;
 
 
 
@@ -44,14 +44,18 @@ public class AboveCanvasDisplayService
         }
 
         var mapManager = MapManager.Instance;
-        if (mapManager?.CurrentLocation != null)
+        var dataManager = DataManager.Instance;
+
+        // ‚≠ê NOUVEAU : V√©rifier si on est en voyage
+        if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            manager.CurrentLocationText.text = mapManager.CurrentLocation.DisplayName;
-
-            // NOUVEAU : Mettre a jour l'icÙne du LocationButton
-            UpdateLocationButtonIcon(mapManager.CurrentLocation);
-
-            Logger.LogInfo($"AboveCanvasManager: Updated location display to {mapManager.CurrentLocation.DisplayName}", Logger.LogCategory.General);
+            // Pendant le voyage : afficher "En voyage vers X" et ic√¥ne de voyage
+            ShowTravelingState(dataManager.PlayerData.TravelDestinationId);
+        }
+        else if (mapManager?.CurrentLocation != null)
+        {
+            // √âtat normal : afficher la location actuelle
+            ShowCurrentLocationState(mapManager.CurrentLocation);
         }
         else
         {
@@ -59,8 +63,52 @@ public class AboveCanvasDisplayService
         }
     }
 
-    // NOUVEAU : Methode pour mettre a jour l'icÙne du LocationButton
-    private void UpdateLocationButtonIcon(MapLocationDefinition location)
+    private void ShowTravelingState(string destinationId)
+    {
+        // Texte "En voyage vers X"
+        var destinationLocation = MapManager.Instance?.LocationRegistry?.GetLocationById(destinationId);
+        string destinationName = destinationLocation?.DisplayName ?? destinationId;
+        manager.CurrentLocationText.text = $"En voyage vers {destinationName}";
+
+        // Ic√¥ne de voyage
+        UpdateLocationButtonForTravel();
+
+        Logger.LogInfo($"AboveCanvasManager: Updated location display to traveling state towards {destinationName}", Logger.LogCategory.General);
+    }
+    // ‚≠ê NOUVEAU : Affiche l'√©tat "location actuelle"
+    private void ShowCurrentLocationState(MapLocationDefinition location)
+    {
+        // Texte normal
+        manager.CurrentLocationText.text = location.DisplayName;
+
+        // Ic√¥ne normale de la location
+        UpdateLocationButtonForLocation(location);
+
+        Logger.LogInfo($"AboveCanvasManager: Updated location display to {location.DisplayName}", Logger.LogCategory.General);
+    }
+
+    // ‚≠ê NOUVEAU : Configure le LocationButton pour l'√©tat voyage
+    private void UpdateLocationButtonForTravel()
+    {
+        if (manager.LocationButtonIcon == null) return;
+
+        if (manager.TravelIcon != null)
+        {
+            manager.LocationButtonIcon.sprite = manager.TravelIcon;
+            manager.LocationButtonIcon.color = Color.white;
+            Logger.LogInfo("AboveCanvasManager: Set LocationButton to travel icon", Logger.LogCategory.General);
+        }
+        else
+        {
+            // Pas d'ic√¥ne de voyage d√©finie, cacher l'ic√¥ne
+            manager.LocationButtonIcon.sprite = null;
+            manager.LocationButtonIcon.color = Color.clear;
+            Logger.LogWarning("AboveCanvasManager: No travel icon assigned, hiding LocationButton icon", Logger.LogCategory.General);
+        }
+    }
+
+    // NOUVEAU : Methode pour mettre a jour l'ic√¥ne du LocationButton
+    private void UpdateLocationButtonForLocation(MapLocationDefinition location)
     {
         if (manager.LocationButtonIcon == null) return;
 
@@ -73,7 +121,7 @@ public class AboveCanvasDisplayService
         }
         else
         {
-            // Image par defaut ou cacher l'icÙne si pas d'image
+            // Image par defaut ou cacher l'ic√¥ne si pas d'image
             manager.LocationButtonIcon.sprite = null;
             manager.LocationButtonIcon.color = Color.clear; // Ou utiliser une image par defaut
             Logger.LogInfo("AboveCanvasManager: No icon available for current location", Logger.LogCategory.General);
@@ -139,7 +187,7 @@ public class AboveCanvasDisplayService
 
         Logger.LogInfo($"AboveCanvasManager: Travel from {currentLocationId} to {destinationId}", Logger.LogCategory.General);
 
-        // Configurer les icÙnes
+        // Configurer les ic√¥nes
         SetupTravelIcons(currentLocationId, destinationId);
 
         // Calculer la progression une seule fois
@@ -162,7 +210,7 @@ public class AboveCanvasDisplayService
             manager.FillBar.fillAmount = Mathf.Clamp01(progressPercent);
         }
 
-        // Montrer la flËche pour le voyage
+        // Montrer la fl√®che pour le voyage
         if (manager.ArrowIcon != null)
         {
             manager.ArrowIcon.SetActive(true);
@@ -196,10 +244,10 @@ public class AboveCanvasDisplayService
             animationService?.SlideInBar(manager.ActivityBar);
         }
 
-        // CORRECTION: Recuperer l'activite principale pour l'icÙne gauche
+        // CORRECTION: Recuperer l'activite principale pour l'ic√¥ne gauche
         var activityDefinition = activityManager.ActivityRegistry?.GetActivity(activity.ActivityId);
 
-        // Configurer l'icÙne gauche avec l'ACTIVIT… PRINCIPALE
+        // Configurer l'ic√¥ne gauche avec l'ACTIVIT√â PRINCIPALE
         if (manager.LeftIcon != null)
         {
             var activityIcon = activityDefinition?.ActivityReference?.GetIcon();
@@ -208,7 +256,7 @@ public class AboveCanvasDisplayService
             Logger.LogInfo($"AboveCanvasManager: Set left icon to ACTIVITY {(activityIcon != null ? activityIcon.name : "null")}", Logger.LogCategory.General);
         }
 
-        // CORRECTION: Afficher l'icÙne droite avec le VARIANT
+        // CORRECTION: Afficher l'ic√¥ne droite avec le VARIANT
         if (manager.RightIcon != null)
         {
             var variantIcon = variant.GetIcon();
@@ -241,7 +289,7 @@ public class AboveCanvasDisplayService
 
         }
 
-        // Masquer la flËche pour les activites (la flËche sert seulement pour les voyages)
+        // Masquer la fl√®che pour les activites (la fl√®che sert seulement pour les voyages)
         if (manager.ArrowIcon != null)
         {
             manager.ArrowIcon.SetActive(false);
@@ -267,7 +315,7 @@ public class AboveCanvasDisplayService
         }
     }
 
-    // NOUVEAU : Methode pour formater le temps de maniËre intelligente
+    // NOUVEAU : Methode pour formater le temps de mani√®re intelligente
     private string FormatTimeForProgress(long timeMs)
     {
         if (timeMs <= 0) return "0 s";
@@ -323,7 +371,7 @@ public class AboveCanvasDisplayService
             return;
         }
 
-        // IcÙne de depart
+        // Ic√¥ne de depart
         if (manager.LeftIcon != null)
         {
             var currentLocation = locationRegistry.GetLocationById(currentLocationId);
@@ -340,7 +388,7 @@ public class AboveCanvasDisplayService
             manager.LeftIcon.gameObject.SetActive(true);
         }
 
-        // IcÙne d'arrivee
+        // Ic√¥ne d'arrivee
         if (manager.RightIcon != null)
         {
             var destinationLocation = locationRegistry.GetLocationById(destinationId);
@@ -364,7 +412,7 @@ public class AboveCanvasDisplayService
     }
 
     // ===============================================
-    // NOUVELLES M…THODES POUR IDLEBAR
+    // NOUVELLES M√âTHODES POUR IDLEBAR
     // ===============================================
 
     private void ShowIdleBar()
@@ -388,7 +436,7 @@ public class AboveCanvasDisplayService
 
     private void HideIdleBar()
     {
-        // NOUVEAU : ArrÍter l'animation repetitive d'inactivite
+        // NOUVEAU : Arr√™ter l'animation repetitive d'inactivite
         animationService?.StopIdleBarAnimation();
         animationService?.HideBar(manager.IdleBar);
     }

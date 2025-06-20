@@ -224,6 +224,14 @@ public class MapValidationService
             return false;
         }
 
+        // ⭐ NOUVEAU : Vérifier si le joueur est déjà en train de voyager
+        var dataManager = DataManager.Instance;
+        if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
+        {
+            Logger.LogInfo($"MapManager: Cannot travel - already traveling to {dataManager.PlayerData.TravelDestinationId}", Logger.LogCategory.MapLog);
+            return false;
+        }
+
         if (ActivityManager.Instance.ShouldBlockTravel())
         {
             Logger.LogInfo($"MapManager: Cannot travel - activity in progress blocks travel", Logger.LogCategory.MapLog);

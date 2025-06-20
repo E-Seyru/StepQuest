@@ -4,9 +4,6 @@
 // Purpose: Manages the always-visible UI elements above the main canvas
 // Filepath: Assets/Scripts/UI/AboveCanvasManager.cs
 
-using ActivityEvents;
-using GameEvents;
-using MapEvents;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -24,6 +21,7 @@ public class AboveCanvasManager : MonoBehaviour
     [SerializeField] private Image locationButtonIcon; // NOUVEAU : Image du POI dans le LocationButton
     [SerializeField] private Image locationButtonBackground; // NOUVEAU : Background du LocationButton pour les effets
     [SerializeField] private Image locationButtonShadow; // NOUVEAU : Ombre du LocationButton (optionnel)
+    [SerializeField] private Sprite travelIcon;
 
     [Header("UI References - Activity/Travel Bar")]
     [SerializeField] private GameObject activityBar;
@@ -86,6 +84,8 @@ public class AboveCanvasManager : MonoBehaviour
     internal AboveCanvasEventService EventService => eventService;
     internal AboveCanvasAnimationService AnimationService => animationService;
     internal AboveCanvasDisplayService DisplayService => displayService;
+
+    public Sprite TravelIcon => travelIcon; // NOUVEAU : Accesseur pour l'icône de voyage
 
     void Awake()
     {
@@ -203,4 +203,5 @@ public class AboveCanvasManager : MonoBehaviour
     public Vector2 ShadowOffset => shadowOffset;
     public Color ShadowColor => shadowColor;
 }
+
 
