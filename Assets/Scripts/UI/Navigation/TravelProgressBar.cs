@@ -1,5 +1,6 @@
 // Purpose: Simple travel progress bar that shows current travel progress
 // Filepath: Assets/Scripts/UI/Components/TravelProgressBar.cs
+using MapEvents; // NOUVEAU: Import pour EventBus
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -50,13 +51,12 @@ public class TravelProgressBar : MonoBehaviour
         mapManager = MapManager.Instance;
         dataManager = DataManager.Instance;
 
-        if (mapManager != null)
-        {
-            // S'abonner aux événements de voyage
-            mapManager.OnTravelStarted += OnTravelStarted;
-            mapManager.OnTravelCompleted += OnTravelCompleted;
-            mapManager.OnTravelProgress += OnTravelProgress;
-        }
+        // =====================================
+        // EVENTBUS - S'abonner aux événements de voyage
+        // =====================================
+        EventBus.Subscribe<TravelStartedEvent>(OnTravelStarted);
+        EventBus.Subscribe<TravelCompletedEvent>(OnTravelCompleted);
+        EventBus.Subscribe<TravelProgressEvent>(OnTravelProgress);
 
         // Validation des références
         ValidateReferences();
@@ -91,13 +91,12 @@ public class TravelProgressBar : MonoBehaviour
 
     void OnDestroy()
     {
-        // Se désabonner des événements
-        if (mapManager != null)
-        {
-            mapManager.OnTravelStarted -= OnTravelStarted;
-            mapManager.OnTravelCompleted -= OnTravelCompleted;
-            mapManager.OnTravelProgress -= OnTravelProgress;
-        }
+        // =====================================
+        // EVENTBUS - Se désabonner des événements
+        // =====================================
+        EventBus.Unsubscribe<TravelStartedEvent>(OnTravelStarted);
+        EventBus.Unsubscribe<TravelCompletedEvent>(OnTravelCompleted);
+        EventBus.Unsubscribe<TravelProgressEvent>(OnTravelProgress);
     }
 
     void Update()
@@ -110,35 +109,37 @@ public class TravelProgressBar : MonoBehaviour
         }
     }
 
+    // === GESTIONNAIRES D'ÉVÉNEMENTS - ADAPTÉS POUR EVENTBUS ===
+
     /// <summary>
     /// Appelé quand un voyage commence
     /// </summary>
-    private void OnTravelStarted(string destinationId)
+    private void OnTravelStarted(TravelStartedEvent eventData)
     {
         ShowProgressBar();
-        UpdateProgressText(destinationId);
+        UpdateProgressText(eventData.DestinationLocationId);
         UpdateProgressDisplay();
 
-        Logger.LogInfo($"TravelProgressBar: Travel started to {destinationId}", Logger.LogCategory.MapLog);
+        Logger.LogInfo($"TravelProgressBar: Travel started to {eventData.DestinationLocationId}", Logger.LogCategory.MapLog);
     }
 
     /// <summary>
     /// Appelé quand un voyage se termine
     /// </summary>
-    private void OnTravelCompleted(string arrivedLocationId)
+    private void OnTravelCompleted(TravelCompletedEvent eventData)
     {
         // Animer jusqu'à 100% puis cacher
         AnimateToComplete(() => HideProgressBar());
 
-        Logger.LogInfo($"TravelProgressBar: Travel completed to {arrivedLocationId}", Logger.LogCategory.MapLog);
+        Logger.LogInfo($"TravelProgressBar: Travel completed to {eventData.NewLocation?.DisplayName ?? eventData.DestinationLocationId}", Logger.LogCategory.MapLog);
     }
 
     /// <summary>
     /// Appelé pendant le voyage pour mettre à jour le progrès
     /// </summary>
-    private void OnTravelProgress(string destinationId, int currentSteps, int requiredSteps)
+    private void OnTravelProgress(TravelProgressEvent eventData)
     {
-        UpdateProgressValues(currentSteps, requiredSteps);
+        UpdateProgressValues(eventData.CurrentSteps, eventData.RequiredSteps);
     }
 
     /// <summary>

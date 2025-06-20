@@ -1,5 +1,7 @@
 // Filepath: Assets/Scripts/Core/GameManager.cs
-using System;
+using ActivityEvents;
+using GameEvents;
+using MapEvents;
 using UnityEngine;
 
 public enum GameState
@@ -19,9 +21,6 @@ public class GameManager : MonoBehaviour
     [Header("Game State")]
     [SerializeField] private GameState currentState = GameState.Loading;
 
-    // Event que d'autres scripts peuvent écouter
-    public event Action<GameState, GameState> OnGameStateChanged; // oldState, newState
-
     // Propriété publique pour lire l'état
     public GameState CurrentState
     {
@@ -39,7 +38,6 @@ public class GameManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-
         }
         else
         {
@@ -84,21 +82,19 @@ public class GameManager : MonoBehaviour
 
     private void SubscribeToManagerEvents()
     {
-        // Événements de voyage
-        if (mapManager != null)
-        {
-            mapManager.OnTravelStarted += OnTravelStarted;
-            mapManager.OnTravelCompleted += OnTravelCompleted;
-        }
+        // =====================================
+        // EVENTBUS - Événements de voyage
+        // =====================================
+        EventBus.Subscribe<TravelStartedEvent>(OnTravelStarted);
+        EventBus.Subscribe<TravelCompletedEvent>(OnTravelCompleted);
 
-        // Événements d'activité
-        if (activityManager != null)
-        {
-            activityManager.OnActivityStarted += OnActivityStarted;
-            activityManager.OnActivityStopped += OnActivityStopped;
-        }
+        // =====================================
+        // EVENTBUS - Événements d'activité  
+        // =====================================
+        EventBus.Subscribe<ActivityStartedEvent>(OnActivityStarted);
+        EventBus.Subscribe<ActivityStoppedEvent>(OnActivityStopped);
 
-        Logger.LogInfo("GameManager: Subscribed to manager events", Logger.LogCategory.General);
+        Logger.LogInfo("GameManager: Subscribed to EventBus events", Logger.LogCategory.General);
     }
 
     private void DetermineInitialGameState()
@@ -135,21 +131,23 @@ public class GameManager : MonoBehaviour
 
         Logger.LogInfo($"GameManager: State changed from {oldState} to {newState}", Logger.LogCategory.General);
 
-        // Déclencher l'événement pour informer les autres scripts
-        OnGameStateChanged?.Invoke(oldState, newState);
+        // =====================================
+        // EVENTBUS - Publier le changement d'état
+        // =====================================
+        EventBus.Publish(new GameStateChangedEvent(oldState, newState));
     }
 
-    // === GESTIONNAIRES D'ÉVÉNEMENTS ===
+    // === GESTIONNAIRES D'ÉVÉNEMENTS - ADAPTÉS POUR EVENTBUS ===
 
-    private void OnTravelStarted(string destinationId)
+    private void OnTravelStarted(TravelStartedEvent eventData)
     {
-        Logger.LogInfo($"GameManager: Travel started to {destinationId}", Logger.LogCategory.General);
+        Logger.LogInfo($"GameManager: Travel started to {eventData.DestinationLocationId}", Logger.LogCategory.General);
         ChangeState(GameState.Traveling);
     }
 
-    private void OnTravelCompleted(string arrivedLocationId)
+    private void OnTravelCompleted(TravelCompletedEvent eventData)
     {
-        Logger.LogInfo($"GameManager: Travel completed at {arrivedLocationId}", Logger.LogCategory.General);
+        Logger.LogInfo($"GameManager: Travel completed at {eventData.NewLocation?.DisplayName ?? eventData.DestinationLocationId}", Logger.LogCategory.General);
 
         // Après un voyage, vérifier s'il y a une activité en cours
         if (activityManager.HasActiveActivity())
@@ -162,15 +160,15 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void OnActivityStarted(ActivityData activity, ActivityVariant variant)
+    private void OnActivityStarted(ActivityStartedEvent eventData)
     {
-        Logger.LogInfo($"GameManager: Activity started: {variant.GetDisplayName()}", Logger.LogCategory.General);
+        Logger.LogInfo($"GameManager: Activity started: {eventData.Activity?.ActivityId}/{eventData.Variant?.VariantName}", Logger.LogCategory.General);
         ChangeState(GameState.DoingActivity);
     }
 
-    private void OnActivityStopped(ActivityData activity, ActivityVariant variant)
+    private void OnActivityStopped(ActivityStoppedEvent eventData)
     {
-        Logger.LogInfo($"GameManager: Activity stopped: {variant.GetDisplayName()}", Logger.LogCategory.General);
+        Logger.LogInfo($"GameManager: Activity stopped: {eventData.Activity?.ActivityId}/{eventData.Variant?.VariantName} (Completed: {eventData.WasCompleted})", Logger.LogCategory.General);
 
         // Après arrêt d'activité, vérifier s'il y a un voyage en cours
         if (dataManager.PlayerData.IsCurrentlyTraveling())
@@ -224,18 +222,13 @@ public class GameManager : MonoBehaviour
 
     void OnDestroy()
     {
-        // Se désabonner des événements pour éviter les erreurs
-        if (mapManager != null)
-        {
-            mapManager.OnTravelStarted -= OnTravelStarted;
-            mapManager.OnTravelCompleted -= OnTravelCompleted;
-        }
-
-        if (activityManager != null)
-        {
-            activityManager.OnActivityStarted -= OnActivityStarted;
-            activityManager.OnActivityStopped -= OnActivityStopped;
-        }
+        // =====================================
+        // EVENTBUS - Se désabonner des événements
+        // =====================================
+        EventBus.Unsubscribe<TravelStartedEvent>(OnTravelStarted);
+        EventBus.Unsubscribe<TravelCompletedEvent>(OnTravelCompleted);
+        EventBus.Unsubscribe<ActivityStartedEvent>(OnActivityStarted);
+        EventBus.Unsubscribe<ActivityStoppedEvent>(OnActivityStopped);
     }
 
     // === MÉTHODES DE DEBUG ===

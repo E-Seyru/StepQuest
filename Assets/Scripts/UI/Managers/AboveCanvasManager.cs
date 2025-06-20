@@ -4,6 +4,9 @@
 // Purpose: Manages the always-visible UI elements above the main canvas
 // Filepath: Assets/Scripts/UI/AboveCanvasManager.cs
 
+using ActivityEvents;
+using GameEvents;
+using MapEvents;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -1306,53 +1309,39 @@ public class AboveCanvasEventService
 
     public void SubscribeToEvents()
     {
-        var gameManager = GameManager.Instance;
-        var mapManager = MapManager.Instance;
-        var activityManager = ActivityManager.Instance;
+        // =====================================
+        // EVENTBUS - Fini les managers !
+        // =====================================
 
-        // S'abonner aux événements
-        if (gameManager != null)
-        {
-            gameManager.OnGameStateChanged += OnGameStateChanged;
-        }
+        // GameManager events → GameEvents
+        EventBus.Subscribe<GameStateChangedEvent>(OnGameStateChanged);
 
-        if (mapManager != null)
-        {
-            mapManager.OnLocationChanged += OnLocationChanged;
-            mapManager.OnTravelProgress += OnTravelProgress;
-        }
+        // MapManager events → MapEvents  
+        EventBus.Subscribe<LocationChangedEvent>(OnLocationChanged);
+        EventBus.Subscribe<TravelProgressEvent>(OnTravelProgress);
 
-        if (activityManager != null)
-        {
-            activityManager.OnActivityProgress += OnActivityProgress;
-            activityManager.OnActivityStopped += OnActivityStopped;
-            activityManager.OnActivityTick += OnActivityTick;
-        }
+        // ActivityManager events → ActivityEvents
+        EventBus.Subscribe<ActivityProgressEvent>(OnActivityProgress);
+        EventBus.Subscribe<ActivityStoppedEvent>(OnActivityStopped);
+        EventBus.Subscribe<ActivityTickEvent>(OnActivityTick);
+
+        Logger.LogInfo("AboveCanvasEventService: Subscribed to EventBus events", Logger.LogCategory.General);
     }
 
     public void UnsubscribeFromEvents()
     {
-        var gameManager = GameManager.Instance;
-        var mapManager = MapManager.Instance;
-        var activityManager = ActivityManager.Instance;
+        // =====================================
+        // EVENTBUS - Désabonnement simple
+        // =====================================
 
-        if (gameManager != null)
-        {
-            gameManager.OnGameStateChanged -= OnGameStateChanged;
-        }
+        EventBus.Unsubscribe<GameStateChangedEvent>(OnGameStateChanged);
+        EventBus.Unsubscribe<LocationChangedEvent>(OnLocationChanged);
+        EventBus.Unsubscribe<TravelProgressEvent>(OnTravelProgress);
+        EventBus.Unsubscribe<ActivityProgressEvent>(OnActivityProgress);
+        EventBus.Unsubscribe<ActivityStoppedEvent>(OnActivityStopped);
+        EventBus.Unsubscribe<ActivityTickEvent>(OnActivityTick);
 
-        if (mapManager != null)
-        {
-            mapManager.OnLocationChanged -= OnLocationChanged;
-            mapManager.OnTravelProgress -= OnTravelProgress;
-        }
-
-        if (activityManager != null)
-        {
-            activityManager.OnActivityProgress -= OnActivityProgress;
-            activityManager.OnActivityStopped -= OnActivityStopped;
-            activityManager.OnActivityTick -= OnActivityTick;
-        }
+        Logger.LogInfo("AboveCanvasEventService: Unsubscribed from EventBus events", Logger.LogCategory.General);
     }
 
     public void Cleanup()
@@ -1364,40 +1353,46 @@ public class AboveCanvasEventService
         animationService?.Cleanup();
     }
 
-    // === EVENT HANDLERS ===
-    private void OnGameStateChanged(GameState oldState, GameState newState)
+    // =====================================
+    // EVENT HANDLERS - Adaptés pour EventBus
+    // =====================================
+
+    private void OnGameStateChanged(GameStateChangedEvent eventData)
     {
-        Logger.LogInfo($"AboveCanvasManager: Game state changed from {oldState} to {newState}", Logger.LogCategory.General);
+        Logger.LogInfo($"AboveCanvasManager: Game state changed from {eventData.PreviousState} to {eventData.NewState}", Logger.LogCategory.General);
         displayService.RefreshDisplay();
     }
 
-    private void OnLocationChanged(MapLocationDefinition newLocation)
+    private void OnLocationChanged(LocationChangedEvent eventData)
     {
+        Logger.LogInfo($"AboveCanvasManager: Location changed from {eventData.PreviousLocation?.DisplayName ?? "None"} to {eventData.NewLocation?.DisplayName ?? "None"}", Logger.LogCategory.General);
         displayService.UpdateLocationDisplay();
     }
 
-    private void OnTravelProgress(string destinationId, int currentSteps, int requiredSteps)
+    private void OnTravelProgress(TravelProgressEvent eventData)
     {
-        displayService.UpdateTravelProgress(currentSteps, requiredSteps);
+        Logger.LogInfo($"AboveCanvasManager: Travel progress {eventData.CurrentSteps}/{eventData.RequiredSteps} to {eventData.DestinationLocationId}", Logger.LogCategory.General);
+        displayService.UpdateTravelProgress(eventData.CurrentSteps, eventData.RequiredSteps);
     }
 
-    private void OnActivityProgress(ActivityData activity, ActivityVariant variant)
+    private void OnActivityProgress(ActivityProgressEvent eventData)
     {
-        displayService.UpdateActivityProgress(activity, variant);
+        Logger.LogInfo($"AboveCanvasManager: Activity progress {eventData.Activity?.ActivityId}/{eventData.Variant?.VariantName} ({eventData.ProgressPercentage:F1}%)", Logger.LogCategory.General);
+        displayService.UpdateActivityProgress(eventData.Activity, eventData.Variant);
     }
 
-    private void OnActivityStopped(ActivityData activity, ActivityVariant variant)
+    private void OnActivityStopped(ActivityStoppedEvent eventData)
     {
-        Logger.LogInfo("AboveCanvasManager: Activity stopped, refreshing display", Logger.LogCategory.General);
+        Logger.LogInfo($"AboveCanvasManager: Activity stopped {eventData.Activity?.ActivityId}/{eventData.Variant?.VariantName} (Completed: {eventData.WasCompleted})", Logger.LogCategory.General);
         displayService.RefreshDisplay();
     }
 
-    private void OnActivityTick(ActivityData activity, ActivityVariant variant, int ticksCompleted)
+    private void OnActivityTick(ActivityTickEvent eventData)
     {
-        if (ticksCompleted > 0)
+        if (eventData.TicksCompleted > 0)
         {
-            animationService?.ShakeRightIcon(); // Maintenant c'est un pop satisfaisant !
-            Logger.LogInfo($"AboveCanvasManager: Activity tick completed - reward pop animation", Logger.LogCategory.General);
+            animationService?.ShakeRightIcon(); // Animation de satisfaction !
+            Logger.LogInfo($"AboveCanvasManager: Activity tick completed - {eventData.TicksCompleted} ticks, {eventData.Rewards.Length} rewards", Logger.LogCategory.General);
         }
     }
 }

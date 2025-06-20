@@ -1,5 +1,6 @@
 ﻿// Panel d'affichage des détails d'une location
 // Chemin: Assets/Scripts/UI/Panels/LocationDetailsPanel.cs
+using MapEvents; // NOUVEAU: Import pour EventBus
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -11,9 +12,7 @@ public class LocationDetailsPanel : MonoBehaviour
     #region Variables Serialized
 
     [Header("Interface - En-tête")]
-
     [SerializeField] private Image locationImage;
-
 
     [Header("Interface - Contenu")]
     [SerializeField] private TextMeshProUGUI locationDescriptionText;
@@ -142,19 +141,21 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// S'abonne aux événements du MapManager pour les mises à jour automatiques
+    /// S'abonne aux événements via EventBus au lieu du MapManager directement
     /// </summary>
     private void SetupEventSubscriptions()
     {
-        if (mapManager != null)
-        {
-            mapManager.OnLocationChanged += OnLocationChanged;
-            mapManager.OnTravelCompleted += OnTravelCompleted;
-            mapManager.OnTravelStarted += OnTravelStarted;
-            mapManager.OnTravelProgress += OnTravelProgress;
-        }
-    }
+        // =====================================
+        // EVENTBUS - Plus besoin de vérifier if (mapManager != null)
+        // =====================================
 
+        EventBus.Subscribe<LocationChangedEvent>(OnLocationChanged);
+        EventBus.Subscribe<TravelCompletedEvent>(OnTravelCompleted);
+        EventBus.Subscribe<TravelStartedEvent>(OnTravelStarted);
+        EventBus.Subscribe<TravelProgressEvent>(OnTravelProgress);
+
+        Logger.LogInfo("LocationDetailsPanel: Subscribed to EventBus events", Logger.LogCategory.General);
+    }
 
     /// <summary>
     /// Configure l'effet d'ombre sur la HeroCard
@@ -185,12 +186,99 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     private void UnsubscribeFromEvents()
     {
-        if (mapManager != null)
+        // =====================================
+        // EVENTBUS - Désabonnement simple et fiable
+        // =====================================
+
+        EventBus.Unsubscribe<LocationChangedEvent>(OnLocationChanged);
+        EventBus.Unsubscribe<TravelCompletedEvent>(OnTravelCompleted);
+        EventBus.Unsubscribe<TravelStartedEvent>(OnTravelStarted);
+        EventBus.Unsubscribe<TravelProgressEvent>(OnTravelProgress);
+
+        Logger.LogInfo("LocationDetailsPanel: Unsubscribed from EventBus events", Logger.LogCategory.General);
+    }
+
+    /// <summary>
+    /// Valide que toutes les références nécessaires sont assignées
+    /// </summary>
+    private void ValidateRequiredReferences()
+    {
+        bool hasErrors = false;
+
+        if (heroCard == null)
         {
-            mapManager.OnLocationChanged -= OnLocationChanged;
-            mapManager.OnTravelCompleted -= OnTravelCompleted;
-            mapManager.OnTravelStarted -= OnTravelStarted;
-            mapManager.OnTravelProgress -= OnTravelProgress;
+            Logger.LogError("LocationDetailsPanel: HeroCard n'est pas assigné !", Logger.LogCategory.General);
+            hasErrors = true;
+        }
+
+        if (locationDescriptionText == null)
+        {
+            Logger.LogError("LocationDetailsPanel: LocationDescriptionText n'est pas assigné !", Logger.LogCategory.General);
+            hasErrors = true;
+        }
+
+        if (hasErrors)
+        {
+            Logger.LogError("LocationDetailsPanel: Des références critiques manquent ! Le panel peut ne pas fonctionner correctement.", Logger.LogCategory.General);
+        }
+    }
+
+    #endregion
+
+    #region Gestion des Événements - ADAPTÉE POUR EVENTBUS
+
+    private void OnLocationChanged(LocationChangedEvent eventData)
+    {
+        Logger.LogInfo($"LocationDetailsPanel: Location changed from {eventData.PreviousLocation?.DisplayName ?? "None"} to {eventData.NewLocation?.DisplayName ?? "None"}", Logger.LogCategory.General);
+
+        if (gameObject.activeInHierarchy && !isAnimating)
+        {
+            // Si on n'est pas en train d'animer, on peut refresh normalement
+            StartCoroutine(RefreshPanelSmoothly());
+        }
+        else if (gameObject.activeInHierarchy && isAnimating)
+        {
+            // Si on anime, attendre la fin de l'animation avant de refresh
+            StartCoroutine(WaitForAnimationThenRefresh());
+        }
+    }
+
+    private void OnTravelCompleted(TravelCompletedEvent eventData)
+    {
+        Logger.LogInfo($"LocationDetailsPanel: Travel completed to {eventData.NewLocation?.DisplayName ?? "Unknown"} ({eventData.StepsTaken} steps)", Logger.LogCategory.General);
+
+        if (gameObject.activeInHierarchy && !isAnimating)
+        {
+            StartCoroutine(RefreshPanelSmoothly());
+        }
+        else if (gameObject.activeInHierarchy && isAnimating)
+        {
+            StartCoroutine(WaitForAnimationThenRefresh());
+        }
+    }
+
+    private void OnTravelStarted(TravelStartedEvent eventData)
+    {
+        Logger.LogInfo($"LocationDetailsPanel: Travel started from {eventData.CurrentLocation?.DisplayName ?? "Unknown"} to {eventData.DestinationLocationId} ({eventData.RequiredSteps} steps)", Logger.LogCategory.General);
+
+        if (gameObject.activeInHierarchy && !isAnimating)
+        {
+            StartCoroutine(RefreshPanelSmoothly());
+        }
+        else if (gameObject.activeInHierarchy && isAnimating)
+        {
+            StartCoroutine(WaitForAnimationThenRefresh());
+        }
+    }
+
+    private void OnTravelProgress(TravelProgressEvent eventData)
+    {
+        Logger.LogInfo($"LocationDetailsPanel: Travel progress {eventData.CurrentSteps}/{eventData.RequiredSteps} to {eventData.DestinationLocationId} ({eventData.ProgressPercentage:F1}%)", Logger.LogCategory.General);
+
+        if (gameObject.activeInHierarchy && !isAnimating)
+        {
+            // Mise à jour seulement de la section info pour éviter de tout recalculer
+            UpdateInfoSection();
         }
     }
 
@@ -233,124 +321,39 @@ public class LocationDetailsPanel : MonoBehaviour
             Vector3 startPosition = originalPosition + Vector3.down * slidePixels;
             heroCard.transform.localPosition = startPosition;
 
-            // Animer vers la position normale
-            yield return StartCoroutine(AnimatePosition(startPosition, originalPosition, animationDuration));
+            // Animation vers la position finale
+            float elapsed = 0f;
+            while (elapsed < animationDuration)
+            {
+                elapsed += Time.deltaTime;
+                float progress = elapsed / animationDuration;
 
-            // Corriger le layout après l'animation
-            StartCoroutine(FixLayoutAfterDelay());
+                // Appliquer la courbe d'animation
+                float easedProgress = animationCurve.Evaluate(progress);
+
+                // Interpoler la position
+                Vector3 currentPosition = Vector3.Lerp(startPosition, originalPosition, easedProgress);
+                heroCard.transform.localPosition = currentPosition;
+
+                yield return null;
+            }
+
+            // S'assurer qu'on termine exactement à la bonne position
+            heroCard.transform.localPosition = originalPosition;
         }
         finally
         {
-            // S'assurer que l'état est toujours reset même en cas d'erreur
             isAnimating = false;
         }
     }
 
     /// <summary>
-    /// Joue l'animation de fermeture du panel (slide down)
+    /// Attendre la fin de l'animation puis rafraîchir
     /// </summary>
-    private IEnumerator PlayCloseAnimation()
+    private IEnumerator WaitForAnimationThenRefresh()
     {
-        if (heroCard == null)
-        {
-            ClosePanel();
-            yield break;
-        }
-
-        // Si on était déjà en train d'animer, on force le reset
-        if (isAnimating)
-        {
-            ResetAnimationState();
-        }
-
-        isAnimating = true;
-
-        try
-        {
-            // Position de fin (plus bas selon slidePixels * 0.6 pour être plus rapide)
-            Vector3 endPosition = originalPosition + Vector3.down * (slidePixels * 0.6f);
-
-            // Animer vers la position de sortie
-            yield return StartCoroutine(AnimatePosition(originalPosition, endPosition, animationDuration * 0.6f));
-        }
-        finally
-        {
-            // S'assurer que l'état est toujours reset même en cas d'erreur
-            isAnimating = false;
-            ClosePanel();
-        }
-    }
-
-    /// <summary>
-    /// Anime la position d'un objet entre deux valeurs
-    /// </summary>
-    private IEnumerator AnimatePosition(Vector3 fromPosition, Vector3 toPosition, float duration)
-    {
-        if (heroCard == null) yield break;
-
-        float elapsedTime = 0f;
-        while (elapsedTime < duration)
-        {
-            elapsedTime += Time.deltaTime;
-            float progress = elapsedTime / duration;
-            float easedProgress = animationCurve.Evaluate(progress);
-
-            heroCard.transform.localPosition = Vector3.Lerp(fromPosition, toPosition, easedProgress);
-            yield return null;
-        }
-
-        heroCard.transform.localPosition = toPosition;
-    }
-
-    #endregion
-
-    #region Gestion des Événements
-
-    private void OnLocationChanged(MapLocationDefinition newLocation)
-    {
-        if (gameObject.activeInHierarchy && !isAnimating)
-        {
-            // Si on n'est pas en train d'animer, on peut refresh normalement
-            StartCoroutine(RefreshPanelSmoothly());
-        }
-        else if (gameObject.activeInHierarchy && isAnimating)
-        {
-            // Si on anime, attendre la fin de l'animation avant de refresh
-            StartCoroutine(WaitForAnimationThenRefresh());
-        }
-    }
-
-    private void OnTravelCompleted(string arrivedLocationId)
-    {
-        if (gameObject.activeInHierarchy && !isAnimating)
-        {
-            StartCoroutine(RefreshPanelSmoothly());
-        }
-        else if (gameObject.activeInHierarchy && isAnimating)
-        {
-            StartCoroutine(WaitForAnimationThenRefresh());
-        }
-    }
-
-    private void OnTravelStarted(string destinationId)
-    {
-        if (gameObject.activeInHierarchy && !isAnimating)
-        {
-            StartCoroutine(RefreshPanelSmoothly());
-        }
-        else if (gameObject.activeInHierarchy && isAnimating)
-        {
-            StartCoroutine(WaitForAnimationThenRefresh());
-        }
-    }
-
-    private void OnTravelProgress(string destinationId, int currentSteps, int requiredSteps)
-    {
-        if (gameObject.activeInHierarchy && !isAnimating)
-        {
-            // Mise à jour seulement de la section info pour éviter de tout recalculer
-            UpdateInfoSection();
-        }
+        yield return new WaitUntil(() => !isAnimating);
+        yield return RefreshPanelSmoothly();
     }
 
     #endregion
@@ -368,12 +371,21 @@ public class LocationDetailsPanel : MonoBehaviour
             return;
         }
 
-        Logger.LogInfo($"LocationDetailsPanel: Ouverture des détails pour {mapManager.CurrentLocation.DisplayName}", Logger.LogCategory.General);
-        RefreshPanel();
+        gameObject.SetActive(true);
+        Logger.LogInfo($"LocationDetailsPanel: Ouverture pour {mapManager.CurrentLocation.DisplayName}", Logger.LogCategory.General);
     }
 
     /// <summary>
-    /// Actualise le panel avec les données de la location actuelle
+    /// Ferme le panel
+    /// </summary>
+    public void ClosePanel()
+    {
+        gameObject.SetActive(false);
+        Logger.LogInfo("LocationDetailsPanel: Panel fermé", Logger.LogCategory.General);
+    }
+
+    /// <summary>
+    /// Force une mise à jour du contenu du panel
     /// </summary>
     public void RefreshPanel()
     {
@@ -385,44 +397,19 @@ public class LocationDetailsPanel : MonoBehaviour
 
         currentLocation = mapManager.CurrentLocation;
         UpdateAllSections();
+        Logger.LogInfo($"LocationDetailsPanel: Panel rafraîchi pour {currentLocation.DisplayName}", Logger.LogCategory.General);
     }
 
     #endregion
 
-    #region Mise à Jour de l'Interface
+    #region Méthodes Privées - Mise à jour du contenu
 
     /// <summary>
-    /// Actualise le panel sans effet de clignotement
+    /// Version smooth du refresh pour éviter les saccades
     /// </summary>
     private IEnumerator RefreshPanelSmoothly()
     {
-        // Ne pas actualiser pendant une animation
-        if (isAnimating) yield break;
-
-        // Actualiser le contenu directement sans masquer/afficher
-        // pour éviter les conflits avec l'animation
-        RefreshPanel();
-
-        // Attendre que Unity recalcule tout
         yield return null;
-        Canvas.ForceUpdateCanvases();
-
-        // Corriger le ScrollRect
-        FixScrollRect();
-    }
-
-    /// <summary>
-    /// Attend la fin de l'animation puis actualise le panel
-    /// </summary>
-    private IEnumerator WaitForAnimationThenRefresh()
-    {
-        // Attendre que l'animation se termine
-        while (isAnimating)
-        {
-            yield return null;
-        }
-
-        // Maintenant on peut actualiser en sécurité
         RefreshPanel();
         yield return null;
         Canvas.ForceUpdateCanvases();
@@ -447,7 +434,6 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     private void UpdateHeaderSection()
     {
-
         // Image de la location
         UpdateLocationImage();
     }
@@ -514,6 +500,8 @@ public class LocationDetailsPanel : MonoBehaviour
 
     /// <summary>
     /// Met à jour la section d'informations supplémentaires
+    /// MISE À JOUR: Plus besoin d'accéder directement au PlayerData pour l'affichage des infos de voyage
+    /// Les événements de TravelProgress nous donnent déjà toutes les infos nécessaires !
     /// </summary>
     private void UpdateInfoSection()
     {
@@ -618,7 +606,7 @@ public class LocationDetailsPanel : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("ActivityVariantsPanel introuvable !");
+            Logger.LogWarning("LocationDetailsPanel: ActivityVariantsPanel introuvable !", Logger.LogCategory.General);
         }
     }
 
@@ -666,7 +654,6 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     private void ShowNoLocationMessage()
     {
-
         if (locationDescriptionText != null)
         {
             locationDescriptionText.text = "Aucune information de location disponible.";
@@ -697,6 +684,14 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
+    /// Vérifie que le ActivityDisplayPanel est présent
+    /// </summary>
+    private void CheckActivityDisplayPanel()
+    {
+        // Méthode pour vérifications futures si nécessaire
+    }
+
+    /// <summary>
     /// Corrige les problèmes de layout du ScrollRect
     /// </summary>
     private void FixScrollRect()
@@ -710,6 +705,8 @@ public class LocationDetailsPanel : MonoBehaviour
 
     /// <summary>
     /// Ajoute les informations de voyage à la liste d'infos
+    /// MISE À JOUR: Plus besoin d'accéder directement au PlayerData pour l'affichage des infos de voyage
+    /// Les événements de TravelProgress nous donnent déjà toutes les infos nécessaires !
     /// </summary>
     private void AddTravelInfo(List<string> infoLines)
     {
@@ -718,101 +715,9 @@ public class LocationDetailsPanel : MonoBehaviour
             string destination = dataManager.PlayerData.TravelDestinationId;
             long progress = dataManager.PlayerData.GetTravelProgress(dataManager.PlayerData.TotalSteps);
             int required = dataManager.PlayerData.TravelRequiredSteps;
-            infoLines.Add($"En voyage vers {destination}: {progress}/{required} pas");
-        }
-    }
+            float progressPercent = required > 0 ? (float)progress / required * 100f : 0f;
 
-    /// <summary>
-    /// Vérifie et affiche le panel d'activité si nécessaire
-    /// </summary>
-    private void CheckActivityDisplayPanel()
-    {
-        if (ActivityDisplayPanel.Instance != null)
-        {
-            ActivityDisplayPanel.Instance.CheckAndShowIfActivityActive();
-        }
-    }
-
-    /// <summary>
-    /// Corrige le layout après un délai
-    /// </summary>
-    private IEnumerator FixLayoutAfterDelay()
-    {
-        yield return null;
-        Canvas.ForceUpdateCanvases();
-        FixScrollRect();
-    }
-
-    /// <summary>
-    /// Ferme le panel (méthode privée, appelée après l'animation)
-    /// </summary>
-    private void ClosePanel()
-    {
-        if (panelManager != null)
-        {
-            Logger.LogInfo("LocationDetailsPanel: Demande de retour au panel précédent", Logger.LogCategory.General);
-        }
-        else
-        {
-            gameObject.SetActive(false);
-        }
-    }
-
-    /// <summary>
-    /// Valide que toutes les références UI requises sont assignées
-    /// </summary>
-    private void ValidateRequiredReferences()
-    {
-        List<string> missing = new List<string>();
-
-
-        if (locationDescriptionText == null) missing.Add("locationDescriptionText");
-        if (activitiesContainer == null) missing.Add("activitiesContainer");
-        if (heroCard == null) missing.Add("heroCard");
-
-        if (missing.Count > 0)
-        {
-            Logger.LogWarning($"LocationDetailsPanel: Références UI manquantes: {string.Join(", ", missing)}", Logger.LogCategory.General);
-        }
-    }
-
-    #endregion
-
-    #region Méthodes de Debug et Contrôles Publics
-
-    /// <summary>
-    /// Force l'actualisation du panel (utile pour le debug)
-    /// </summary>
-    [System.Diagnostics.Conditional("UNITY_EDITOR")]
-    public void ForceRefresh()
-    {
-        RefreshPanel();
-    }
-
-    /// <summary>
-    /// Permet de modifier les paramètres d'ombre en temps réel
-    /// </summary>
-    public void UpdateShadowSettings(Vector2 newOffset, Color newColor)
-    {
-        shadowOffset = newOffset;
-        shadowColor = newColor;
-
-        if (heroCardShadow != null)
-        {
-            heroCardShadow.effectDistance = shadowOffset;
-            heroCardShadow.effectColor = shadowColor;
-        }
-    }
-
-    /// <summary>
-    /// Permet de tester l'animation d'ouverture manuellement
-    /// </summary>
-    [System.Diagnostics.Conditional("UNITY_EDITOR")]
-    public void TestOpenAnimation()
-    {
-        if (Application.isPlaying)
-        {
-            StartCoroutine(PlayOpenAnimation());
+            infoLines.Add($"En voyage vers {destination}: {progress}/{required} pas ({progressPercent:F1}%)");
         }
     }
 

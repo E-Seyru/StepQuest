@@ -1,5 +1,6 @@
 // Purpose: UI Panel to display current activity progress and info
 // Filepath: Assets/Scripts/UI/Panels/ActivityDisplayPanel.cs
+using ActivityEvents; // NOUVEAU: Import pour EventBus
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -61,9 +62,10 @@ public class ActivityDisplayPanel : MonoBehaviour
         // Commencer caché
         gameObject.SetActive(false);
 
-        // S'abonner aux événements de l'ActivityManager
+        // =====================================
+        // EVENTBUS - S'abonner aux événements
+        // =====================================
         SubscribeToActivityEvents();
-
     }
 
     /// <summary>
@@ -87,22 +89,22 @@ public class ActivityDisplayPanel : MonoBehaviour
             progressBarFill.fillOrigin = 0; // Commence à gauche
             progressBarFill.fillAmount = 0f; // Commence vide
         }
-
-
     }
 
     /// <summary>
-    /// S'abonner aux événements de l'ActivityManager
+    /// S'abonner aux événements via EventBus
     /// </summary>
     private void SubscribeToActivityEvents()
     {
-        if (ActivityManager.Instance != null)
-        {
-            ActivityManager.Instance.OnActivityStarted += OnActivityStarted;
-            ActivityManager.Instance.OnActivityStopped += OnActivityStopped;
-            ActivityManager.Instance.OnActivityProgress += OnActivityProgress;
-            ActivityManager.Instance.OnActivityTick += OnActivityTick;
-        }
+        // =====================================
+        // EVENTBUS - Plus besoin de vérifier ActivityManager.Instance
+        // =====================================
+        EventBus.Subscribe<ActivityStartedEvent>(OnActivityStarted);
+        EventBus.Subscribe<ActivityStoppedEvent>(OnActivityStopped);
+        EventBus.Subscribe<ActivityProgressEvent>(OnActivityProgress);
+        EventBus.Subscribe<ActivityTickEvent>(OnActivityTick);
+
+        Logger.LogInfo("ActivityDisplayPanel: Subscribed to EventBus events", Logger.LogCategory.General);
     }
 
     /// <summary>
@@ -110,60 +112,64 @@ public class ActivityDisplayPanel : MonoBehaviour
     /// </summary>
     private void UnsubscribeFromActivityEvents()
     {
-        if (ActivityManager.Instance != null)
-        {
-            ActivityManager.Instance.OnActivityStarted -= OnActivityStarted;
-            ActivityManager.Instance.OnActivityStopped -= OnActivityStopped;
-            ActivityManager.Instance.OnActivityProgress -= OnActivityProgress;
-            ActivityManager.Instance.OnActivityTick -= OnActivityTick;
-        }
+        // =====================================
+        // EVENTBUS - Désabonnement simple et fiable
+        // =====================================
+        EventBus.Unsubscribe<ActivityStartedEvent>(OnActivityStarted);
+        EventBus.Unsubscribe<ActivityStoppedEvent>(OnActivityStopped);
+        EventBus.Unsubscribe<ActivityProgressEvent>(OnActivityProgress);
+        EventBus.Unsubscribe<ActivityTickEvent>(OnActivityTick);
+
+        Logger.LogInfo("ActivityDisplayPanel: Unsubscribed from EventBus events", Logger.LogCategory.General);
     }
 
-    // === EVENEMENTS DE L'ACTIVITYMANAGER ===
+    // === GESTIONNAIRES D'ÉVÉNEMENTS - ADAPTÉS POUR EVENTBUS ===
 
     /// <summary>
     /// Appelé quand une activité commence
     /// </summary>
-    private void OnActivityStarted(ActivityData activity, ActivityVariant variant)
+    private void OnActivityStarted(ActivityStartedEvent eventData)
     {
-        currentActivity = activity;
-        currentVariant = variant;
+        currentActivity = eventData.Activity;
+        currentVariant = eventData.Variant;
         ShowPanel();
         UpdateDisplay();
 
-
+        Logger.LogInfo($"ActivityDisplayPanel: Activity started - {eventData.Activity?.ActivityId}/{eventData.Variant?.VariantName}", Logger.LogCategory.General);
     }
 
     /// <summary>
     /// Appelé quand une activité s'arrête
     /// </summary>
-    private void OnActivityStopped(ActivityData activity, ActivityVariant variant)
+    private void OnActivityStopped(ActivityStoppedEvent eventData)
     {
+        Logger.LogInfo($"ActivityDisplayPanel: Activity stopped - {eventData.Activity?.ActivityId}/{eventData.Variant?.VariantName} (Completed: {eventData.WasCompleted})", Logger.LogCategory.General);
         HidePanel();
-
     }
 
     /// <summary>
     /// Appelé quand l'activité progresse (pas ajoutés)
     /// </summary>
-    private void OnActivityProgress(ActivityData activity, ActivityVariant variant)
+    private void OnActivityProgress(ActivityProgressEvent eventData)
     {
-        currentActivity = activity;
-        currentVariant = variant;
+        currentActivity = eventData.Activity;
+        currentVariant = eventData.Variant;
         UpdateDisplay();
     }
 
     /// <summary>
     /// Appelé quand des ticks sont complétés (récompenses données)
     /// </summary>
-    private void OnActivityTick(ActivityData activity, ActivityVariant variant, int ticksCompleted)
+    private void OnActivityTick(ActivityTickEvent eventData)
     {
-        currentActivity = activity;
-        currentVariant = variant;
+        currentActivity = eventData.Activity;
+        currentVariant = eventData.Variant;
         UpdateDisplay();
 
         // Optionnel : effet visuel pour les récompenses
-        ShowTickRewardFeedback(ticksCompleted);
+        ShowTickRewardFeedback(eventData.TicksCompleted);
+
+        Logger.LogInfo($"ActivityDisplayPanel: Activity tick - {eventData.TicksCompleted} ticks, {eventData.Rewards.Length} rewards", Logger.LogCategory.General);
     }
 
     // === GESTION DE L'AFFICHAGE ===
@@ -200,7 +206,6 @@ public class ActivityDisplayPanel : MonoBehaviour
         if (ActivityManager.Instance != null)
         {
             bool success = ActivityManager.Instance.StopActivity();
-
         }
     }
 
@@ -248,6 +253,75 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
+    /// NOUVEAU : Affichage pour les activités temporelles (crafting)
+    /// </summary>
+    private void UpdateTimedActivityDisplay()
+    {
+        float progressPercent = currentActivity.GetProgressToNextTick(currentVariant);
+
+        // Temps restant
+        long remainingTimeMs = currentActivity.RequiredTimeMs - currentActivity.AccumulatedTimeMs;
+        string timeRemaining = FormatTime(remainingTimeMs);
+        string totalTime = FormatTime(currentActivity.RequiredTimeMs);
+
+        if (progressText != null)
+        {
+            progressText.text = $"Temps restant: {timeRemaining}\n" +
+                               $"Progression: {currentActivity.AccumulatedTimeMs}ms / {totalTime}";
+        }
+
+        // Barre de progression
+        if (progressBarFill != null)
+        {
+            progressBarFill.fillAmount = progressPercent;
+
+            // Couleur spéciale pour les activités temporelles
+            Color timeColor = Color.Lerp(Color.cyan, Color.yellow, progressPercent);
+            progressBarFill.color = timeColor;
+        }
+
+        // Récompenses
+        if (rewardText != null)
+        {
+            string rewardInfo = GetRewardInfo();
+            rewardText.text = $"Récompense: {rewardInfo}";
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU : Affichage pour les activités basées sur les pas (existant)
+    /// </summary>
+    private void UpdateStepBasedActivityDisplay()
+    {
+        // Code existant pour les activités de pas
+        int stepsToNext = currentVariant.ActionCost - currentActivity.AccumulatedSteps;
+        float progressPercent = currentActivity.GetProgressToNextTick(currentVariant);
+
+        if (progressText != null)
+        {
+            progressText.text = $"Prochain tick dans {stepsToNext} pas\n" +
+                               $"Progression: {currentActivity.AccumulatedSteps}/{currentVariant.ActionCost}";
+        }
+
+        // Barre de progression
+        if (progressBarFill != null)
+        {
+            progressBarFill.fillAmount = progressPercent;
+
+            // Couleur standard pour les activités de pas
+            Color currentColor = Color.Lerp(progressFillColor, Color.yellow, progressPercent * 0.5f);
+            progressBarFill.color = currentColor;
+        }
+
+        // Récompenses
+        if (rewardText != null)
+        {
+            string rewardInfo = GetRewardInfo();
+            rewardText.text = $"Récompense par tick:\n{rewardInfo}";
+        }
+    }
+
+    /// <summary>
     /// Obtenir les informations sur les récompenses
     /// </summary>
     private string GetRewardInfo()
@@ -273,14 +347,27 @@ public class ActivityDisplayPanel : MonoBehaviour
         // - Texte qui apparaît pour montrer les récompenses
         // - Son ou vibration
 
-
-
         // Exemple simple : effet visuel sur la barre custom
         if (progressBarFill != null)
         {
             // L'UpdateDisplay() va être appelé après, donc la barre se remplira automatiquement
             // Ici on pourrait ajouter un effet de "flash" ou d'animation
         }
+    }
+
+    /// <summary>
+    /// NOUVEAU : Formater le temps en millisecondes en format lisible
+    /// </summary>
+    private string FormatTime(long timeMs)
+    {
+        if (timeMs <= 0) return "0s";
+
+        if (timeMs < 1000)
+            return $"{timeMs}ms";
+        else if (timeMs < 60000)
+            return $"{timeMs / 1000f:F1}s";
+        else
+            return $"{timeMs / 60000f:F1}min";
     }
 
     // === METHODES PUBLIQUES POUR L'INTEGRATION ===
@@ -301,8 +388,6 @@ public class ActivityDisplayPanel : MonoBehaviour
                 currentVariant = variant;
                 ShowPanel();
                 UpdateDisplay();
-
-
             }
         }
     }
@@ -346,89 +431,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     // === CLEANUP ===
-    /// <summary>
-    /// NOUVEAU : Affichage pour les activités temporelles (crafting)
-    /// </summary>
-    private void UpdateTimedActivityDisplay()
-    {
-        float progressPercent = currentActivity.GetProgressToNextTick(currentVariant);
 
-        // Temps restant
-        long remainingTimeMs = currentActivity.RequiredTimeMs - currentActivity.AccumulatedTimeMs;
-        string timeRemaining = FormatTime(remainingTimeMs);
-        string totalTime = FormatTime(currentActivity.RequiredTimeMs);
-
-        if (progressText != null)
-        {
-            progressText.text = $"Temps restant: {timeRemaining}\n" +
-                               $"Progression: {currentActivity.AccumulatedTimeMs}ms / {totalTime}";
-        }
-
-        // Barre de progression
-        if (progressBarFill != null)
-        {
-            progressBarFill.fillAmount = progressPercent;
-
-            // Couleur spéciale pour les activités temporelles
-            Color timeColor = Color.Lerp(Color.cyan, Color.yellow, progressPercent);
-            progressBarFill.color = timeColor;
-        }
-
-        // Récompenses
-        if (rewardText != null)
-        {
-            string rewardInfo = GetRewardInfo();
-            progressText.text += $"\nRécompense: {rewardInfo}";
-        }
-    }
-
-    /// <summary>
-    /// NOUVEAU : Affichage pour les activités basées sur les pas (existant)
-    /// </summary>
-    private void UpdateStepBasedActivityDisplay()
-    {
-        // Code existant pour les activités de pas
-        int stepsToNext = currentVariant.ActionCost - currentActivity.AccumulatedSteps;
-        float progressPercent = currentActivity.GetProgressToNextTick(currentVariant);
-
-        if (progressText != null)
-        {
-            progressText.text = $"Prochain tick dans {stepsToNext} pas\n" +
-                               $"Progression: {currentActivity.AccumulatedSteps}/{currentVariant.ActionCost}";
-        }
-
-        // Barre de progression
-        if (progressBarFill != null)
-        {
-            progressBarFill.fillAmount = progressPercent;
-
-            // Couleur standard pour les activités de pas
-            Color currentColor = Color.Lerp(progressFillColor, Color.yellow, progressPercent * 0.5f);
-            progressBarFill.color = currentColor;
-        }
-
-        // Récompenses
-        if (rewardText != null)
-        {
-            string rewardInfo = GetRewardInfo();
-            rewardText.text = $"Récompense par tick:\n{rewardInfo}";
-        }
-    }
-
-    /// <summary>
-    /// NOUVEAU : Formater le temps en millisecondes en format lisible
-    /// </summary>
-    private string FormatTime(long timeMs)
-    {
-        if (timeMs <= 0) return "0s";
-
-        if (timeMs < 1000)
-            return $"{timeMs}ms";
-        else if (timeMs < 60000)
-            return $"{timeMs / 1000f:F1}s";
-        else
-            return $"{timeMs / 60000f:F1}min";
-    }
     void OnDestroy()
     {
         UnsubscribeFromActivityEvents();

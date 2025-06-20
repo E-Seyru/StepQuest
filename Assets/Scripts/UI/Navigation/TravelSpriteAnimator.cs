@@ -1,5 +1,6 @@
 ﻿// Purpose: Animates a sprite that moves along the travel path during journey
 // Filepath: Assets/Scripts/UI/Components/TravelSpriteAnimator.cs
+using MapEvents; // NOUVEAU: Import pour EventBus
 using System.Collections.Generic; // Pour Dictionary
 using UnityEngine;
 
@@ -69,13 +70,15 @@ public class TravelSpriteAnimator : MonoBehaviour
         if (mapManager != null)
         {
             locationRegistry = mapManager.LocationRegistry;
-
-            // S'abonner aux evenements de voyage
-            mapManager.OnTravelStarted += OnTravelStarted;
-            mapManager.OnTravelCompleted += OnTravelCompleted;
-            mapManager.OnTravelProgress += OnTravelProgress;
-            mapManager.OnLocationChanged += OnLocationChanged;
         }
+
+        // =====================================
+        // EVENTBUS - S'abonner aux événements de voyage
+        // =====================================
+        EventBus.Subscribe<TravelStartedEvent>(OnTravelStarted);
+        EventBus.Subscribe<TravelCompletedEvent>(OnTravelCompleted);
+        EventBus.Subscribe<TravelProgressEvent>(OnTravelProgress);
+        EventBus.Subscribe<LocationChangedEvent>(OnLocationChanged);
 
         // Validation
         if (travelSprite == null)
@@ -111,14 +114,11 @@ public class TravelSpriteAnimator : MonoBehaviour
         // Activer temporairement la WorldMap si elle etait desactivee
         if (!wasMapActive)
         {
-
             worldMapObject.SetActive(true);
         }
 
         // OPTIMISATION : Chercher les POI seulement dans WorldMap au lieu de toute la scène
         POI[] allPOIs = worldMapObject.GetComponentsInChildren<POI>(true); // 'true' pour inclure les POI desactives
-
-
 
         // Mettre en cache toutes les positions
         foreach (POI poi in allPOIs)
@@ -127,8 +127,6 @@ public class TravelSpriteAnimator : MonoBehaviour
             {
                 Vector3 poiPosition = poi.GetTravelPathStartPosition();
                 poiPositionsCache[poi.LocationID] = poiPosition;
-
-
             }
             else
             {
@@ -140,11 +138,9 @@ public class TravelSpriteAnimator : MonoBehaviour
         if (!wasMapActive)
         {
             worldMapObject.SetActive(false);
-
         }
 
         isCacheInitialized = true;
-
     }
 
     /// <summary>
@@ -162,7 +158,6 @@ public class TravelSpriteAnimator : MonoBehaviour
         // Chercher dans le cache
         if (poiPositionsCache.TryGetValue(locationId, out Vector3 cachedPosition))
         {
-
             return cachedPosition;
         }
 
@@ -180,12 +175,10 @@ public class TravelSpriteAnimator : MonoBehaviour
     /// </summary>
     public void RefreshPOICache()
     {
-
         poiPositionsCache.Clear();
         isCacheInitialized = false;
         InitializePOICache();
     }
-
 
     // === LE RESTE DU CODE RESTE IDENTIQUE ===
 
@@ -195,8 +188,6 @@ public class TravelSpriteAnimator : MonoBehaviour
 
         if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
         {
-
-
             string destinationId = dataManager.PlayerData.TravelDestinationId;
             SetupTravelPath(destinationId);
 
@@ -211,8 +202,6 @@ public class TravelSpriteAnimator : MonoBehaviour
             {
                 Vector3 currentPos = Vector3.Lerp(startPosition, endPosition, progress);
                 travelSprite.transform.position = currentPos;
-
-
             }
 
             if (bounceAnimation)
@@ -226,7 +215,22 @@ public class TravelSpriteAnimator : MonoBehaviour
         }
     }
 
-    private void OnLocationChanged(MapLocationDefinition newLocation)
+    void OnDestroy()
+    {
+        // =====================================
+        // EVENTBUS - Se désabonner des événements
+        // =====================================
+        EventBus.Unsubscribe<TravelStartedEvent>(OnTravelStarted);
+        EventBus.Unsubscribe<TravelCompletedEvent>(OnTravelCompleted);
+        EventBus.Unsubscribe<TravelProgressEvent>(OnTravelProgress);
+        EventBus.Unsubscribe<LocationChangedEvent>(OnLocationChanged);
+
+        StopAllAnimations();
+    }
+
+    // === GESTIONNAIRES D'ÉVÉNEMENTS - ADAPTÉS POUR EVENTBUS ===
+
+    private void OnLocationChanged(LocationChangedEvent eventData)
     {
         if (!dataManager.PlayerData.IsCurrentlyTraveling())
         {
@@ -234,44 +238,29 @@ public class TravelSpriteAnimator : MonoBehaviour
         }
     }
 
-    void OnDestroy()
-    {
-        if (mapManager != null)
-        {
-            mapManager.OnTravelStarted -= OnTravelStarted;
-            mapManager.OnTravelCompleted -= OnTravelCompleted;
-            mapManager.OnTravelProgress -= OnTravelProgress;
-            mapManager.OnLocationChanged -= OnLocationChanged;
-        }
-
-        StopAllAnimations();
-    }
-
-    private void OnTravelStarted(string destinationId)
+    private void OnTravelStarted(TravelStartedEvent eventData)
     {
         StopAllAnimations();
-        SetupTravelPath(destinationId);
+        SetupTravelPath(eventData.DestinationLocationId);
         PositionPlayerAtStart();
         if (bounceAnimation) StartBounceAnimation();
     }
 
-    private void OnTravelProgress(string destinationId, int currentSteps, int requiredSteps)
+    private void OnTravelProgress(TravelProgressEvent eventData)
     {
         if (travelSprite != null && travelSprite.activeSelf)
         {
-            float progress = requiredSteps > 0 ? (float)currentSteps / requiredSteps : 0f;
+            float progress = eventData.RequiredSteps > 0 ? (float)eventData.CurrentSteps / eventData.RequiredSteps : 0f;
             progress = Mathf.Clamp01(progress);
 
             UpdateSpritePosition(progress);
         }
     }
 
-    private void OnTravelCompleted(string arrivedLocationId)
+    private void OnTravelCompleted(TravelCompletedEvent eventData)
     {
         AnimateToDestination();
         StopBounceAnimation();
-
-
     }
 
     private void SetupTravelPath(string destinationId)
@@ -325,12 +314,8 @@ public class TravelSpriteAnimator : MonoBehaviour
 
         currentPos += spriteOffset;
 
-
-
         travelSprite.transform.position = currentPos;
         travelSprite.SetActive(true);
-
-
     }
 
     private void UpdateSpritePosition(float progress)

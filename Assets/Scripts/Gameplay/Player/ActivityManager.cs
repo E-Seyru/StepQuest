@@ -1,9 +1,10 @@
 // ===============================================
-// ActivityManager (Facade Pattern) - EXTENDED WITH TIME-BASED ACTIVITIES
+// ActivityManager (Facade Pattern) - MIGRÉ VERS EVENTBUS
 // ===============================================
 // Purpose: Manages player activities (mining, gathering, crafting, etc.) with step-based AND time-based progression
 // Filepath: Assets/Scripts/Gameplay/Player/ActivityManager.cs
 
+using ActivityEvents; // NOUVEAU: Import pour EventBus
 using System;
 using System.Collections;
 using UnityEngine;
@@ -19,12 +20,6 @@ public class ActivityManager : MonoBehaviour
 
     [Header("Activity Data")]
     [SerializeField] private ActivityRegistry activityRegistry;
-
-    // === PUBLIC EVENTS - SAME AS BEFORE ===
-    public event Action<ActivityData, ActivityVariant> OnActivityStarted;
-    public event Action<ActivityData, ActivityVariant> OnActivityStopped;
-    public event Action<ActivityData, ActivityVariant, int> OnActivityTick;
-    public event Action<ActivityData, ActivityVariant> OnActivityProgress;
 
     // === PUBLIC ACCESSORS - SAME AS BEFORE ===
     public ActivityRegistry ActivityRegistry => activityRegistry;
@@ -62,15 +57,8 @@ public class ActivityManager : MonoBehaviour
         executionService = new ActivityExecutionService(cacheService, progressService, validationService, enableDebugLogs);
         PersistenceService = new ActivityPersistenceService(autoSaveInterval);
 
-        // Wire events from services to public events
-        executionService.OnActivityStarted += (activity, variant) => OnActivityStarted?.Invoke(activity, variant);
-        executionService.OnActivityStopped += (activity, variant) => OnActivityStopped?.Invoke(activity, variant);
-        progressService.OnActivityTick += (activity, variant, ticks) => OnActivityTick?.Invoke(activity, variant, ticks);
-        progressService.OnActivityProgress += (activity, variant) => OnActivityProgress?.Invoke(activity, variant);
-
-        // NOUVEAU : Événements temporels
-        timeService.OnTimedActivityCompleted += (activity, variant) => OnActivityTick?.Invoke(activity, variant, 1);
-        timeService.OnTimedActivityProgress += (activity, variant) => OnActivityProgress?.Invoke(activity, variant); // MANQUAIT !
+        // Les services publient maintenant directement via EventBus - plus de wire events !
+        Logger.LogInfo("ActivityManager: Services initialized with EventBus", Logger.LogCategory.General);
     }
 
     void Start()
@@ -92,8 +80,6 @@ public class ActivityManager : MonoBehaviour
 
         // Process any offline activity progress
         Invoke(nameof(ProcessOfflineProgressInvoke), 1f);
-
-
     }
 
     private void ProcessOfflineProgressInvoke()
@@ -228,14 +214,9 @@ public class ActivityManager : MonoBehaviour
         // Démarrer l'exécution
         bool success = executionService.StartActivity(activityData, variant);
 
-        if (success)
+        if (success && enableDebugLogs)
         {
-            OnActivityStarted?.Invoke(activityData, variant);
-
-            if (enableDebugLogs)
-            {
-                Logger.LogInfo($"ActivityManager: Started timed activity {variant.GetDisplayName()} (Duration: {variant.GetCraftingTimeText()})", Logger.LogCategory.General);
-            }
+            Logger.LogInfo($"ActivityManager: Started timed activity {variant.GetDisplayName()} (Duration: {variant.GetCraftingTimeText()})", Logger.LogCategory.General);
         }
 
         return success;
@@ -264,15 +245,12 @@ public class ActivityManager : MonoBehaviour
 }
 
 // ===============================================
-// NOUVEAU SERVICE: ActivityTimeService
+// NOUVEAU SERVICE: ActivityTimeService - MIGRÉ VERS EVENTBUS
 // ===============================================
 public class ActivityTimeService
 {
     private readonly ActivityCacheService cacheService;
     private readonly bool enableDebugLogs;
-
-    public event Action<ActivityData, ActivityVariant> OnTimedActivityCompleted;
-    public event Action<ActivityData, ActivityVariant> OnTimedActivityProgress;
 
     public ActivityTimeService(ActivityCacheService cacheService, bool enableDebugLogs)
     {
@@ -337,8 +315,11 @@ public class ActivityTimeService
             // Marquer comme dirty pour persistence
             ActivityManager.Instance.PersistenceService.MarkDirty();
 
-            // Déclencher l'événement de progression pour l'UI
-            OnTimedActivityProgress?.Invoke(currentActivityCache, currentVariantCache);
+            // =====================================
+            // EVENTBUS - Publier l'événement de progression
+            // =====================================
+            EventBus.Publish(new ActivityProgressEvent(currentActivityCache, currentVariantCache,
+                currentActivityCache.GetProgressToNextTick(currentVariantCache) * 100f));
 
             if (enableDebugLogs)
             {
@@ -372,8 +353,10 @@ public class ActivityTimeService
         // Marquer l'activité comme terminée
         activityCache.ProcessTicks(variantCache, 1);
 
-        // Déclencher l'événement de completion
-        OnTimedActivityCompleted?.Invoke(activityCache, variantCache);
+        // =====================================
+        // EVENTBUS - Publier l'événement de tick
+        // =====================================
+        EventBus.Publish(new ActivityTickEvent(activityCache, variantCache, 1, resourceId));
 
         if (enableDebugLogs)
         {
@@ -389,8 +372,6 @@ public class ActivityTimeService
                 // Reset l'activité pour une nouvelle boucle
                 activityCache.AccumulatedTimeMs = 0;
                 activityCache.LastProcessedTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-
-
             }
             else
             {
@@ -418,7 +399,10 @@ public class ActivityTimeService
         DataManager.Instance.PlayerData.CurrentActivity = null;
         ActivityManager.Instance.PersistenceService.MarkDirty();
 
-
+        // =====================================
+        // EVENTBUS - Publier l'événement d'arrêt
+        // =====================================
+        EventBus.Publish(new ActivityStoppedEvent(activityCache, variantCache, true, "Materials depleted"));
     }
 
     /// <summary>
@@ -435,8 +419,6 @@ public class ActivityTimeService
         // Calculer le temps offline total
         long offlineTimeMs = currentActivityCache.GetElapsedTimeMs();
         if (offlineTimeMs <= 0) return;
-
-
 
         // Simuler le temps offline par chunks pour gérer les boucles
         long remainingTime = offlineTimeMs;
@@ -495,7 +477,7 @@ public class ActivityTimeService
 }
 
 // ===============================================
-// SERVICE: ActivityExecutionService (MODIFIE)
+// SERVICE: ActivityExecutionService - MIGRÉ VERS EVENTBUS
 // ===============================================
 public class ActivityExecutionService
 {
@@ -503,9 +485,6 @@ public class ActivityExecutionService
     private readonly ActivityProgressService progressService;
     private readonly ActivityValidationService validationService;
     private readonly bool enableDebugLogs;
-
-    public event Action<ActivityData, ActivityVariant> OnActivityStarted;
-    public event Action<ActivityData, ActivityVariant> OnActivityStopped;
 
     public ActivityExecutionService(ActivityCacheService cacheService, ActivityProgressService progressService,
                                   ActivityValidationService validationService, bool enableDebugLogs)
@@ -580,8 +559,10 @@ public class ActivityExecutionService
         // Mark for saving
         ActivityManager.Instance.PersistenceService.MarkDirty();
 
-        // Trigger event
-        OnActivityStarted?.Invoke(activityData, variant);
+        // =====================================
+        // EVENTBUS - Publier l'événement de début
+        // =====================================
+        EventBus.Publish(new ActivityStartedEvent(activityData, variant));
 
         if (enableDebugLogs)
         {
@@ -606,8 +587,10 @@ public class ActivityExecutionService
         // Mark for saving
         ActivityManager.Instance.PersistenceService.MarkDirty();
 
-        // Trigger event
-        OnActivityStopped?.Invoke(currentActivity, currentVariant);
+        // =====================================
+        // EVENTBUS - Publier l'événement d'arrêt
+        // =====================================
+        EventBus.Publish(new ActivityStoppedEvent(currentActivity, currentVariant, false, "Manually stopped"));
 
         if (enableDebugLogs)
         {
@@ -643,16 +626,13 @@ public class ActivityExecutionService
 }
 
 // ===============================================
-// SERVICE: ActivityProgressService (MODIFIE)
+// SERVICE: ActivityProgressService - MIGRÉ VERS EVENTBUS
 // ===============================================
 public class ActivityProgressService
 {
     private readonly ActivityCacheService cacheService;
     private readonly ActivityTimeService timeService;
     private readonly bool enableDebugLogs;
-
-    public event Action<ActivityData, ActivityVariant, int> OnActivityTick;
-    public event Action<ActivityData, ActivityVariant> OnActivityProgress;
 
     public ActivityProgressService(ActivityCacheService cacheService, ActivityTimeService timeService, bool enableDebugLogs)
     {
@@ -712,8 +692,11 @@ public class ActivityProgressService
         // Mark as dirty for persistence
         ActivityManager.Instance.PersistenceService.MarkDirty();
 
-        // Trigger progress event for UI
-        OnActivityProgress?.Invoke(currentActivityCache, currentVariantCache);
+        // =====================================
+        // EVENTBUS - Publier l'événement de progression
+        // =====================================
+        EventBus.Publish(new ActivityProgressEvent(currentActivityCache, currentVariantCache,
+            currentActivityCache.GetProgressToNextTick(currentVariantCache) * 100f));
 
         if (enableDebugLogs && newSteps > 0)
         {
@@ -752,8 +735,10 @@ public class ActivityProgressService
         // Mark as dirty for persistence
         ActivityManager.Instance.PersistenceService.MarkDirty();
 
-        // Trigger tick event
-        OnActivityTick?.Invoke(currentActivityCache, currentVariantCache, ticksCompleted);
+        // =====================================
+        // EVENTBUS - Publier l'événement de tick
+        // =====================================
+        EventBus.Publish(new ActivityTickEvent(currentActivityCache, currentVariantCache, ticksCompleted, resourceId));
 
         if (enableDebugLogs)
         {
