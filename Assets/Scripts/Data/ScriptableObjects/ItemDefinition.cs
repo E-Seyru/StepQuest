@@ -111,19 +111,19 @@ public class ItemDefinition : ScriptableObject
     {
         if (string.IsNullOrEmpty(ItemID))
         {
-            Debug.LogError($"ItemDefinition '{name}': ItemID is empty!");
+            Logger.LogError($"ItemDefinition '{name}': ItemID is empty!", Logger.LogCategory.General);
             return false;
         }
 
         if (IsStackable && MaxStackSize <= 0)
         {
-            Debug.LogError($"ItemDefinition '{ItemID}': IsStackable is true but MaxStackSize is {MaxStackSize}!");
+            Logger.LogError($"ItemDefinition '{ItemID}': IsStackable is true but MaxStackSize is {MaxStackSize}!", Logger.LogCategory.General);
             return false;
         }
 
         if (IsBackpack() && InventorySlots <= 0)
         {
-            Debug.LogWarning($"ItemDefinition '{ItemID}': Backpack has {InventorySlots} inventory slots!");
+            Logger.LogWarning($"ItemDefinition '{ItemID}': Backpack has {InventorySlots} inventory slots!", Logger.LogCategory.General);
         }
 
         return true;

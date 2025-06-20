@@ -299,7 +299,7 @@ public static class EventBus
     {
         if (EnableDetailedLogging)
         {
-            Debug.Log($"[EventBus] {message}");
+            Logger.LogInfo($"[EventBus] {message}", Logger.LogCategory.General);
         }
     }
 
@@ -307,7 +307,7 @@ public static class EventBus
     {
         if (EnableDetailedLogging || EnableErrorLogging)
         {
-            Debug.LogWarning($"[EventBus] {message}");
+            Logger.LogWarning($"[EventBus] {message}", Logger.LogCategory.General);
         }
     }
 
@@ -315,7 +315,7 @@ public static class EventBus
     {
         if (EnableErrorLogging)
         {
-            Debug.LogError($"[EventBus] {message}");
+            Logger.LogError($"[EventBus] {message}", Logger.LogCategory.General);
         }
     }
 
