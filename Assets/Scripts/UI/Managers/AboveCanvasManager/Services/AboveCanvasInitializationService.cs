@@ -156,10 +156,35 @@ public class AboveCanvasInitializationService
     // NOUVEAU: Gestionnaire pour le clic sur LocationButton
     private void OnLocationButtonClicked()
     {
-        // NOUVEAU : Jouer l'effet de clic d'abord
+        // ⭐ NOUVEAU : Vérifier si on est en voyage AVANT tout le reste
+        var dataManager = DataManager.Instance;
+        if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
+        {
+            // Pendant le voyage : jouer effet de clic mais ne pas naviguer
+            PlayLocationButtonClickEffect();
+
+            // Optionnel : afficher un message d'information
+            string destinationName = dataManager.PlayerData.TravelDestinationId;
+            var destinationLocation = MapManager.Instance?.LocationRegistry?.GetLocationById(destinationName);
+            if (destinationLocation != null)
+            {
+                destinationName = destinationLocation.DisplayName;
+            }
+
+            // Utiliser ErrorPanel pour afficher le message
+            if (ErrorPanel.Instance != null)
+            {
+                ErrorPanel.Instance.ShowError($"Vous êtes en voyage vers {destinationName}. Attendez d'arriver à destination.");
+            }
+
+            Logger.LogInfo("AboveCanvasManager: LocationButton clicked during travel - access blocked", Logger.LogCategory.General);
+            return;
+        }
+
+        // État normal : jouer l'effet de clic
         PlayLocationButtonClickEffect();
 
-        // Verifier que PanelManager est disponible
+        // Vérifier que PanelManager est disponible
         if (PanelManager.Instance == null)
         {
             Logger.LogWarning("AboveCanvasManager: PanelManager.Instance is null", Logger.LogCategory.General);
@@ -167,7 +192,6 @@ public class AboveCanvasInitializationService
         }
 
         // Naviguer vers le LocationDetailsPanel
-        // Le nom doit correspondre exactement au nom du GameObject dans Unity
         PanelManager.Instance.HideMapAndGoToPanel("LocationDetailsPanel");
 
         Logger.LogInfo("AboveCanvasManager: Navigating to LocationDetailsPanel", Logger.LogCategory.General);

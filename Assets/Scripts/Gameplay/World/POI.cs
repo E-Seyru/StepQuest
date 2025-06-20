@@ -70,72 +70,41 @@ public class POI : MonoBehaviour, IPointerClickHandler
         return transform.position;
     }
 
-    /// <summary>
-    /// Retourne la position actuelle du point de départ (pour vérification dans l'éditeur)
-    /// </summary>
-    public Vector3 GetTravelPathStartPoint()
-    {
-        return GetTravelPathStartPosition();
-    }
-
-    /// <summary>
-    /// Définit un nouveau point de départ pour le chemin de voyage
-    /// </summary>
-    public void SetTravelPathStartPoint(Transform newStartPoint)
-    {
-        travelPathStartPoint = newStartPoint;
-    }
-
     void Start()
     {
-        // Sauvegarder l'échelle originale
+        // Sauvegarder l'échelle originale pour l'animation
         originalScale = transform.localScale;
 
-        // Get manager references
+        // Initialiser les références
         mapManager = MapManager.Instance;
         dataManager = DataManager.Instance;
         panelManager = PanelManager.Instance;
 
+        if (mapManager != null)
+        {
+            locationRegistry = mapManager.LocationRegistry;
+        }
+
+        // Trouver le TravelConfirmationPopup dans la scène
+        travelPopup = FindObjectOfType<TravelConfirmationPopup>();
+
+        // Valider les références critiques
         if (mapManager == null)
         {
-            Logger.LogError($"POI ({LocationID}): MapManager not found!", Logger.LogCategory.MapLog);
+            Logger.LogError($"POI ({LocationID}): MapManager.Instance is null!", Logger.LogCategory.MapLog);
             return;
         }
 
         if (dataManager == null)
         {
-            Logger.LogError($"POI ({LocationID}): DataManager not found!", Logger.LogCategory.MapLog);
+            Logger.LogError($"POI ({LocationID}): DataManager.Instance is null!", Logger.LogCategory.MapLog);
             return;
         }
 
-        if (panelManager == null)
-        {
-            Logger.LogError($"POI ({LocationID}): PanelManager not found!", Logger.LogCategory.MapLog);
-            return;
-        }
-
-        locationRegistry = mapManager.LocationRegistry;
         if (locationRegistry == null)
         {
-            Logger.LogError($"POI ({LocationID}): LocationRegistry not found via MapManager!", Logger.LogCategory.MapLog);
+            Logger.LogError($"POI ({LocationID}): LocationRegistry is null in MapManager!", Logger.LogCategory.MapLog);
             return;
-        }
-
-        travelPopup = TravelConfirmationPopup.Instance;
-        if (travelPopup == null)
-        {
-            Logger.LogWarning($"POI ({LocationID}): TravelConfirmationPopup not found! POI will use direct travel instead.", Logger.LogCategory.MapLog);
-        }
-
-        // Get SpriteRenderer if not assigned
-        if (spriteRenderer == null)
-        {
-            spriteRenderer = GetComponent<SpriteRenderer>();
-            if (spriteRenderer == null)
-            {
-                Logger.LogError($"POI ({LocationID}): SpriteRenderer component not found!", Logger.LogCategory.MapLog);
-                return;
-            }
         }
 
         if (enableDebugLogs)
@@ -194,7 +163,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// ENHANCED: Gère le clic sur le POI avec support pathfinding
+    /// ENHANCED: Gère le clic sur le POI avec support pathfinding et CurrentLocation null
     /// </summary>
     private void HandleClick()
     {
@@ -206,8 +175,40 @@ public class POI : MonoBehaviour, IPointerClickHandler
             return;
         }
 
+        // ⭐ NOUVEAU : Vérifier si on est en voyage AVANT toute autre vérification
+        if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
+        {
+            // Pendant le voyage, bloquer l'accès aux détails de TOUTES les locations
+            string destinationName = dataManager.PlayerData.TravelDestinationId;
+            var destinationLocation = locationRegistry.GetLocationById(destinationName);
+            if (destinationLocation != null)
+            {
+                destinationName = destinationLocation.DisplayName;
+            }
+
+            if (enableErrorMessages && ErrorPanel.Instance != null)
+            {
+                ErrorPanel.Instance.ShowError($"Vous êtes en voyage vers {destinationName}. Attendez d'arriver à destination.");
+            }
+
+            Logger.LogInfo($"POI ({LocationID}): Click blocked - currently traveling to {destinationName}", Logger.LogCategory.MapLog);
+            return;
+        }
+
+        // ⭐ NOUVEAU : Vérifier si CurrentLocation est null (normalement ça n'arrive plus maintenant qu'on vérifie IsCurrentlyTraveling() avant)
+        if (mapManager.CurrentLocation == null)
+        {
+            if (enableErrorMessages && ErrorPanel.Instance != null)
+            {
+                ErrorPanel.Instance.ShowError("Position actuelle inconnue. Impossible d'accéder aux détails.");
+            }
+
+            Logger.LogWarning($"POI ({LocationID}): Click blocked - CurrentLocation is null", Logger.LogCategory.MapLog);
+            return;
+        }
+
         // Vérifier si on est déjà à cette location
-        if (mapManager.CurrentLocation != null && mapManager.CurrentLocation.LocationID == LocationID)
+        if (mapManager.CurrentLocation.LocationID == LocationID)
         {
             if (enableDebugLogs)
             {
@@ -453,11 +454,15 @@ public class POI : MonoBehaviour, IPointerClickHandler
         }
 
         string travelType = travelInfo.RequiresPathfinding ? "PATHFINDING" : "DIRECT";
-        Logger.LogInfo($"POI ({LocationID}): Travel type: {travelType}, Cost: {travelInfo.StepCost} steps, Can travel: {travelInfo.CanTravel}", Logger.LogCategory.MapLog);
+        string segmentInfo = travelInfo.RequiresPathfinding ? $" ({travelInfo.SegmentCount} segments)" : "";
 
-        if (travelInfo.RequiresPathfinding && travelInfo.PathDetails != null)
+        Logger.LogInfo($"POI ({LocationID}): {travelType} travel{segmentInfo} to {travelInfo.To?.DisplayName} - " +
+                      $"{travelInfo.StepCost} steps - Can travel: {travelInfo.CanTravel}", Logger.LogCategory.MapLog);
+
+        if (travelInfo.PathDetails != null && enableDebugLogs)
         {
-            Logger.LogInfo($"POI ({LocationID}): Path has {travelInfo.SegmentCount} segments", Logger.LogCategory.MapLog);
+            Logger.LogInfo($"POI ({LocationID}): Path details - Reachable: {travelInfo.PathDetails.IsReachable}, " +
+                          $"Total cost: {travelInfo.PathDetails.TotalCost}, Segments: {travelInfo.PathDetails.Segments?.Count ?? 0}", Logger.LogCategory.MapLog);
         }
     }
 

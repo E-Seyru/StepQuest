@@ -13,7 +13,7 @@ public class LocalDatabase
     private string _databasePath;
 
     private const string DatabaseFilename = "StepQuestRPG_Data.db";
-    private const int DATABASE_VERSION = 6; // MODIFIE: Incremente pour ActivityData (5 -> 6)
+    private const int DATABASE_VERSION = 7; // MODIFIE: Incremente pour ActivityData (5 -> 6)
 
     public void InitializeDatabase()
     {
@@ -112,7 +112,7 @@ public class LocalDatabase
                 // Migrations existantes (2, 3, 4, 5)
                 ApplyMigrations(currentVersion);
 
-                // NOUVELLE MIGRATION: Version 5 -> 6 pour ActivityData
+                // MIGRATION: Version 5 -> 6 pour ActivityData (existante)
                 if (currentVersion < 6 && DATABASE_VERSION >= 6)
                 {
                     Logger.LogInfo("LocalDatabase: Migrating to version 6 - Adding ActivityData support...");
@@ -131,6 +131,29 @@ public class LocalDatabase
                     catch (Exception ex)
                     {
                         Logger.LogError($"LocalDatabase: Migration to version 6 error: {ex.Message}");
+                    }
+                }
+
+                // ⭐ NOUVELLE MIGRATION: Version 6 -> 7 pour voyage multi-segment
+                if (currentVersion < 7 && DATABASE_VERSION >= 7)
+                {
+                    Logger.LogInfo("LocalDatabase: Migrating to version 7 - Adding multi-segment travel support...");
+
+                    try
+                    {
+                        // Ajouter les colonnes pour les voyages multi-segments
+                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN TravelFinalDestinationId TEXT DEFAULT NULL");
+                        _connection.Execute("ALTER TABLE PlayerData ADD COLUMN TravelOriginLocationId TEXT DEFAULT NULL");
+
+                        Logger.LogInfo("LocalDatabase: Added TravelFinalDestinationId and TravelOriginLocationId columns");
+
+                        // Mettre a jour la version
+                        _connection.Execute("UPDATE DatabaseVersion SET Version = 7");
+                        Logger.LogInfo("LocalDatabase: Migration to version 7 completed");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError($"LocalDatabase: Migration to version 7 error: {ex.Message}");
                     }
                 }
             }

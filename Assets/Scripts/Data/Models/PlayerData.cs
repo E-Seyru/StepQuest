@@ -92,7 +92,7 @@ public class PlayerData
         set { _currentLocationId = value; }
     }
 
-    // Est-ce que le joueur voyage actuellement ? (null = non, sinon = destination)
+    // Est-ce que le joueur voyage actuellement ? (null = non, sinon = destination du segment actuel)
     private string _travelDestinationId;
     [Column("TravelDestinationId")]
     public string TravelDestinationId
@@ -110,13 +110,31 @@ public class PlayerData
         set { _travelStartSteps = value; }
     }
 
-    // Combien de pas faut-il pour finir le voyage
+    // Combien de pas faut-il pour finir le voyage (ou le segment actuel)
     private int _travelRequiredSteps;
     [Column("TravelRequiredSteps")]
     public int TravelRequiredSteps
     {
         get { return _travelRequiredSteps; }
         set { _travelRequiredSteps = value; }
+    }
+
+    // ⭐ NOUVEAU : Destination finale pour les voyages multi-segments (Version 7)
+    private string _travelFinalDestinationId;
+    [Column("TravelFinalDestinationId")]
+    public string TravelFinalDestinationId
+    {
+        get { return _travelFinalDestinationId; }
+        set { _travelFinalDestinationId = value; }
+    }
+
+    // ⭐ NOUVEAU : Location de départ originale du voyage (Version 7)
+    private string _travelOriginLocationId;
+    [Column("TravelOriginLocationId")]
+    public string TravelOriginLocationId
+    {
+        get { return _travelOriginLocationId; }
+        set { _travelOriginLocationId = value; }
     }
 
     // === NOUVEAU: Système d'activite ===
@@ -188,6 +206,8 @@ public class PlayerData
         _travelDestinationId = null; // Pas de voyage en cours
         _travelStartSteps = 0;
         _travelRequiredSteps = 0;
+        _travelFinalDestinationId = null; // ⭐ NOUVEAU : Pas de voyage multi-segment par défaut
+        _travelOriginLocationId = null; // ⭐ NOUVEAU : Pas de voyage en cours
 
         // NOUVEAU: Pas d'activite active par defaut
         _currentActivityJson = null;
@@ -218,6 +238,12 @@ public class PlayerData
         return !string.IsNullOrEmpty(TravelDestinationId);
     }
 
+    // ⭐ NOUVEAU : Est-ce que c'est un voyage multi-segment ?
+    public bool IsMultiSegmentTravel()
+    {
+        return IsCurrentlyTraveling() && !string.IsNullOrEmpty(TravelFinalDestinationId);
+    }
+
     // Combien de pas a fait le joueur depuis le debut du voyage ?
     public long GetTravelProgress(long currentTotalSteps)
     {
@@ -232,46 +258,17 @@ public class PlayerData
         return GetTravelProgress(currentTotalSteps) >= TravelRequiredSteps;
     }
 
-    // === NOUVEAU: Methodes utiles pour l'activite ===
+    // NOUVEAU: Methodes utiles pour les activites
 
-    /// <summary>
-    /// Verifie si le joueur a une activite active
-    /// </summary>
+    // Est-ce que le joueur a une activite active ?
     public bool HasActiveActivity()
     {
-        return CurrentActivity != null && CurrentActivity.IsActive();
+        return CurrentActivity != null;
     }
 
-    /// <summary>
-    /// Demarre une nouvelle activite
-    /// </summary>
-    public void StartActivity(string activityId, string variantId, long currentSteps, string locationId)
-    {
-        CurrentActivity = new ActivityData(activityId, variantId, currentSteps, locationId);
-        Logger.LogInfo($"PlayerData: Started activity {activityId}/{variantId} at {locationId}", Logger.LogCategory.General);
-    }
-
-    /// <summary>
-    /// Arrête l'activite en cours
-    /// </summary>
+    // Arreter l'activite courante
     public void StopActivity()
     {
-        if (HasActiveActivity())
-        {
-            Logger.LogInfo($"PlayerData: Stopped activity {CurrentActivity.ActivityId}/{CurrentActivity.VariantId}", Logger.LogCategory.General);
-        }
         CurrentActivity = null;
-    }
-
-    /// <summary>
-    /// Obtient des informations de debug sur l'activite courante
-    /// </summary>
-    public string GetActivityDebugInfo()
-    {
-        if (!HasActiveActivity())
-            return "No active activity";
-
-        var activity = CurrentActivity;
-        return $"Activity: {activity.ActivityId}/{activity.VariantId} - Steps: {activity.AccumulatedSteps} - Location: {activity.LocationId}";
     }
 }
