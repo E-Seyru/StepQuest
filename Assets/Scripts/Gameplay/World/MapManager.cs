@@ -414,41 +414,49 @@ public class MapTravelService
     }
 
     /// <summary>
-    /// NOUVEAU : Démarre un segment individuel du voyage
+    /// Démarre un segment individuel du voyage (multi-segment)
     /// </summary>
-    private void StartSegmentTravel(MapPathfindingService.PathSegment segment, DataManager dataManager)
+    private void StartSegmentTravel(MapPathfindingService.PathSegment segment,
+                                    DataManager dataManager)
     {
         long currentSteps = dataManager.PlayerData.TotalSteps;
+
+        // ➜ NOUVEAU : l’origine de CE segment devient le From du path-segment
+        dataManager.PlayerData.TravelOriginLocationId = segment.FromLocationId;
 
         // Configurer les données de voyage pour ce segment
         dataManager.PlayerData.TravelDestinationId = segment.ToLocationId;
         dataManager.PlayerData.TravelStartSteps = currentSteps;
         dataManager.PlayerData.TravelRequiredSteps = segment.StepCost;
 
-        // ⭐ NOUVEAU : Clear la location actuelle pour tous les segments (sauf si c'est déjà null)
-        if (manager.CurrentLocation != null)
-        {
-            manager.SetCurrentLocation(null);
-        }
+        var originLocationObj = manager.LocationRegistry.GetLocationById(segment.FromLocationId);
+        eventService.TriggerTravelStarted(segment.ToLocationId, originLocationObj, segment.StepCost);
 
-        // Sauvegarder le changement de segment
+        // On n’est « nulle part » pendant le déplacement
+        if (manager.CurrentLocation != null)
+            manager.SetCurrentLocation(null);
+
+        // Sauvegarder et réinitialiser le tracking
         dataManager.SaveGame();
         saveService.ResetSaveTracking(currentSteps);
 
-        Logger.LogInfo($"MapManager: Started segment {currentSegmentIndex + 1}/{currentPathDetails.Segments.Count} " +
-                      $"from {segment.FromLocationId} to {segment.ToLocationId} ({segment.StepCost} steps). CurrentLocation is null.", Logger.LogCategory.MapLog);
+        Logger.LogInfo(
+            $"MapManager: Started segment {currentSegmentIndex + 1}/{currentPathDetails.Segments.Count} " +
+            $"from {segment.FromLocationId} to {segment.ToLocationId} ({segment.StepCost} steps).",
+            Logger.LogCategory.MapLog);
 
-        // ⭐ NOUVEAU : Déclencher un événement pour notifier l'UI du changement de segment
+        // Notifier l’UI
         var destinationLocation = manager.LocationRegistry.GetLocationById(segment.ToLocationId);
         if (destinationLocation != null)
         {
-            // Pour l'événement, on utilise null comme CurrentLocation (on n'est nulle part)
             eventService.TriggerTravelStarted(segment.ToLocationId, null, segment.StepCost);
-            Logger.LogInfo($"MapManager: TravelStartedEvent triggered for segment to {destinationLocation.DisplayName}", Logger.LogCategory.MapLog);
+            Logger.LogInfo($"MapManager: TravelStartedEvent triggered for segment to {destinationLocation.DisplayName}",
+                           Logger.LogCategory.MapLog);
         }
         else
         {
-            Logger.LogWarning($"MapManager: Could not find destination location {segment.ToLocationId} for event trigger", Logger.LogCategory.MapLog);
+            Logger.LogWarning($"MapManager: Could not find destination location {segment.ToLocationId} for event trigger",
+                              Logger.LogCategory.MapLog);
         }
     }
 
@@ -487,35 +495,78 @@ public class MapTravelService
     }
 
     /// <summary>
-    /// NOUVEAU : Termine le segment actuel et démarre le suivant
+    /// Termine le segment courant, reporte les pas excédentaires sur le suivant
+    /// et enchaîne jusqu’à ce qu’il n’y ait plus de segments ou de pas en trop.
     /// </summary>
     private void CompleteCurrentSegment(DataManager dataManager)
     {
+        // ----- Segment courant ----------------------------------------------------
         var currentSegment = currentPathDetails.Segments[currentSegmentIndex];
-        var segmentDestination = manager.LocationRegistry.GetLocationById(currentSegment.ToLocationId);
+        var segmentDest = manager.LocationRegistry.GetLocationById(currentSegment.ToLocationId);
 
-        Logger.LogInfo($"MapManager: Completed segment {currentSegmentIndex + 1}/{currentPathDetails.Segments.Count} " +
-                      $"- arrived at {segmentDestination?.DisplayName}", Logger.LogCategory.MapLog);
+        Logger.LogInfo(
+            $"MapManager: Completed segment {currentSegmentIndex + 1}/{currentPathDetails.Segments.Count} " +
+            $"- arrived at {segmentDest?.DisplayName}",
+            Logger.LogCategory.MapLog);
 
-        // Mettre à jour la location actuelle
-        manager.SetCurrentLocation(segmentDestination);
+        // 1) Calcul du surplus de pas pour CE segment
+        long currentSteps = dataManager.PlayerData.TotalSteps;
+        long segmentStart = dataManager.PlayerData.TravelStartSteps;
+        int segmentCost = currentSegment.StepCost;
+        long leftoverSteps = currentSteps - segmentStart - segmentCost;
+        if (leftoverSteps < 0) leftoverSteps = 0;
+
+        // 2) Mise à jour de la position réelle du joueur
+        manager.SetCurrentLocation(segmentDest);
         dataManager.PlayerData.CurrentLocationId = currentSegment.ToLocationId;
 
-        // Nettoyer l'état du segment actuel
+        // 3) Nettoyage de l’état du segment terminé
         dataManager.PlayerData.TravelDestinationId = null;
         dataManager.PlayerData.TravelStartSteps = 0;
         dataManager.PlayerData.TravelRequiredSteps = 0;
 
-        // Passer au segment suivant
+        // ----- Segment suivant ----------------------------------------------------
         currentSegmentIndex++;
+
         if (currentSegmentIndex < currentPathDetails.Segments.Count)
         {
             var nextSegment = currentPathDetails.Segments[currentSegmentIndex];
+
+            // Démarre le nouveau segment (TravelStartSteps = currentSteps)
             StartSegmentTravel(nextSegment, dataManager);
+
+            // 3bis) Report immédiat du surplus de pas
+            if (leftoverSteps > 0)
+            {
+                // On “recule” le point de départ du segment suivant
+                dataManager.PlayerData.TravelStartSteps -= leftoverSteps;
+
+                Logger.LogInfo(
+                    $"MapManager: Carried over {leftoverSteps} surplus steps to next segment.",
+                    Logger.LogCategory.MapLog);
+
+                // Si ce surplus suffit pour finir encore un segment, on enchaîne
+                CheckTravelProgress();
+            }
+        }
+        else
+        {
+            // Aucun segment restant : voyage terminé
+            CompleteTravel();
         }
 
-        // Sauvegarder
+        // ----- Sauvegarde ---------------------------------------------------------
         dataManager.SaveGame();
+    }
+    private void ApplyLeftoverSteps(long leftoverSteps, DataManager dataManager)
+    {
+        if (leftoverSteps <= 0) return;
+
+        // On « remonte » TravelStartSteps pour que le surplus soit compté
+        dataManager.PlayerData.TravelStartSteps -= leftoverSteps;
+
+        Logger.LogInfo($"MapManager: Carried over {leftoverSteps} surplus steps to next segment.",
+                       Logger.LogCategory.MapLog);
     }
 
     public void CompleteTravel()
