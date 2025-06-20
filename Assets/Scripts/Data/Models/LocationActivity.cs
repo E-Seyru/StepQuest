@@ -175,21 +175,21 @@ public class LocationActivity
         // Check if we have a valid ActivityReference
         if (ActivityReference == null)
         {
-            Debug.LogError($"LocationActivity: ActivityReference is null!");
+            Logger.LogError($"LocationActivity: ActivityReference is null!", Logger.LogCategory.General);
             return false;
         }
 
         // Check if the referenced activity is valid
         if (!ActivityReference.IsValid())
         {
-            Debug.LogError($"LocationActivity: ActivityReference '{ActivityReference.ActivityID}' is not valid!");
+            Logger.LogError($"LocationActivity: ActivityReference '{ActivityReference.ActivityID}' is not valid!", Logger.LogCategory.General);
             return false;
         }
 
         // Check if we have at least one valid variant
         if (ActivityVariants == null || ActivityVariants.Count == 0)
         {
-            Debug.LogError($"LocationActivity '{ActivityId}': No activity variants assigned!");
+            Logger.LogError($"LocationActivity '{ActivityId}': No activity variants assigned!", Logger.LogCategory.General);
             return false;
         }
 
@@ -205,7 +205,7 @@ public class LocationActivity
 
         if (!hasValidVariant)
         {
-            Debug.LogError($"LocationActivity '{ActivityId}': No valid variants found!");
+            Logger.LogError($"LocationActivity '{ActivityId}': No valid variants found!", Logger.LogCategory.General);
             return false;
         }
 

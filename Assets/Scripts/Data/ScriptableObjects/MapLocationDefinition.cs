@@ -179,7 +179,7 @@ public class MapLocationDefinition : ScriptableObject
 
         if (errors.Count > 0)
         {
-            Debug.LogError($"MapLocationDefinition '{name}' validation failed:\n{string.Join("\n", errors)}");
+            Logger.LogError($"MapLocationDefinition '{name}' validation failed:\n{string.Join("\n", errors)}", Logger.LogCategory.General);
             return false;
         }
 

@@ -182,9 +182,9 @@ public class RuntimePlayerDataFixer : MonoBehaviour
         UpdateStatusText(diagnosis);
 
         // Also log to console for more details
-        Debug.Log("=== RUNTIME DIAGNOSTIC ===");
-        Debug.Log(diagnosis.Replace("\n", " | "));
-        Debug.Log("=== END DIAGNOSTIC ===");
+        Logger.LogInfo("=== RUNTIME DIAGNOSTIC ===", Logger.LogCategory.General);
+        Logger.LogInfo(diagnosis.Replace("\n", " | "), Logger.LogCategory.General);
+        Logger.LogInfo("=== END DIAGNOSTIC ===", Logger.LogCategory.General);
     }
 
     public void RepairTravelState()
@@ -213,7 +213,7 @@ public class RuntimePlayerDataFixer : MonoBehaviour
             dataManager?.ForceSave();
 
             UpdateStatusText($"SUCCESS: Etat voyage repare!\nSupprime: {oldDest}");
-            Debug.Log($"RuntimeFixer: Repaired travel state - removed destination '{oldDest}'");
+            Logger.LogInfo($"RuntimeFixer: Repaired travel state - removed destination '{oldDest}'", Logger.LogCategory.General);
         }
         else
         {
@@ -242,7 +242,7 @@ public class RuntimePlayerDataFixer : MonoBehaviour
             dataManager?.ForceSave();
 
             UpdateStatusText($"SUCCESS: Activite arretee!\nSupprime: {oldActivity}");
-            Debug.Log($"RuntimeFixer: Repaired activity state - stopped '{oldActivity}'");
+            Logger.LogInfo($"RuntimeFixer: Repaired activity state - stopped '{oldActivity}'", Logger.LogCategory.General);
         }
         else
         {
@@ -297,14 +297,14 @@ public class RuntimePlayerDataFixer : MonoBehaviour
             report += "\n   • Voyager vers d'autres POI";
             report += "\n   • Commencer des activites";
 
-            Debug.Log("RuntimeFixer: Full repair completed with changes");
+            Logger.LogInfo("RuntimeFixer: Full repair completed with changes", Logger.LogCategory.General);
         }
         else
         {
             report += "INFO: Aucune reparation necessaire\n";
             report += "Tout etait deja OK!";
 
-            Debug.Log("RuntimeFixer: Full repair completed - no issues found");
+            Logger.LogInfo("RuntimeFixer: Full repair completed - no issues found", Logger.LogCategory.General);
         }
 
         UpdateStatusText(report);
@@ -320,7 +320,7 @@ public class RuntimePlayerDataFixer : MonoBehaviour
         // Also log important messages
         if (text.Contains("SUCCESS") || text.Contains("PROBLEME"))
         {
-            Debug.Log($"RuntimePlayerDataFixer: {text.Replace("\n", " | ")}");
+            Logger.LogInfo($"RuntimePlayerDataFixer: {text.Replace("\n", " | ")}", Logger.LogCategory.General);
         }
     }
 
