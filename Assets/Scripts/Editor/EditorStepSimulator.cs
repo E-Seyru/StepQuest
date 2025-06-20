@@ -1,4 +1,4 @@
-﻿// Purpose: Simulateur de pas pour tester le jeu dans l'éditeur Unity
+﻿// Purpose: Simulateur de pas pour tester le jeu dans l'editeur Unity
 // Filepath: Assets/Scripts/Editor/EditorStepSimulator.cs
 #if UNITY_EDITOR
 using System;
@@ -120,7 +120,7 @@ public class EditorStepSimulator : EditorWindow
         GUILayout.Label("✋ Contrôle Manuel", EditorStyles.boldLabel);
 
         EditorGUILayout.BeginHorizontal();
-        stepsToAdd = EditorGUILayout.IntField("Pas à ajouter", stepsToAdd);
+        stepsToAdd = EditorGUILayout.IntField("Pas a ajouter", stepsToAdd);
         if (GUILayout.Button("Ajouter", GUILayout.Width(80)))
         {
             AddStepsInternal(stepsToAdd);
@@ -203,7 +203,7 @@ public class EditorStepSimulator : EditorWindow
         GUI.backgroundColor = Color.red;
         if (GUILayout.Button("⚠️ Reset Complet"))
         {
-            if (EditorUtility.DisplayDialog("Confirmation", "Voulez-vous vraiment remettre tous les pas à zéro ?", "Oui", "Annuler"))
+            if (EditorUtility.DisplayDialog("Confirmation", "Voulez-vous vraiment remettre tous les pas a zero ?", "Oui", "Annuler"))
             {
                 ResetAllSteps();
             }
@@ -230,27 +230,27 @@ public class EditorStepSimulator : EditorWindow
 
         if (dataManager?.PlayerData == null)
         {
-            Debug.LogWarning("Simulator: DataManager ou PlayerData non trouvé!");
+            Debug.LogWarning("Simulator: DataManager ou PlayerData non trouve!");
             return false;
         }
 
         long oldTotal = dataManager.PlayerData.TotalSteps;
         long oldDaily = dataManager.PlayerData.DailySteps;
 
-        // DIRECT: Ajouter les pas sans passer par des systèmes compliqués
+        // DIRECT: Ajouter les pas sans passer par des systèmes compliques
         dataManager.PlayerData.TotalPlayerSteps += steps;
         dataManager.PlayerData.DailySteps += steps;
 
-        // Mettre à jour les timestamps
+        // Mettre a jour les timestamps
         long nowMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         dataManager.PlayerData.LastStepsChangeEpochMs = nowMs;
         dataManager.PlayerData.LastSyncEpochMs = nowMs;
         dataManager.PlayerData.LastPauseEpochMs = nowMs;
 
-        // Sauvegarder immédiatement
+        // Sauvegarder immediatement
         dataManager.SaveGame();
 
-        // Forcer la mise à jour de l'UI
+        // Forcer la mise a jour de l'UI
         UpdateStatus();
         Repaint();
 
@@ -260,7 +260,7 @@ public class EditorStepSimulator : EditorWindow
             uiManager.ForceUIUpdate();
         }
 
-        Debug.Log($"Simulator: Ajouté {steps} pas. Total: {oldTotal} → {dataManager.PlayerData.TotalSteps}, Quotidien: {oldDaily} → {dataManager.PlayerData.DailySteps}");
+        Debug.Log($"Simulator: Ajoute {steps} pas. Total: {oldTotal} → {dataManager.PlayerData.TotalSteps}, Quotidien: {oldDaily} → {dataManager.PlayerData.DailySteps}");
         return true;
     }
 
@@ -280,7 +280,7 @@ public class EditorStepSimulator : EditorWindow
         UpdateStatus();
         Repaint();
 
-        Debug.Log($"Simulator: Nouveau jour simulé! Date: {tomorrow}");
+        Debug.Log($"Simulator: Nouveau jour simule! Date: {tomorrow}");
     }
 
     void ResetDailySteps()
@@ -297,7 +297,7 @@ public class EditorStepSimulator : EditorWindow
         UpdateStatus();
         Repaint();
 
-        Debug.Log("Simulator: Pas quotidiens remis à zéro");
+        Debug.Log("Simulator: Pas quotidiens remis a zero");
     }
 
     void ClearTravelState()
@@ -338,7 +338,7 @@ public class EditorStepSimulator : EditorWindow
         UpdateStatus();
         Repaint();
 
-        Debug.Log("Simulator: Tous les pas remis à zéro");
+        Debug.Log("Simulator: Tous les pas remis a zero");
     }
 }
 #endif

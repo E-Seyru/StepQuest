@@ -195,7 +195,7 @@ public class MapLocationService
             manager.SetCurrentLocation(currentLocation);
             Logger.LogInfo($"MapManager: Current location loaded: {currentLocation.DisplayName} ({currentLocationId})", Logger.LogCategory.MapLog);
 
-            // Si on est en voyage, restaurer l'état au démarrage
+            // Si on est en voyage, restaurer l'etat au demarrage
             if (dataManager.PlayerData.IsCurrentlyTraveling())
             {
                 long currentTotalSteps = dataManager.PlayerData.TotalSteps;
@@ -267,18 +267,18 @@ public class MapTravelService
         int stepCost = manager.LocationRegistry.GetTravelCost(manager.CurrentLocation.LocationID, destinationLocationId);
         long currentSteps = dataManager.PlayerData.TotalSteps;
 
-        // Configurer les données de voyage
+        // Configurer les donnees de voyage
         dataManager.PlayerData.TravelDestinationId = destinationLocationId;
         dataManager.PlayerData.TravelStartSteps = currentSteps;
         dataManager.PlayerData.TravelRequiredSteps = stepCost;
 
-        // Sauvegarder immédiatement le début du voyage
+        // Sauvegarder immediatement le debut du voyage
         dataManager.SaveGame();
         saveService.ResetSaveTracking(currentSteps);
 
         Logger.LogInfo($"MapManager: Started travel from {manager.CurrentLocation.LocationID} to {destinationLocationId} ({stepCost} steps)", Logger.LogCategory.MapLog);
 
-        // Déclencher l'événement
+        // Declencher l'evenement
         eventService.TriggerTravelStarted(destinationLocationId, manager.CurrentLocation, stepCost);
     }
 
@@ -292,7 +292,7 @@ public class MapTravelService
         int requiredSteps = dataManager.PlayerData.TravelRequiredSteps;
         long progressSteps = dataManager.PlayerData.GetTravelProgress(currentTotalSteps);
 
-        // Mettre à jour la sauvegarde si nécessaire
+        // Mettre a jour la sauvegarde si necessaire
         saveService.CheckAndSaveProgress(currentTotalSteps, progressSteps);
 
         // Log progress moins souvent
@@ -302,14 +302,14 @@ public class MapTravelService
             Logger.LogInfo($"MapManager: Travel progress {progressSteps}/{requiredSteps} steps to {destinationId}", Logger.LogCategory.MapLog);
         }
 
-        // Déclencher l'événement de progrès
-        if ((int)progressSteps != lastProgressSteps) // Seulement si ça a changé !
+        // Declencher l'evenement de progrès
+        if ((int)progressSteps != lastProgressSteps) // Seulement si ça a change !
         {
             eventService.TriggerTravelProgress(destinationId, (int)progressSteps, requiredSteps);
             lastProgressSteps = (int)progressSteps;
         }
 
-        // Vérifier si le voyage est terminé
+        // Verifier si le voyage est termine
         if (dataManager.PlayerData.IsTravelComplete(currentTotalSteps))
         {
             CompleteTravel();
@@ -338,28 +338,28 @@ public class MapTravelService
 
         Logger.LogInfo($"MapManager: Travel completed! Arrived at {destinationLocation.DisplayName} after {stepsTaken} steps", Logger.LogCategory.MapLog);
 
-        // Garder référence de l'ancienne location pour l'événement
+        // Garder reference de l'ancienne location pour l'evenement
         var previousLocation = manager.CurrentLocation;
 
-        // Mettre à jour la location du joueur
+        // Mettre a jour la location du joueur
         dataManager.PlayerData.CurrentLocationId = destinationId;
 
-        // Nettoyer les données de voyage
+        // Nettoyer les donnees de voyage
         dataManager.PlayerData.TravelDestinationId = null;
         dataManager.PlayerData.TravelStartSteps = 0;
         dataManager.PlayerData.TravelRequiredSteps = 0;
 
-        // Mettre à jour la location actuelle dans le manager
+        // Mettre a jour la location actuelle dans le manager
         manager.SetCurrentLocation(destinationLocation);
 
         // Reset du tracking de sauvegarde
         saveService.ResetSaveTracking(-1);
 
-        // Sauvegarde immédiate et obligatoire à la fin du voyage
+        // Sauvegarde immediate et obligatoire a la fin du voyage
         dataManager.SaveGame();
         Logger.LogInfo($"MapManager: Travel state cleared and game saved", Logger.LogCategory.MapLog);
 
-        // Déclencher les événements APRÈS que tout l'état soit mis à jour et sauvé
+        // Declencher les evenements APRÈS que tout l'etat soit mis a jour et sauve
         eventService.TriggerTravelCompleted(destinationId, destinationLocation, stepsTaken);
         eventService.TriggerLocationChanged(previousLocation, destinationLocation);
     }
@@ -432,7 +432,7 @@ public class MapTravelService
         long currentTotalSteps = dataManager.PlayerData.TotalSteps;
         long travelProgress = dataManager.PlayerData.GetTravelProgress(currentTotalSteps);
 
-        // Vérifications de cohérence
+        // Verifications de coherence
         if (string.IsNullOrEmpty(destination))
         {
             Logger.LogWarning($"MapManager: Invalid travel destination. Clearing travel state.", Logger.LogCategory.MapLog);
@@ -454,7 +454,7 @@ public class MapTravelService
             return;
         }
 
-        // Si le voyage est déjà terminé selon les pas, le compléter immédiatement
+        // Si le voyage est deja termine selon les pas, le completer immediatement
         if (dataManager.PlayerData.IsTravelComplete(currentTotalSteps))
         {
             Logger.LogInfo($"MapManager: Travel already complete on startup - completing now", Logger.LogCategory.MapLog);

@@ -105,12 +105,12 @@ public class MapLocationDefinition : ScriptableObject
         var validActivities = GetAvailableActivities();
 
         if (validActivities.Count == 0)
-            return "Aucune activité disponible";
+            return "Aucune activite disponible";
 
         if (validActivities.Count == 1)
-            return $"1 activité: {validActivities[0].GetDisplayName()}";
+            return $"1 activite: {validActivities[0].GetDisplayName()}";
 
-        return $"{validActivities.Count} activités disponibles";
+        return $"{validActivities.Count} activites disponibles";
     }
 
     /// <summary>
@@ -191,10 +191,10 @@ public class MapLocationDefinition : ScriptableObject
     /// </summary>
     public Sprite GetIcon()
     {
-        // Retourne l'icône spécifique de la location (vérification Unity-safe)
+        // Retourne l'icône specifique de la location (verification Unity-safe)
         if (LocationIcon != null) return LocationIcon;
 
-        // Fallback possible : icône par défaut selon le type de location
+        // Fallback possible : icône par defaut selon le type de location
         // if (Type == LocationType.Village && defaultVillageIcon != null) return defaultVillageIcon;
         // if (Type == LocationType.Forest && defaultForestIcon != null) return defaultForestIcon;
 
@@ -203,7 +203,7 @@ public class MapLocationDefinition : ScriptableObject
     }
 
     /// <summary>
-    /// Version alternative avec icône par défaut
+    /// Version alternative avec icône par defaut
     /// </summary>
     public Sprite GetIconWithFallback(Sprite defaultIcon = null)
     {

@@ -62,7 +62,7 @@ public class InventoryPanelUI : MonoBehaviour
 
     void Update()
     {
-        // Désélectionner automatiquement si on clique/touche en dehors (mobile-friendly)
+        // Deselectionner automatiquement si on clique/touche en dehors (mobile-friendly)
         CheckForDeselection();
     }
 
@@ -76,13 +76,13 @@ public class InventoryPanelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Vérifier si on doit désélectionner automatiquement (mobile-friendly)
+    /// Verifier si on doit deselectionner automatiquement (mobile-friendly)
     /// </summary>
     private void CheckForDeselection()
     {
         if (selectedSlot == null) return;
 
-        // Détecter clic/touch sur mobile et desktop
+        // Detecter clic/touch sur mobile et desktop
         bool inputDetected = false;
 
         // Pour mobile (touch)
@@ -102,7 +102,7 @@ public class InventoryPanelUI : MonoBehaviour
 
         if (inputDetected)
         {
-            // Vérifier si le clic/touch est en dehors de l'inventaire
+            // Verifier si le clic/touch est en dehors de l'inventaire
             if (!IsPointerOverInventoryArea())
             {
                 DeselectCurrentSlot();
@@ -117,7 +117,7 @@ public class InventoryPanelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Vérifier si le pointeur/touch est sur la zone d'inventaire
+    /// Verifier si le pointeur/touch est sur la zone d'inventaire
     /// </summary>
     private bool IsPointerOverInventoryArea()
     {
@@ -133,18 +133,18 @@ public class InventoryPanelUI : MonoBehaviour
             screenPosition = Input.mousePosition;
         }
 
-        // Vérifier si on est sur l'ItemActionPanel (ne pas désélectionner si on clique dessus)
+        // Verifier si on est sur l'ItemActionPanel (ne pas deselectionner si on clique dessus)
         if (ItemActionPanel.Instance != null && ItemActionPanel.Instance.gameObject.activeInHierarchy)
         {
             RectTransform actionPanelRect = ItemActionPanel.Instance.GetComponent<RectTransform>();
             if (actionPanelRect != null && RectTransformUtility.RectangleContainsScreenPoint(
                 actionPanelRect, screenPosition, Camera.main))
             {
-                return true; // On est sur l'ActionPanel, ne pas désélectionner
+                return true; // On est sur l'ActionPanel, ne pas deselectionner
             }
         }
 
-        // Vérifier si on est sur un slot d'inventaire
+        // Verifier si on est sur un slot d'inventaire
         foreach (var slot in slotUIs)
         {
             if (slot != null && RectTransformUtility.RectangleContainsScreenPoint(
@@ -154,7 +154,7 @@ public class InventoryPanelUI : MonoBehaviour
             }
         }
 
-        // Vérifier si on est sur la zone de l'inventaire en général
+        // Verifier si on est sur la zone de l'inventaire en general
         RectTransform inventoryRect = GetComponent<RectTransform>();
         if (inventoryRect != null)
         {
@@ -166,7 +166,7 @@ public class InventoryPanelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Désélectionner le slot actuel
+    /// Deselectionner le slot actuel
     /// </summary>
     private void DeselectCurrentSlot()
     {
@@ -286,11 +286,11 @@ public class InventoryPanelUI : MonoBehaviour
             if (selectedSlot != null && !selectedSlot.IsEmpty())
             {
                 var slot = selectedSlot.GetSlotData();
-                selectedItemText.text = $"Sélectionné: {slot.ItemID} x{slot.Quantity}";
+                selectedItemText.text = $"Selectionne: {slot.ItemID} x{slot.Quantity}";
             }
             else
             {
-                selectedItemText.text = "Aucun objet sélectionné";
+                selectedItemText.text = "Aucun objet selectionne";
             }
         }
     }

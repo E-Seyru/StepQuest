@@ -1,4 +1,4 @@
-﻿// Purpose: Script de debug pour identifier les références fantômes dans ActivityRegistry
+﻿// Purpose: Script de debug pour identifier les references fantômes dans ActivityRegistry
 // Filepath: Assets/Scripts/Debug/ActivityRegistryDebugger.cs
 #if UNITY_EDITOR
 using UnityEditor;
@@ -25,18 +25,18 @@ public class ActivityRegistryDebugger : EditorWindow
 
         if (activityRegistry == null)
         {
-            EditorGUILayout.HelpBox("Sélectionnez votre ActivityRegistry pour le débugger", MessageType.Info);
+            EditorGUILayout.HelpBox("Selectionnez votre ActivityRegistry pour le debugger", MessageType.Info);
             return;
         }
 
         EditorGUILayout.Space();
 
-        if (GUILayout.Button("Analyser les Références"))
+        if (GUILayout.Button("Analyser les References"))
         {
             AnalyzeRegistry();
         }
 
-        if (GUILayout.Button("Nettoyer les Références Nulles"))
+        if (GUILayout.Button("Nettoyer les References Nulles"))
         {
             CleanNullReferences();
         }
@@ -63,7 +63,7 @@ public class ActivityRegistryDebugger : EditorWindow
             return;
         }
 
-        Debug.Log($"Nombre total d'activités : {activityRegistry.AllActivities.Count}");
+        Debug.Log($"Nombre total d'activites : {activityRegistry.AllActivities.Count}");
 
         for (int i = 0; i < activityRegistry.AllActivities.Count; i++)
         {
@@ -82,7 +82,7 @@ public class ActivityRegistryDebugger : EditorWindow
             }
 
             var activityDef = locationActivity.ActivityReference;
-            Debug.Log($"Activité[{i}] : '{activityDef.ActivityID}' - '{activityDef.ActivityName}'");
+            Debug.Log($"Activite[{i}] : '{activityDef.ActivityID}' - '{activityDef.ActivityName}'");
 
             if (locationActivity.ActivityVariants != null)
             {
@@ -92,11 +92,11 @@ public class ActivityRegistryDebugger : EditorWindow
 
                     if (variant == null)
                     {
-                        Debug.LogWarning($"  Variant[{j}] est null pour l'activité '{activityDef.ActivityID}' !");
+                        Debug.LogWarning($"  Variant[{j}] est null pour l'activite '{activityDef.ActivityID}' !");
                         continue;
                     }
 
-                    // Vérifier le ParentActivityID
+                    // Verifier le ParentActivityID
                     string parentId = variant.GetParentActivityID();
                     string expectedId = activityDef.ActivityID;
 
@@ -105,10 +105,10 @@ public class ActivityRegistryDebugger : EditorWindow
                     if (parentId != expectedId)
                     {
                         Debug.LogError($"  ❌ PROBLÈME : Le variant '{variant.VariantName}' a un ParentActivityID '{parentId}' " +
-                                     $"mais il est associé à l'activité '{expectedId}' !");
+                                     $"mais il est associe a l'activite '{expectedId}' !");
                     }
 
-                    // Vérifier les ressources
+                    // Verifier les ressources
                     if (variant.PrimaryResource == null)
                     {
                         Debug.LogWarning($"  ⚠️ Le variant '{variant.VariantName}' n'a pas de ressource primaire !");
@@ -117,11 +117,11 @@ public class ActivityRegistryDebugger : EditorWindow
             }
             else
             {
-                Debug.LogWarning($"  L'activité '{activityDef.ActivityID}' n'a aucun variant !");
+                Debug.LogWarning($"  L'activite '{activityDef.ActivityID}' n'a aucun variant !");
             }
         }
 
-        // Chercher des références à "Mining"
+        // Chercher des references a "Mining"
         SearchForMiningReferences();
     }
 
@@ -144,7 +144,7 @@ public class ActivityRegistryDebugger : EditorWindow
                 if (parentId.Contains("Mining") || parentId.Contains("mining"))
                 {
                     Debug.LogError($"❌ TROUVÉ : Le variant '{variant.VariantName}' dans '{path}' " +
-                                 $"référence '{parentId}' qui contient 'Mining' !");
+                                 $"reference '{parentId}' qui contient 'Mining' !");
                 }
             }
         }
@@ -161,7 +161,7 @@ public class ActivityRegistryDebugger : EditorWindow
             {
                 if (activity.ActivityID.Contains("Mining") || activity.ActivityID.Contains("mining"))
                 {
-                    Debug.LogError($"❌ TROUVÉ : L'activité '{activity.ActivityName}' dans '{path}' " +
+                    Debug.LogError($"❌ TROUVÉ : L'activite '{activity.ActivityName}' dans '{path}' " +
                                  $"a un ID '{activity.ActivityID}' qui contient 'Mining' !");
                 }
             }
@@ -186,7 +186,7 @@ public class ActivityRegistryDebugger : EditorWindow
             }
         }
 
-        // Nettoyer les variants nulls dans chaque activité
+        // Nettoyer les variants nulls dans chaque activite
         foreach (var locationActivity in activityRegistry.AllActivities)
         {
             if (locationActivity.ActivityVariants != null)
@@ -207,11 +207,11 @@ public class ActivityRegistryDebugger : EditorWindow
         {
             EditorUtility.SetDirty(activityRegistry);
             AssetDatabase.SaveAssets();
-            Debug.Log("✅ Nettoyage terminé. Registry sauvegardé.");
+            Debug.Log("✅ Nettoyage termine. Registry sauvegarde.");
         }
         else
         {
-            Debug.Log("Aucune référence nulle trouvée.");
+            Debug.Log("Aucune reference nulle trouvee.");
         }
     }
 
@@ -225,7 +225,7 @@ public class ActivityRegistryDebugger : EditorWindow
         EditorUtility.SetDirty(activityRegistry);
         AssetDatabase.SaveAssets();
 
-        Debug.Log("✅ Cache reconstruit et registry validé.");
+        Debug.Log("✅ Cache reconstruit et registry valide.");
     }
 
     private void DisplayRegistryContents()
@@ -240,7 +240,7 @@ public class ActivityRegistryDebugger : EditorWindow
 
             EditorGUILayout.BeginVertical("box");
 
-            EditorGUILayout.LabelField($"Activité: {locationActivity.ActivityReference.ActivityID}", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField($"Activite: {locationActivity.ActivityReference.ActivityID}", EditorStyles.boldLabel);
 
             if (locationActivity.ActivityVariants != null)
             {

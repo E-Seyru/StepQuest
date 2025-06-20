@@ -16,8 +16,8 @@ public class TravelProgressBar : MonoBehaviour
     [SerializeField] private Image progressBarFill;
 
     [Header("Settings")]
-    [SerializeField] private float updateInterval = 0.5f; // Fréquence de mise à jour
-    [SerializeField] private float animationDuration = 0.3f; // Durée d'animation LeanTween
+    [SerializeField] private float updateInterval = 0.5f; // Frequence de mise a jour
+    [SerializeField] private float animationDuration = 0.3f; // Duree d'animation LeanTween
 
     // État interne
     private MapManager mapManager;
@@ -41,37 +41,37 @@ public class TravelProgressBar : MonoBehaviour
             return;
         }
 
-        // Cacher la barre au démarrage
+        // Cacher la barre au demarrage
         HideProgressBar();
     }
 
     void Start()
     {
-        // Obtenir les références
+        // Obtenir les references
         mapManager = MapManager.Instance;
         dataManager = DataManager.Instance;
 
         // =====================================
-        // EVENTBUS - S'abonner aux événements de voyage
+        // EVENTBUS - S'abonner aux evenements de voyage
         // =====================================
         EventBus.Subscribe<TravelStartedEvent>(OnTravelStarted);
         EventBus.Subscribe<TravelCompletedEvent>(OnTravelCompleted);
         EventBus.Subscribe<TravelProgressEvent>(OnTravelProgress);
 
-        // Validation des références
+        // Validation des references
         ValidateReferences();
 
-        // Configurer le séparateur
+        // Configurer le separateur
         if (separatorText != null)
         {
             separatorText.text = "/";
         }
 
-        // NOUVEAU: Vérifier si on est déjà en voyage au démarrage
+        // NOUVEAU: Verifier si on est deja en voyage au demarrage
         StartCoroutine(CheckTravelStateOnStart());
     }
 
-    // NOUVEAU: Vérifier l'état de voyage au démarrage
+    // NOUVEAU: Verifier l'etat de voyage au demarrage
     private System.Collections.IEnumerator CheckTravelStateOnStart()
     {
         // Attendre que tous les managers soient prêts
@@ -92,7 +92,7 @@ public class TravelProgressBar : MonoBehaviour
     void OnDestroy()
     {
         // =====================================
-        // EVENTBUS - Se désabonner des événements
+        // EVENTBUS - Se desabonner des evenements
         // =====================================
         EventBus.Unsubscribe<TravelStartedEvent>(OnTravelStarted);
         EventBus.Unsubscribe<TravelCompletedEvent>(OnTravelCompleted);
@@ -101,7 +101,7 @@ public class TravelProgressBar : MonoBehaviour
 
     void Update()
     {
-        // Mise à jour périodique si en voyage
+        // Mise a jour periodique si en voyage
         if (isVisible && Time.time - lastUpdateTime > updateInterval)
         {
             UpdateProgressDisplay();
@@ -112,7 +112,7 @@ public class TravelProgressBar : MonoBehaviour
     // === GESTIONNAIRES D'ÉVÉNEMENTS - ADAPTÉS POUR EVENTBUS ===
 
     /// <summary>
-    /// Appelé quand un voyage commence
+    /// Appele quand un voyage commence
     /// </summary>
     private void OnTravelStarted(TravelStartedEvent eventData)
     {
@@ -124,18 +124,18 @@ public class TravelProgressBar : MonoBehaviour
     }
 
     /// <summary>
-    /// Appelé quand un voyage se termine
+    /// Appele quand un voyage se termine
     /// </summary>
     private void OnTravelCompleted(TravelCompletedEvent eventData)
     {
-        // Animer jusqu'à 100% puis cacher
+        // Animer jusqu'a 100% puis cacher
         AnimateToComplete(() => HideProgressBar());
 
         Logger.LogInfo($"TravelProgressBar: Travel completed to {eventData.NewLocation?.DisplayName ?? eventData.DestinationLocationId}", Logger.LogCategory.MapLog);
     }
 
     /// <summary>
-    /// Appelé pendant le voyage pour mettre à jour le progrès
+    /// Appele pendant le voyage pour mettre a jour le progrès
     /// </summary>
     private void OnTravelProgress(TravelProgressEvent eventData)
     {
@@ -143,7 +143,7 @@ public class TravelProgressBar : MonoBehaviour
     }
 
     /// <summary>
-    /// Met à jour le texte de destination
+    /// Met a jour le texte de destination
     /// </summary>
     private void UpdateProgressText(string destinationId)
     {
@@ -168,7 +168,7 @@ public class TravelProgressBar : MonoBehaviour
     }
 
     /// <summary>
-    /// Met à jour l'affichage du progrès
+    /// Met a jour l'affichage du progrès
     /// </summary>
     private void UpdateProgressDisplay()
     {
@@ -185,11 +185,11 @@ public class TravelProgressBar : MonoBehaviour
     }
 
     /// <summary>
-    /// Met à jour les valeurs de progrès et anime si nécessaire
+    /// Met a jour les valeurs de progrès et anime si necessaire
     /// </summary>
     private void UpdateProgressValues(int currentSteps, int requiredSteps)
     {
-        // Mise à jour des textes
+        // Mise a jour des textes
         if (currentStepText != null)
         {
             currentStepText.text = currentSteps.ToString();
@@ -200,7 +200,7 @@ public class TravelProgressBar : MonoBehaviour
             totalRequiredText.text = requiredSteps.ToString();
         }
 
-        // Animation de la barre de progression si elle a changé
+        // Animation de la barre de progression si elle a change
         if (progressBarFill != null && currentSteps != lastCurrentSteps)
         {
             float progress = requiredSteps > 0 ? (float)currentSteps / requiredSteps : 0f;
@@ -219,7 +219,7 @@ public class TravelProgressBar : MonoBehaviour
     }
 
     /// <summary>
-    /// Anime la barre jusqu'à 100% puis exécute un callback
+    /// Anime la barre jusqu'a 100% puis execute un callback
     /// </summary>
     private void AnimateToComplete(System.Action onComplete = null)
     {
@@ -285,7 +285,7 @@ public class TravelProgressBar : MonoBehaviour
     }
 
     /// <summary>
-    /// Validation des références UI
+    /// Validation des references UI
     /// </summary>
     private void ValidateReferences()
     {
@@ -306,7 +306,7 @@ public class TravelProgressBar : MonoBehaviour
     }
 
     /// <summary>
-    /// Force une mise à jour manuelle (utile pour le debug)
+    /// Force une mise a jour manuelle (utile pour le debug)
     /// </summary>
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     public void ForceUpdate()

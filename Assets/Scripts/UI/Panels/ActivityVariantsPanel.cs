@@ -157,7 +157,7 @@ public class ActivityVariantsPanel : MonoBehaviour
     {
         Debug.Log($"Variant selected: {variant.VariantName}");
 
-        // MODIFIE : Démarrer l'activité via ActivityManager avec détection automatique du type
+        // MODIFIE : Demarrer l'activite via ActivityManager avec detection automatique du type
         if (ActivityManager.Instance != null && currentActivity != null)
         {
             string activityId = currentActivity.ActivityId;
@@ -165,7 +165,7 @@ public class ActivityVariantsPanel : MonoBehaviour
 
             bool success;
 
-            // NOUVEAU : Vérifier le type d'activité et appeler la bonne méthode
+            // NOUVEAU : Verifier le type d'activite et appeler la bonne methode
             if (variant.IsTimeBased)
             {
                 Debug.Log($"Starting time-based activity: {variant.GetDisplayName()}");

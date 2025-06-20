@@ -13,7 +13,7 @@ public class ItemRegistry : ScriptableObject
 
     [Header("Robustness Settings")]
     [SerializeField] private bool enableFallbackSearch = true;
-    [SerializeField] private bool logMissingItems = false; // Désactivé par défaut pour éviter le spam
+    [SerializeField] private bool logMissingItems = false; // Desactive par defaut pour eviter le spam
 
     [Header("Debug Info")]
     [Tooltip("Shows validation errors if any")]
@@ -22,7 +22,7 @@ public class ItemRegistry : ScriptableObject
 
     // Cache for fast lookup
     private Dictionary<string, ItemDefinition> itemLookup;
-    private HashSet<string> loggedMissingItems = new HashSet<string>(); // Pour éviter le spam de logs
+    private HashSet<string> loggedMissingItems = new HashSet<string>(); // Pour eviter le spam de logs
 
     /// <summary>
     /// Get item by ID (fast lookup via cache) - ROBUST VERSION
@@ -37,7 +37,7 @@ public class ItemRegistry : ScriptableObject
 
         if (string.IsNullOrEmpty(itemId))
         {
-            return null; // Pas de log pour éviter le spam
+            return null; // Pas de log pour eviter le spam
         }
 
         // Try to get item from cache
@@ -67,7 +67,7 @@ public class ItemRegistry : ScriptableObject
     }
 
     /// <summary>
-    /// Cherche un item par nom si l'ID exact n'est pas trouvé
+    /// Cherche un item par nom si l'ID exact n'est pas trouve
     /// </summary>
     private ItemDefinition FindItemByNameFallback(string itemId)
     {
@@ -321,7 +321,7 @@ public class ItemRegistry : ScriptableObject
     /// </summary>
     void OnEnable()
     {
-        // Auto-clean silencieusement au démarrage
+        // Auto-clean silencieusement au demarrage
         CleanNullReferences();
         RefreshCache();
     }

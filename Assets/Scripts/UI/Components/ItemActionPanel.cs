@@ -189,7 +189,7 @@ public class ItemActionPanel : MonoBehaviour
         // Quantity
         if (quantityText != null)
         {
-            quantityText.text = $"Quantité: {itemSlot.Quantity}";
+            quantityText.text = $"Quantite: {itemSlot.Quantity}";
         }
     }
 
@@ -254,7 +254,7 @@ public class ItemActionPanel : MonoBehaviour
             LeanTween.cancel(currentTween);
         }
 
-        // Animation simple : Scale de 0 à 1 (pop effect)
+        // Animation simple : Scale de 0 a 1 (pop effect)
         rectTransform.localScale = Vector3.zero;
 
         currentTween = LeanTween.scale(gameObject, Vector3.one, animationDuration)
@@ -276,7 +276,7 @@ public class ItemActionPanel : MonoBehaviour
             LeanTween.cancel(currentTween);
         }
 
-        // Animation simple : Scale de 1 à 0
+        // Animation simple : Scale de 1 a 0
         currentTween = LeanTween.scale(gameObject, Vector3.zero, animationDuration)
             .setEase(slideOutEase)
             .setOnComplete(() =>

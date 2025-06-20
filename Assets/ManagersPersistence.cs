@@ -7,7 +7,7 @@ public class ManagersPersistence : MonoBehaviour
 
     void Awake()
     {
-        // Singleton pour éviter les doublons de managers
+        // Singleton pour eviter les doublons de managers
         if (Instance != null && Instance != this)
         {
             Logger.LogWarning("ManagersPersistence: Duplicate Managers detected! Destroying duplicate.", Logger.LogCategory.General);

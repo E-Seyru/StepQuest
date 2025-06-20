@@ -13,7 +13,7 @@ public class ActivityRegistry : ScriptableObject
 
     [Header("Robustness Settings")]
     [SerializeField] private bool enableFallbackSearch = true;
-    [SerializeField] private bool logMissingVariants = false; // Désactivé par défaut pour éviter le spam
+    [SerializeField] private bool logMissingVariants = false; // Desactive par defaut pour eviter le spam
 
     [Header("Debug Info")]
     [Tooltip("Shows validation errors if any")]
@@ -33,7 +33,7 @@ public class ActivityRegistry : ScriptableObject
 
         if (string.IsNullOrEmpty(activityId))
         {
-            return null; // Pas de log pour éviter le spam
+            return null; // Pas de log pour eviter le spam
         }
 
         // Try to get activity from cache
@@ -42,7 +42,7 @@ public class ActivityRegistry : ScriptableObject
             return activity;
         }
 
-        // Fallback: cherche par nom si ID pas trouvé
+        // Fallback: cherche par nom si ID pas trouve
         if (enableFallbackSearch)
         {
             activity = FindActivityByNameFallback(activityId);
@@ -68,7 +68,7 @@ public class ActivityRegistry : ScriptableObject
 
         if (string.IsNullOrEmpty(activityId) || string.IsNullOrEmpty(variantId))
         {
-            return null; // Pas de log pour éviter le spam
+            return null; // Pas de log pour eviter le spam
         }
 
         // Create lookup key
@@ -98,7 +98,7 @@ public class ActivityRegistry : ScriptableObject
     }
 
     /// <summary>
-    /// Cherche un variant par nom si l'ID exact n'est pas trouvé
+    /// Cherche un variant par nom si l'ID exact n'est pas trouve
     /// </summary>
     private ActivityVariant FindVariantByNameFallback(string activityId, string variantId)
     {
@@ -121,7 +121,7 @@ public class ActivityRegistry : ScriptableObject
     }
 
     /// <summary>
-    /// Cherche une activité par nom si l'ID exact n'est pas trouvé
+    /// Cherche une activite par nom si l'ID exact n'est pas trouve
     /// </summary>
     private LocationActivity FindActivityByNameFallback(string activityId)
     {
@@ -150,7 +150,7 @@ public class ActivityRegistry : ScriptableObject
     }
 
     /// <summary>
-    /// Matching flexible pour les noms d'activités
+    /// Matching flexible pour les noms d'activites
     /// </summary>
     private bool MatchesActivityName(ActivityDefinition activity, string searchName)
     {
@@ -356,7 +356,7 @@ public class ActivityRegistry : ScriptableObject
     /// </summary>
     void OnEnable()
     {
-        // Auto-clean silencieusement au démarrage
+        // Auto-clean silencieusement au demarrage
         CleanNullReferences();
         RefreshCache();
     }

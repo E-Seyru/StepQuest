@@ -130,7 +130,7 @@ public class PlayerData
         set { _currentActivityJson = value; }
     }
 
-    // Propriete pour acceder facilement à l'activite courante
+    // Propriete pour acceder facilement a l'activite courante
     [Ignore] // Ne pas sauvegarder en base, c'est juste un wrapper
     public ActivityData CurrentActivity
     {
@@ -173,7 +173,7 @@ public class PlayerData
     // Constructeur par defaut
     public PlayerData()
     {
-        Id = 1; // Fixons l'Id à 1 pour notre joueur unique
+        Id = 1; // Fixons l'Id a 1 pour notre joueur unique
         _totalPlayerSteps = 0;
         _lastSyncEpochMs = 0; // 0 indique qu'aucune synchro n'a encore eu lieu
         _lastPauseEpochMs = 0; // 0 indique que l'app n'a jamais ete mise en pause auparavant
@@ -193,7 +193,7 @@ public class PlayerData
         _currentActivityJson = null;
     }
 
-    // Propriete pour acceder à TotalPlayerSteps avec le nom simplifie TotalSteps
+    // Propriete pour acceder a TotalPlayerSteps avec le nom simplifie TotalSteps
     public long TotalSteps
     {
         get { return TotalPlayerSteps; }

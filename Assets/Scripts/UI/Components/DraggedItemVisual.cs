@@ -51,7 +51,7 @@ public class DraggedItemVisual : MonoBehaviour
             itemIcon.color = itemDef.ItemColor;
         }
 
-        // Configure la quantité
+        // Configure la quantite
         if (quantityText != null)
         {
             if (quantity > 1 || !hideQuantityIfOne)

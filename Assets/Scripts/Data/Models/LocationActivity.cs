@@ -69,7 +69,7 @@ public class LocationActivity
         if (ActivityReference != null)
             return ActivityReference.ActivityName;
 
-        return "Activité inconnue";
+        return "Activite inconnue";
     }
 
     /// <summary>
@@ -156,7 +156,7 @@ public class LocationActivity
         }
 
         if (allResources.Count == 0)
-            return "Aucune ressource spécifiée";
+            return "Aucune ressource specifiee";
 
         var resourceNames = new List<string>();
         foreach (var resource in allResources)
@@ -231,7 +231,7 @@ public class LocationActivity
 
         if (!string.IsNullOrEmpty(SpecialRequirements))
         {
-            info += $"\nPré-requis: {SpecialRequirements}";
+            info += $"\nPre-requis: {SpecialRequirements}";
         }
 
         return info;

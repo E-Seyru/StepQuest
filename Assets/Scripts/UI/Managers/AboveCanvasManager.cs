@@ -36,7 +36,7 @@ public class AboveCanvasManager : MonoBehaviour
 
     [Header("UI References - Idle Bar")]
     [SerializeField] private GameObject idleBar;
-    [SerializeField] private Image idleBarImage;  // NOUVEAU : L'image à l'intérieur de l'IdleBar pour l'animation
+    [SerializeField] private Image idleBarImage;  // NOUVEAU : L'image a l'interieur de l'IdleBar pour l'animation
 
     [Header("UI References - Navigation Bar")]
     [SerializeField] private GameObject navigationBar;
@@ -63,17 +63,17 @@ public class AboveCanvasManager : MonoBehaviour
 
     [Header("Idle Bar Animation Settings")]
     [SerializeField] private float idleAnimationInterval = 2.5f;    // Intervalle entre les ronflements (en secondes)
-    [SerializeField] private float idleSnoreDuration = 1.2f;        // Durée d'un ronflement complet
+    [SerializeField] private float idleSnoreDuration = 1.2f;        // Duree d'un ronflement complet
     [SerializeField] private float idleSnoreScale = 1.25f;          // Facteur d'agrandissement (25% plus grand)
-    [SerializeField] private float idleShakeIntensity = 5f;         // Intensité de la vibration (en pixels)
+    [SerializeField] private float idleShakeIntensity = 5f;         // Intensite de la vibration (en pixels)
     [SerializeField] private LeanTweenType idleInflateEase = LeanTweenType.easeInSine;   // Animation d'inspiration
     [SerializeField] private LeanTweenType idleDeflateEase = LeanTweenType.easeOutBounce; // Animation d'expiration
 
     [Header("LocationButton Settings")]
-    [SerializeField] private float locationButtonClickScale = 0.95f;     // Facteur de rétrécissement au clic (ex: 0.95 = 5% plus petit)
-    [SerializeField] private float locationButtonClickDuration = 0.1f;   // Durée de l'animation de clic
+    [SerializeField] private float locationButtonClickScale = 0.95f;     // Facteur de retrecissement au clic (ex: 0.95 = 5% plus petit)
+    [SerializeField] private float locationButtonClickDuration = 0.1f;   // Duree de l'animation de clic
     [SerializeField] private LeanTweenType locationButtonClickEase = LeanTweenType.easeOutQuart; // Type d'animation
-    [SerializeField] private Vector2 shadowOffset = new Vector2(3f, -3f); // Décalage de l'ombre (x, y)
+    [SerializeField] private Vector2 shadowOffset = new Vector2(3f, -3f); // Decalage de l'ombre (x, y)
     [SerializeField] private Color shadowColor = new Color(0f, 0f, 0f, 0.3f); // Couleur de l'ombre
 
     // === INTERNAL SERVICES (NOUVEAU) ===
@@ -108,8 +108,8 @@ public class AboveCanvasManager : MonoBehaviour
 
     void OnEnable()
     {
-        // Brancher les événements quand le GameObject devient actif
-        // MAIS seulement si l'initialisation est terminée
+        // Brancher les evenements quand le GameObject devient actif
+        // MAIS seulement si l'initialisation est terminee
         if (eventService != null && initializationService?.IsInitialized == true)
         {
             eventService.SubscribeToEvents();
@@ -118,7 +118,7 @@ public class AboveCanvasManager : MonoBehaviour
 
     void OnDisable()
     {
-        // Débrancher les événements quand le GameObject devient inactif
+        // Debrancher les evenements quand le GameObject devient inactif
         if (eventService != null)
         {
             eventService.UnsubscribeFromEvents();
@@ -133,7 +133,7 @@ public class AboveCanvasManager : MonoBehaviour
 
     private void InitializeServices()
     {
-        // Créer les services dans l'ordre (animation et display d'abord)
+        // Creer les services dans l'ordre (animation et display d'abord)
         animationService = new AboveCanvasAnimationService(this);
         displayService = new AboveCanvasDisplayService(this);
         eventService = new AboveCanvasEventService(this, displayService, animationService);
@@ -141,7 +141,7 @@ public class AboveCanvasManager : MonoBehaviour
 
         // Initialiser les services dans l'ordre
         animationService.Initialize();
-        displayService.Initialize(); // Maintenant displayService peut récupérer animationService
+        displayService.Initialize(); // Maintenant displayService peut recuperer animationService
     }
 
     // === PUBLIC API - SAME AS BEFORE ===
@@ -234,14 +234,14 @@ public class AboveCanvasInitializationService
         // Configurer la UI
         SetupUI();
 
-        // Abonner aux événements immédiatement (comme avant)
+        // Abonner aux evenements immediatement (comme avant)
         eventService?.SubscribeToEvents();
 
-        // Première mise à jour de l'affichage
+        // Première mise a jour de l'affichage
         manager.RefreshDisplay();
 
-        // RESTAURATION: Vérification retardée pour s'assurer que l'affichage est correct
-        // (C'était dans l'ancien code et ça résolvait les problèmes d'ordre d'initialisation)
+        // RESTAURATION: Verification retardee pour s'assurer que l'affichage est correct
+        // (C'etait dans l'ancien code et ça resolvait les problèmes d'ordre d'initialisation)
         manager.StartCoroutine(DelayedDisplayRefresh());
 
         isInitialized = true;
@@ -250,10 +250,10 @@ public class AboveCanvasInitializationService
 
     private System.Collections.IEnumerator DelayedDisplayRefresh()
     {
-        // Attendre quelques frames pour que tous les managers soient complètement initialisés
+        // Attendre quelques frames pour que tous les managers soient complètement initialises
         yield return new WaitForSeconds(1f);
 
-        // Forcer une mise à jour de l'affichage
+        // Forcer une mise a jour de l'affichage
         manager.RefreshDisplay();
 
         // NOUVEAU : Marquer la fin de l'initialisation pour activer les animations
@@ -264,11 +264,11 @@ public class AboveCanvasInitializationService
 
     private System.Collections.IEnumerator WaitForCriticalManagers()
     {
-        // Version optimisée : WaitUntil() arrête immédiatement quand la condition est remplie
+        // Version optimisee : WaitUntil() arrête immediatement quand la condition est remplie
         // → Évite de boucler toutes les 0.1s ; tu gagnes quelques ms au lancement
         yield return new WaitUntil(() => DataManager.Instance != null && MapManager.Instance != null);
 
-        // Attendre un frame supplémentaire pour la stabilité
+        // Attendre un frame supplementaire pour la stabilite
         yield return null;
     }
 
@@ -287,7 +287,7 @@ public class AboveCanvasInitializationService
         }
     }
 
-    // NOUVEAU: Méthode pour configurer le LocationButton
+    // NOUVEAU: Methode pour configurer le LocationButton
     private void SetupLocationButton()
     {
         if (manager.LocationButton != null)
@@ -308,7 +308,7 @@ public class AboveCanvasInitializationService
         }
     }
 
-    // NOUVEAU : Méthode pour initialiser l'ombre du LocationButton
+    // NOUVEAU : Methode pour initialiser l'ombre du LocationButton
     private void InitializeLocationButtonShadow()
     {
         if (manager.LocationButtonShadow == null) return;
@@ -316,7 +316,7 @@ public class AboveCanvasInitializationService
         // Configuration de l'ombre
         manager.LocationButtonShadow.color = manager.ShadowColor;
 
-        // Positionner l'ombre avec le décalage
+        // Positionner l'ombre avec le decalage
         RectTransform shadowRect = manager.LocationButtonShadow.GetComponent<RectTransform>();
         if (shadowRect != null)
         {
@@ -326,7 +326,7 @@ public class AboveCanvasInitializationService
         Logger.LogInfo("AboveCanvasManager: LocationButton shadow configured", Logger.LogCategory.General);
     }
 
-    // NOUVEAU : Méthode pour initialiser l'icône du LocationButton
+    // NOUVEAU : Methode pour initialiser l'icône du LocationButton
     private void InitializeLocationButtonIcon()
     {
         if (manager.LocationButtonIcon == null)
@@ -336,9 +336,9 @@ public class AboveCanvasInitializationService
         }
 
         // Configuration initiale de l'image
-        manager.LocationButtonIcon.preserveAspect = true; // S'assurer que Preserve Aspect est activé
+        manager.LocationButtonIcon.preserveAspect = true; // S'assurer que Preserve Aspect est active
 
-        // L'icône sera mise à jour quand UpdateLocationDisplay() sera appelé
+        // L'icône sera mise a jour quand UpdateLocationDisplay() sera appele
         Logger.LogInfo("AboveCanvasManager: LocationButtonIcon initialized", Logger.LogCategory.General);
     }
 
@@ -362,7 +362,7 @@ public class AboveCanvasInitializationService
         // NOUVEAU : Jouer l'effet de clic d'abord
         PlayLocationButtonClickEffect();
 
-        // Vérifier que PanelManager est disponible
+        // Verifier que PanelManager est disponible
         if (PanelManager.Instance == null)
         {
             Logger.LogWarning("AboveCanvasManager: PanelManager.Instance is null", Logger.LogCategory.General);
@@ -376,7 +376,7 @@ public class AboveCanvasInitializationService
         Logger.LogInfo("AboveCanvasManager: Navigating to LocationDetailsPanel", Logger.LogCategory.General);
     }
 
-    // NOUVEAU : Méthode pour l'effet de clic du LocationButton
+    // NOUVEAU : Methode pour l'effet de clic du LocationButton
     private void PlayLocationButtonClickEffect()
     {
         if (manager.LocationButton == null) return;
@@ -384,12 +384,12 @@ public class AboveCanvasInitializationService
         // Annuler toute animation en cours sur le bouton
         LeanTween.cancel(manager.LocationButton.gameObject);
 
-        // Effet de "squeeze" sur tout le bouton : rétrécissement rapide puis retour à la normale
+        // Effet de "squeeze" sur tout le bouton : retrecissement rapide puis retour a la normale
         LeanTween.scale(manager.LocationButton.gameObject, Vector3.one * manager.LocationButtonClickScale, manager.LocationButtonClickDuration)
             .setEase(manager.LocationButtonClickEase)
             .setOnComplete(() =>
             {
-                // Retour à la taille normale
+                // Retour a la taille normale
                 LeanTween.scale(manager.LocationButton.gameObject, Vector3.one, manager.LocationButtonClickDuration)
                     .setEase(manager.LocationButtonClickEase);
             });
@@ -407,7 +407,7 @@ public class AboveCanvasDisplayService
 {
     private readonly AboveCanvasManager manager;
     private AboveCanvasAnimationService animationService;
-    private bool isInitializing = true; // NOUVEAU : Flag pour éviter animations pendant init
+    private bool isInitializing = true; // NOUVEAU : Flag pour eviter animations pendant init
 
     public AboveCanvasDisplayService(AboveCanvasManager manager)
     {
@@ -416,11 +416,11 @@ public class AboveCanvasDisplayService
 
     public void Initialize()
     {
-        // Récupérer la référence au service d'animation
+        // Recuperer la reference au service d'animation
         animationService = manager.AnimationService;
     }
 
-    // NOUVEAU : Méthode pour marquer la fin de l'initialisation
+    // NOUVEAU : Methode pour marquer la fin de l'initialisation
     public void FinishInitialization()
     {
         isInitializing = false;
@@ -446,7 +446,7 @@ public class AboveCanvasDisplayService
         {
             manager.CurrentLocationText.text = mapManager.CurrentLocation.DisplayName;
 
-            // NOUVEAU : Mettre à jour l'icône du LocationButton
+            // NOUVEAU : Mettre a jour l'icône du LocationButton
             UpdateLocationButtonIcon(mapManager.CurrentLocation);
 
             Logger.LogInfo($"AboveCanvasManager: Updated location display to {mapManager.CurrentLocation.DisplayName}", Logger.LogCategory.General);
@@ -457,7 +457,7 @@ public class AboveCanvasDisplayService
         }
     }
 
-    // NOUVEAU : Méthode pour mettre à jour l'icône du LocationButton
+    // NOUVEAU : Methode pour mettre a jour l'icône du LocationButton
     private void UpdateLocationButtonIcon(MapLocationDefinition location)
     {
         if (manager.LocationButtonIcon == null) return;
@@ -471,9 +471,9 @@ public class AboveCanvasDisplayService
         }
         else
         {
-            // Image par défaut ou cacher l'icône si pas d'image
+            // Image par defaut ou cacher l'icône si pas d'image
             manager.LocationButtonIcon.sprite = null;
-            manager.LocationButtonIcon.color = Color.clear; // Ou utiliser une image par défaut
+            manager.LocationButtonIcon.color = Color.clear; // Ou utiliser une image par defaut
             Logger.LogInfo("AboveCanvasManager: No icon available for current location", Logger.LogCategory.General);
         }
     }
@@ -502,7 +502,7 @@ public class AboveCanvasDisplayService
         else if (hasActiveActivity)
         {
             SetupActivityDisplay();
-            HideIdleBar(); // NOUVEAU : Cacher IdleBar pendant activité
+            HideIdleBar(); // NOUVEAU : Cacher IdleBar pendant activite
         }
         else
         {
@@ -594,7 +594,7 @@ public class AboveCanvasDisplayService
             animationService?.SlideInBar(manager.ActivityBar);
         }
 
-        // CORRECTION: Récupérer l'activité principale pour l'icône gauche
+        // CORRECTION: Recuperer l'activite principale pour l'icône gauche
         var activityDefinition = activityManager.ActivityRegistry?.GetActivity(activity.ActivityId);
 
         // Configurer l'icône gauche avec l'ACTIVITÉ PRINCIPALE
@@ -615,7 +615,7 @@ public class AboveCanvasDisplayService
             Logger.LogInfo($"AboveCanvasManager: Set right icon to VARIANT {(variantIcon != null ? variantIcon.name : "null")}", Logger.LogCategory.General);
         }
 
-        // NOUVEAU : Affichage du texte avec progression détaillée
+        // NOUVEAU : Affichage du texte avec progression detaillee
         if (manager.ActivityText != null)
         {
             string progressText = FormatActivityProgress(activity, variant);
@@ -631,7 +631,7 @@ public class AboveCanvasDisplayService
         {
             manager.FillBar.fillAmount = Mathf.Clamp01(progressPercent);
 
-            // NOUVEAU : Couleur différente pour les activités temporelles
+            // NOUVEAU : Couleur differente pour les activites temporelles
             if (activity.IsTimeBased)
             {
                 manager.FillBar.color = Color.Lerp(Color.cyan, Color.yellow, progressPercent);
@@ -639,33 +639,33 @@ public class AboveCanvasDisplayService
 
         }
 
-        // Masquer la flèche pour les activités (la flèche sert seulement pour les voyages)
+        // Masquer la flèche pour les activites (la flèche sert seulement pour les voyages)
         if (manager.ArrowIcon != null)
         {
             manager.ArrowIcon.SetActive(false);
         }
     }
 
-    // NOUVEAU : Méthode pour formater l'affichage de progression d'activité
+    // NOUVEAU : Methode pour formater l'affichage de progression d'activite
     private string FormatActivityProgress(ActivityData activity, ActivityVariant variant)
     {
         if (activity.IsTimeBased)
         {
-            // Pour les activités temporelles : "5 min 30 s / 10 min"
+            // Pour les activites temporelles : "5 min 30 s / 10 min"
             string currentTime = FormatTimeForProgress(activity.AccumulatedTimeMs);
             string totalTime = FormatTimeForProgress(activity.RequiredTimeMs);
             return $"{currentTime} / {totalTime}";
         }
         else
         {
-            // Pour les activités à pas : "x / x"
+            // Pour les activites a pas : "x / x"
             int currentSteps = (int)activity.AccumulatedSteps;
             int totalSteps = variant.ActionCost; // ActionCost = pas requis par tick
             return $"{currentSteps} / {totalSteps}";
         }
     }
 
-    // NOUVEAU : Méthode pour formater le temps de manière intelligente
+    // NOUVEAU : Methode pour formater le temps de manière intelligente
     private string FormatTimeForProgress(long timeMs)
     {
         if (timeMs <= 0) return "0 s";
@@ -702,7 +702,7 @@ public class AboveCanvasDisplayService
 
     private string FormatTime(long timeMs)
     {
-        if (timeMs <= 0) return "Terminé";
+        if (timeMs <= 0) return "Termine";
 
         if (timeMs < 1000)
             return $"{timeMs}ms";
@@ -721,7 +721,7 @@ public class AboveCanvasDisplayService
             return;
         }
 
-        // Icône de départ
+        // Icône de depart
         if (manager.LeftIcon != null)
         {
             var currentLocation = locationRegistry.GetLocationById(currentLocationId);
@@ -738,7 +738,7 @@ public class AboveCanvasDisplayService
             manager.LeftIcon.gameObject.SetActive(true);
         }
 
-        // Icône d'arrivée
+        // Icône d'arrivee
         if (manager.RightIcon != null)
         {
             var destinationLocation = locationRegistry.GetLocationById(destinationId);
@@ -780,13 +780,13 @@ public class AboveCanvasDisplayService
             animationService?.SlideInBar(manager.IdleBar);
         }
 
-        // NOUVEAU : Démarrer l'animation répétitive d'inactivité
+        // NOUVEAU : Demarrer l'animation repetitive d'inactivite
         animationService?.StartIdleBarAnimation();
     }
 
     private void HideIdleBar()
     {
-        // NOUVEAU : Arrêter l'animation répétitive d'inactivité
+        // NOUVEAU : Arrêter l'animation repetitive d'inactivite
         animationService?.StopIdleBarAnimation();
         animationService?.HideBar(manager.IdleBar);
     }
@@ -798,7 +798,7 @@ public class AboveCanvasDisplayService
         float progressPercent = (float)currentSteps / requiredSteps;
         animationService?.AnimateProgressBar(progressPercent);
 
-        // NOUVEAU : Mettre à jour le texte de progression pour les voyages
+        // NOUVEAU : Mettre a jour le texte de progression pour les voyages
         if (manager.ActivityText != null)
         {
             string progressText = $"{currentSteps} / {requiredSteps}";
@@ -813,7 +813,7 @@ public class AboveCanvasDisplayService
         float progressPercent = activity.GetProgressToNextTick(variant);
         animationService?.AnimateProgressBar(progressPercent);
 
-        // NOUVEAU : Mettre à jour le texte avec la progression détaillée
+        // NOUVEAU : Mettre a jour le texte avec la progression detaillee
         if (manager.ActivityText != null)
         {
             string progressText = FormatActivityProgress(activity, variant);
@@ -831,7 +831,7 @@ public class AboveCanvasAnimationService
     private float lastProgressValue = -1f;
     private int currentAnimationId = -1;
     private int currentPulseId = -1;
-    private int currentPopId = -1;        // Renommé pour le pop
+    private int currentPopId = -1;        // Renomme pour le pop
     private Color originalFillColor;
     private Vector3 originalFillScale;
     private Vector3 originalRightIconScale;  // Échelle originale de l'icône droite
@@ -845,7 +845,7 @@ public class AboveCanvasAnimationService
     // NOUVEAU : Variables pour l'animation de l'IdleBar
     private Vector3 idleBarImageOriginalScale;    // Échelle originale de l'image IdleBar
     private Vector3 idleBarImageOriginalPosition; // Position originale de l'image IdleBar
-    private int idleAnimationTimerId = -1;        // ID du timer pour répéter l'animation
+    private int idleAnimationTimerId = -1;        // ID du timer pour repeter l'animation
     private int idleSnoreAnimationId = -1;        // ID de l'animation de ronflement
     private int idleShakeAnimationId = -1;        // ID de l'animation de vibration
     private bool isIdleAnimationActive = false;   // Flag pour savoir si l'animation est active
@@ -925,7 +925,7 @@ public class AboveCanvasAnimationService
         if (manager.FillBar == null) return;
         if (Mathf.Approximately(targetProgress, lastProgressValue)) return;
 
-        // Arrêter les animations précédentes
+        // Arrêter les animations precedentes
         if (currentAnimationId != -1)
         {
             LeanTween.cancel(currentAnimationId);
@@ -950,7 +950,7 @@ public class AboveCanvasAnimationService
                 currentAnimationId = -1;
             }).id;
 
-        // 2. IMMÉDIATEMENT déclencher le pulse en parallèle (pas à la fin !)
+        // 2. IMMÉDIATEMENT declencher le pulse en parallèle (pas a la fin !)
         PulseFillBarParallel();
 
         lastProgressValue = targetProgress;
@@ -960,7 +960,7 @@ public class AboveCanvasAnimationService
     {
         if (manager.FillBar == null) return;
 
-        // Pulse d'échelle EN MÊME TEMPS que l'animation de remplissage
+        // Pulse d'echelle EN MÊME TEMPS que l'animation de remplissage
         currentPulseId = LeanTween.scale(manager.FillBar.gameObject, originalFillScale * manager.PulseScaleAmount, manager.PulseDuration)
             .setEase(LeanTweenType.easeOutQuart)
             .setLoopPingPong(1)
@@ -973,7 +973,7 @@ public class AboveCanvasAnimationService
                 }
             }).id;
 
-        // Animation de couleur EN PARALLÈLE (pas d'ID à stocker, courte durée)
+        // Animation de couleur EN PARALLÈLE (pas d'ID a stocker, courte duree)
         LeanTween.color(manager.FillBar.rectTransform, manager.PulseColor, manager.PulseDuration)
             .setEase(LeanTweenType.easeOutQuart)
             .setLoopPingPong(1)
@@ -988,13 +988,13 @@ public class AboveCanvasAnimationService
 
     public void PulseFillBar()
     {
-        // Méthode séparée pour les cas où on veut juste un pulse sans animation de remplissage
+        // Methode separee pour les cas où on veut juste un pulse sans animation de remplissage
         PulseFillBarParallel();
     }
 
     public void ShakeRightIcon()
     {
-        // NOUVEAU : Pop de récompense au lieu de shake d'erreur !
+        // NOUVEAU : Pop de recompense au lieu de shake d'erreur !
         PopRightIcon();
     }
 
@@ -1006,7 +1006,7 @@ public class AboveCanvasAnimationService
         // Activer la barre d'abord
         bar.SetActive(true);
 
-        // Déterminer la position originale
+        // Determiner la position originale
         Vector3 originalPos;
         if (bar == manager.ActivityBar)
         {
@@ -1021,11 +1021,11 @@ public class AboveCanvasAnimationService
             return; // Barre inconnue
         }
 
-        // Position de départ (au-dessus, cachée)
+        // Position de depart (au-dessus, cachee)
         Vector3 startPos = originalPos;
-        startPos.y += 100f; // Décaler vers le haut
+        startPos.y += 100f; // Decaler vers le haut
 
-        // Positionner la barre en position de départ
+        // Positionner la barre en position de depart
         bar.transform.localPosition = startPos;
 
         // Animer vers la position originale
@@ -1039,7 +1039,7 @@ public class AboveCanvasAnimationService
 
         bar.SetActive(false);
 
-        // Remettre en position cachée pour la prochaine animation
+        // Remettre en position cachee pour la prochaine animation
         Vector3 originalPos;
         if (bar == manager.ActivityBar)
         {
@@ -1055,7 +1055,7 @@ public class AboveCanvasAnimationService
         }
 
         Vector3 hiddenPos = originalPos;
-        hiddenPos.y += 100f; // Position cachée au-dessus
+        hiddenPos.y += 100f; // Position cachee au-dessus
         bar.transform.localPosition = hiddenPos;
     }
 
@@ -1063,7 +1063,7 @@ public class AboveCanvasAnimationService
     {
         if (manager.RightIcon == null) return;
 
-        // Arrêter le pop précédent
+        // Arrêter le pop precedent
         if (currentPopId != -1)
         {
             LeanTween.cancel(currentPopId);
@@ -1071,14 +1071,14 @@ public class AboveCanvasAnimationService
 
         // Animation de POP satisfaisante :
         // 1. Grossit rapidement avec couleur plus lumineuse
-        // 2. Retourne à la normale avec bounce
+        // 2. Retourne a la normale avec bounce
 
         // Scale + couleur en parallèle
         currentPopId = LeanTween.scale(manager.RightIcon.gameObject, originalRightIconScale * manager.PopScaleAmount, manager.PopDuration * 0.4f)
             .setEase(LeanTweenType.easeOutQuart)
             .setOnComplete(() =>
             {
-                // Phase 2: Retour à la normale avec bounce satisfaisant
+                // Phase 2: Retour a la normale avec bounce satisfaisant
                 LeanTween.scale(manager.RightIcon.gameObject, originalRightIconScale, manager.PopDuration * 0.6f)
                     .setEase(manager.PopEaseType) // easeOutBack pour l'effet bounce
                     .setOnComplete(() =>
@@ -1103,7 +1103,7 @@ public class AboveCanvasAnimationService
     // ===============================================
 
     /// <summary>
-    /// Démarre l'animation répétitive de ronflement de l'IdleBar
+    /// Demarre l'animation repetitive de ronflement de l'IdleBar
     /// </summary>
     public void StartIdleBarAnimation()
     {
@@ -1112,15 +1112,15 @@ public class AboveCanvasAnimationService
         isIdleAnimationActive = true;
         Logger.LogInfo("AboveCanvasManager: Starting idle bar snore animation", Logger.LogCategory.General);
 
-        // Démarrer immédiatement le premier ronflement
+        // Demarrer immediatement le premier ronflement
         PlayIdleSnoreAnimation();
 
-        // Puis programmer les répétitions
+        // Puis programmer les repetitions
         ScheduleNextIdleAnimation();
     }
 
     /// <summary>
-    /// Arrête l'animation répétitive de ronflement de l'IdleBar
+    /// Arrête l'animation repetitive de ronflement de l'IdleBar
     /// </summary>
     public void StopIdleBarAnimation()
     {
@@ -1129,7 +1129,7 @@ public class AboveCanvasAnimationService
         isIdleAnimationActive = false;
         Logger.LogInfo("AboveCanvasManager: Stopping idle bar snore animation", Logger.LogCategory.General);
 
-        // Annuler le timer de répétition
+        // Annuler le timer de repetition
         if (idleAnimationTimerId != -1)
         {
             LeanTween.cancel(idleAnimationTimerId);
@@ -1149,7 +1149,7 @@ public class AboveCanvasAnimationService
             idleShakeAnimationId = -1;
         }
 
-        // Remettre l'image à ses valeurs originales
+        // Remettre l'image a ses valeurs originales
         if (manager.IdleBarImage != null)
         {
             manager.IdleBarImage.transform.localScale = idleBarImageOriginalScale;
@@ -1164,13 +1164,13 @@ public class AboveCanvasAnimationService
     {
         if (!isIdleAnimationActive) return;
 
-        // Programmer le prochain ronflement après l'intervalle défini
+        // Programmer le prochain ronflement après l'intervalle defini
         idleAnimationTimerId = LeanTween.delayedCall(manager.IdleAnimationInterval, () =>
         {
-            if (isIdleAnimationActive) // Vérifier qu'on n'a pas arrêté entre temps
+            if (isIdleAnimationActive) // Verifier qu'on n'a pas arrête entre temps
             {
                 PlayIdleSnoreAnimation();
-                ScheduleNextIdleAnimation(); // Programmer la suivante (récursion)
+                ScheduleNextIdleAnimation(); // Programmer la suivante (recursion)
             }
         }).id;
     }
@@ -1178,7 +1178,7 @@ public class AboveCanvasAnimationService
     /// <summary>
     /// Joue une animation de "ronflement" sur l'image de l'IdleBar
     /// Phase 1: Inspiration (grossissement lent)
-    /// Phase 2: Expiration avec vibration (rétrécissement + shake)
+    /// Phase 2: Expiration avec vibration (retrecissement + shake)
     /// </summary>
     private void PlayIdleSnoreAnimation()
     {
@@ -1207,7 +1207,7 @@ public class AboveCanvasAnimationService
     {
         if (manager.IdleBarImage == null || !isIdleAnimationActive) return;
 
-        // Animation de rétrécissement avec bounce (comme un ronflement qui "expire")
+        // Animation de retrecissement avec bounce (comme un ronflement qui "expire")
         idleSnoreAnimationId = LeanTween.scale(manager.IdleBarImage.gameObject, idleBarImageOriginalScale, duration)
             .setEase(manager.IdleDeflateEase)  // easeOutBounce pour l'effet ronflement
             .setOnComplete(() =>
@@ -1220,7 +1220,7 @@ public class AboveCanvasAnimationService
     }
 
     /// <summary>
-    /// Crée l'effet de vibration pendant l'expiration (simule le bruit du ronflement)
+    /// Cree l'effet de vibration pendant l'expiration (simule le bruit du ronflement)
     /// VRAIES vibrations continues et rapides !
     /// </summary>
     private void PlaySnoreShakeEffect(float duration)
@@ -1228,7 +1228,7 @@ public class AboveCanvasAnimationService
         if (manager.IdleBarImage == null || !isIdleAnimationActive) return;
 
         // VRAIE vibration : mouvement rapide et continu en X (horizontal)
-        // Vibration rapide de gauche à droite pendant toute la durée
+        // Vibration rapide de gauche a droite pendant toute la duree
         float vibrateFrequency = 15f; // Hz - très rapide pour effet vibration
         float totalCycles = duration * vibrateFrequency;
 
@@ -1237,7 +1237,7 @@ public class AboveCanvasAnimationService
             {
                 if (manager.IdleBarImage != null && isIdleAnimationActive)
                 {
-                    // Calculer l'intensité qui diminue progressivement
+                    // Calculer l'intensite qui diminue progressivement
                     float progress = value / (totalCycles * 2f * Mathf.PI);
                     float currentIntensity = manager.IdleShakeIntensity * (1f - progress * 0.7f); // Diminue de 70%
 
@@ -1264,8 +1264,8 @@ public class AboveCanvasAnimationService
         // Arrêter l'animation de l'IdleBar
         StopIdleBarAnimation();
 
-        // Version sécurisée : annuler par GameObject plutôt que par ID
-        // Évite les "orphan tweens" quand l'objet est détruit
+        // Version securisee : annuler par GameObject plutôt que par ID
+        // Évite les "orphan tweens" quand l'objet est detruit
         if (manager.FillBar != null)
         {
             LeanTween.cancel(manager.FillBar.gameObject);
@@ -1281,7 +1281,7 @@ public class AboveCanvasAnimationService
             LeanTween.cancel(manager.IdleBarImage.gameObject);
         }
 
-        // Reset des IDs pour sécurité
+        // Reset des IDs pour securite
         currentAnimationId = -1;
         currentPulseId = -1;
         currentPopId = -1;
@@ -1331,7 +1331,7 @@ public class AboveCanvasEventService
     public void UnsubscribeFromEvents()
     {
         // =====================================
-        // EVENTBUS - Désabonnement simple
+        // EVENTBUS - Desabonnement simple
         // =====================================
 
         EventBus.Unsubscribe<GameStateChangedEvent>(OnGameStateChanged);
@@ -1346,7 +1346,7 @@ public class AboveCanvasEventService
 
     public void Cleanup()
     {
-        // Désabonner de tous les événements
+        // Desabonner de tous les evenements
         UnsubscribeFromEvents();
 
         // Nettoyer les animations
@@ -1354,7 +1354,7 @@ public class AboveCanvasEventService
     }
 
     // =====================================
-    // EVENT HANDLERS - Adaptés pour EventBus
+    // EVENT HANDLERS - Adaptes pour EventBus
     // =====================================
 
     private void OnGameStateChanged(GameStateChangedEvent eventData)

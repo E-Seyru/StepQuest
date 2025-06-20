@@ -8,28 +8,28 @@ public class MapToggleButton : MonoBehaviour
     public Sprite backSprite;
 
     [Header("References")]
-    public Image buttonImage; // l'image du bouton (drag depuis l'éditeur)
-    public PanelManager panelManager; // référence à ton PanelManager
+    public Image buttonImage; // l'image du bouton (drag depuis l'editeur)
+    public PanelManager panelManager; // reference a ton PanelManager
 
     private void Start()
     {
-        // S'assurer qu'on a la référence au PanelManager
+        // S'assurer qu'on a la reference au PanelManager
         if (panelManager == null)
             panelManager = PanelManager.Instance;
 
-        // S'abonner aux événements du PanelManager pour être notifié des changements d'état
+        // S'abonner aux evenements du PanelManager pour être notifie des changements d'etat
         if (panelManager != null)
         {
             panelManager.OnMapStateChanged.AddListener(OnMapStateChanged);
         }
 
-        // Initialiser le sprite selon l'état actuel
+        // Initialiser le sprite selon l'etat actuel
         UpdateButtonSprite();
     }
 
     private void OnDestroy()
     {
-        // Se désabonner des événements pour éviter les erreurs
+        // Se desabonner des evenements pour eviter les erreurs
         if (panelManager != null)
         {
             panelManager.OnMapStateChanged.RemoveListener(OnMapStateChanged);
@@ -37,7 +37,7 @@ public class MapToggleButton : MonoBehaviour
     }
 
     /// <summary>
-    /// Méthode appelée quand on clique sur le bouton
+    /// Methode appelee quand on clique sur le bouton
     /// </summary>
     public void OnClick()
     {
@@ -47,21 +47,21 @@ public class MapToggleButton : MonoBehaviour
             return;
         }
 
-        // Utiliser la nouvelle logique centralisée du PanelManager
+        // Utiliser la nouvelle logique centralisee du PanelManager
         if (panelManager.IsMapVisible)
         {
-            // La carte est visible, on revient au panel précédent
+            // La carte est visible, on revient au panel precedent
             panelManager.HideMapAndReturnToPrevious();
         }
         else
         {
-            // La carte est cachée, on l'affiche
+            // La carte est cachee, on l'affiche
             panelManager.ShowMap();
         }
     }
 
     /// <summary>
-    /// Méthode appelée automatiquement quand l'état de la carte change
+    /// Methode appelee automatiquement quand l'etat de la carte change
     /// </summary>
     /// <param name="mapIsVisible">True si la carte est visible, false sinon</param>
     private void OnMapStateChanged(bool mapIsVisible)
@@ -70,7 +70,7 @@ public class MapToggleButton : MonoBehaviour
     }
 
     /// <summary>
-    /// Met à jour le sprite du bouton selon l'état actuel de la carte
+    /// Met a jour le sprite du bouton selon l'etat actuel de la carte
     /// </summary>
     private void UpdateButtonSprite()
     {
@@ -83,7 +83,7 @@ public class MapToggleButton : MonoBehaviour
         }
         else
         {
-            // La carte est cachée, afficher le sprite "carte"
+            // La carte est cachee, afficher le sprite "carte"
             buttonImage.sprite = mapSprite;
         }
     }

@@ -18,7 +18,7 @@ public class UIManager : MonoBehaviour
     private long lastDisplayedDailySteps = -1;
     private float stepUpdateFlashDuration = 0.3f;
 
-    // OPTIMISATION : Variables pour éviter les Update() constants
+    // OPTIMISATION : Variables pour eviter les Update() constants
     private Coroutine updateCoroutine;
     private bool isUpdateActive = false;
 
@@ -38,15 +38,15 @@ public class UIManager : MonoBehaviour
 
         if (totalStepsText == null)
         {
-            Logger.LogError("UIManager: totalStepsText n'est pas assigné dans l'inspecteur !", Logger.LogCategory.General);
+            Logger.LogError("UIManager: totalStepsText n'est pas assigne dans l'inspecteur !", Logger.LogCategory.General);
         }
 
         if (dailyStepsText == null)
         {
-            Logger.LogWarning("UIManager: dailyStepsText n'est pas assigné dans l'inspecteur ! L'affichage des pas quotidiens ne fonctionnera pas.", Logger.LogCategory.General);
+            Logger.LogWarning("UIManager: dailyStepsText n'est pas assigne dans l'inspecteur ! L'affichage des pas quotidiens ne fonctionnera pas.", Logger.LogCategory.General);
         }
 
-        // Initialiser l'affichage à une valeur d'attente
+        // Initialiser l'affichage a une valeur d'attente
         UpdateTotalStepsDisplay(0, true);
         UpdateDailyStepsDisplay(0, true);
     }
@@ -60,7 +60,7 @@ public class UIManager : MonoBehaviour
         stepManager = StepManager.Instance;
         Logger.LogInfo("UIManager: StepManager.Instance found. Ready to update UI from StepManager.", Logger.LogCategory.General);
 
-        // OPTIMISATION : Démarrer la coroutine d'update au lieu d'Update()
+        // OPTIMISATION : Demarrer la coroutine d'update au lieu d'Update()
         StartUIUpdateCoroutine();
     }
 
@@ -82,14 +82,14 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // OPTIMISATION : Coroutine qui vérifie les changements moins fréquemment
+    // OPTIMISATION : Coroutine qui verifie les changements moins frequemment
     private IEnumerator UIUpdateCoroutine()
     {
         while (true)
         {
             if (stepManager != null && stepManager.enabled)
             {
-                // OPTIMISATION : Vérifier seulement si les valeurs ont vraiment changé
+                // OPTIMISATION : Verifier seulement si les valeurs ont vraiment change
                 bool totalStepsChanged = stepManager.TotalSteps != lastDisplayedTotalSteps;
                 bool dailyStepsChanged = stepManager.DailySteps != lastDisplayedDailySteps;
 
@@ -103,14 +103,14 @@ public class UIManager : MonoBehaviour
                     UpdateDailyStepsDisplay(stepManager.DailySteps);
                 }
 
-                // OPTIMISATION : Si rien n'a changé, attendre plus longtemps
+                // OPTIMISATION : Si rien n'a change, attendre plus longtemps
                 if (!totalStepsChanged && !dailyStepsChanged)
                 {
                     yield return new WaitForSeconds(0.5f); // Attendre 0.5s si pas de changement
                 }
                 else
                 {
-                    yield return new WaitForSeconds(0.1f); // Vérifier plus souvent s'il y a des changements
+                    yield return new WaitForSeconds(0.1f); // Verifier plus souvent s'il y a des changements
                 }
             }
             else
@@ -136,7 +136,7 @@ public class UIManager : MonoBehaviour
             {
                 bool isIncrease = steps > lastDisplayedTotalSteps && lastDisplayedTotalSteps >= 0;
 
-                // OPTIMISATION : Mettre à jour le texte seulement si nécessaire
+                // OPTIMISATION : Mettre a jour le texte seulement si necessaire
                 string newText = $"{steps}";
                 if (totalStepsText.text != newText) // MODIFICATION APPLIQUÉE
                 {
@@ -149,7 +149,7 @@ public class UIManager : MonoBehaviour
                     if (lastChangeMs > 0)
                     {
                         string readableDate = LocalDatabase.GetReadableDateFromEpoch(lastChangeMs);
-                        string newUpdateText = $"Dernière mise à jour: {readableDate}";
+                        string newUpdateText = $"Dernière mise a jour: {readableDate}";
                         if (lastUpdateText.text != newUpdateText) // MODIFICATION APPLIQUÉE
                         {
                             lastUpdateText.text = newUpdateText;
@@ -178,7 +178,7 @@ public class UIManager : MonoBehaviour
             {
                 bool isIncrease = steps > lastDisplayedDailySteps && lastDisplayedDailySteps >= 0;
 
-                // OPTIMISATION : Mettre à jour seulement si nécessaire
+                // OPTIMISATION : Mettre a jour seulement si necessaire
                 string newText = $"{steps}";
                 if (dailyStepsText.text != newText) // MODIFICATION APPLIQUÉE
                 {
@@ -194,7 +194,7 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // OPTIMISATION : Éviter les coroutines multiples pour le même élément
+    // OPTIMISATION : Éviter les coroutines multiples pour le même element
     private System.Collections.Generic.Dictionary<TextMeshProUGUI, Coroutine> flashCoroutines =
         new System.Collections.Generic.Dictionary<TextMeshProUGUI, Coroutine>();
 
@@ -202,7 +202,7 @@ public class UIManager : MonoBehaviour
     {
         if (textElement != null)
         {
-            // OPTIMISATION : Arrêter la coroutine précédente si elle existe
+            // OPTIMISATION : Arrêter la coroutine precedente si elle existe
             if (flashCoroutines.ContainsKey(textElement) && flashCoroutines[textElement] != null)
             {
                 StopCoroutine(flashCoroutines[textElement]);
@@ -217,10 +217,10 @@ public class UIManager : MonoBehaviour
             // Attendre un court instant
             yield return new WaitForSeconds(stepUpdateFlashDuration);
 
-            // Revenir à la couleur d'origine
+            // Revenir a la couleur d'origine
             textElement.color = originalColor;
 
-            // Nettoyer la référence
+            // Nettoyer la reference
             if (flashCoroutines.ContainsKey(textElement))
             {
                 flashCoroutines.Remove(textElement);
@@ -228,7 +228,7 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // OPTIMISATION : Méthodes publiques pour contrôler l'update
+    // OPTIMISATION : Methodes publiques pour contrôler l'update
     public void PauseUIUpdates()
     {
         StopUIUpdateCoroutine();
@@ -239,7 +239,7 @@ public class UIManager : MonoBehaviour
         StartUIUpdateCoroutine();
     }
 
-    // OPTIMISATION : Forcer une mise à jour immédiate si nécessaire
+    // OPTIMISATION : Forcer une mise a jour immediate si necessaire
     public void ForceUIUpdate()
     {
         if (stepManager != null && stepManager.enabled)
@@ -249,7 +249,7 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // OPTIMISATION : Nettoyer à la destruction
+    // OPTIMISATION : Nettoyer a la destruction
     private void OnDestroy()
     {
         StopUIUpdateCoroutine();

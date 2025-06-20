@@ -250,7 +250,7 @@ public class EquipmentPanelUI : MonoBehaviour
         {
             // TODO: Calculate total stats from equipped items
             int totalItems = equippedItems.Count;
-            totalStatsText.text = $"Objets équipés: {totalItems}";
+            totalStatsText.text = $"Objets equipes: {totalItems}";
         }
     }
 
@@ -263,7 +263,7 @@ public class EquipmentPanelUI : MonoBehaviour
         {
             if (equippedItems.Count == 0)
             {
-                equipmentInfoText.text = "Aucun équipement";
+                equipmentInfoText.text = "Aucun equipement";
             }
             else
             {

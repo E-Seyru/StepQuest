@@ -24,7 +24,7 @@ public class ErrorPanel : MonoBehaviour
 
     private bool isDisplaying = false;
     private Transform currentPOI = null; // Pour suivre le POI pendant l'affichage
-    private Vector2 currentOffset; // Offset calculé (peut être différent de poiOffset si décalé)
+    private Vector2 currentOffset; // Offset calcule (peut être different de poiOffset si decale)
 
     void Awake()
     {
@@ -40,7 +40,7 @@ public class ErrorPanel : MonoBehaviour
 
     void Start()
     {
-        // S'assurer que le panel est masqué au départ
+        // S'assurer que le panel est masque au depart
         gameObject.SetActive(false);
 
         // Initialiser le CanvasGroup
@@ -56,8 +56,8 @@ public class ErrorPanel : MonoBehaviour
 
     void Update()
     {
-        // Si le panel est affiché et qu'on a une référence au POI, 
-        // recalculer la position en continu pour suivre les mouvements de caméra
+        // Si le panel est affiche et qu'on a une reference au POI, 
+        // recalculer la position en continu pour suivre les mouvements de camera
         if (isDisplaying && currentPOI != null)
         {
             UpdatePosition();
@@ -65,7 +65,7 @@ public class ErrorPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Affiche le panel d'erreur avec le message spécifié
+    /// Affiche le panel d'erreur avec le message specifie
     /// </summary>
     public void ShowError(string message, Transform poiTransform = null)
     {
@@ -76,16 +76,16 @@ public class ErrorPanel : MonoBehaviour
             errorText.text = message;
         }
 
-        // Stocker la référence au POI pour le suivi en continu
+        // Stocker la reference au POI pour le suivi en continu
         currentPOI = poiTransform;
 
-        // Calculer l'offset adapté selon la position du POI (seulement au moment du clic)
+        // Calculer l'offset adapte selon la position du POI (seulement au moment du clic)
         CalculateAdaptedOffset();
 
         // Positionner près du POI
         UpdatePosition();
 
-        // Préparer l'animation d'entrée
+        // Preparer l'animation d'entree
         canvasGroup.alpha = 0f;
         gameObject.SetActive(true);
         isDisplaying = true;
@@ -123,17 +123,17 @@ public class ErrorPanel : MonoBehaviour
             {
                 gameObject.SetActive(false);
                 isDisplaying = false;
-                // Nettoyer la référence au POI seulement quand l'animation est terminée
+                // Nettoyer la reference au POI seulement quand l'animation est terminee
                 currentPOI = null;
             });
     }
 
     /// <summary>
-    /// Calcule l'offset adapté selon la position du POI pour éviter de sortir de l'écran
+    /// Calcule l'offset adapte selon la position du POI pour eviter de sortir de l'ecran
     /// </summary>
     private void CalculateAdaptedOffset()
     {
-        // Commencer avec l'offset par défaut
+        // Commencer avec l'offset par defaut
         currentOffset = poiOffset;
 
         if (currentPOI == null)
@@ -141,14 +141,14 @@ public class ErrorPanel : MonoBehaviour
             return;
         }
 
-        // Trouver la caméra principale
+        // Trouver la camera principale
         Camera mainCamera = Camera.main;
         if (mainCamera == null)
         {
             return;
         }
 
-        // Récupérer la vraie largeur du panel
+        // Recuperer la vraie largeur du panel
         RectTransform rectTransform = transform as RectTransform;
         if (rectTransform == null)
         {
@@ -157,25 +157,25 @@ public class ErrorPanel : MonoBehaviour
 
         float panelWidth = rectTransform.rect.width;
 
-        // Convertir la position du POI en position écran
+        // Convertir la position du POI en position ecran
         Vector3 poiScreenPosition = mainCamera.WorldToScreenPoint(currentPOI.position);
 
         // Calculer la position cible avec l'offset normal
         Vector3 targetScreenPosition = poiScreenPosition + new Vector3(poiOffset.x, poiOffset.y, 0f);
 
-        // Calculer combien de pixels du panel seraient cachés à droite
+        // Calculer combien de pixels du panel seraient caches a droite
         float hiddenWidth = (targetScreenPosition.x + panelWidth) - Screen.width;
 
-        // Changer de côté seulement si 25% ou plus du panel serait caché
+        // Changer de côte seulement si 25% ou plus du panel serait cache
         if (hiddenWidth > 0 && hiddenWidth > panelWidth * 0.25f)
         {
-            // Décaler vers la gauche : utiliser un offset négatif
+            // Decaler vers la gauche : utiliser un offset negatif
             currentOffset.x = -Mathf.Abs(poiOffset.x);
         }
     }
 
     /// <summary>
-    /// Met à jour la position du panel par rapport au POI actuel
+    /// Met a jour la position du panel par rapport au POI actuel
     /// </summary>
     private void UpdatePosition()
     {
@@ -184,12 +184,12 @@ public class ErrorPanel : MonoBehaviour
 
         if (currentPOI == null)
         {
-            // Position par défaut si pas de POI spécifié
+            // Position par defaut si pas de POI specifie
             rectTransform.anchoredPosition = new Vector2(0f, 200f);
             return;
         }
 
-        // Trouver la caméra principale
+        // Trouver la camera principale
         Camera mainCamera = Camera.main;
         if (mainCamera == null)
         {
@@ -198,13 +198,13 @@ public class ErrorPanel : MonoBehaviour
             return;
         }
 
-        // Convertir la position du POI (world space) en position écran
+        // Convertir la position du POI (world space) en position ecran
         Vector3 poiScreenPosition = mainCamera.WorldToScreenPoint(currentPOI.position);
 
-        // Utiliser l'offset adapté (calculé au moment du clic)
+        // Utiliser l'offset adapte (calcule au moment du clic)
         Vector3 targetScreenPosition = poiScreenPosition + new Vector3(currentOffset.x, currentOffset.y, 0f);
 
-        // Convertir la position écran en position UI locale pour notre RectTransform
+        // Convertir la position ecran en position UI locale pour notre RectTransform
         Canvas parentCanvas = GetComponentInParent<Canvas>();
         if (parentCanvas != null)
         {
@@ -220,7 +220,7 @@ public class ErrorPanel : MonoBehaviour
         }
         else
         {
-            // Fallback : utiliser la position écran directement
+            // Fallback : utiliser la position ecran directement
             rectTransform.position = targetScreenPosition;
         }
     }
@@ -230,7 +230,7 @@ public class ErrorPanel : MonoBehaviour
         // Nettoyer les animations LeanTween
         LeanTween.cancel(gameObject);
 
-        // Nettoyer la référence au POI
+        // Nettoyer la reference au POI
         currentPOI = null;
     }
 }

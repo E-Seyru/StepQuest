@@ -5,8 +5,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Interface de debug runtime pour réparer les données joueur corrompues
-/// Fonctionne sur Android ! Ajoute ce script à un GameObject avec UI
+/// Interface de debug runtime pour reparer les donnees joueur corrompues
+/// Fonctionne sur Android ! Ajoute ce script a un GameObject avec UI
 /// </summary>
 public class RuntimePlayerDataFixer : MonoBehaviour
 {
@@ -20,7 +20,7 @@ public class RuntimePlayerDataFixer : MonoBehaviour
     [SerializeField] private Button togglePanelButton;
 
     [Header("Settings")]
-    [SerializeField] private KeyCode toggleKey = KeyCode.F1; // Pour l'éditeur
+    [SerializeField] private KeyCode toggleKey = KeyCode.F1; // Pour l'editeur
     [SerializeField] private bool enableTouchToggle = true; // 5 taps rapides pour ouvrir
     [SerializeField] private bool startVisible = false;
 

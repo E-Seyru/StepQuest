@@ -31,11 +31,11 @@ public class POI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private LeanTweenType clickAnimationEase = LeanTweenType.easeOutBack;
 
     [Header("Error Display")]
-    [Tooltip("Le panel d'erreur sera géré automatiquement via ErrorPanel.Instance")]
+    [Tooltip("Le panel d'erreur sera gere automatiquement via ErrorPanel.Instance")]
     [SerializeField] private bool enableErrorMessages = true;
 
     [Header("Location Details")]
-    [Tooltip("Nom du panel à afficher pour les détails de la location")]
+    [Tooltip("Nom du panel a afficher pour les details de la location")]
     [SerializeField] private string locationDetailsPanelName = "LocationDetailsPanel";
 
     [Header("Debug")]
@@ -53,7 +53,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     private bool isAnimating = false;
 
     /// <summary>
-    /// Retourne la position de départ pour le chemin de voyage
+    /// Retourne la position de depart pour le chemin de voyage
     /// </summary>
     public Vector3 GetTravelPathStartPosition()
     {
@@ -65,7 +65,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// Retourne la position actuelle du point de départ (pour vérification dans l'éditeur)
+    /// Retourne la position actuelle du point de depart (pour verification dans l'editeur)
     /// </summary>
     public Vector3 GetTravelPathStartPoint()
     {
@@ -73,7 +73,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// Définit un nouveau point de départ pour le chemin de voyage
+    /// Definit un nouveau point de depart pour le chemin de voyage
     /// </summary>
     public void SetTravelPathStartPoint(Transform newStartPoint)
     {
@@ -82,7 +82,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     void Start()
     {
-        // Sauvegarder l'échelle originale
+        // Sauvegarder l'echelle originale
         originalScale = transform.localScale;
 
         // Get manager references
@@ -133,7 +133,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
         }
 
         // Subscribe to MapManager events if needed for other functionality
-        // (Actuellement aucun événement nécessaire car plus de changements de couleur)
+        // (Actuellement aucun evenement necessaire car plus de changements de couleur)
 
         if (enableDebugLogs)
         {
@@ -147,7 +147,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
         // Arrêter toutes les animations LeanTween sur cet objet
         LeanTween.cancel(gameObject);
 
-        // Plus d'événements à désabonner car plus de changements de couleur
+        // Plus d'evenements a desabonner car plus de changements de couleur
     }
 
     // Mobile-optimized click handling
@@ -167,7 +167,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     /// </summary>
     private void PlayClickAnimation()
     {
-        // Ne pas jouer l'animation si elle est désactivée ou si une animation est déjà en cours
+        // Ne pas jouer l'animation si elle est desactivee ou si une animation est deja en cours
         if (!enableClickAnimation || isAnimating)
             return;
 
@@ -176,16 +176,16 @@ public class POI : MonoBehaviour, IPointerClickHandler
         // Annuler toute animation en cours sur cet objet
         LeanTween.cancel(gameObject);
 
-        // Animation en 2 étapes :
+        // Animation en 2 etapes :
         // 1. Grandir rapidement
-        // 2. Revenir à la taille normale
+        // 2. Revenir a la taille normale
 
-        // Étape 1 : Grandir (la moitié du temps total)
+        // Étape 1 : Grandir (la moitie du temps total)
         LeanTween.scale(gameObject, originalScale * clickScaleAmount, clickAnimationDuration * 0.5f)
             .setEase(LeanTweenType.easeOutQuad)
             .setOnComplete(() =>
             {
-                // Étape 2 : Rétrécir vers la taille normale (l'autre moitié du temps)
+                // Étape 2 : Retrecir vers la taille normale (l'autre moitie du temps)
                 LeanTween.scale(gameObject, originalScale, clickAnimationDuration * 0.5f)
                     .setEase(clickAnimationEase)
                     .setOnComplete(() =>
@@ -222,7 +222,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
             Logger.LogInfo($"POI: Clicked on POI '{LocationID}'", Logger.LogCategory.MapLog);
         }
 
-        // Vérifier en temps réel si c'est la location actuelle (évite les problèmes d'ordre d'initialisation)
+        // Verifier en temps reel si c'est la location actuelle (evite les problèmes d'ordre d'initialisation)
         bool isAtCurrentLocation = (mapManager?.CurrentLocation?.LocationID == LocationID);
 
         // Check if this is the current location (when not traveling)
@@ -237,7 +237,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
             return;
         }
 
-        // Vérifier si le voyage est possible avant d'ouvrir la popup
+        // Verifier si le voyage est possible avant d'ouvrir la popup
         if (mapManager.CanTravelTo(LocationID))
         {
             if (travelPopup != null)
@@ -270,15 +270,15 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
         if (mapManager.CurrentLocation == null)
         {
-            errorMessage = "Impossible - aucune location définie !";
+            errorMessage = "Impossible - aucune location definie !";
         }
         else if (dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            errorMessage = "Impossible - vous êtes déjà en train de voyager !";
+            errorMessage = "Impossible - vous êtes deja en train de voyager !";
         }
         else if (ActivityManager.Instance?.HasActiveActivity() == true)
         {
-            errorMessage = "Impossible - vous êtes en activité !";
+            errorMessage = "Impossible - vous êtes en activite !";
         }
         else if (destinationLocation == null)
         {
@@ -286,11 +286,11 @@ public class POI : MonoBehaviour, IPointerClickHandler
         }
         else if (mapManager.CurrentLocation.LocationID == LocationID)
         {
-            errorMessage = $"Impossible - déjà à '{destinationLocation.DisplayName}' !";
+            errorMessage = $"Impossible - deja a '{destinationLocation.DisplayName}' !";
         }
         else if (!locationRegistry.CanTravelBetween(mapManager.CurrentLocation.LocationID, LocationID))
         {
-            errorMessage = $"Impossible - pas connecté à '{destinationLocation.DisplayName}' !";
+            errorMessage = $"Impossible - pas connecte a '{destinationLocation.DisplayName}' !";
         }
 
         // Afficher le panel d'erreur
@@ -326,7 +326,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// Affiche le panel de détails de la location quand on clique sur notre location actuelle
+    /// Affiche le panel de details de la location quand on clique sur notre location actuelle
     /// </summary>
     private void ShowLocationDetails()
     {
@@ -347,7 +347,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
             Logger.LogInfo($"POI ({LocationID}): Hiding map and showing '{locationDetailsPanelName}' panel", Logger.LogCategory.MapLog);
         }
 
-        // Utiliser la nouvelle méthode du PanelManager pour aller au panel des détails
+        // Utiliser la nouvelle methode du PanelManager pour aller au panel des details
         panelManager.HideMapAndGoToPanel(locationDetailsPanelName);
     }
 

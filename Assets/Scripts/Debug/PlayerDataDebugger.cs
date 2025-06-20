@@ -1,4 +1,4 @@
-﻿// Purpose: Diagnostic et réparation des données joueur corrompues
+﻿// Purpose: Diagnostic et reparation des donnees joueur corrompues
 // Filepath: Assets/Scripts/Debug/PlayerDataDebugger.cs
 #if UNITY_EDITOR
 using UnityEditor;
@@ -22,7 +22,7 @@ public class PlayerDataDebugger : EditorWindow
 
         if (!Application.isPlaying)
         {
-            EditorGUILayout.HelpBox("WARNING: Cette tool nécessite le mode Play pour accéder aux données joueur", MessageType.Warning);
+            EditorGUILayout.HelpBox("WARNING: Cette tool necessite le mode Play pour acceder aux donnees joueur", MessageType.Warning);
             return;
         }
 
@@ -256,7 +256,7 @@ public class PlayerDataDebugger : EditorWindow
 
         EditorGUILayout.Space();
 
-        // État d'activité
+        // État d'activite
         EditorGUILayout.LabelField("ACTIVITE:", EditorStyles.boldLabel);
         EditorGUILayout.LabelField($"   Activite active: {(playerData.HasActiveActivity() ? "Oui" : "Non")}", EditorStyles.miniLabel);
 

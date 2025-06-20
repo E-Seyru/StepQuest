@@ -15,13 +15,13 @@ public class POIEditor : Editor
 
         POI poi = (POI)target;
 
-        // Bouton pour créer un point de départ
+        // Bouton pour creer un point de depart
         if (GUILayout.Button("Create Travel Start Point"))
         {
             CreateTravelStartPoint(poi);
         }
 
-        // Bouton pour supprimer le point de départ
+        // Bouton pour supprimer le point de depart
         if (poi.GetTravelPathStartPosition() != poi.transform.position && GUILayout.Button("Remove Travel Start Point"))
         {
             RemoveTravelStartPoint(poi);
@@ -41,11 +41,11 @@ public class POIEditor : Editor
 
     private void CreateTravelStartPoint(POI poi)
     {
-        // Créer un nouveau GameObject enfant
+        // Creer un nouveau GameObject enfant
         GameObject startPoint = new GameObject("TravelStartPoint");
         startPoint.transform.SetParent(poi.transform);
 
-        // Le positionner légèrement décalé du POI pour qu'il soit visible
+        // Le positionner legèrement decale du POI pour qu'il soit visible
         startPoint.transform.localPosition = new Vector3(0.5f, 0f, 0f);
 
         // Assigner le Transform au POI
@@ -54,11 +54,11 @@ public class POIEditor : Editor
         startPointProperty.objectReferenceValue = startPoint.transform;
         serializedPOI.ApplyModifiedProperties();
 
-        // Marquer la scène comme modifiée
+        // Marquer la scène comme modifiee
         EditorUtility.SetDirty(poi);
         UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(poi.gameObject.scene);
 
-        // Sélectionner le nouveau point pour faciliter son positionnement
+        // Selectionner le nouveau point pour faciliter son positionnement
         Selection.activeGameObject = startPoint;
 
         Debug.Log($"Travel start point created for POI '{poi.LocationID}'");
@@ -75,11 +75,11 @@ public class POIEditor : Editor
             // Supprimer le GameObject
             DestroyImmediate(currentStartPoint.gameObject);
 
-            // Nettoyer la référence
+            // Nettoyer la reference
             startPointProperty.objectReferenceValue = null;
             serializedPOI.ApplyModifiedProperties();
 
-            // Marquer comme modifié
+            // Marquer comme modifie
             EditorUtility.SetDirty(poi);
             UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(poi.gameObject.scene);
 

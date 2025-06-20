@@ -53,12 +53,12 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
 
     void OnDestroy()
     {
-        // Plus besoin de gérer l'enregistrement avec le système event-driven
+        // Plus besoin de gerer l'enregistrement avec le système event-driven
     }
 
     void OnDisable()
     {
-        // Sécurité : se nettoyer du DragDropManager si on était survolé
+        // Securite : se nettoyer du DragDropManager si on etait survole
         if (DragDropManager.Instance != null && DragDropManager.Instance.IsDragging)
         {
             DragDropManager.Instance.ClearHoveredSlot(this);
@@ -226,7 +226,7 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     {
         if (background != null && !isDragSource)
         {
-            // Restaurer la couleur originale ou sélectionnée
+            // Restaurer la couleur originale ou selectionnee
             background.color = isSelected ? selectedColor : originalBackgroundColor;
         }
     }
@@ -285,7 +285,7 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
 
         isDragSource = false;
 
-        // IMPORTANT: Si le drag n'a pas été complété via OnDrop(), l'annuler
+        // IMPORTANT: Si le drag n'a pas ete complete via OnDrop(), l'annuler
         if (DragDropManager.Instance != null && DragDropManager.Instance.IsDragging)
         {
             DragDropManager.Instance.CancelDrag();

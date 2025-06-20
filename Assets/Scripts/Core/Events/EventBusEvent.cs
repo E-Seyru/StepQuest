@@ -1,38 +1,38 @@
-// Purpose: Classe de base pour tous les événements de l'EventBus
+// Purpose: Classe de base pour tous les evenements de l'EventBus
 // Filepath: Assets/Scripts/Core/Events/EventBusEvent.cs
 
 using System;
 
 /// <summary>
-/// Classe de base abstraite pour tous les événements de l'EventBus.
-/// Tous vos événements doivent hériter de cette classe.
+/// Classe de base abstraite pour tous les evenements de l'EventBus.
+/// Tous vos evenements doivent heriter de cette classe.
 /// </summary>
 public abstract class EventBusEvent
 {
     /// <summary>
-    /// Timestamp de quand l'événement a été créé
+    /// Timestamp de quand l'evenement a ete cree
     /// Utile pour le debugging et les logs
     /// </summary>
     public DateTime Timestamp { get; }
 
     /// <summary>
-    /// ID unique de l'événement pour le debugging
+    /// ID unique de l'evenement pour le debugging
     /// </summary>
     public string EventId { get; }
 
     /// <summary>
-    /// Nom lisible du type d'événement
+    /// Nom lisible du type d'evenement
     /// </summary>
     public string EventType => GetType().Name;
 
     protected EventBusEvent()
     {
         Timestamp = DateTime.Now;
-        EventId = Guid.NewGuid().ToString("N")[..8]; // 8 premiers caractères pour plus de lisibilité
+        EventId = Guid.NewGuid().ToString("N")[..8]; // 8 premiers caractères pour plus de lisibilite
     }
 
     /// <summary>
-    /// Représentation string de l'événement pour le debugging
+    /// Representation string de l'evenement pour le debugging
     /// </summary>
     public override string ToString()
     {
@@ -41,8 +41,8 @@ public abstract class EventBusEvent
 }
 
 /// <summary>
-/// Interface optionnelle pour les événements qui peuvent être annulés
-/// Utile pour des événements comme "BeforeLocationChange" où on veut pouvoir empêcher l'action
+/// Interface optionnelle pour les evenements qui peuvent être annules
+/// Utile pour des evenements comme "BeforeLocationChange" où on veut pouvoir empêcher l'action
 /// </summary>
 public interface ICancellableEvent
 {
@@ -53,7 +53,7 @@ public interface ICancellableEvent
 }
 
 /// <summary>
-/// Classe de base pour les événements annulables
+/// Classe de base pour les evenements annulables
 /// </summary>
 public abstract class CancellableEventBusEvent : EventBusEvent, ICancellableEvent
 {

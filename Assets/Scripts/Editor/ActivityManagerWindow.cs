@@ -394,7 +394,7 @@ public class ActivityManagerWindow : EditorWindow
         SceneView sceneView = SceneView.lastActiveSceneView;
         if (sceneView != null)
         {
-            // Position en face de la caméra de la SceneView
+            // Position en face de la camera de la SceneView
             Vector3 cameraPos = sceneView.camera.transform.position;
             Vector3 cameraForward = sceneView.camera.transform.forward;
             poiObject.transform.position = cameraPos + cameraForward * 10f;
@@ -493,7 +493,7 @@ public class ActivityManagerWindow : EditorWindow
             }
         }
 
-        // NOUVEAU : Aussi synchroniser ces variants avec toutes les autres locations qui utilisent cette activité
+        // NOUVEAU : Aussi synchroniser ces variants avec toutes les autres locations qui utilisent cette activite
         if (assignedCount > 0 && locationRegistry != null)
         {
             foreach (var variant in locationActivity.ActivityVariants)
@@ -1232,7 +1232,7 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// Synchronise l'ajout/suppression d'un variant à travers toutes les LocationActivity qui utilisent la même ActivityDefinition
+    /// Synchronise l'ajout/suppression d'un variant a travers toutes les LocationActivity qui utilisent la même ActivityDefinition
     /// </summary>
     private void SynchronizeVariantAcrossAllLocations(ActivityDefinition activityDef, ActivityVariant variant, bool add)
     {
@@ -1255,7 +1255,7 @@ public class ActivityManagerWindow : EditorWindow
 
                 if (add)
                 {
-                    // Ajouter le variant s'il n'existe pas déjà
+                    // Ajouter le variant s'il n'existe pas deja
                     if (!locActivity.ActivityVariants.Contains(variant))
                     {
                         locActivity.ActivityVariants.Add(variant);

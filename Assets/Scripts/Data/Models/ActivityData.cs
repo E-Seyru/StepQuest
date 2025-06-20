@@ -15,10 +15,10 @@ public class ActivityData
     public long LastProcessedTotalSteps; // Dernier TotalSteps qu'on a traite
 
     // === NOUVEAU: ETAT DE LA SESSION - TEMPS ===
-    public bool IsTimeBased;           // Flag pour identifier le type d'activité
-    public long AccumulatedTimeMs;     // Temps accumulé (pour activités temporelles)
+    public bool IsTimeBased;           // Flag pour identifier le type d'activite
+    public long AccumulatedTimeMs;     // Temps accumule (pour activites temporelles)
     public long RequiredTimeMs;        // Temps total requis (ex: 30000ms = 30s de craft)
-    public long LastProcessedTimeMs;   // Dernier timestamp traité (pour calculs offline)
+    public long LastProcessedTimeMs;   // Dernier timestamp traite (pour calculs offline)
 
     // === METADONNEES DE SESSION ===
     public long StartTimeMs;           // Timestamp Unix de debut (pour calculs offline)
@@ -43,7 +43,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// Constructeur pour creer une nouvelle session d'activite basée sur les pas
+    /// Constructeur pour creer une nouvelle session d'activite basee sur les pas
     /// </summary>
     public ActivityData(string activityId, string variantId, long startSteps, string locationId)
     {
@@ -61,7 +61,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// NOUVEAU: Constructeur pour creer une nouvelle session d'activite basée sur le temps
+    /// NOUVEAU: Constructeur pour creer une nouvelle session d'activite basee sur le temps
     /// </summary>
     public ActivityData(string activityId, string variantId, long requiredTimeMs, string locationId, bool isTimeBased)
     {
@@ -91,9 +91,9 @@ public class ActivityData
     }
 
     /// <summary>
-    /// Calcule le progrès vers le prochain tic (0.0 à 1.0)
-    /// Pour les activités pas: utilise le ActivityVariant pour connaître le ActionCost
-    /// Pour les activités temps: utilise RequiredTimeMs
+    /// Calcule le progrès vers le prochain tic (0.0 a 1.0)
+    /// Pour les activites pas: utilise le ActivityVariant pour connaître le ActionCost
+    /// Pour les activites temps: utilise RequiredTimeMs
     /// </summary>
     public float GetProgressToNextTick(ActivityVariant variant)
     {
@@ -111,14 +111,14 @@ public class ActivityData
 
     /// <summary>
     /// MODIFIE: Calcule combien de tics complets peuvent être effectues
-    /// Pour les pas: utilise les pas donnés
-    /// Pour le temps: vérifie si le temps requis est atteint
+    /// Pour les pas: utilise les pas donnes
+    /// Pour le temps: verifie si le temps requis est atteint
     /// </summary>
     public int CalculateCompleteTicks(ActivityVariant variant, int additionalSteps)
     {
         if (IsTimeBased)
         {
-            // Pour les activités temporelles, on ne peut compléter qu'1 seul "tick" (le craft complet)
+            // Pour les activites temporelles, on ne peut completer qu'1 seul "tick" (le craft complet)
             return (AccumulatedTimeMs >= RequiredTimeMs) ? 1 : 0;
         }
         else
@@ -130,7 +130,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// MODIFIE: Met à jour après avoir effectue des tics
+    /// MODIFIE: Met a jour après avoir effectue des tics
     /// </summary>
     public void ProcessTicks(ActivityVariant variant, int ticksCompleted)
     {
@@ -138,10 +138,10 @@ public class ActivityData
 
         if (IsTimeBased)
         {
-            // Pour les activités temporelles, compléter un tick = activité terminée
+            // Pour les activites temporelles, completer un tick = activite terminee
             if (ticksCompleted > 0)
             {
-                AccumulatedTimeMs = RequiredTimeMs; // Marquer comme terminé
+                AccumulatedTimeMs = RequiredTimeMs; // Marquer comme termine
             }
         }
         else
@@ -155,11 +155,11 @@ public class ActivityData
     }
 
     /// <summary>
-    /// EXISTANT: Ajoute des pas à l'accumulation
+    /// EXISTANT: Ajoute des pas a l'accumulation
     /// </summary>
     public void AddSteps(int steps)
     {
-        if (steps > 0 && !IsTimeBased) // Seulement pour les activités basées sur les pas
+        if (steps > 0 && !IsTimeBased) // Seulement pour les activites basees sur les pas
         {
             AccumulatedSteps += steps;
             LastProcessedTotalSteps += steps;
@@ -167,7 +167,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// NOUVEAU: Ajoute du temps à l'accumulation
+    /// NOUVEAU: Ajoute du temps a l'accumulation
     /// </summary>
     public void AddTime(long timeMs)
     {
@@ -179,7 +179,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// NOUVEAU: Vérifie si l'activité est terminée
+    /// NOUVEAU: Verifie si l'activite est terminee
     /// </summary>
     public bool IsComplete()
     {
@@ -189,8 +189,8 @@ public class ActivityData
         }
         else
         {
-            // Pour les activités pas, on ne peut pas savoir sans le variant
-            return false; // Sera géré par CalculateCompleteTicks
+            // Pour les activites pas, on ne peut pas savoir sans le variant
+            return false; // Sera gere par CalculateCompleteTicks
         }
     }
 
@@ -204,7 +204,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// NOUVEAU: Calcule combien de temps non-traité on a (pour les activités temporelles)
+    /// NOUVEAU: Calcule combien de temps non-traite on a (pour les activites temporelles)
     /// </summary>
     public long GetUnprocessedTimeMs()
     {
@@ -239,7 +239,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// MODIFIE: Remet à zero l'activite (pour arrêter proprement)
+    /// MODIFIE: Remet a zero l'activite (pour arrêter proprement)
     /// </summary>
     public void Clear()
     {

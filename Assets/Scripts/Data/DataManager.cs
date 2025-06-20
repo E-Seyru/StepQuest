@@ -46,10 +46,10 @@ public class DataManager : MonoBehaviour
         playerDataService = new DataManagerPlayerDataService(databaseService, validationService);
         saveLoadService = new DataManagerSaveLoadService(databaseService, validationService);
 
-        // Initialiser la base de données
+        // Initialiser la base de donnees
         databaseService.Initialize();
 
-        // Charger les données du joueur
+        // Charger les donnees du joueur
         PlayerData = playerDataService.LoadPlayerData();
 
         Logger.LogInfo("DataManager initialized and game data loaded.", Logger.LogCategory.General);
@@ -240,7 +240,7 @@ public class DataManagerPlayerDataService
 // ===============================================
 public class DataManagerValidationService
 {
-    // Constantes pour la détection d'anomalies (DÉSACTIVÉES EN ÉDITEUR)
+    // Constantes pour la detection d'anomalies (DÉSACTIVÉES EN ÉDITEUR)
     private const long MAX_ACCEPTABLE_STEPS_DELTA = 10000;
     private const long MAX_ACCEPTABLE_DAILY_STEPS = 50000;
 
@@ -280,7 +280,7 @@ public class DataManagerValidationService
             return false;
         }
 
-        // Validation basique de l'état de voyage
+        // Validation basique de l'etat de voyage
         if (string.IsNullOrEmpty(playerData.TravelDestinationId))
         {
             Logger.LogError("DataManager: Travel state corrupted - no destination!", Logger.LogCategory.General);

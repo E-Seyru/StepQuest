@@ -67,7 +67,7 @@ public class ItemDefinition : ScriptableObject
             2 => "Peu commun",
             3 => "Rare",
             4 => "Épique",
-            5 => "Légendaire",
+            5 => "Legendaire",
             _ => "Inconnu"
         };
     }
@@ -179,15 +179,15 @@ public enum ItemType
 /// </summary>
 public enum EquipmentType
 {
-    None,        // Pas un équipement
+    None,        // Pas un equipement
     Weapon,      // Arme principale
-    Tool,        // Outils (pioche, hache, canne à pêche)
+    Tool,        // Outils (pioche, hache, canne a pêche)
     Helmet,      // Casque
     Armor,       // Armure de corps
     Legs,        // Jambières
     Boots,       // Bottes
     Gloves,      // Gants
-    Backpack,    // Sac à dos (augmente l'inventaire)
+    Backpack,    // Sac a dos (augmente l'inventaire)
     Ring,        // Bague
     Necklace     // Collier
 }

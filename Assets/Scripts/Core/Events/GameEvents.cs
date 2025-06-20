@@ -1,13 +1,13 @@
-﻿// Purpose: Événements concrets du jeu pour remplacer les événements existants
+﻿// Purpose: Évenements concrets du jeu pour remplacer les evenements existants
 // Filepath: Assets/Scripts/Core/Events/GameEvents.cs
 
 /// <summary>
-/// Événements liés au GameManager
+/// Évenements lies au GameManager
 /// </summary>
 namespace GameEvents
 {
     /// <summary>
-    /// Publié quand l'état du jeu change (ex: Menu -> Playing -> Paused)
+    /// Publie quand l'etat du jeu change (ex: Menu -> Playing -> Paused)
     /// Remplace: GameManager.OnGameStateChanged
     /// </summary>
     public class GameStateChangedEvent : EventBusEvent
@@ -28,8 +28,8 @@ namespace GameEvents
     }
 
     /// <summary>
-    /// Publié AVANT que l'état du jeu change (annulable)
-    /// Nouveau: permet d'empêcher un changement d'état si nécessaire
+    /// Publie AVANT que l'etat du jeu change (annulable)
+    /// Nouveau: permet d'empêcher un changement d'etat si necessaire
     /// </summary>
     public class BeforeGameStateChangeEvent : CancellableEventBusEvent
     {
@@ -50,12 +50,12 @@ namespace GameEvents
 }
 
 /// <summary>
-/// Événements liés au MapManager et aux déplacements
+/// Évenements lies au MapManager et aux deplacements
 /// </summary>
 namespace MapEvents
 {
     /// <summary>
-    /// Publié quand le joueur arrive à une nouvelle location
+    /// Publie quand le joueur arrive a une nouvelle location
     /// Remplace: MapManager.OnLocationChanged
     /// </summary>
     public class LocationChangedEvent : EventBusEvent
@@ -78,7 +78,7 @@ namespace MapEvents
     }
 
     /// <summary>
-    /// Publié pendant le voyage entre deux locations
+    /// Publie pendant le voyage entre deux locations
     /// Remplace: MapManager.OnTravelProgress
     /// </summary>
     public class TravelProgressEvent : EventBusEvent
@@ -102,7 +102,7 @@ namespace MapEvents
     }
 
     /// <summary>
-    /// Publié quand un voyage commence
+    /// Publie quand un voyage commence
     /// Remplace: MapManager.OnTravelStarted
     /// </summary>
     public class TravelStartedEvent : EventBusEvent
@@ -125,7 +125,7 @@ namespace MapEvents
     }
 
     /// <summary>
-    /// Publié quand un voyage se termine avec succès
+    /// Publie quand un voyage se termine avec succès
     /// Remplace: MapManager.OnTravelCompleted
     /// </summary>
     public class TravelCompletedEvent : EventBusEvent
@@ -149,12 +149,12 @@ namespace MapEvents
 }
 
 /// <summary>
-/// Événements liés aux activités (mining, crafting, combat, etc.)
+/// Évenements lies aux activites (mining, crafting, combat, etc.)
 /// </summary>
 namespace ActivityEvents
 {
     /// <summary>
-    /// Publié pendant qu'une activité progresse
+    /// Publie pendant qu'une activite progresse
     /// Remplace: ActivityManager.OnActivityProgress
     /// </summary>
     public class ActivityProgressEvent : EventBusEvent
@@ -179,7 +179,7 @@ namespace ActivityEvents
     }
 
     /// <summary>
-    /// Publié quand une activité s'arrête (volontairement ou automatiquement)
+    /// Publie quand une activite s'arrête (volontairement ou automatiquement)
     /// Remplace: ActivityManager.OnActivityStopped
     /// </summary>
     public class ActivityStoppedEvent : EventBusEvent
@@ -208,7 +208,7 @@ namespace ActivityEvents
     }
 
     /// <summary>
-    /// Publié à chaque "tick" d'activité (quand le joueur gagne quelque chose)
+    /// Publie a chaque "tick" d'activite (quand le joueur gagne quelque chose)
     /// Remplace: ActivityManager.OnActivityTick
     /// </summary>
     public class ActivityTickEvent : EventBusEvent
@@ -235,8 +235,8 @@ namespace ActivityEvents
     }
 
     /// <summary>
-    /// Publié quand une nouvelle activité commence
-    /// Nouveau: permet de notifier le début d'une activité
+    /// Publie quand une nouvelle activite commence
+    /// Nouveau: permet de notifier le debut d'une activite
     /// </summary>
     public class ActivityStartedEvent : EventBusEvent
     {

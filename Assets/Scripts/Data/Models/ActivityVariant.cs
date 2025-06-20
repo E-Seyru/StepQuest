@@ -83,7 +83,7 @@ public class ActivityVariant : ScriptableObject
     }
 
     /// <summary>
-    /// NOUVEAU: Vérifie si on peut crafter (pour les activités temporelles)
+    /// NOUVEAU: Verifie si on peut crafter (pour les activites temporelles)
     /// </summary>
     public bool CanCraft(InventoryManager inventoryManager, string playerId = "player")
     {
@@ -94,15 +94,15 @@ public class ActivityVariant : ScriptableObject
         var container = inventoryManager.GetContainer(playerId);
         if (container == null) return false;
 
-        // Vérifier qu'on a tous les matériaux nécessaires
+        // Verifier qu'on a tous les materiaux necessaires
         for (int i = 0; i < RequiredMaterials.Length; i++)
         {
             if (RequiredMaterials[i] == null) continue;
 
-            // Utiliser HasItem pour vérifier si on a assez de ce matériau
+            // Utiliser HasItem pour verifier si on a assez de ce materiau
             if (!container.HasItem(RequiredMaterials[i].ItemID, RequiredQuantities[i]))
             {
-                return false; // Pas assez de ce matériau
+                return false; // Pas assez de ce materiau
             }
         }
 
@@ -110,13 +110,13 @@ public class ActivityVariant : ScriptableObject
     }
 
     /// <summary>
-    /// NOUVEAU: Consomme les matériaux nécessaires pour le crafting
+    /// NOUVEAU: Consomme les materiaux necessaires pour le crafting
     /// </summary>
     public bool ConsumeCraftingMaterials(InventoryManager inventoryManager, string playerId = "player")
     {
         if (!CanCraft(inventoryManager, playerId)) return false;
 
-        // Consommer tous les matériaux
+        // Consommer tous les materiaux
         for (int i = 0; i < RequiredMaterials.Length; i++)
         {
             if (RequiredMaterials[i] == null) continue;
@@ -134,7 +134,7 @@ public class ActivityVariant : ScriptableObject
     }
 
     /// <summary>
-    /// NOUVEAU: Obtient la liste des matériaux requis sous forme de texte
+    /// NOUVEAU: Obtient la liste des materiaux requis sous forme de texte
     /// </summary>
     public string GetRequiredMaterialsText()
     {
@@ -179,7 +179,7 @@ public class ActivityVariant : ScriptableObject
 
         if (IsTimeBased)
         {
-            // Validation pour les activités temporelles
+            // Validation pour les activites temporelles
             if (CraftingTimeMs <= 0) return false;
             if (RequiredMaterials != null && RequiredQuantities != null)
             {
@@ -188,7 +188,7 @@ public class ActivityVariant : ScriptableObject
         }
         else
         {
-            // Validation pour les activités basées sur les pas
+            // Validation pour les activites basees sur les pas
             if (ActionCost <= 0) return false;
         }
 

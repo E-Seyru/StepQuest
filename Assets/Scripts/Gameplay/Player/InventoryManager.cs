@@ -1,5 +1,5 @@
 ﻿// ===============================================
-// InventoryManager.cs - Version Complète Corrigée
+// InventoryManager.cs - Version Complète Corrigee
 // Thread-Safe, Robuste, Zero-Impact API
 // ===============================================
 // Purpose: Main manager for all inventory operations - REFACTORED & SECURED
@@ -259,7 +259,7 @@ public class InventoryManager : MonoBehaviour
             var containers = containerService.GetAllContainers();
             foreach (var container in containers.Values)
             {
-                // Vérifier l'intégrité de chaque container
+                // Verifier l'integrite de chaque container
                 if (container.Slots == null)
                 {
                     Logger.LogError($"InventoryManager: Container '{container.ContainerID}' has null slots!", Logger.LogCategory.InventoryLog);
@@ -271,7 +271,7 @@ public class InventoryManager : MonoBehaviour
                     }
                 }
 
-                // Vérifier le nombre de slots
+                // Verifier le nombre de slots
                 if (container.Slots.Count != container.MaxSlots)
                 {
                     Logger.LogWarning($"InventoryManager: Container '{container.ContainerID}' has incorrect slot count. Fixing...", Logger.LogCategory.InventoryLog);
@@ -288,7 +288,7 @@ public class InventoryManager : MonoBehaviour
 
         if (hasIssues)
         {
-            ForceSave(); // Sauvegarder les réparations
+            ForceSave(); // Sauvegarder les reparations
         }
 
         return !hasIssues;
@@ -326,12 +326,12 @@ public class InventoryContainerService
 
     public void Initialize(int defaultPlayerSlots, int defaultBankSlots)
     {
-        // IMPORTANT: Ne pas créer les containers ici !
-        // Ils seront créés dans EnsureDefaultContainers() après le chargement
+        // IMPORTANT: Ne pas creer les containers ici !
+        // Ils seront crees dans EnsureDefaultContainers() après le chargement
         Logger.LogInfo("InventoryContainerService: Initialized (containers will be loaded/created later)", Logger.LogCategory.InventoryLog);
     }
 
-    // CORRECTION: Retourner ReadOnly pour éviter la fuite d'état
+    // CORRECTION: Retourner ReadOnly pour eviter la fuite d'etat
     public IReadOnlyDictionary<string, InventoryContainer> GetAllContainers()
     {
         lock (containersLock)
@@ -342,7 +342,7 @@ public class InventoryContainerService
         }
     }
 
-    // Méthode interne pour accès direct (thread-safe)
+    // Methode interne pour accès direct (thread-safe)
     internal Dictionary<string, InventoryContainer> GetContainersInternal()
     {
         lock (containersLock)
@@ -359,7 +359,7 @@ public class InventoryContainerService
             var snapshot = new Dictionary<string, InventoryContainer>();
             foreach (var kvp in containers)
             {
-                // Copie via sérialisation/désérialisation pour éviter les références partagées
+                // Copie via serialisation/deserialisation pour eviter les references partagees
                 var containerData = InventoryContainerData.FromInventoryContainer(kvp.Value);
                 var containerCopy = containerData.ToInventoryContainer();
                 snapshot[kvp.Key] = containerCopy;
@@ -473,10 +473,10 @@ public class InventoryContainerService
         }
     }
 
-    // CORRECTION: Transaction atomique avec rollback vérifié
+    // CORRECTION: Transaction atomique avec rollback verifie
     public bool TransferItem(string fromId, string toId, string itemId, int quantity, ItemRegistry registry)
     {
-        // Vérifications préalables (sans lock pour éviter les deadlocks)
+        // Verifications prealables (sans lock pour eviter les deadlocks)
         if (!CanAddItem(toId, itemId, quantity, registry))
         {
             Logger.LogWarning($"InventoryContainerService: Cannot transfer - destination '{toId}' cannot accept {quantity} of '{itemId}'", Logger.LogCategory.InventoryLog);
@@ -490,7 +490,7 @@ public class InventoryContainerService
             return false;
         }
 
-        // Transaction atomique avec rollback vérifié
+        // Transaction atomique avec rollback verifie
         lock (containersLock)
         {
             // Étape 1: Retirer les items
@@ -503,17 +503,17 @@ public class InventoryContainerService
             // Étape 2: Ajouter les items
             if (!AddItem(toId, itemId, quantity, registry))
             {
-                // CORRECTION: Rollback vérifié
+                // CORRECTION: Rollback verifie
                 Logger.LogWarning($"InventoryContainerService: Transfer failed - rolling back removal from '{fromId}'", Logger.LogCategory.InventoryLog);
 
                 bool rollbackSuccess = AddItem(fromId, itemId, quantity, registry);
                 if (!rollbackSuccess)
                 {
-                    // CRITIQUE: Perte d'items détectée !
+                    // CRITIQUE: Perte d'items detectee !
                     Logger.LogError($"InventoryContainerService: CRITICAL - Rollback failed! {quantity} of '{itemId}' may be lost!", Logger.LogCategory.InventoryLog);
 
-                    // TODO: Ajouter un système de récupération d'urgence
-                    // Par exemple, log dans un fichier spécial pour récupération manuelle
+                    // TODO: Ajouter un système de recuperation d'urgence
+                    // Par exemple, log dans un fichier special pour recuperation manuelle
                 }
 
                 return false;
@@ -631,7 +631,7 @@ public class InventoryPersistenceService
         while (true)
         {
             yield return wait;
-            // CRITIQUE: Sauvegarder seulement si on a des changements non sauvegardés
+            // CRITIQUE: Sauvegarder seulement si on a des changements non sauvegardes
             if (HasUnsavedChanges())
             {
                 Logger.LogInfo("InventoryPersistenceService: Auto-save triggered", Logger.LogCategory.InventoryLog);
@@ -651,11 +651,11 @@ public class InventoryPersistenceService
 
         if (!hasDirtyContainers) return;
 
-        // CORRECTION: Créer un snapshot thread-safe
+        // CORRECTION: Creer un snapshot thread-safe
         Dictionary<string, InventoryContainer> snapshot;
         HashSet<string> dirtySnapshot;
 
-        // Créer le snapshot de manière atomique
+        // Creer le snapshot de manière atomique
         lock (dirtyLock)
         {
             snapshot = containerService.CreateSnapshotForSave();
@@ -708,7 +708,7 @@ public class InventoryPersistenceService
 
         try
         {
-            // Créer un snapshot thread-safe
+            // Creer un snapshot thread-safe
             var snapshot = containerService.CreateSnapshotForSave();
             int savedCount = 0;
 
@@ -751,7 +751,7 @@ public class InventoryPersistenceService
             foreach (var containerData in containerDataList)
             {
                 var container = containerData.ToInventoryContainer();
-                // CRITIQUE: Remplacer le container en mémoire avec les données chargées
+                // CRITIQUE: Remplacer le container en memoire avec les donnees chargees
                 containers[container.ContainerID] = container;
                 Logger.LogInfo($"InventoryPersistenceService: Loaded container '{container.ContainerID}' with {container.GetUsedSlotsCount()}/{container.MaxSlots} used slots", Logger.LogCategory.InventoryLog);
             }
@@ -768,7 +768,7 @@ public class InventoryPersistenceService
     {
         var containers = containerService.GetContainersInternal();
 
-        // CRITIQUE: Vérifier si les containers par défaut existent
+        // CRITIQUE: Verifier si les containers par defaut existent
         if (!containers.ContainsKey("player"))
         {
             Logger.LogInfo("InventoryPersistenceService: Creating missing player container", Logger.LogCategory.InventoryLog);
@@ -786,7 +786,7 @@ public class InventoryPersistenceService
         }
     }
 
-    // CRITIQUE: Force save = sauvegarder immédiatement TOUS les containers
+    // CRITIQUE: Force save = sauvegarder immediatement TOUS les containers
     public void ForceSave()
     {
         Logger.LogInfo("InventoryPersistenceService: Force save requested", Logger.LogCategory.InventoryLog);

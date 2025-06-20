@@ -35,7 +35,7 @@ public class DragDropManager : MonoBehaviour
         {
             Instance = this;
 
-            // Trouve le canvas principal si pas assigné
+            // Trouve le canvas principal si pas assigne
             if (dragCanvas == null)
             {
                 dragCanvas = FindObjectOfType<Canvas>();
@@ -63,14 +63,14 @@ public class DragDropManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Commencer une opération de drag depuis un slot
+    /// Commencer une operation de drag depuis un slot
     /// </summary>
     public bool StartDrag(IDragDropSlot slot, string itemId, int quantity)
     {
         if (isDragging || slot == null || string.IsNullOrEmpty(itemId) || quantity <= 0)
             return false;
 
-        // Vérifier que le slot peut bien donner cet item
+        // Verifier que le slot peut bien donner cet item
         if (slot.GetItemId() != itemId || slot.GetQuantity() < quantity)
             return false;
 
@@ -86,7 +86,7 @@ public class DragDropManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Terminer une opération de drag avec drop
+    /// Terminer une operation de drag avec drop
     /// </summary>
     public bool CompleteDrag(IDragDropSlot targetSlot)
     {
@@ -102,13 +102,13 @@ public class DragDropManager : MonoBehaviour
             return false;
         }
 
-        // Gérer l'échange ou le merge
+        // Gerer l'echange ou le merge
         string targetItemId = targetSlot.GetItemId();
         int targetQuantity = targetSlot.GetQuantity();
 
         if (targetSlot.IsEmpty())
         {
-            // Slot vide - simple transfer (avec vérification)
+            // Slot vide - simple transfer (avec verification)
             if (targetSlot.CanAcceptItem(draggedItemId, draggedQuantity))
             {
                 success = PerformSimpleTransfer(targetSlot);
@@ -116,12 +116,12 @@ public class DragDropManager : MonoBehaviour
         }
         else if (targetItemId == draggedItemId)
         {
-            // Même item - essayer de merge (PerformMerge gère ses propres vérifications)
+            // Même item - essayer de merge (PerformMerge gère ses propres verifications)
             success = PerformMerge(targetSlot);
         }
         else
         {
-            // Items différents - essayer d'échanger (avec vérification)
+            // Items differents - essayer d'echanger (avec verification)
             if (targetSlot.CanAcceptItem(draggedItemId, draggedQuantity))
             {
                 success = PerformSwap(targetSlot, targetItemId, targetQuantity);
@@ -143,7 +143,7 @@ public class DragDropManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Annuler l'opération de drag en cours
+    /// Annuler l'operation de drag en cours
     /// </summary>
     public void CancelDrag()
     {
@@ -155,7 +155,7 @@ public class DragDropManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Vérifier si une opération de drag est en cours
+    /// Verifier si une operation de drag est en cours
     /// </summary>
     public bool IsDragging => isDragging;
 
@@ -165,7 +165,7 @@ public class DragDropManager : MonoBehaviour
     public string GetDraggedItemId() => isDragging ? draggedItemId : null;
 
     /// <summary>
-    /// Notifié par un slot quand la souris entre (event-driven)
+    /// Notifie par un slot quand la souris entre (event-driven)
     /// </summary>
     public void SetHoveredSlot(IDragDropSlot slot)
     {
@@ -180,13 +180,13 @@ public class DragDropManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Notifié par un slot quand la souris sort (event-driven)
+    /// Notifie par un slot quand la souris sort (event-driven)
     /// </summary>
     public void ClearHoveredSlot(IDragDropSlot slot)
     {
         if (!isDragging) return;
 
-        // Sécurité : vérifier que le slot existe encore et correspond
+        // Securite : verifier que le slot existe encore et correspond
         if (currentHoveredSlot == slot && currentHoveredSlot != null)
         {
             currentHoveredSlot.OnDragExit();
@@ -208,7 +208,7 @@ public class DragDropManager : MonoBehaviour
             draggedItemComponent.Setup(draggedItemId, draggedQuantity);
         }
 
-        // Configurer l'échelle et la position
+        // Configurer l'echelle et la position
         draggedItemVisual.transform.localScale = Vector3.one * dragScale;
         UpdateDragVisualPosition();
     }
@@ -243,7 +243,7 @@ public class DragDropManager : MonoBehaviour
             return true;
         }
 
-        // Rollback si échec
+        // Rollback si echec
         sourceSlot.TrySetItem(draggedItemId, draggedQuantity);
         return false;
     }
@@ -263,13 +263,13 @@ public class DragDropManager : MonoBehaviour
         int toMerge = Mathf.Min(draggedQuantity, spaceLeft);
         int remaining = draggedQuantity - toMerge;
 
-        // Tester l'acceptation avec la quantité qu'on va réellement merger
+        // Tester l'acceptation avec la quantite qu'on va reellement merger
         if (!targetSlot.CanAcceptItem(draggedItemId, toMerge))
         {
             return false;
         }
 
-        // Sauvegarder l'état initial pour rollback correct
+        // Sauvegarder l'etat initial pour rollback correct
         int originalSourceQuantity = sourceSlot.GetQuantity();
 
         // Effectuer le merge partiel ou total
@@ -277,16 +277,16 @@ public class DragDropManager : MonoBehaviour
         {
             if (targetSlot.TrySetItem(draggedItemId, targetCurrentQuantity + toMerge))
             {
-                // Le slot source contient déjà le reste après TryRemoveItem(toMerge)
-                // Pas besoin de ré-injection, il est déjà correct
+                // Le slot source contient deja le reste après TryRemoveItem(toMerge)
+                // Pas besoin de re-injection, il est deja correct
 
-                // Mettre à jour la quantité annoncée pour l'événement
+                // Mettre a jour la quantite annoncee pour l'evenement
                 draggedQuantity = toMerge;
                 return true;
             }
             else
             {
-                // Rollback exact : restaurer la quantité originale du source
+                // Rollback exact : restaurer la quantite originale du source
                 sourceSlot.TrySetItem(draggedItemId, originalSourceQuantity);
                 return false;
             }
@@ -297,11 +297,11 @@ public class DragDropManager : MonoBehaviour
 
     private bool PerformSwap(IDragDropSlot targetSlot, string targetItemId, int targetQuantity)
     {
-        // Vérifier que le slot source peut accepter l'item cible
+        // Verifier que le slot source peut accepter l'item cible
         if (!sourceSlot.CanAcceptItem(targetItemId, targetQuantity))
             return false;
 
-        // Effectuer l'échange
+        // Effectuer l'echange
         if (sourceSlot.TryRemoveItem(draggedQuantity) && targetSlot.TryRemoveItem(targetQuantity))
         {
             if (sourceSlot.TrySetItem(targetItemId, targetQuantity) &&
@@ -310,7 +310,7 @@ public class DragDropManager : MonoBehaviour
                 return true;
             }
 
-            // Rollback en cas d'échec
+            // Rollback en cas d'echec
             sourceSlot.TrySetItem(draggedItemId, draggedQuantity);
             targetSlot.TrySetItem(targetItemId, targetQuantity);
         }
@@ -325,7 +325,7 @@ public class DragDropManager : MonoBehaviour
         draggedItemId = null;
         draggedQuantity = 0;
 
-        // Sécurité : vérifier si currentHoveredSlot existe encore
+        // Securite : verifier si currentHoveredSlot existe encore
         if (currentHoveredSlot != null)
         {
             currentHoveredSlot.OnDragExit();

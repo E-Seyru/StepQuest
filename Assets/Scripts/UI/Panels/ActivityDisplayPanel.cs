@@ -12,13 +12,13 @@ public class ActivityDisplayPanel : MonoBehaviour
     [SerializeField] private TextMeshProUGUI progressText;
     [SerializeField] private TextMeshProUGUI rewardText;
     [SerializeField] private Button closeButton;
-    [SerializeField] private Button stopActivityButton; // Optionnel pour arrêter l'activité
+    [SerializeField] private Button stopActivityButton; // Optionnel pour arrêter l'activite
 
     [Header("Custom Progress Bar")]
     [SerializeField] private Image progressBarBackground; // Image de fond de la barre
     [SerializeField] private Image progressBarFill; // Image qui se remplit
     [SerializeField] private Color progressFillColor = new Color(0.3f, 0.8f, 0.3f, 1f); // Vert sympa
-    [SerializeField] private Color progressBackgroundColor = new Color(0.2f, 0.2f, 0.2f, 0.8f); // Gris foncé
+    [SerializeField] private Color progressBackgroundColor = new Color(0.2f, 0.2f, 0.2f, 0.8f); // Gris fonce
 
     [Header("Visual")]
     [SerializeField] private Image activityIcon;
@@ -59,11 +59,11 @@ public class ActivityDisplayPanel : MonoBehaviour
         // Setup custom progress bar
         SetupCustomProgressBar();
 
-        // Commencer caché
+        // Commencer cache
         gameObject.SetActive(false);
 
         // =====================================
-        // EVENTBUS - S'abonner aux événements
+        // EVENTBUS - S'abonner aux evenements
         // =====================================
         SubscribeToActivityEvents();
     }
@@ -77,7 +77,7 @@ public class ActivityDisplayPanel : MonoBehaviour
         if (progressBarBackground != null)
         {
             progressBarBackground.color = progressBackgroundColor;
-            progressBarBackground.type = Image.Type.Sliced; // Pour des coins arrondis si vous utilisez un sprite approprié
+            progressBarBackground.type = Image.Type.Sliced; // Pour des coins arrondis si vous utilisez un sprite approprie
         }
 
         // Configurer l'image de remplissage
@@ -86,18 +86,18 @@ public class ActivityDisplayPanel : MonoBehaviour
             progressBarFill.color = progressFillColor;
             progressBarFill.type = Image.Type.Filled;
             progressBarFill.fillMethod = Image.FillMethod.Horizontal;
-            progressBarFill.fillOrigin = 0; // Commence à gauche
+            progressBarFill.fillOrigin = 0; // Commence a gauche
             progressBarFill.fillAmount = 0f; // Commence vide
         }
     }
 
     /// <summary>
-    /// S'abonner aux événements via EventBus
+    /// S'abonner aux evenements via EventBus
     /// </summary>
     private void SubscribeToActivityEvents()
     {
         // =====================================
-        // EVENTBUS - Plus besoin de vérifier ActivityManager.Instance
+        // EVENTBUS - Plus besoin de verifier ActivityManager.Instance
         // =====================================
         EventBus.Subscribe<ActivityStartedEvent>(OnActivityStarted);
         EventBus.Subscribe<ActivityStoppedEvent>(OnActivityStopped);
@@ -108,12 +108,12 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Se désabonner des événements (important pour éviter les erreurs)
+    /// Se desabonner des evenements (important pour eviter les erreurs)
     /// </summary>
     private void UnsubscribeFromActivityEvents()
     {
         // =====================================
-        // EVENTBUS - Désabonnement simple et fiable
+        // EVENTBUS - Desabonnement simple et fiable
         // =====================================
         EventBus.Unsubscribe<ActivityStartedEvent>(OnActivityStarted);
         EventBus.Unsubscribe<ActivityStoppedEvent>(OnActivityStopped);
@@ -126,7 +126,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     // === GESTIONNAIRES D'ÉVÉNEMENTS - ADAPTÉS POUR EVENTBUS ===
 
     /// <summary>
-    /// Appelé quand une activité commence
+    /// Appele quand une activite commence
     /// </summary>
     private void OnActivityStarted(ActivityStartedEvent eventData)
     {
@@ -139,7 +139,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Appelé quand une activité s'arrête
+    /// Appele quand une activite s'arrête
     /// </summary>
     private void OnActivityStopped(ActivityStoppedEvent eventData)
     {
@@ -148,7 +148,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Appelé quand l'activité progresse (pas ajoutés)
+    /// Appele quand l'activite progresse (pas ajoutes)
     /// </summary>
     private void OnActivityProgress(ActivityProgressEvent eventData)
     {
@@ -158,7 +158,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Appelé quand des ticks sont complétés (récompenses données)
+    /// Appele quand des ticks sont completes (recompenses donnees)
     /// </summary>
     private void OnActivityTick(ActivityTickEvent eventData)
     {
@@ -166,7 +166,7 @@ public class ActivityDisplayPanel : MonoBehaviour
         currentVariant = eventData.Variant;
         UpdateDisplay();
 
-        // Optionnel : effet visuel pour les récompenses
+        // Optionnel : effet visuel pour les recompenses
         ShowTickRewardFeedback(eventData.TicksCompleted);
 
         Logger.LogInfo($"ActivityDisplayPanel: Activity tick - {eventData.TicksCompleted} ticks, {eventData.Rewards.Length} rewards", Logger.LogCategory.General);
@@ -187,7 +187,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Cacher le panel (n'arrête PAS l'activité)
+    /// Cacher le panel (n'arrête PAS l'activite)
     /// </summary>
     public void HidePanel()
     {
@@ -199,7 +199,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Arrêter l'activité en cours via l'ActivityManager
+    /// Arrêter l'activite en cours via l'ActivityManager
     /// </summary>
     private void StopCurrentActivity()
     {
@@ -210,7 +210,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Mettre à jour l'affichage avec les données actuelles
+    /// Mettre a jour l'affichage avec les donnees actuelles
     /// </summary>
     private void UpdateDisplay()
     {
@@ -220,13 +220,13 @@ public class ActivityDisplayPanel : MonoBehaviour
             return;
         }
 
-        // Nom de l'activité
+        // Nom de l'activite
         if (activityNameText != null)
         {
             activityNameText.text = currentVariant.GetDisplayName();
         }
 
-        // NOUVEAU : Affichage différent selon le type d'activité
+        // NOUVEAU : Affichage different selon le type d'activite
         if (currentActivity.IsTimeBased)
         {
             UpdateTimedActivityDisplay();
@@ -236,7 +236,7 @@ public class ActivityDisplayPanel : MonoBehaviour
             UpdateStepBasedActivityDisplay();
         }
 
-        // Icône de l'activité (identique pour les deux types)
+        // Icône de l'activite (identique pour les deux types)
         if (activityIcon != null)
         {
             Sprite icon = currentVariant.GetIcon();
@@ -253,7 +253,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// NOUVEAU : Affichage pour les activités temporelles (crafting)
+    /// NOUVEAU : Affichage pour les activites temporelles (crafting)
     /// </summary>
     private void UpdateTimedActivityDisplay()
     {
@@ -275,25 +275,25 @@ public class ActivityDisplayPanel : MonoBehaviour
         {
             progressBarFill.fillAmount = progressPercent;
 
-            // Couleur spéciale pour les activités temporelles
+            // Couleur speciale pour les activites temporelles
             Color timeColor = Color.Lerp(Color.cyan, Color.yellow, progressPercent);
             progressBarFill.color = timeColor;
         }
 
-        // Récompenses
+        // Recompenses
         if (rewardText != null)
         {
             string rewardInfo = GetRewardInfo();
-            rewardText.text = $"Récompense: {rewardInfo}";
+            rewardText.text = $"Recompense: {rewardInfo}";
         }
     }
 
     /// <summary>
-    /// NOUVEAU : Affichage pour les activités basées sur les pas (existant)
+    /// NOUVEAU : Affichage pour les activites basees sur les pas (existant)
     /// </summary>
     private void UpdateStepBasedActivityDisplay()
     {
-        // Code existant pour les activités de pas
+        // Code existant pour les activites de pas
         int stepsToNext = currentVariant.ActionCost - currentActivity.AccumulatedSteps;
         float progressPercent = currentActivity.GetProgressToNextTick(currentVariant);
 
@@ -308,25 +308,25 @@ public class ActivityDisplayPanel : MonoBehaviour
         {
             progressBarFill.fillAmount = progressPercent;
 
-            // Couleur standard pour les activités de pas
+            // Couleur standard pour les activites de pas
             Color currentColor = Color.Lerp(progressFillColor, Color.yellow, progressPercent * 0.5f);
             progressBarFill.color = currentColor;
         }
 
-        // Récompenses
+        // Recompenses
         if (rewardText != null)
         {
             string rewardInfo = GetRewardInfo();
-            rewardText.text = $"Récompense par tick:\n{rewardInfo}";
+            rewardText.text = $"Recompense par tick:\n{rewardInfo}";
         }
     }
 
     /// <summary>
-    /// Obtenir les informations sur les récompenses
+    /// Obtenir les informations sur les recompenses
     /// </summary>
     private string GetRewardInfo()
     {
-        if (currentVariant == null) return "Aucune récompense";
+        if (currentVariant == null) return "Aucune recompense";
 
         if (currentVariant.PrimaryResource != null)
         {
@@ -334,23 +334,23 @@ public class ActivityDisplayPanel : MonoBehaviour
             return $"1x {resourceName}";
         }
 
-        return "Récompense inconnue";
+        return "Recompense inconnue";
     }
 
     /// <summary>
-    /// Effet visuel quand des ticks sont complétés (optionnel)
+    /// Effet visuel quand des ticks sont completes (optionnel)
     /// </summary>
     private void ShowTickRewardFeedback(int ticksCompleted)
     {
         // Ici vous pourriez ajouter des effets visuels :
         // - Animation de la barre de progression
-        // - Texte qui apparaît pour montrer les récompenses
+        // - Texte qui apparaît pour montrer les recompenses
         // - Son ou vibration
 
         // Exemple simple : effet visuel sur la barre custom
         if (progressBarFill != null)
         {
-            // L'UpdateDisplay() va être appelé après, donc la barre se remplira automatiquement
+            // L'UpdateDisplay() va être appele après, donc la barre se remplira automatiquement
             // Ici on pourrait ajouter un effet de "flash" ou d'animation
         }
     }
@@ -373,8 +373,8 @@ public class ActivityDisplayPanel : MonoBehaviour
     // === METHODES PUBLIQUES POUR L'INTEGRATION ===
 
     /// <summary>
-    /// Vérifier s'il y a une activité en cours et afficher le panel si nécessaire
-    /// Appelé quand on ouvre le panel de localisation
+    /// Verifier s'il y a une activite en cours et afficher le panel si necessaire
+    /// Appele quand on ouvre le panel de localisation
     /// </summary>
     public void CheckAndShowIfActivityActive()
     {
@@ -383,7 +383,7 @@ public class ActivityDisplayPanel : MonoBehaviour
             var (activity, variant) = ActivityManager.Instance.GetCurrentActivityInfo();
             if (activity != null && variant != null)
             {
-                // Il y a une activité en cours, afficher le panel
+                // Il y a une activite en cours, afficher le panel
                 currentActivity = activity;
                 currentVariant = variant;
                 ShowPanel();
@@ -393,7 +393,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Vérifier si le panel est actuellement affiché
+    /// Verifier si le panel est actuellement affiche
     /// </summary>
     public bool IsDisplaying()
     {
@@ -401,7 +401,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Forcer une mise à jour de l'affichage (si nécessaire)
+    /// Forcer une mise a jour de l'affichage (si necessaire)
     /// </summary>
     public void RefreshDisplay()
     {

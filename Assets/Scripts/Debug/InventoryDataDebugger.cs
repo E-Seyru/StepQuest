@@ -1,4 +1,4 @@
-﻿// Purpose: Script pour débugger et nettoyer les données d'inventaire corrompues
+﻿// Purpose: Script pour debugger et nettoyer les donnees d'inventaire corrompues
 // Filepath: Assets/Scripts/Debug/InventoryDataDebugger.cs
 #if UNITY_EDITOR
 using System.Collections.Generic;
@@ -21,9 +21,9 @@ public class InventoryDataDebugger : EditorWindow
     {
         GUILayout.Label("Inventory Data Debugger", EditorStyles.boldLabel);
 
-        EditorGUILayout.HelpBox("Ce script va analyser et nettoyer les données d'inventaire corrompues", MessageType.Info);
+        EditorGUILayout.HelpBox("Ce script va analyser et nettoyer les donnees d'inventaire corrompues", MessageType.Info);
 
-        if (GUILayout.Button("Analyser les données d'inventaire"))
+        if (GUILayout.Button("Analyser les donnees d'inventaire"))
         {
             AnalyzeInventoryData();
         }
@@ -79,13 +79,13 @@ public class InventoryDataDebugger : EditorWindow
 
         if (inventoryManager == null)
         {
-            Debug.LogError("InventoryManager non trouvé !");
+            Debug.LogError("InventoryManager non trouve !");
             return;
         }
 
         if (dataManager?.LocalDatabase == null)
         {
-            Debug.LogError("DataManager ou LocalDatabase non trouvé !");
+            Debug.LogError("DataManager ou LocalDatabase non trouve !");
             return;
         }
 
@@ -101,7 +101,7 @@ public class InventoryDataDebugger : EditorWindow
             var container = containerData.ToInventoryContainer();
             var nonEmptySlots = container.GetNonEmptySlots();
 
-            Debug.Log($"   Slots utilisés: {nonEmptySlots.Count}/{container.MaxSlots}");
+            Debug.Log($"   Slots utilises: {nonEmptySlots.Count}/{container.MaxSlots}");
 
             foreach (var slot in nonEmptySlots)
             {
@@ -115,11 +115,11 @@ public class InventoryDataDebugger : EditorWindow
                 {
                     Debug.LogError($"   ❌ {slot.ItemID} x{slot.Quantity} - ITEM INTROUVABLE DANS LE REGISTRY !");
 
-                    // Chercher une variante avec une casse différente
+                    // Chercher une variante avec une casse differente
                     string possibleMatch = FindItemWithDifferentCase(slot.ItemID, inventoryManager.GetItemRegistry());
                     if (!string.IsNullOrEmpty(possibleMatch))
                     {
-                        Debug.LogWarning($"      💡 Variante trouvée: '{possibleMatch}' (casse différente)");
+                        Debug.LogWarning($"      💡 Variante trouvee: '{possibleMatch}' (casse differente)");
                     }
                 }
             }
@@ -157,7 +157,7 @@ public class InventoryDataDebugger : EditorWindow
 
         if (inventoryManager == null || dataManager?.LocalDatabase == null)
         {
-            Debug.LogError("Managers non trouvés !");
+            Debug.LogError("Managers non trouves !");
             return;
         }
 
@@ -189,15 +189,15 @@ public class InventoryDataDebugger : EditorWindow
 
             if (containerChanged)
             {
-                // Sauvegarder le conteneur nettoyé
+                // Sauvegarder le conteneur nettoye
                 var cleanedData = InventoryContainerData.FromInventoryContainer(container);
                 dataManager.LocalDatabase.SaveInventoryContainer(cleanedData);
             }
         }
 
-        Debug.Log($"✅ Nettoyage terminé ! {cleanedCount} item(s) corrompu(s) supprimé(s)");
-        EditorUtility.DisplayDialog("Nettoyage terminé",
-            $"{cleanedCount} item(s) corrompu(s) ont été supprimés de l'inventaire.", "OK");
+        Debug.Log($"✅ Nettoyage termine ! {cleanedCount} item(s) corrompu(s) supprime(s)");
+        EditorUtility.DisplayDialog("Nettoyage termine",
+            $"{cleanedCount} item(s) corrompu(s) ont ete supprimes de l'inventaire.", "OK");
     }
 
     private void MigrateItemIDs()
@@ -217,21 +217,21 @@ public class InventoryDataDebugger : EditorWindow
 
         if (inventoryManager == null || dataManager?.LocalDatabase == null)
         {
-            Debug.LogError("Managers non trouvés !");
+            Debug.LogError("Managers non trouves !");
             return;
         }
 
         var containers = dataManager.LocalDatabase.LoadAllInventoryContainers();
         int migratedCount = 0;
 
-        // Définir les migrations connues
+        // Definir les migrations connues
         var migrations = new Dictionary<string, string>
         {
             { "cuivre", "Cuivre" },
             { "fer", "Fer" },
             { "charbon", "Charbon" },
             { "pin", "Pin" }
-            // Ajoute d'autres migrations si nécessaire
+            // Ajoute d'autres migrations si necessaire
         };
 
         foreach (var containerData in containers)
@@ -248,7 +248,7 @@ public class InventoryDataDebugger : EditorWindow
                     string oldId = slot.ItemID;
                     string newId = migrations[oldId];
 
-                    // Vérifier que le nouvel ID existe dans le registry
+                    // Verifier que le nouvel ID existe dans le registry
                     if (inventoryManager.GetItemRegistry()?.HasItem(newId) == true)
                     {
                         Debug.Log($"🔄 Migration: {oldId} → {newId} (x{slot.Quantity}) dans {container.ContainerID}");
@@ -265,15 +265,15 @@ public class InventoryDataDebugger : EditorWindow
 
             if (containerChanged)
             {
-                // Sauvegarder le conteneur migré
+                // Sauvegarder le conteneur migre
                 var migratedData = InventoryContainerData.FromInventoryContainer(container);
                 dataManager.LocalDatabase.SaveInventoryContainer(migratedData);
             }
         }
 
-        Debug.Log($"✅ Migration terminée ! {migratedCount} item(s) migré(s)");
-        EditorUtility.DisplayDialog("Migration terminée",
-            $"{migratedCount} item(s) ont été migrés vers les nouveaux IDs.", "OK");
+        Debug.Log($"✅ Migration terminee ! {migratedCount} item(s) migre(s)");
+        EditorUtility.DisplayDialog("Migration terminee",
+            $"{migratedCount} item(s) ont ete migres vers les nouveaux IDs.", "OK");
     }
 
     private void ResetInventory()
@@ -293,7 +293,7 @@ public class InventoryDataDebugger : EditorWindow
 
         if (inventoryManager == null || dataManager?.LocalDatabase == null)
         {
-            Debug.LogError("Managers non trouvés !");
+            Debug.LogError("Managers non trouves !");
             return;
         }
 
@@ -314,9 +314,9 @@ public class InventoryDataDebugger : EditorWindow
         // Forcer la sauvegarde
         inventoryManager.ForceSave();
 
-        Debug.Log("✅ Inventaire complètement vidé !");
-        EditorUtility.DisplayDialog("Reset terminé",
-            "L'inventaire a été complètement vidé.", "OK");
+        Debug.Log("✅ Inventaire complètement vide !");
+        EditorUtility.DisplayDialog("Reset termine",
+            "L'inventaire a ete complètement vide.", "OK");
     }
 
     private void DisplayInventoryDebugInfo()

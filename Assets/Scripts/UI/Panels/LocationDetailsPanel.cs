@@ -1,4 +1,4 @@
-﻿// Panel d'affichage des détails d'une location
+﻿// Panel d'affichage des details d'une location
 // Chemin: Assets/Scripts/UI/Panels/LocationDetailsPanel.cs
 using MapEvents; // NOUVEAU: Import pour EventBus
 using System.Collections;
@@ -18,7 +18,7 @@ public class LocationDetailsPanel : MonoBehaviour
     [SerializeField] private TextMeshProUGUI locationDescriptionText;
     [SerializeField] private ScrollRect descriptionScrollRect;
 
-    [Header("Interface - Section Activités")]
+    [Header("Interface - Section Activites")]
     [SerializeField] private GameObject activitiesSection;
     [SerializeField] private TextMeshProUGUI activitiesSectionTitle;
     [SerializeField] private Transform activitiesContainer;
@@ -36,20 +36,20 @@ public class LocationDetailsPanel : MonoBehaviour
     [SerializeField] private Color defaultImageColor = Color.gray;
 
     [Header("Paramètres Animation")]
-    [SerializeField] private float animationDuration = 0.2f; // Durée de l'animation en secondes
+    [SerializeField] private float animationDuration = 0.2f; // Duree de l'animation en secondes
     [SerializeField] private AnimationCurve animationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1); // Courbe d'animation
     [SerializeField] private float slidePixels = 50f; // Distance en pixels pour l'animation slide
 
     [Header("Paramètres Ombre")]
-    [SerializeField] private bool enableShadow = true; // Activer/désactiver l'ombre
-    [SerializeField] private Vector2 shadowOffset = new Vector2(5, -5); // Décalage de l'ombre
+    [SerializeField] private bool enableShadow = true; // Activer/desactiver l'ombre
+    [SerializeField] private Vector2 shadowOffset = new Vector2(5, -5); // Decalage de l'ombre
     [SerializeField] private Color shadowColor = new Color(0, 0, 0, 0.3f); // Couleur de l'ombre
 
     #endregion
 
-    #region Variables Privées
+    #region Variables Privees
 
-    // Références vers les managers
+    // References vers les managers
     private MapManager mapManager;
     private DataManager dataManager;
     private PanelManager panelManager;
@@ -83,7 +83,7 @@ public class LocationDetailsPanel : MonoBehaviour
         }
         else
         {
-            Logger.LogWarning("LocationDetailsPanel: Instance multiple détectée ! Destruction du doublon.", Logger.LogCategory.General);
+            Logger.LogWarning("LocationDetailsPanel: Instance multiple detectee ! Destruction du doublon.", Logger.LogCategory.General);
             Destroy(gameObject);
         }
     }
@@ -105,10 +105,10 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         CheckActivityDisplayPanel();
 
-        // Reset animation state au cas où elle aurait été interrompue
+        // Reset animation state au cas où elle aurait ete interrompue
         ResetAnimationState();
 
-        // Refresh immédiatement AVANT l'animation pour éviter le texte corrompu
+        // Refresh immediatement AVANT l'animation pour eviter le texte corrompu
         RefreshPanel();
 
         // Puis lancer l'animation
@@ -117,7 +117,7 @@ public class LocationDetailsPanel : MonoBehaviour
 
     void OnDisable()
     {
-        // Reset l'état d'animation quand le panel se ferme
+        // Reset l'etat d'animation quand le panel se ferme
         ResetAnimationState();
     }
 
@@ -131,7 +131,7 @@ public class LocationDetailsPanel : MonoBehaviour
     #region Initialisation
 
     /// <summary>
-    /// Récupère les références vers les managers principaux
+    /// Recupère les references vers les managers principaux
     /// </summary>
     private void InitializeReferences()
     {
@@ -141,12 +141,12 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// S'abonne aux événements via EventBus au lieu du MapManager directement
+    /// S'abonne aux evenements via EventBus au lieu du MapManager directement
     /// </summary>
     private void SetupEventSubscriptions()
     {
         // =====================================
-        // EVENTBUS - Plus besoin de vérifier if (mapManager != null)
+        // EVENTBUS - Plus besoin de verifier if (mapManager != null)
         // =====================================
 
         EventBus.Subscribe<LocationChangedEvent>(OnLocationChanged);
@@ -164,7 +164,7 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         if (!enableShadow || heroCardBackground == null) return;
 
-        // Vérifier si un composant Shadow existe déjà
+        // Verifier si un composant Shadow existe deja
         heroCardShadow = heroCardBackground.GetComponent<Shadow>();
 
         // Si pas de Shadow, en ajouter un
@@ -173,21 +173,21 @@ public class LocationDetailsPanel : MonoBehaviour
             heroCardShadow = heroCardBackground.gameObject.AddComponent<Shadow>();
         }
 
-        // Configurer les propriétés de l'ombre
+        // Configurer les proprietes de l'ombre
         heroCardShadow.effectColor = shadowColor;
         heroCardShadow.effectDistance = shadowOffset;
         heroCardShadow.useGraphicAlpha = true; // Utilise la transparence de l'image
 
-        Logger.LogInfo("LocationDetailsPanel: Effet d'ombre configuré sur la HeroCard", Logger.LogCategory.General);
+        Logger.LogInfo("LocationDetailsPanel: Effet d'ombre configure sur la HeroCard", Logger.LogCategory.General);
     }
 
     /// <summary>
-    /// Se désabonne des événements pour éviter les erreurs
+    /// Se desabonne des evenements pour eviter les erreurs
     /// </summary>
     private void UnsubscribeFromEvents()
     {
         // =====================================
-        // EVENTBUS - Désabonnement simple et fiable
+        // EVENTBUS - Desabonnement simple et fiable
         // =====================================
 
         EventBus.Unsubscribe<LocationChangedEvent>(OnLocationChanged);
@@ -199,7 +199,7 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Valide que toutes les références nécessaires sont assignées
+    /// Valide que toutes les references necessaires sont assignees
     /// </summary>
     private void ValidateRequiredReferences()
     {
@@ -207,25 +207,25 @@ public class LocationDetailsPanel : MonoBehaviour
 
         if (heroCard == null)
         {
-            Logger.LogError("LocationDetailsPanel: HeroCard n'est pas assigné !", Logger.LogCategory.General);
+            Logger.LogError("LocationDetailsPanel: HeroCard n'est pas assigne !", Logger.LogCategory.General);
             hasErrors = true;
         }
 
         if (locationDescriptionText == null)
         {
-            Logger.LogError("LocationDetailsPanel: LocationDescriptionText n'est pas assigné !", Logger.LogCategory.General);
+            Logger.LogError("LocationDetailsPanel: LocationDescriptionText n'est pas assigne !", Logger.LogCategory.General);
             hasErrors = true;
         }
 
         if (hasErrors)
         {
-            Logger.LogError("LocationDetailsPanel: Des références critiques manquent ! Le panel peut ne pas fonctionner correctement.", Logger.LogCategory.General);
+            Logger.LogError("LocationDetailsPanel: Des references critiques manquent ! Le panel peut ne pas fonctionner correctement.", Logger.LogCategory.General);
         }
     }
 
     #endregion
 
-    #region Gestion des Événements - ADAPTÉE POUR EVENTBUS
+    #region Gestion des Évenements - ADAPTÉE POUR EVENTBUS
 
     private void OnLocationChanged(LocationChangedEvent eventData)
     {
@@ -277,7 +277,7 @@ public class LocationDetailsPanel : MonoBehaviour
 
         if (gameObject.activeInHierarchy && !isAnimating)
         {
-            // Mise à jour seulement de la section info pour éviter de tout recalculer
+            // Mise a jour seulement de la section info pour eviter de tout recalculer
             UpdateInfoSection();
         }
     }
@@ -287,13 +287,13 @@ public class LocationDetailsPanel : MonoBehaviour
     #region Animations
 
     /// <summary>
-    /// Remet l'état d'animation à zéro et reposition la HeroCard
+    /// Remet l'etat d'animation a zero et reposition la HeroCard
     /// </summary>
     private void ResetAnimationState()
     {
         isAnimating = false;
 
-        // Remettre la HeroCard à sa position normale
+        // Remettre la HeroCard a sa position normale
         if (heroCard != null)
         {
             heroCard.transform.localPosition = originalPosition;
@@ -307,7 +307,7 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         if (heroCard == null) yield break;
 
-        // Si on était déjà en train d'animer, on force le reset
+        // Si on etait deja en train d'animer, on force le reset
         if (isAnimating)
         {
             ResetAnimationState();
@@ -317,7 +317,7 @@ public class LocationDetailsPanel : MonoBehaviour
 
         try
         {
-            // Position de départ (plus bas selon slidePixels)
+            // Position de depart (plus bas selon slidePixels)
             Vector3 startPosition = originalPosition + Vector3.down * slidePixels;
             heroCard.transform.localPosition = startPosition;
 
@@ -338,7 +338,7 @@ public class LocationDetailsPanel : MonoBehaviour
                 yield return null;
             }
 
-            // S'assurer qu'on termine exactement à la bonne position
+            // S'assurer qu'on termine exactement a la bonne position
             heroCard.transform.localPosition = originalPosition;
         }
         finally
@@ -358,7 +358,7 @@ public class LocationDetailsPanel : MonoBehaviour
 
     #endregion
 
-    #region Méthodes Publiques
+    #region Methodes Publiques
 
     /// <summary>
     /// Ouvre le panel et affiche la location actuelle
@@ -381,11 +381,11 @@ public class LocationDetailsPanel : MonoBehaviour
     public void ClosePanel()
     {
         gameObject.SetActive(false);
-        Logger.LogInfo("LocationDetailsPanel: Panel fermé", Logger.LogCategory.General);
+        Logger.LogInfo("LocationDetailsPanel: Panel ferme", Logger.LogCategory.General);
     }
 
     /// <summary>
-    /// Force une mise à jour du contenu du panel
+    /// Force une mise a jour du contenu du panel
     /// </summary>
     public void RefreshPanel()
     {
@@ -402,10 +402,10 @@ public class LocationDetailsPanel : MonoBehaviour
 
     #endregion
 
-    #region Méthodes Privées - Mise à jour du contenu
+    #region Methodes Privees - Mise a jour du contenu
 
     /// <summary>
-    /// Version smooth du refresh pour éviter les saccades
+    /// Version smooth du refresh pour eviter les saccades
     /// </summary>
     private IEnumerator RefreshPanelSmoothly()
     {
@@ -417,7 +417,7 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Met à jour toutes les sections du panel
+    /// Met a jour toutes les sections du panel
     /// </summary>
     private void UpdateAllSections()
     {
@@ -430,7 +430,7 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Met à jour l'en-tête (nom et image)
+    /// Met a jour l'en-tête (nom et image)
     /// </summary>
     private void UpdateHeaderSection()
     {
@@ -439,7 +439,7 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Met à jour l'image de la location
+    /// Met a jour l'image de la location
     /// </summary>
     private void UpdateLocationImage()
     {
@@ -458,7 +458,7 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Met à jour la description de la location
+    /// Met a jour la description de la location
     /// </summary>
     private void UpdateDescriptionSection()
     {
@@ -469,24 +469,24 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Met à jour la section des activités
+    /// Met a jour la section des activites
     /// </summary>
     private void UpdateActivitiesSection()
     {
-        // Nettoyer les éléments existants
+        // Nettoyer les elements existants
         RecycleActivityItems();
 
         if (activitiesSection == null || currentLocation == null) return;
 
         var availableActivities = currentLocation.GetAvailableActivities();
 
-        // Mettre à jour le titre de la section
+        // Mettre a jour le titre de la section
         if (activitiesSectionTitle != null)
         {
-            activitiesSectionTitle.text = $"Activités disponibles ({availableActivities.Count})";
+            activitiesSectionTitle.text = $"Activites disponibles ({availableActivities.Count})";
         }
 
-        // Afficher ou masquer selon la disponibilité
+        // Afficher ou masquer selon la disponibilite
         if (availableActivities.Count == 0)
         {
             ShowNoActivitiesMessage();
@@ -499,9 +499,9 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Met à jour la section d'informations supplémentaires
-    /// MISE À JOUR: Plus besoin d'accéder directement au PlayerData pour l'affichage des infos de voyage
-    /// Les événements de TravelProgress nous donnent déjà toutes les infos nécessaires !
+    /// Met a jour la section d'informations supplementaires
+    /// MISE À JOUR: Plus besoin d'acceder directement au PlayerData pour l'affichage des infos de voyage
+    /// Les evenements de TravelProgress nous donnent deja toutes les infos necessaires !
     /// </summary>
     private void UpdateInfoSection()
     {
@@ -515,7 +515,7 @@ public class LocationDetailsPanel : MonoBehaviour
             infoLines.Add($"Connexions: {currentLocation.Connections.Count} destination(s)");
         }
 
-        // Résumé des activités
+        // Resume des activites
         infoLines.Add(currentLocation.GetActivitiesSummary());
 
         // Informations de voyage si en cours
@@ -526,10 +526,10 @@ public class LocationDetailsPanel : MonoBehaviour
 
     #endregion
 
-    #region Gestion des Activités
+    #region Gestion des Activites
 
     /// <summary>
-    /// Crée les éléments d'interface pour chaque activité
+    /// Cree les elements d'interface pour chaque activite
     /// </summary>
     private void CreateActivityItems(List<LocationActivity> activities)
     {
@@ -549,24 +549,24 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Configure un élément d'activité individuel
+    /// Configure un element d'activite individuel
     /// </summary>
     private void SetupActivityItem(GameObject item, LocationActivity activity)
     {
         if (item == null || activity == null) return;
 
-        // Récupérer les composants de l'élément d'activité
+        // Recuperer les composants de l'element d'activite
         var nameText = item.GetComponentInChildren<TextMeshProUGUI>();
         var iconImage = item.GetComponentInChildren<Image>();
         var button = item.GetComponent<Button>();
 
-        // Configurer le nom de l'activité
+        // Configurer le nom de l'activite
         if (nameText != null)
         {
             nameText.text = activity.GetDisplayName();
         }
 
-        // Configurer l'icône de l'activité
+        // Configurer l'icône de l'activite
         if (iconImage != null && activity.GetIcon() != null)
         {
             iconImage.sprite = activity.GetIcon();
@@ -584,7 +584,7 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Configure le tooltip pour un élément d'activité
+    /// Configure le tooltip pour un element d'activite
     /// </summary>
     private void SetupActivityItemTooltip(GameObject item, LocationActivity activity)
     {
@@ -596,7 +596,7 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Gère le clic sur un élément d'activité
+    /// Gère le clic sur un element d'activite
     /// </summary>
     private void OnActivityClicked(LocationActivity activity)
     {
@@ -615,7 +615,7 @@ public class LocationDetailsPanel : MonoBehaviour
     #region Gestion du Pool d'Objets
 
     /// <summary>
-    /// Recycle tous les éléments d'activité instantiés
+    /// Recycle tous les elements d'activite instanties
     /// </summary>
     private void RecycleActivityItems()
     {
@@ -631,7 +631,7 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Récupère un élément d'activité du pool ou en crée un nouveau
+    /// Recupère un element d'activite du pool ou en cree un nouveau
     /// </summary>
     private GameObject GetPooledActivityItem()
     {
@@ -647,7 +647,7 @@ public class LocationDetailsPanel : MonoBehaviour
 
     #endregion
 
-    #region Méthodes Utilitaires
+    #region Methodes Utilitaires
 
     /// <summary>
     /// Affiche un message quand aucune location n'est disponible
@@ -661,19 +661,19 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Affiche le message "aucune activité"
+    /// Affiche le message "aucune activite"
     /// </summary>
     private void ShowNoActivitiesMessage()
     {
         if (noActivitiesText != null)
         {
             noActivitiesText.gameObject.SetActive(true);
-            noActivitiesText.text = "Aucune activité disponible dans cette location.";
+            noActivitiesText.text = "Aucune activite disponible dans cette location.";
         }
     }
 
     /// <summary>
-    /// Masque le message "aucune activité"
+    /// Masque le message "aucune activite"
     /// </summary>
     private void HideNoActivitiesMessage()
     {
@@ -684,11 +684,11 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Vérifie que le ActivityDisplayPanel est présent
+    /// Verifie que le ActivityDisplayPanel est present
     /// </summary>
     private void CheckActivityDisplayPanel()
     {
-        // Méthode pour vérifications futures si nécessaire
+        // Methode pour verifications futures si necessaire
     }
 
     /// <summary>
@@ -704,9 +704,9 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Ajoute les informations de voyage à la liste d'infos
-    /// MISE À JOUR: Plus besoin d'accéder directement au PlayerData pour l'affichage des infos de voyage
-    /// Les événements de TravelProgress nous donnent déjà toutes les infos nécessaires !
+    /// Ajoute les informations de voyage a la liste d'infos
+    /// MISE À JOUR: Plus besoin d'acceder directement au PlayerData pour l'affichage des infos de voyage
+    /// Les evenements de TravelProgress nous donnent deja toutes les infos necessaires !
     /// </summary>
     private void AddTravelInfo(List<string> infoLines)
     {

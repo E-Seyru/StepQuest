@@ -40,12 +40,12 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
 
     void OnDestroy()
     {
-        // Plus besoin de gérer l'enregistrement avec le système event-driven
+        // Plus besoin de gerer l'enregistrement avec le système event-driven
     }
 
     void OnDisable()
     {
-        // Sécurité : se nettoyer du DragDropManager si on était survolé
+        // Securite : se nettoyer du DragDropManager si on etait survole
         if (DragDropManager.Instance != null && DragDropManager.Instance.IsDragging)
         {
             DragDropManager.Instance.ClearHoveredSlot(this);
@@ -98,7 +98,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     {
         equippedItemId = null;
 
-        // Cache l'icône quand il n'y a pas d'équipement
+        // Cache l'icône quand il n'y a pas d'equipement
         if (itemIcon != null)
         {
             itemIcon.enabled = false;
@@ -137,12 +137,12 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
 
     public bool CanAcceptItem(string itemID, int qty)
     {
-        // Vérifier que c'est de l'équipement
+        // Verifier que c'est de l'equipement
         var itemDef = InventoryManager.Instance?.GetItemRegistry()?.GetItem(itemID);
         if (itemDef == null || !itemDef.IsEquipment())
             return false;
 
-        // Vérifier que c'est le bon type d'équipement pour ce slot
+        // Verifier que c'est le bon type d'equipement pour ce slot
         return itemDef.EquipmentSlot == slotType;
     }
 
@@ -151,7 +151,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
         if (!CanAcceptItem(itemID, qty))
             return false;
 
-        // Utiliser le système d'équipement existant
+        // Utiliser le système d'equipement existant
         if (parentPanel != null)
         {
             return parentPanel.TryEquipItem(itemID);
@@ -165,7 +165,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
         if (string.IsNullOrEmpty(equippedItemId))
             return false;
 
-        // Utiliser le système d'équipement existant
+        // Utiliser le système d'equipement existant
         if (parentPanel != null)
         {
             return parentPanel.UnequipItem(slotType);
@@ -180,7 +180,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     {
         if (background != null && !isDragSource)
         {
-            // Vérifier si l'item peut être accepté
+            // Verifier si l'item peut être accepte
             string draggedItemId = DragDropManager.Instance?.GetDraggedItemId();
             if (!string.IsNullOrEmpty(draggedItemId) && CanAcceptItem(draggedItemId, 1))
             {
@@ -219,7 +219,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
         if (IsEmpty() || DragDropManager.Instance == null)
             return;
 
-        // Commencer le drag depuis cet équipement
+        // Commencer le drag depuis cet equipement
         if (DragDropManager.Instance.StartDrag(this, equippedItemId, 1))
         {
             isDragSource = true;
@@ -245,7 +245,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
 
         isDragSource = false;
 
-        // IMPORTANT: Si le drag n'a pas été complété via OnDrop(), l'annuler
+        // IMPORTANT: Si le drag n'a pas ete complete via OnDrop(), l'annuler
         if (DragDropManager.Instance != null && DragDropManager.Instance.IsDragging)
         {
             DragDropManager.Instance.CancelDrag();

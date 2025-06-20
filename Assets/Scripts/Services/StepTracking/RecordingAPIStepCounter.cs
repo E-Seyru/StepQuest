@@ -19,7 +19,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
 
     public static RecordingAPIStepCounter Instance { get; private set; }
 
-    // SIMPLIFIÉ: Variables pour l'éditeur - plus simples
+    // SIMPLIFIÉ: Variables pour l'editeur - plus simples
 #if UNITY_EDITOR
     private bool editorSensorActive = false;
 #endif
@@ -44,7 +44,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
         if (isPluginClassInitialized) return;
 
 #if UNITY_EDITOR
-        // Mode éditeur - simple
+        // Mode editeur - simple
         Logger.LogInfo("RecordingAPIStepCounter: Running in Editor mode", Logger.LogCategory.StepLog);
         isPluginClassInitialized = true;
         return;
@@ -84,7 +84,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
     public bool HasPermission()
     {
 #if UNITY_EDITOR
-        return true; // Toujours vrai dans l'éditeur
+        return true; // Toujours vrai dans l'editeur
 #else
         if (!isPluginClassInitialized || stepPluginClass == null)
         {
@@ -136,7 +136,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
     public IEnumerator GetDeltaSinceFromAPI(long fromEpochMs, long toEpochMs, System.Action<long> onResultCallback)
     {
 #if UNITY_EDITOR
-        // Simulation SIMPLE pour l'éditeur - retourne toujours 0 pour éviter les conflits
+        // Simulation SIMPLE pour l'editeur - retourne toujours 0 pour eviter les conflits
         yield return new WaitForSeconds(0.1f);
         Logger.LogInfo($"RecordingAPIStepCounter: [EDITOR] API call simulated, returning 0 steps", Logger.LogCategory.StepLog);
         onResultCallback?.Invoke(0);
@@ -201,7 +201,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
     private bool ShouldSkipRange(long fromEpochMs, long toEpochMs)
     {
 #if UNITY_EDITOR
-        return false; // Pas de skip dans l'éditeur
+        return false; // Pas de skip dans l'editeur
 #else
         try
         {
@@ -336,8 +336,8 @@ public class RecordingAPIStepCounter : MonoBehaviour
     public long GetCurrentRawSensorSteps()
     {
 #if UNITY_EDITOR
-        // Dans l'éditeur, retourne -1 pour désactiver le système de capteur direct
-        // Les pas seront gérés uniquement par EditorStepSimulator
+        // Dans l'editeur, retourne -1 pour desactiver le système de capteur direct
+        // Les pas seront geres uniquement par EditorStepSimulator
         return -1;
 #else
         if (!isPluginClassInitialized || stepPluginClass == null || !HasPermission())

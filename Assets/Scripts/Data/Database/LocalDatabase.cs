@@ -119,12 +119,12 @@ public class LocalDatabase
 
                     try
                     {
-                        // Ajouter la colonne CurrentActivityJson à la table PlayerData
+                        // Ajouter la colonne CurrentActivityJson a la table PlayerData
                         _connection.Execute("ALTER TABLE PlayerData ADD COLUMN CurrentActivityJson TEXT DEFAULT NULL");
 
                         Logger.LogInfo("LocalDatabase: Added CurrentActivityJson column to PlayerData table");
 
-                        // Mettre à jour la version
+                        // Mettre a jour la version
                         _connection.Execute("UPDATE DatabaseVersion SET Version = 6");
                         Logger.LogInfo("LocalDatabase: Migration to version 6 completed");
                     }
@@ -146,7 +146,7 @@ public class LocalDatabase
     /// </summary>
     private void ApplyMigrations(int currentVersion)
     {
-        // Migration de la version 1 à 2
+        // Migration de la version 1 a 2
         if (currentVersion == 1 && DATABASE_VERSION >= 2)
         {
 
@@ -164,7 +164,7 @@ public class LocalDatabase
             }
         }
 
-        // Migration de la version 2 à 3
+        // Migration de la version 2 a 3
         if (currentVersion == 2 && DATABASE_VERSION >= 3)
         {
 
@@ -184,7 +184,7 @@ public class LocalDatabase
             }
         }
 
-        // Migration de la version 3 à 4
+        // Migration de la version 3 a 4
         if (currentVersion == 3 && DATABASE_VERSION >= 4)
         {
 
@@ -202,7 +202,7 @@ public class LocalDatabase
             }
         }
 
-        // Migration de la version 4 à 5 (InventoryContainers)
+        // Migration de la version 4 a 5 (InventoryContainers)
         if (currentVersion == 4 && DATABASE_VERSION >= 5)
         {
 
@@ -215,7 +215,7 @@ public class LocalDatabase
                 // Initialiser les conteneurs par defaut
                 InitializeDefaultContainers();
 
-                // Mettre à jour la version
+                // Mettre a jour la version
                 _connection.Execute("UPDATE DatabaseVersion SET Version = 5");
 
                 currentVersion = 5;
@@ -234,7 +234,7 @@ public class LocalDatabase
     /// </summary>
     private void InitializeDefaultContainers()
     {
-        // Verifier si les conteneurs existent dejà
+        // Verifier si les conteneurs existent deja
         var existingContainers = _connection.Query<InventoryContainerData>("SELECT ContainerID FROM InventoryContainers");
 
         if (existingContainers.Count == 0)

@@ -7,9 +7,9 @@ using UnityEngine;
 public enum GameState
 {
     Loading,        // Chargement initial
-    Idle,          // Aucune activité particulière
+    Idle,          // Aucune activite particulière
     Traveling,     // En voyage entre locations
-    DoingActivity, // Activité en cours (mining, gathering, etc.)
+    DoingActivity, // Activite en cours (mining, gathering, etc.)
     InCombat,      // En combat (pour le futur)
     Paused         // Jeu en pause
 }
@@ -21,14 +21,14 @@ public class GameManager : MonoBehaviour
     [Header("Game State")]
     [SerializeField] private GameState currentState = GameState.Loading;
 
-    // Propriété publique pour lire l'état
+    // Propriete publique pour lire l'etat
     public GameState CurrentState
     {
         get { return currentState; }
         private set { currentState = value; }
     }
 
-    // Références aux autres managers
+    // References aux autres managers
     private DataManager dataManager;
     private MapManager mapManager;
     private ActivityManager activityManager;
@@ -66,15 +66,15 @@ public class GameManager : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
         }
 
-        // Récupérer les références
+        // Recuperer les references
         dataManager = DataManager.Instance;
         mapManager = MapManager.Instance;
         activityManager = ActivityManager.Instance;
 
-        // S'abonner aux événements des autres managers
+        // S'abonner aux evenements des autres managers
         SubscribeToManagerEvents();
 
-        // Déterminer l'état initial du jeu
+        // Determiner l'etat initial du jeu
         DetermineInitialGameState();
 
         Logger.LogInfo($"GameManager: Initialized. Current state: {currentState}", Logger.LogCategory.General);
@@ -83,13 +83,13 @@ public class GameManager : MonoBehaviour
     private void SubscribeToManagerEvents()
     {
         // =====================================
-        // EVENTBUS - Événements de voyage
+        // EVENTBUS - Évenements de voyage
         // =====================================
         EventBus.Subscribe<TravelStartedEvent>(OnTravelStarted);
         EventBus.Subscribe<TravelCompletedEvent>(OnTravelCompleted);
 
         // =====================================
-        // EVENTBUS - Événements d'activité  
+        // EVENTBUS - Évenements d'activite  
         // =====================================
         EventBus.Subscribe<ActivityStartedEvent>(OnActivityStarted);
         EventBus.Subscribe<ActivityStoppedEvent>(OnActivityStopped);
@@ -105,7 +105,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // Vérifier l'état actuel du joueur
+        // Verifier l'etat actuel du joueur
         if (dataManager.PlayerData.IsCurrentlyTraveling())
         {
             ChangeState(GameState.Traveling);
@@ -132,7 +132,7 @@ public class GameManager : MonoBehaviour
         Logger.LogInfo($"GameManager: State changed from {oldState} to {newState}", Logger.LogCategory.General);
 
         // =====================================
-        // EVENTBUS - Publier le changement d'état
+        // EVENTBUS - Publier le changement d'etat
         // =====================================
         EventBus.Publish(new GameStateChangedEvent(oldState, newState));
     }
@@ -149,7 +149,7 @@ public class GameManager : MonoBehaviour
     {
         Logger.LogInfo($"GameManager: Travel completed at {eventData.NewLocation?.DisplayName ?? eventData.DestinationLocationId}", Logger.LogCategory.General);
 
-        // Après un voyage, vérifier s'il y a une activité en cours
+        // Après un voyage, verifier s'il y a une activite en cours
         if (activityManager.HasActiveActivity())
         {
             ChangeState(GameState.DoingActivity);
@@ -170,7 +170,7 @@ public class GameManager : MonoBehaviour
     {
         Logger.LogInfo($"GameManager: Activity stopped: {eventData.Activity?.ActivityId}/{eventData.Variant?.VariantName} (Completed: {eventData.WasCompleted})", Logger.LogCategory.General);
 
-        // Après arrêt d'activité, vérifier s'il y a un voyage en cours
+        // Après arrêt d'activite, verifier s'il y a un voyage en cours
         if (dataManager.PlayerData.IsCurrentlyTraveling())
         {
             ChangeState(GameState.Traveling);
@@ -191,7 +191,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            // Revenir à l'état approprié
+            // Revenir a l'etat approprie
             DetermineInitialGameState();
         }
     }
@@ -203,12 +203,12 @@ public class GameManager : MonoBehaviour
         if (pauseStatus)
         {
             Logger.LogInfo("GameManager: Application paused", Logger.LogCategory.General);
-            // Ne pas changer l'état - juste logger
+            // Ne pas changer l'etat - juste logger
         }
         else
         {
             Logger.LogInfo("GameManager: Application resumed", Logger.LogCategory.General);
-            // Vérifier si l'état a changé pendant la pause
+            // Verifier si l'etat a change pendant la pause
             DetermineInitialGameState();
         }
     }
@@ -223,7 +223,7 @@ public class GameManager : MonoBehaviour
     void OnDestroy()
     {
         // =====================================
-        // EVENTBUS - Se désabonner des événements
+        // EVENTBUS - Se desabonner des evenements
         // =====================================
         EventBus.Unsubscribe<TravelStartedEvent>(OnTravelStarted);
         EventBus.Unsubscribe<TravelCompletedEvent>(OnTravelCompleted);

@@ -22,7 +22,7 @@ public class TravelConfirmationPopup : MonoBehaviour
     [SerializeField] private Image destinationImage; // Optionnel : image de la destination
     [SerializeField] private Image routeVisualization; // Optionnel : mini-carte du trajet
 
-    // Références aux services
+    // References aux services
     private MapManager mapManager;
     private LocationRegistry locationRegistry;
 
@@ -46,7 +46,7 @@ public class TravelConfirmationPopup : MonoBehaviour
             return;
         }
 
-        // S'assurer que le popup est caché au démarrage
+        // S'assurer que le popup est cache au demarrage
         if (popupPanel != null)
         {
             popupPanel.SetActive(false);
@@ -55,7 +55,7 @@ public class TravelConfirmationPopup : MonoBehaviour
 
     void Start()
     {
-        // Obtenir les références
+        // Obtenir les references
         mapManager = MapManager.Instance;
         if (mapManager != null)
         {
@@ -84,7 +84,7 @@ public class TravelConfirmationPopup : MonoBehaviour
             backgroundButton.onClick.AddListener(ClosePopup);
         }
 
-        // Validation des références
+        // Validation des references
         if (popupPanel == null)
         {
             Logger.LogError("TravelConfirmationPopup: popupPanel not assigned!", Logger.LogCategory.MapLog);
@@ -100,7 +100,7 @@ public class TravelConfirmationPopup : MonoBehaviour
     }
 
     /// <summary>
-    /// Affiche la popup avec les détails du voyage vers la destination spécifiée
+    /// Affiche la popup avec les details du voyage vers la destination specifiee
     /// </summary>
     /// <param name="destinationLocationId">ID de la location de destination</param>
     public void ShowTravelConfirmation(string destinationLocationId)
@@ -157,7 +157,7 @@ public class TravelConfirmationPopup : MonoBehaviour
         if (destinationDescriptionText != null)
         {
             string description = string.IsNullOrEmpty(currentTravelInfo.To.Description)
-                ? "Une location mystérieuse vous attend..."
+                ? "Une location mysterieuse vous attend..."
                 : currentTravelInfo.To.Description;
             destinationDescriptionText.text = description;
         }
@@ -169,7 +169,7 @@ public class TravelConfirmationPopup : MonoBehaviour
             {
                 travelCostText.text = $"Coût: {currentTravelInfo.StepCost} pas";
                 // Changer la couleur si le joueur n'a pas assez de pas (optionnel)
-                // TODO: Implémenter la vérification des pas actuels vs coût
+                // TODO: Implementer la verification des pas actuels vs coût
             }
             else
             {
@@ -198,7 +198,7 @@ public class TravelConfirmationPopup : MonoBehaviour
     }
 
     /// <summary>
-    /// Appelé quand le joueur confirme le voyage
+    /// Appele quand le joueur confirme le voyage
     /// </summary>
     private void OnConfirmTravel()
     {
@@ -216,7 +216,7 @@ public class TravelConfirmationPopup : MonoBehaviour
 
         Logger.LogInfo($"TravelConfirmationPopup: Player confirmed travel to {pendingDestinationId}", Logger.LogCategory.MapLog);
 
-        // Démarrer le voyage via le MapManager
+        // Demarrer le voyage via le MapManager
         mapManager.StartTravel(pendingDestinationId);
 
         // Fermer la popup
@@ -224,7 +224,7 @@ public class TravelConfirmationPopup : MonoBehaviour
     }
 
     /// <summary>
-    /// Appelé quand le joueur annule le voyage
+    /// Appele quand le joueur annule le voyage
     /// </summary>
     private void OnCancelTravel()
     {
@@ -233,7 +233,7 @@ public class TravelConfirmationPopup : MonoBehaviour
     }
 
     /// <summary>
-    /// Cache la popup et nettoie l'état
+    /// Cache la popup et nettoie l'etat
     /// </summary>
     public void HidePopup()
     {
@@ -242,7 +242,7 @@ public class TravelConfirmationPopup : MonoBehaviour
             popupPanel.SetActive(false);
         }
 
-        // Nettoyer l'état
+        // Nettoyer l'etat
         pendingDestinationId = null;
         currentTravelInfo = null;
 
@@ -250,14 +250,14 @@ public class TravelConfirmationPopup : MonoBehaviour
     }
 
     /// <summary>
-    /// Méthode publique pour fermer la popup depuis l'extérieur (par exemple, via un bouton X)
+    /// Methode publique pour fermer la popup depuis l'exterieur (par exemple, via un bouton X)
     /// </summary>
     public void ClosePopup()
     {
         OnCancelTravel();
     }
 
-    // Optionnel : Gérer la fermeture avec la touche Escape ou retour Android
+    // Optionnel : Gerer la fermeture avec la touche Escape ou retour Android
     void Update()
     {
         if (popupPanel != null && popupPanel.activeSelf)
@@ -270,13 +270,13 @@ public class TravelConfirmationPopup : MonoBehaviour
         }
     }
 
-    // Optionnel : Méthodes pour personnaliser l'apparence
+    // Optionnel : Methodes pour personnaliser l'apparence
     public void SetPopupTheme(Color backgroundColor, Color textColor)
     {
-        // TODO: Implémenter la personnalisation de thème si nécessaire
+        // TODO: Implementer la personnalisation de thème si necessaire
     }
 
-    // Debug : Méthode pour tester la popup depuis l'éditeur
+    // Debug : Methode pour tester la popup depuis l'editeur
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     public void TestShowPopup(string locationId)
     {

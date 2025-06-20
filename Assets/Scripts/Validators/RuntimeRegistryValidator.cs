@@ -3,8 +3,8 @@
 using UnityEngine;
 
 /// <summary>
-/// Valide et nettoie automatiquement les registries au démarrage du jeu
-/// Assure une expérience robuste pour les joueurs
+/// Valide et nettoie automatiquement les registries au demarrage du jeu
+/// Assure une experience robuste pour les joueurs
 /// </summary>
 public class RuntimeRegistryValidator : MonoBehaviour
 {
@@ -27,7 +27,7 @@ public class RuntimeRegistryValidator : MonoBehaviour
 
     void Start()
     {
-        // Double-check après que tous les systèmes soient initialisés
+        // Double-check après que tous les systèmes soient initialises
         if (!validateOnAwake)
         {
             ValidateRegistries();
@@ -95,10 +95,10 @@ public class RuntimeRegistryValidator : MonoBehaviour
             }
         }
 
-        // Force refresh du cache pour s'assurer que tout est à jour
+        // Force refresh du cache pour s'assurer que tout est a jour
         activityRegistry.RefreshCache();
 
-        // Valide que le registry a des activités valides
+        // Valide que le registry a des activites valides
         var validActivities = activityRegistry.GetAllValidActivities();
         if (validActivities.Count == 0)
         {
@@ -130,7 +130,7 @@ public class RuntimeRegistryValidator : MonoBehaviour
             }
         }
 
-        // Force refresh du cache pour s'assurer que tout est à jour
+        // Force refresh du cache pour s'assurer que tout est a jour
         itemRegistry.RefreshCache();
 
         // Valide que le registry a des items valides
@@ -145,7 +145,7 @@ public class RuntimeRegistryValidator : MonoBehaviour
     }
 
     /// <summary>
-    /// Méthode publique pour forcer une revalidation (utile pour debug)
+    /// Methode publique pour forcer une revalidation (utile pour debug)
     /// </summary>
     [ContextMenu("Force Validate")]
     public void ForceValidate()

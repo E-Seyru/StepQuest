@@ -1,4 +1,4 @@
-// Purpose: EventBus principal - Système de communication découplé pour Unity
+// Purpose: EventBus principal - Système de communication decouple pour Unity
 // Filepath: Assets/Scripts/Core/Events/EventBus.cs
 
 using System;
@@ -6,21 +6,21 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// EventBus global pour la communication découplée entre les systèmes du jeu.
-/// Thread-safe et optimisé pour Unity.
+/// EventBus global pour la communication decouplee entre les systèmes du jeu.
+/// Thread-safe et optimise pour Unity.
 /// </summary>
 public static class EventBus
 {
     #region Configuration et État
 
     /// <summary>
-    /// Active/désactive le logging détaillé des événements
-    /// Utile pour débugger, mais peut être verbeux
+    /// Active/desactive le logging detaille des evenements
+    /// Utile pour debugger, mais peut être verbeux
     /// </summary>
     public static bool EnableDetailedLogging { get; set; } = false;
 
     /// <summary>
-    /// Active/désactive le logging des erreurs uniquement
+    /// Active/desactive le logging des erreurs uniquement
     /// </summary>
     public static bool EnableErrorLogging { get; set; } = true;
 
@@ -34,13 +34,13 @@ public static class EventBus
 
     #region Stockage interne
 
-    // Dictionnaire principal : Type d'événement -> Liste des callbacks
+    // Dictionnaire principal : Type d'evenement -> Liste des callbacks
     private static readonly Dictionary<Type, List<Delegate>> eventSubscriptions = new();
 
     // Lock pour thread-safety
     private static readonly object lockObject = new();
 
-    // Cache pour éviter les allocations répétées
+    // Cache pour eviter les allocations repetees
     private static readonly List<Delegate> tempCallbackList = new();
 
     // Compteur pour les stats
@@ -51,10 +51,10 @@ public static class EventBus
     #region API Publique - Subscribe
 
     /// <summary>
-    /// S'abonne à un type d'événement spécifique
+    /// S'abonne a un type d'evenement specifique
     /// </summary>
-    /// <typeparam name="T">Type de l'événement</typeparam>
-    /// <param name="callback">Méthode à appeler quand l'événement est publié</param>
+    /// <typeparam name="T">Type de l'evenement</typeparam>
+    /// <param name="callback">Methode a appeler quand l'evenement est publie</param>
     public static void Subscribe<T>(Action<T> callback) where T : EventBusEvent
     {
         if (callback == null)
@@ -67,13 +67,13 @@ public static class EventBus
 
         lock (lockObject)
         {
-            // Créer la liste si elle n'existe pas
+            // Creer la liste si elle n'existe pas
             if (!eventSubscriptions.ContainsKey(eventType))
             {
                 eventSubscriptions[eventType] = new List<Delegate>();
             }
 
-            // Vérifier qu'on n'est pas déjà abonné (évite les doublons)
+            // Verifier qu'on n'est pas deja abonne (evite les doublons)
             var callbacks = eventSubscriptions[eventType];
             if (callbacks.Contains(callback))
             {
@@ -94,10 +94,10 @@ public static class EventBus
     #region API Publique - Unsubscribe
 
     /// <summary>
-    /// Se désabonne d'un type d'événement spécifique
+    /// Se desabonne d'un type d'evenement specifique
     /// </summary>
-    /// <typeparam name="T">Type de l'événement</typeparam>
-    /// <param name="callback">Méthode à retirer</param>
+    /// <typeparam name="T">Type de l'evenement</typeparam>
+    /// <param name="callback">Methode a retirer</param>
     public static void Unsubscribe<T>(Action<T> callback) where T : EventBusEvent
     {
         if (callback == null)
@@ -137,9 +137,9 @@ public static class EventBus
     }
 
     /// <summary>
-    /// Se désabonne de TOUS les événements (utile dans OnDestroy)
+    /// Se desabonne de TOUS les evenements (utile dans OnDestroy)
     /// </summary>
-    /// <param name="subscriber">L'objet qui veut se désabonner de tout</param>
+    /// <param name="subscriber">L'objet qui veut se desabonner de tout</param>
     public static void UnsubscribeAll(object subscriber)
     {
         if (subscriber == null) return;
@@ -186,10 +186,10 @@ public static class EventBus
     #region API Publique - Publish
 
     /// <summary>
-    /// Publie un événement - tous les abonnés seront notifiés
+    /// Publie un evenement - tous les abonnes seront notifies
     /// </summary>
-    /// <typeparam name="T">Type de l'événement</typeparam>
-    /// <param name="eventData">L'événement à publier</param>
+    /// <typeparam name="T">Type de l'evenement</typeparam>
+    /// <param name="eventData">L'evenement a publier</param>
     public static void Publish<T>(T eventData) where T : EventBusEvent
     {
         if (eventData == null)
@@ -210,7 +210,7 @@ public static class EventBus
         {
             if (eventSubscriptions.ContainsKey(eventType))
             {
-                // SAFE COPY: Créer une nouvelle liste pour éviter les modifications concurrentes
+                // SAFE COPY: Creer une nouvelle liste pour eviter les modifications concurrentes
                 var callbacks = eventSubscriptions[eventType];
                 for (int i = 0; i < callbacks.Count; i++)
                 {
@@ -219,7 +219,7 @@ public static class EventBus
             }
         }
 
-        // Appeler tous les callbacks HORS du lock pour éviter les deadlocks
+        // Appeler tous les callbacks HORS du lock pour eviter les deadlocks
         var successCount = 0;
         var errorCount = 0;
 
@@ -232,7 +232,7 @@ public static class EventBus
                     typedCallback.Invoke(eventData);
                     successCount++;
 
-                    // Si l'événement est annulable et a été annulé, on s'arrête
+                    // Si l'evenement est annulable et a ete annule, on s'arrête
                     if (eventData is ICancellableEvent cancellable && cancellable.IsCancelled)
                     {
                         LogInfo($"Event {eventData} was cancelled by a subscriber");
@@ -244,7 +244,7 @@ public static class EventBus
             {
                 errorCount++;
                 LogError($"Error in event callback for {eventType.Name}: {ex.Message}");
-                // Continue avec les autres callbacks même si un échoue
+                // Continue avec les autres callbacks même si un echoue
             }
         }
 
@@ -270,7 +270,7 @@ public static class EventBus
     }
 
     /// <summary>
-    /// Obtient des informations de debug sur l'état actuel
+    /// Obtient des informations de debug sur l'etat actuel
     /// </summary>
     public static string GetDebugInfo()
     {

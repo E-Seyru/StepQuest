@@ -5,19 +5,19 @@ using UnityEngine;
 public class POIPathRenderer : MonoBehaviour
 {
     [Header("Path Settings")]
-    [SerializeField] private Material dashLineMaterial; // Matériel pour les lignes pointillées
+    [SerializeField] private Material dashLineMaterial; // Materiel pour les lignes pointillees
     [SerializeField] private float lineWidth = 0.05f;
     [SerializeField] private Color lineColor = Color.white;
     [SerializeField] private float dashLength = 0.5f;
     [SerializeField] private float gapLength = 0.3f;
-    [SerializeField] private int dashResolution = 20; // Nombre de segments pour créer l'effet dash
-    [SerializeField] private float poiBuffer = 0.5f; // Distance pour éviter les POIs
+    [SerializeField] private int dashResolution = 20; // Nombre de segments pour creer l'effet dash
+    [SerializeField] private float poiBuffer = 0.5f; // Distance pour eviter les POIs
 
     [Header("Performance")]
     [SerializeField] private bool updateOnStart = true;
     [SerializeField] private bool showDebugInfo = false;
 
-    // Références
+    // References
     private MapManager mapManager;
     private LocationRegistry locationRegistry;
     private LineRenderer[] pathLines;
@@ -26,17 +26,17 @@ public class POIPathRenderer : MonoBehaviour
     {
         if (updateOnStart)
         {
-            // Petit délai pour s'assurer que tout est initialisé
+            // Petit delai pour s'assurer que tout est initialise
             Invoke(nameof(GenerateAllPaths), 0.5f);
         }
     }
 
     /// <summary>
-    /// Génère automatiquement toutes les lignes entre POIs connectés
+    /// Genère automatiquement toutes les lignes entre POIs connectes
     /// </summary>
     public void GenerateAllPaths()
     {
-        // Obtenir les références
+        // Obtenir les references
         mapManager = MapManager.Instance;
         if (mapManager == null)
         {
@@ -61,14 +61,14 @@ public class POIPathRenderer : MonoBehaviour
             Logger.LogInfo($"POIPathRenderer: Found {allPOIs.Length} POIs", Logger.LogCategory.MapLog);
         }
 
-        // Créer les lignes entre POIs connectés
+        // Creer les lignes entre POIs connectes
         CreatePathsBetweenPOIs(allPOIs);
 
         Logger.LogInfo($"POIPathRenderer: Generated paths for {allPOIs.Length} POIs", Logger.LogCategory.MapLog);
     }
 
     /// <summary>
-    /// Crée les chemins entre tous les POIs connectés
+    /// Cree les chemins entre tous les POIs connectes
     /// </summary>
     private void CreatePathsBetweenPOIs(POI[] pois)
     {
@@ -81,7 +81,7 @@ public class POIPathRenderer : MonoBehaviour
                 POI poiA = pois[i];
                 POI poiB = pois[j];
 
-                // Vérifier si les locations sont connectées
+                // Verifier si les locations sont connectees
                 if (locationRegistry.CanTravelBetween(poiA.LocationID, poiB.LocationID))
                 {
                     CreatePathBetweenPOIs(poiA, poiB, pathCount);
@@ -99,11 +99,11 @@ public class POIPathRenderer : MonoBehaviour
     }
 
     /// <summary>
-    /// Crée une ligne pointillée entre deux POIs
+    /// Cree une ligne pointillee entre deux POIs
     /// </summary>
     private void CreatePathBetweenPOIs(POI poiA, POI poiB, int pathIndex)
     {
-        // Positions : utiliser les points de départ de voyage des POIs
+        // Positions : utiliser les points de depart de voyage des POIs
         Vector3 startPos = poiA.GetTravelPathStartPosition();
         Vector3 endPos = poiB.GetTravelPathStartPosition();
 
@@ -111,12 +111,12 @@ public class POIPathRenderer : MonoBehaviour
         startPos.z = -1f;
         endPos.z = -1f;
 
-        // Ajuster les positions pour éviter les POIs
+        // Ajuster les positions pour eviter les POIs
         Vector3 direction = (endPos - startPos).normalized;
         Vector3 adjustedStart = startPos + direction * poiBuffer;
         Vector3 adjustedEnd = endPos - direction * poiBuffer;
 
-        // Vérifier que la ligne ajustée a encore une longueur suffisante
+        // Verifier que la ligne ajustee a encore une longueur suffisante
         float adjustedDistance = Vector3.Distance(adjustedStart, adjustedEnd);
         if (adjustedDistance > dashLength) // Seulement si assez long pour au moins un tiret
         {
@@ -125,7 +125,7 @@ public class POIPathRenderer : MonoBehaviour
     }
 
     /// <summary>
-    /// Crée des segments séparés pour simuler une ligne pointillée
+    /// Cree des segments separes pour simuler une ligne pointillee
     /// </summary>
     private void CreateDashSegments(Vector3 startPos, Vector3 endPos, int pathIndex)
     {
@@ -133,7 +133,7 @@ public class POIPathRenderer : MonoBehaviour
         float segmentLength = dashLength + gapLength;
         int segmentCount = Mathf.CeilToInt(totalDistance / segmentLength);
 
-        // Trouver tous les POIs pour vérifier les collisions
+        // Trouver tous les POIs pour verifier les collisions
         POI[] allPOIs = FindObjectsOfType<POI>();
 
         for (int i = 0; i < segmentCount; i++)
@@ -141,7 +141,7 @@ public class POIPathRenderer : MonoBehaviour
             float segmentStart = i * segmentLength;
             float segmentEnd = segmentStart + dashLength;
 
-            // Arrêter si on dépasse la distance totale
+            // Arrêter si on depasse la distance totale
             if (segmentStart >= totalDistance) break;
 
             // Calculer les positions du tiret
@@ -151,17 +151,17 @@ public class POIPathRenderer : MonoBehaviour
             Vector3 dashStart = Vector3.Lerp(startPos, endPos, t1);
             Vector3 dashEnd = Vector3.Lerp(startPos, endPos, t2);
 
-            // Vérifier si ce segment entre en collision avec un POI
+            // Verifier si ce segment entre en collision avec un POI
             if (!IsSegmentCollidingWithPOIs(dashStart, dashEnd, allPOIs))
             {
-                // Créer un LineRenderer pour ce segment seulement s'il ne collisionne pas
+                // Creer un LineRenderer pour ce segment seulement s'il ne collisionne pas
                 CreateSingleDashSegment(dashStart, dashEnd, i, pathIndex);
             }
         }
     }
 
     /// <summary>
-    /// Vérifie si un segment entre en collision avec des POIs
+    /// Verifie si un segment entre en collision avec des POIs
     /// </summary>
     private bool IsSegmentCollidingWithPOIs(Vector3 segmentStart, Vector3 segmentEnd, POI[] allPOIs)
     {
@@ -170,10 +170,10 @@ public class POIPathRenderer : MonoBehaviour
             Vector3 poiPosition = poi.transform.position;
             poiPosition.z = segmentStart.z; // Même Z pour la comparaison
 
-            // Calculer la distance du POI à la ligne
+            // Calculer la distance du POI a la ligne
             float distanceToLine = DistancePointToLineSegment(poiPosition, segmentStart, segmentEnd);
 
-            // Si la distance est inférieure au buffer, il y a collision
+            // Si la distance est inferieure au buffer, il y a collision
             if (distanceToLine < poiBuffer)
             {
                 return true;
@@ -184,7 +184,7 @@ public class POIPathRenderer : MonoBehaviour
     }
 
     /// <summary>
-    /// Calcule la distance d'un point à un segment de ligne
+    /// Calcule la distance d'un point a un segment de ligne
     /// </summary>
     private float DistancePointToLineSegment(Vector3 point, Vector3 lineStart, Vector3 lineEnd)
     {
@@ -205,11 +205,11 @@ public class POIPathRenderer : MonoBehaviour
     }
 
     /// <summary>
-    /// Crée un seul segment de tiret
+    /// Cree un seul segment de tiret
     /// </summary>
     private void CreateSingleDashSegment(Vector3 start, Vector3 end, int segmentIndex, int pathIndex)
     {
-        // Créer un GameObject pour ce segment
+        // Creer un GameObject pour ce segment
         GameObject segmentObject = new GameObject($"Dash_Segment_{pathIndex}_{segmentIndex}");
         segmentObject.transform.SetParent(transform);
 
@@ -223,7 +223,7 @@ public class POIPathRenderer : MonoBehaviour
         lineRenderer.positionCount = 2;
         lineRenderer.useWorldSpace = true;
 
-        // Définir la couleur via le gradient
+        // Definir la couleur via le gradient
         Gradient gradient = new Gradient();
         gradient.SetKeys(
             new GradientColorKey[] { new GradientColorKey(lineColor, 0.0f), new GradientColorKey(lineColor, 1.0f) },
@@ -231,11 +231,11 @@ public class POIPathRenderer : MonoBehaviour
         );
         lineRenderer.colorGradient = gradient;
 
-        // Définir les positions
+        // Definir les positions
         lineRenderer.SetPosition(0, start);
         lineRenderer.SetPosition(1, end);
 
-        // Désactiver les ombres pour les performances
+        // Desactiver les ombres pour les performances
         lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         lineRenderer.receiveShadows = false;
 
@@ -249,7 +249,7 @@ public class POIPathRenderer : MonoBehaviour
     /// </summary>
     private void ClearExistingPaths()
     {
-        // Détruire tous les enfants (les lignes précédentes)
+        // Detruire tous les enfants (les lignes precedentes)
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
             DestroyImmediate(transform.GetChild(i).gameObject);
@@ -257,7 +257,7 @@ public class POIPathRenderer : MonoBehaviour
     }
 
     /// <summary>
-    /// Méthode publique pour regénérer les chemins (utile si les POIs changent)
+    /// Methode publique pour regenerer les chemins (utile si les POIs changent)
     /// </summary>
     public void RegeneratePaths()
     {
@@ -265,13 +265,13 @@ public class POIPathRenderer : MonoBehaviour
     }
 
     /// <summary>
-    /// Crée un matériel de base pour les lignes pointillées si aucun n'est assigné
+    /// Cree un materiel de base pour les lignes pointillees si aucun n'est assigne
     /// </summary>
     void OnValidate()
     {
         if (dashLineMaterial == null)
         {
-            // En mode éditeur seulement, créer un matériel temporaire
+            // En mode editeur seulement, creer un materiel temporaire
 #if UNITY_EDITOR
             dashLineMaterial = new Material(Shader.Find("Sprites/Default"));
 #endif

@@ -23,7 +23,7 @@ public class PanelManager : MonoBehaviour
 
     [Header("Events")]
     public UnityEvent<int> OnPanelChanged;
-    public UnityEvent<bool> OnMapStateChanged; // Nouvel événement pour notifier les changements d'état de la carte
+    public UnityEvent<bool> OnMapStateChanged; // Nouvel evenement pour notifier les changements d'etat de la carte
 
     // Private variables
     private bool mapIsHidden = true;
@@ -35,13 +35,13 @@ public class PanelManager : MonoBehaviour
     private Dictionary<int, Vector2> originalPositions = new Dictionary<int, Vector2>();
     private int previousPanelIndex = 0;
 
-    // OPTIMISATION : Variables pour éviter les Update() inutiles
+    // OPTIMISATION : Variables pour eviter les Update() inutiles
     private bool isInputActive = false;
     private Coroutine inputCoroutine;
 
     public static PanelManager Instance { get; private set; }
 
-    // Propriété publique pour connaître l'état de la carte
+    // Propriete publique pour connaître l'etat de la carte
     public bool IsMapVisible => !mapIsHidden;
 
     private void Awake()
@@ -82,11 +82,11 @@ public class PanelManager : MonoBehaviour
 
         ShowPanel(startingPanelIndex);
 
-        // OPTIMISATION : Démarrer la détection d'input seulement quand nécessaire
+        // OPTIMISATION : Demarrer la detection d'input seulement quand necessaire
         StartInputDetection();
     }
 
-    // OPTIMISATION : Remplacer Update() par une coroutine qui ne tourne que quand nécessaire
+    // OPTIMISATION : Remplacer Update() par une coroutine qui ne tourne que quand necessaire
     private void StartInputDetection()
     {
         if (inputCoroutine != null)
@@ -108,16 +108,16 @@ public class PanelManager : MonoBehaviour
     {
         while (true)
         {
-            // OPTIMISATION : Arrêter la détection si la carte est visible ou en transition
+            // OPTIMISATION : Arrêter la detection si la carte est visible ou en transition
             if (!mapIsHidden || isTransitioning)
             {
-                yield return new WaitForSeconds(0.1f); // Vérifier moins souvent
+                yield return new WaitForSeconds(0.1f); // Verifier moins souvent
                 continue;
             }
 
             HandleInput();
 
-            // OPTIMISATION : Attendre un frame seulement si nécessaire
+            // OPTIMISATION : Attendre un frame seulement si necessaire
             yield return null;
         }
     }
@@ -338,25 +338,25 @@ public class PanelManager : MonoBehaviour
     /// </summary>
     public void ShowMap()
     {
-        if (!mapIsHidden) return; // Déjà visible
+        if (!mapIsHidden) return; // Deja visible
 
         previousPanelIndex = currentPanelIndex;
         HidePanel();
         mapPanel.SetActive(true);
         mapIsHidden = false;
 
-        // OPTIMISATION : Arrêter la détection d'input quand la carte est visible
+        // OPTIMISATION : Arrêter la detection d'input quand la carte est visible
         StopInputDetection();
 
-        // Notifier le changement d'état
+        // Notifier le changement d'etat
         OnMapStateChanged?.Invoke(true);
     }
 
     /// <summary>
-    /// Cache la carte et affiche le panel spécifié par son nom
+    /// Cache la carte et affiche le panel specifie par son nom
     /// MODIFIÉ: Fonctionne maintenant depuis n'importe où (carte ou panel)
     /// </summary>
-    /// <param name="panelName">Nom du GameObject panel à afficher</param>
+    /// <param name="panelName">Nom du GameObject panel a afficher</param>
     public void HideMapAndGoToPanel(string panelName)
     {
         int panelIndex = FindPanelIndexByName(panelName);
@@ -371,10 +371,10 @@ public class PanelManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Cache la carte et affiche le panel spécifié par son index
+    /// Cache la carte et affiche le panel specifie par son index
     /// MODIFIÉ: Fonctionne maintenant depuis n'importe où + corrige les positions
     /// </summary>
-    /// <param name="panelIndex">Index du panel à afficher</param>
+    /// <param name="panelIndex">Index du panel a afficher</param>
     public void HideMapAndGoToPanel(int panelIndex)
     {
         if (panelIndex < 0 || panelIndex >= panels.Count || panels[panelIndex] == null)
@@ -386,17 +386,17 @@ public class PanelManager : MonoBehaviour
         // NOUVEAU: Arrêter toute transition en cours et nettoyer les positions
         CleanupTransitionsAndPositions();
 
-        // NOUVEAU: Gérer les deux cas
+        // NOUVEAU: Gerer les deux cas
         if (!mapIsHidden)
         {
             // CAS 1: On vient de la carte → cacher la carte d'abord
             mapPanel.SetActive(false);
             mapIsHidden = true;
 
-            // Notifier le changement d'état de la carte
+            // Notifier le changement d'etat de la carte
             OnMapStateChanged?.Invoke(false);
 
-            // OPTIMISATION : Relancer la détection d'input
+            // OPTIMISATION : Relancer la detection d'input
             StartInputDetection();
         }
         else
@@ -405,7 +405,7 @@ public class PanelManager : MonoBehaviour
             HidePanel();
         }
 
-        // Dans tous les cas : afficher le panel demandé avec sa position correcte
+        // Dans tous les cas : afficher le panel demande avec sa position correcte
         ShowPanelAtCorrectPosition(panelIndex);
 
         currentPanelIndex = panelIndex;
@@ -417,7 +417,7 @@ public class PanelManager : MonoBehaviour
     }
 
     /// <summary>
-    /// NOUVEAU: Nettoie toutes les transitions en cours et remet les panels à leur position correcte
+    /// NOUVEAU: Nettoie toutes les transitions en cours et remet les panels a leur position correcte
     /// </summary>
     private void CleanupTransitionsAndPositions()
     {
@@ -432,7 +432,7 @@ public class PanelManager : MonoBehaviour
             Logger.LogInfo("PanelManager: Stopped ongoing transition", Logger.LogCategory.General);
         }
 
-        // Remettre tous les panels à leur position correcte
+        // Remettre tous les panels a leur position correcte
         for (int i = 0; i < panels.Count; i++)
         {
             if (panels[i] == null) continue;
@@ -442,7 +442,7 @@ public class PanelManager : MonoBehaviour
 
             if (alwaysActivePanelIndices.Contains(i))
             {
-                // Les panels "always active" : soit à leur position originale, soit hors écran
+                // Les panels "always active" : soit a leur position originale, soit hors ecran
                 if (i == currentPanelIndex && !isTransitioning)
                 {
                     // Panel actuel : position originale
@@ -451,7 +451,7 @@ public class PanelManager : MonoBehaviour
                 }
                 else
                 {
-                    // Autres panels : hors écran
+                    // Autres panels : hors ecran
                     rectTransform.anchoredPosition = offScreenPosition;
                 }
             }
@@ -467,7 +467,7 @@ public class PanelManager : MonoBehaviour
     }
 
     /// <summary>
-    /// NOUVEAU: Affiche un panel à sa position correcte
+    /// NOUVEAU: Affiche un panel a sa position correcte
     /// </summary>
     private void ShowPanelAtCorrectPosition(int panelIndex)
     {
@@ -493,7 +493,7 @@ public class PanelManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Cache la carte et retourne au panel précédent
+    /// Cache la carte et retourne au panel precedent
     /// </summary>
     public void HideMapAndReturnToPrevious()
     {
@@ -503,8 +503,8 @@ public class PanelManager : MonoBehaviour
     /// <summary>
     /// Trouve l'index d'un panel par son nom
     /// </summary>
-    /// <param name="panelName">Nom du GameObject panel à chercher</param>
-    /// <returns>Index du panel ou -1 si non trouvé</returns>
+    /// <param name="panelName">Nom du GameObject panel a chercher</param>
+    /// <returns>Index du panel ou -1 si non trouve</returns>
     private int FindPanelIndexByName(string panelName)
     {
         for (int i = 0; i < panels.Count; i++)
@@ -518,8 +518,8 @@ public class PanelManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Toggle la carte (affiche si cachée, cache et retourne au précédent si visible)
-    /// Méthode de compatibilité avec l'ancien code
+    /// Toggle la carte (affiche si cachee, cache et retourne au precedent si visible)
+    /// Methode de compatibilite avec l'ancien code
     /// </summary>
     public void ShowAndHideMapPanel()
     {
@@ -533,7 +533,7 @@ public class PanelManager : MonoBehaviour
         }
     }
 
-    // OPTIMISATION : Nettoyer les coroutines à la destruction
+    // OPTIMISATION : Nettoyer les coroutines a la destruction
     private void OnDestroy()
     {
         StopInputDetection();
@@ -543,7 +543,7 @@ public class PanelManager : MonoBehaviour
     public int CurrentPanelIndex => currentPanelIndex;
     public int PanelCount => panels.Count;
 
-    // Autres méthodes restent identiques...
+    // Autres methodes restent identiques...
     public void AddAlwaysActivePanel(int panelIndex)
     {
         if (panelIndex >= 0 && panelIndex < panels.Count && !alwaysActivePanelIndices.Contains(panelIndex))

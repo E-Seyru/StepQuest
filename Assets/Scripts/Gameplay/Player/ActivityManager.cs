@@ -87,7 +87,7 @@ public class ActivityManager : MonoBehaviour
         progressService.ProcessOfflineProgress();
     }
 
-    // MODIFIE: Update method pour gérer les deux types d'activités
+    // MODIFIE: Update method pour gerer les deux types d'activites
     void Update()
     {
         if (HasActiveActivity())
@@ -97,12 +97,12 @@ public class ActivityManager : MonoBehaviour
             {
                 if (currentActivity.IsTimeBased)
                 {
-                    // Vérifier les mises à jour de temps
+                    // Verifier les mises a jour de temps
                     timeService.CheckForTimeUpdates();
                 }
                 else
                 {
-                    // Vérifier les mises à jour de pas
+                    // Verifier les mises a jour de pas
                     progressService.CheckForStepUpdates();
                 }
             }
@@ -158,7 +158,7 @@ public class ActivityManager : MonoBehaviour
     // === NOUVEAU: API POUR ACTIVITES TEMPORELLES ===
 
     /// <summary>
-    /// NOUVEAU: Démarre une activité temporelle (crafting)
+    /// NOUVEAU: Demarre une activite temporelle (crafting)
     /// </summary>
     public bool StartTimedActivity(string activityId, string variantId, string locationId = null)
     {
@@ -174,7 +174,7 @@ public class ActivityManager : MonoBehaviour
             return false;
         }
 
-        // Vérifier qu'on a les matériaux pour crafter
+        // Verifier qu'on a les materiaux pour crafter
         var variant = ActivityRegistry.GetActivityVariant(activityId, variantId);
         if (variant == null || !variant.IsTimeBased)
         {
@@ -189,29 +189,29 @@ public class ActivityManager : MonoBehaviour
             return false;
         }
 
-        // Consommer les matériaux
+        // Consommer les materiaux
         if (!variant.ConsumeCraftingMaterials(inventoryManager))
         {
             Logger.LogError($"ActivityManager: Failed to consume materials for {variant.GetDisplayName()}", Logger.LogCategory.General);
             return false;
         }
 
-        // Arrêter l'activité actuelle s'il y en a une
+        // Arrêter l'activite actuelle s'il y en a une
         if (DataManager.Instance.PlayerData.HasActiveActivity())
         {
             StopActivity();
         }
 
-        // Utiliser la localisation actuelle si pas spécifiée
+        // Utiliser la localisation actuelle si pas specifiee
         if (string.IsNullOrEmpty(locationId))
         {
             locationId = DataManager.Instance.PlayerData.CurrentLocationId ?? "unknown";
         }
 
-        // Créer la nouvelle activité temporelle
+        // Creer la nouvelle activite temporelle
         var activityData = new ActivityData(activityId, variantId, variant.CraftingTimeMs, locationId, true);
 
-        // Démarrer l'exécution
+        // Demarrer l'execution
         bool success = executionService.StartActivity(activityData, variant);
 
         if (success && enableDebugLogs)
@@ -223,7 +223,7 @@ public class ActivityManager : MonoBehaviour
     }
 
     /// <summary>
-    /// NOUVEAU: Vérifie si on peut démarrer une activité temporelle
+    /// NOUVEAU: Verifie si on peut demarrer une activite temporelle
     /// </summary>
     public bool CanStartTimedActivity(string activityId, string variantId)
     {
@@ -265,7 +265,7 @@ public class ActivityTimeService
     }
 
     /// <summary>
-    /// Vérifie et traite les mises à jour temporelles pour les activités time-based
+    /// Verifie et traite les mises a jour temporelles pour les activites time-based
     /// </summary>
     public void CheckForTimeUpdates()
     {
@@ -277,7 +277,7 @@ public class ActivityTimeService
 
         if (currentActivityCache == null || !currentActivityCache.IsTimeBased) return;
 
-        // Calculer le temps non-traité
+        // Calculer le temps non-traite
         long unprocessedTimeMs = currentActivityCache.GetUnprocessedTimeMs();
 
         if (unprocessedTimeMs > 0)
@@ -287,7 +287,7 @@ public class ActivityTimeService
     }
 
     /// <summary>
-    /// Traite le nouveau temps écoulé pour les activités temporelles
+    /// Traite le nouveau temps ecoule pour les activites temporelles
     /// </summary>
     public void ProcessNewTime(long newTimeMs)
     {
@@ -297,10 +297,10 @@ public class ActivityTimeService
         var (currentActivityCache, currentVariantCache) = cacheService.GetCurrentActivityInfo();
         if (currentActivityCache == null || currentVariantCache == null || !currentActivityCache.IsTimeBased) return;
 
-        // Ajouter le temps à l'activité
+        // Ajouter le temps a l'activite
         currentActivityCache.AddTime(newTimeMs);
 
-        // Vérifier si l'activité est maintenant terminée
+        // Verifier si l'activite est maintenant terminee
         bool isComplete = currentActivityCache.IsComplete();
 
         if (isComplete)
@@ -309,14 +309,14 @@ public class ActivityTimeService
         }
         else
         {
-            // Mettre à jour les données
+            // Mettre a jour les donnees
             dataManager.PlayerData.CurrentActivity = currentActivityCache;
 
             // Marquer comme dirty pour persistence
             ActivityManager.Instance.PersistenceService.MarkDirty();
 
             // =====================================
-            // EVENTBUS - Publier l'événement de progression
+            // EVENTBUS - Publier l'evenement de progression
             // =====================================
             EventBus.Publish(new ActivityProgressEvent(currentActivityCache, currentVariantCache,
                 currentActivityCache.GetProgressToNextTick(currentVariantCache) * 100f));
@@ -330,13 +330,13 @@ public class ActivityTimeService
     }
 
     /// <summary>
-    /// Traite la completion d'une activité temporelle (ex: crafting terminé)
+    /// Traite la completion d'une activite temporelle (ex: crafting termine)
     /// </summary>
     private void ProcessTimedActivityCompletion(ActivityData activityCache, ActivityVariant variantCache)
     {
         if (variantCache == null) return;
 
-        // Produire l'item crafté
+        // Produire l'item crafte
         string resourceId = variantCache.PrimaryResource?.ItemID;
 
         if (!string.IsNullOrEmpty(resourceId))
@@ -350,11 +350,11 @@ public class ActivityTimeService
             }
         }
 
-        // Marquer l'activité comme terminée
+        // Marquer l'activite comme terminee
         activityCache.ProcessTicks(variantCache, 1);
 
         // =====================================
-        // EVENTBUS - Publier l'événement de tick
+        // EVENTBUS - Publier l'evenement de tick
         // =====================================
         EventBus.Publish(new ActivityTickEvent(activityCache, variantCache, 1, resourceId));
 
@@ -363,35 +363,35 @@ public class ActivityTimeService
             Logger.LogInfo($"ActivityTimeService: Completed crafting {variantCache.GetDisplayName()}", Logger.LogCategory.General);
         }
 
-        // Vérifier si on peut recommencer automatiquement (boucle)
+        // Verifier si on peut recommencer automatiquement (boucle)
         if (variantCache.CanCraft(InventoryManager.Instance))
         {
-            // Consommer les matériaux et redémarrer
+            // Consommer les materiaux et redemarrer
             if (variantCache.ConsumeCraftingMaterials(InventoryManager.Instance))
             {
-                // Reset l'activité pour une nouvelle boucle
+                // Reset l'activite pour une nouvelle boucle
                 activityCache.AccumulatedTimeMs = 0;
                 activityCache.LastProcessedTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             }
             else
             {
-                // Impossible de consommer, arrêter l'activité
+                // Impossible de consommer, arrêter l'activite
                 StopTimedActivity(activityCache, variantCache);
             }
         }
         else
         {
-            // Plus de matériaux, arrêter l'activité
+            // Plus de materiaux, arrêter l'activite
             StopTimedActivity(activityCache, variantCache);
         }
 
-        // Sauvegarder l'état
+        // Sauvegarder l'etat
         DataManager.Instance.PlayerData.CurrentActivity = activityCache;
         ActivityManager.Instance.PersistenceService.MarkDirty();
     }
 
     /// <summary>
-    /// Arrête une activité temporelle
+    /// Arrête une activite temporelle
     /// </summary>
     private void StopTimedActivity(ActivityData activityCache, ActivityVariant variantCache)
     {
@@ -400,7 +400,7 @@ public class ActivityTimeService
         ActivityManager.Instance.PersistenceService.MarkDirty();
 
         // =====================================
-        // EVENTBUS - Publier l'événement d'arrêt
+        // EVENTBUS - Publier l'evenement d'arrêt
         // =====================================
         EventBus.Publish(new ActivityStoppedEvent(activityCache, variantCache, true, "Materials depleted"));
     }
@@ -420,7 +420,7 @@ public class ActivityTimeService
         long offlineTimeMs = currentActivityCache.GetElapsedTimeMs();
         if (offlineTimeMs <= 0) return;
 
-        // Simuler le temps offline par chunks pour gérer les boucles
+        // Simuler le temps offline par chunks pour gerer les boucles
         long remainingTime = offlineTimeMs;
         int completedCrafts = 0;
 
@@ -430,19 +430,19 @@ public class ActivityTimeService
 
             if (remainingTime >= timeNeeded)
             {
-                // Compléter ce craft
+                // Completer ce craft
                 remainingTime -= timeNeeded;
                 currentActivityCache.AccumulatedTimeMs = currentActivityCache.RequiredTimeMs;
                 completedCrafts++;
 
-                // Donner les récompenses
+                // Donner les recompenses
                 string resourceId = currentVariantCache.PrimaryResource?.ItemID;
                 if (!string.IsNullOrEmpty(resourceId))
                 {
                     InventoryManager.Instance.AddItem("player", resourceId, 1);
                 }
 
-                // Vérifier si on peut continuer
+                // Verifier si on peut continuer
                 if (currentVariantCache.CanCraft(InventoryManager.Instance))
                 {
                     currentVariantCache.ConsumeCraftingMaterials(InventoryManager.Instance);
@@ -450,7 +450,7 @@ public class ActivityTimeService
                 }
                 else
                 {
-                    // Plus de matériaux, arrêter
+                    // Plus de materiaux, arrêter
                     currentActivityCache.Clear();
                     DataManager.Instance.PlayerData.CurrentActivity = null;
                     break;
@@ -464,7 +464,7 @@ public class ActivityTimeService
             }
         }
 
-        // Mettre à jour le timestamp
+        // Mettre a jour le timestamp
         currentActivityCache.LastProcessedTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         DataManager.Instance.PlayerData.CurrentActivity = currentActivityCache;
         ActivityManager.Instance.PersistenceService.MarkDirty();
@@ -550,7 +550,7 @@ public class ActivityExecutionService
         return StartActivity(newActivity, variant);
     }
 
-    // NOUVEAU: Méthode interne pour démarrer avec ActivityData directe
+    // NOUVEAU: Methode interne pour demarrer avec ActivityData directe
     internal bool StartActivity(ActivityData activityData, ActivityVariant variant)
     {
         // Save to player data
@@ -560,7 +560,7 @@ public class ActivityExecutionService
         ActivityManager.Instance.PersistenceService.MarkDirty();
 
         // =====================================
-        // EVENTBUS - Publier l'événement de début
+        // EVENTBUS - Publier l'evenement de debut
         // =====================================
         EventBus.Publish(new ActivityStartedEvent(activityData, variant));
 
@@ -588,7 +588,7 @@ public class ActivityExecutionService
         ActivityManager.Instance.PersistenceService.MarkDirty();
 
         // =====================================
-        // EVENTBUS - Publier l'événement d'arrêt
+        // EVENTBUS - Publier l'evenement d'arrêt
         // =====================================
         EventBus.Publish(new ActivityStoppedEvent(currentActivity, currentVariant, false, "Manually stopped"));
 
@@ -693,7 +693,7 @@ public class ActivityProgressService
         ActivityManager.Instance.PersistenceService.MarkDirty();
 
         // =====================================
-        // EVENTBUS - Publier l'événement de progression
+        // EVENTBUS - Publier l'evenement de progression
         // =====================================
         EventBus.Publish(new ActivityProgressEvent(currentActivityCache, currentVariantCache,
             currentActivityCache.GetProgressToNextTick(currentVariantCache) * 100f));
@@ -736,7 +736,7 @@ public class ActivityProgressService
         ActivityManager.Instance.PersistenceService.MarkDirty();
 
         // =====================================
-        // EVENTBUS - Publier l'événement de tick
+        // EVENTBUS - Publier l'evenement de tick
         // =====================================
         EventBus.Publish(new ActivityTickEvent(currentActivityCache, currentVariantCache, ticksCompleted, resourceId));
 
@@ -746,7 +746,7 @@ public class ActivityProgressService
         }
     }
 
-    // MODIFIE: ProcessOfflineProgress pour gérer les deux types
+    // MODIFIE: ProcessOfflineProgress pour gerer les deux types
     public void ProcessOfflineProgress()
     {
         var dataManager = DataManager.Instance;
@@ -757,12 +757,12 @@ public class ActivityProgressService
 
         if (currentActivityCache.IsTimeBased)
         {
-            // Déléguer au service temporel
+            // Deleguer au service temporel
             timeService.ProcessOfflineTimeProgress();
         }
         else
         {
-            // Code existant pour les activités basées sur les pas
+            // Code existant pour les activites basees sur les pas
             ProcessOfflineStepProgress(currentActivityCache, currentVariantCache);
         }
     }

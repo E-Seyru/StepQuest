@@ -73,7 +73,7 @@ public class TravelSpriteAnimator : MonoBehaviour
         }
 
         // =====================================
-        // EVENTBUS - S'abonner aux événements de voyage
+        // EVENTBUS - S'abonner aux evenements de voyage
         // =====================================
         EventBus.Subscribe<TravelStartedEvent>(OnTravelStarted);
         EventBus.Subscribe<TravelCompletedEvent>(OnTravelCompleted);
@@ -89,7 +89,7 @@ public class TravelSpriteAnimator : MonoBehaviour
         // NOUVEAU : Initialiser le cache des positions POI
         InitializePOICache();
 
-        // Positionner le personnage à sa location actuelle au demarrage
+        // Positionner le personnage a sa location actuelle au demarrage
         StartCoroutine(PositionPlayerAfterDelay());
     }
 
@@ -218,7 +218,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     void OnDestroy()
     {
         // =====================================
-        // EVENTBUS - Se désabonner des événements
+        // EVENTBUS - Se desabonner des evenements
         // =====================================
         EventBus.Unsubscribe<TravelStartedEvent>(OnTravelStarted);
         EventBus.Unsubscribe<TravelCompletedEvent>(OnTravelCompleted);
