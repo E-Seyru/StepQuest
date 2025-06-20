@@ -1,4 +1,4 @@
-﻿// Purpose: Clickable POI on the world map that shows travel confirmation popup
+﻿// Purpose: Clickable POI on the world map with intelligent pathfinding support
 // Filepath: Assets/Scripts/Gameplay/World/POI.cs
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -31,12 +31,18 @@ public class POI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private LeanTweenType clickAnimationEase = LeanTweenType.easeOutBack;
 
     [Header("Error Display")]
-    [Tooltip("Le panel d'erreur sera gere automatiquement via ErrorPanel.Instance")]
+    [Tooltip("Le panel d'erreur sera géré automatiquement via ErrorPanel.Instance")]
     [SerializeField] private bool enableErrorMessages = true;
 
     [Header("Location Details")]
-    [Tooltip("Nom du panel a afficher pour les details de la location")]
+    [Tooltip("Nom du panel à afficher pour les détails de la location")]
     [SerializeField] private string locationDetailsPanelName = "LocationDetailsPanel";
+
+    [Header("Pathfinding Settings - NOUVEAU")]
+    [Tooltip("Afficher des informations détaillées sur le pathfinding")]
+    [SerializeField] private bool showPathfindingDetails = true;
+    [Tooltip("Afficher le nombre de segments dans le message de voyage")]
+    [SerializeField] private bool showSegmentCount = true;
 
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
@@ -53,7 +59,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     private bool isAnimating = false;
 
     /// <summary>
-    /// Retourne la position de depart pour le chemin de voyage
+    /// Retourne la position de départ pour le chemin de voyage
     /// </summary>
     public Vector3 GetTravelPathStartPosition()
     {
@@ -65,7 +71,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// Retourne la position actuelle du point de depart (pour verification dans l'editeur)
+    /// Retourne la position actuelle du point de départ (pour vérification dans l'éditeur)
     /// </summary>
     public Vector3 GetTravelPathStartPoint()
     {
@@ -73,7 +79,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// Definit un nouveau point de depart pour le chemin de voyage
+    /// Définit un nouveau point de départ pour le chemin de voyage
     /// </summary>
     public void SetTravelPathStartPoint(Transform newStartPoint)
     {
@@ -82,7 +88,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     void Start()
     {
-        // Sauvegarder l'echelle originale
+        // Sauvegarder l'échelle originale
         originalScale = transform.localScale;
 
         // Get manager references
@@ -132,9 +138,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
             }
         }
 
-        // Subscribe to MapManager events if needed for other functionality
-        // (Actuellement aucun evenement necessaire car plus de changements de couleur)
-
         if (enableDebugLogs)
         {
             Vector3 startPos = GetTravelPathStartPosition();
@@ -146,8 +149,6 @@ public class POI : MonoBehaviour, IPointerClickHandler
     {
         // Arrêter toutes les animations LeanTween sur cet objet
         LeanTween.cancel(gameObject);
-
-        // Plus d'evenements a desabonner car plus de changements de couleur
     }
 
     // Mobile-optimized click handling
@@ -167,7 +168,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     /// </summary>
     private void PlayClickAnimation()
     {
-        // Ne pas jouer l'animation si elle est desactivee ou si une animation est deja en cours
+        // Ne pas jouer l'animation si elle est désactivée ou si une animation est déjà en cours
         if (!enableClickAnimation || isAnimating)
             return;
 
@@ -176,68 +177,48 @@ public class POI : MonoBehaviour, IPointerClickHandler
         // Annuler toute animation en cours sur cet objet
         LeanTween.cancel(gameObject);
 
-        // Animation en 2 etapes :
+        // Animation en 2 étapes :
         // 1. Grandir rapidement
-        // 2. Revenir a la taille normale
-
-        // Étape 1 : Grandir (la moitie du temps total)
-        LeanTween.scale(gameObject, originalScale * clickScaleAmount, clickAnimationDuration * 0.5f)
-            .setEase(LeanTweenType.easeOutQuad)
+        // 2. Revenir à la taille normale avec un effet bounce
+        LeanTween.scale(gameObject, originalScale * clickScaleAmount, clickAnimationDuration * 0.4f)
+            .setEase(LeanTweenType.easeOutQuart)
             .setOnComplete(() =>
             {
-                // Étape 2 : Retrecir vers la taille normale (l'autre moitie du temps)
-                LeanTween.scale(gameObject, originalScale, clickAnimationDuration * 0.5f)
+                LeanTween.scale(gameObject, originalScale, clickAnimationDuration * 0.6f)
                     .setEase(clickAnimationEase)
                     .setOnComplete(() =>
                     {
                         isAnimating = false;
                     });
             });
-
-        if (enableDebugLogs)
-        {
-            Logger.LogInfo($"POI ({LocationID}): Playing click animation", Logger.LogCategory.MapLog);
-        }
     }
 
+    /// <summary>
+    /// ENHANCED: Gère le clic sur le POI avec support pathfinding
+    /// </summary>
     private void HandleClick()
     {
-        // Jouer l'effet d'animation en premier
         PlayClickAnimation();
 
-        if (mapManager == null)
+        if (mapManager == null || locationRegistry == null)
         {
-            Logger.LogError($"POI ({LocationID}): MapManager is null!", Logger.LogCategory.MapLog);
+            Logger.LogError($"POI ({LocationID}): Missing required components for travel", Logger.LogCategory.MapLog);
             return;
         }
 
-        if (string.IsNullOrEmpty(LocationID))
-        {
-            Logger.LogError($"POI: LocationID is not set!", Logger.LogCategory.MapLog);
-            return;
-        }
-
-        if (enableDebugLogs)
-        {
-            Logger.LogInfo($"POI: Clicked on POI '{LocationID}'", Logger.LogCategory.MapLog);
-        }
-
-        // Verifier en temps reel si c'est la location actuelle (evite les problèmes d'ordre d'initialisation)
-        bool isAtCurrentLocation = (mapManager?.CurrentLocation?.LocationID == LocationID);
-
-        // Check if this is the current location (when not traveling)
-        if (!dataManager.PlayerData.IsCurrentlyTraveling() && isAtCurrentLocation)
+        // Vérifier si on est déjà à cette location
+        if (mapManager.CurrentLocation != null && mapManager.CurrentLocation.LocationID == LocationID)
         {
             if (enableDebugLogs)
             {
-                Logger.LogInfo($"POI ({LocationID}): At current location - showing location details!", Logger.LogCategory.MapLog);
+                Logger.LogInfo($"POI ({LocationID}): Already at this location, showing details", Logger.LogCategory.MapLog);
             }
 
             ShowLocationDetails();
             return;
         }
 
-        // Verifier si le voyage est possible avant d'ouvrir la popup
+        // ENHANCED: Vérifier si le voyage est possible (direct ou pathfinding)
         if (mapManager.CanTravelTo(LocationID))
         {
             if (travelPopup != null)
@@ -246,7 +227,17 @@ public class POI : MonoBehaviour, IPointerClickHandler
                 {
                     Logger.LogInfo($"POI ({LocationID}): Opening travel confirmation popup", Logger.LogCategory.MapLog);
                 }
-                travelPopup.ShowTravelConfirmation(LocationID);
+
+                // NOUVEAU: Passer des informations de pathfinding au popup si disponible
+                if (showPathfindingDetails)
+                {
+                    var travelInfo = mapManager.GetTravelInfo(LocationID);
+                    ShowEnhancedTravelConfirmation(travelInfo);
+                }
+                else
+                {
+                    travelPopup.ShowTravelConfirmation(LocationID);
+                }
             }
             else
             {
@@ -261,7 +252,27 @@ public class POI : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// Affiche un panel d'erreur quand le voyage n'est pas possible
+    /// NOUVEAU: Affiche une popup de confirmation avec détails pathfinding
+    /// </summary>
+    private void ShowEnhancedTravelConfirmation(MapManager.TravelInfo travelInfo)
+    {
+        if (travelInfo == null)
+        {
+            travelPopup.ShowTravelConfirmation(LocationID);
+            return;
+        }
+
+        // Si TravelConfirmationPopup a des méthodes pour afficher des détails étendus, les utiliser
+        // Sinon, utiliser la méthode standard
+        travelPopup.ShowTravelConfirmation(LocationID);
+
+        // TODO: Si tu veux modifier TravelConfirmationPopup pour supporter les détails pathfinding,
+        // tu peux ajouter quelque chose comme :
+        // travelPopup.ShowTravelConfirmationWithDetails(LocationID, travelInfo);
+    }
+
+    /// <summary>
+    /// ENHANCED: Affiche un message d'erreur plus informatif
     /// </summary>
     private void ShowTravelUnavailableMessage()
     {
@@ -270,15 +281,15 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
         if (mapManager.CurrentLocation == null)
         {
-            errorMessage = "Impossible - aucune location definie !";
+            errorMessage = "Impossible - aucune location définie !";
         }
         else if (dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            errorMessage = "Impossible - vous êtes deja en train de voyager !";
+            errorMessage = "Impossible - vous êtes déjà en train de voyager !";
         }
         else if (ActivityManager.Instance?.HasActiveActivity() == true)
         {
-            errorMessage = "Impossible - vous êtes en activite !";
+            errorMessage = "Impossible - vous êtes en activité !";
         }
         else if (destinationLocation == null)
         {
@@ -286,77 +297,83 @@ public class POI : MonoBehaviour, IPointerClickHandler
         }
         else if (mapManager.CurrentLocation.LocationID == LocationID)
         {
-            errorMessage = $"Impossible - deja a '{destinationLocation.DisplayName}' !";
-        }
-        else if (!locationRegistry.CanTravelBetween(mapManager.CurrentLocation.LocationID, LocationID))
-        {
-            errorMessage = $"Impossible - pas connecte a '{destinationLocation.DisplayName}' !";
-        }
-
-        // Afficher le panel d'erreur
-        ShowErrorPanel(errorMessage);
-
-        // Garder le log pour debug
-        Logger.LogInfo($"POI ({LocationID}): {errorMessage}", Logger.LogCategory.MapLog);
-    }
-
-    /// <summary>
-    /// Affiche le panel d'erreur via le singleton
-    /// </summary>
-    private void ShowErrorPanel(string message)
-    {
-        if (!enableErrorMessages)
-        {
-            return;
-        }
-
-        if (ErrorPanel.Instance != null)
-        {
-            ErrorPanel.Instance.ShowError(message, transform);
-
-            if (enableDebugLogs)
-            {
-                Logger.LogInfo($"POI ({LocationID}): Showing error panel with message: {message}", Logger.LogCategory.MapLog);
-            }
+            errorMessage = $"Impossible - déjà à '{destinationLocation.DisplayName}' !";
         }
         else
         {
-            Logger.LogWarning($"POI ({LocationID}): ErrorPanel.Instance not found!", Logger.LogCategory.MapLog);
+            // ENHANCED: Message plus détaillé basé sur le pathfinding
+            string detailedReason = GetDetailedTravelBlockReason(destinationLocation);
+            errorMessage = $"Impossible de voyager vers '{destinationLocation.DisplayName}' - {detailedReason}";
+        }
+
+        if (enableErrorMessages && ErrorPanel.Instance != null)
+        {
+            ErrorPanel.Instance.ShowError(errorMessage);
+        }
+        else
+        {
+            Logger.LogWarning($"POI ({LocationID}): {errorMessage}", Logger.LogCategory.MapLog);
         }
     }
 
     /// <summary>
-    /// Affiche le panel de details de la location quand on clique sur notre location actuelle
+    /// NOUVEAU: Retourne une raison détaillée pour l'impossibilité de voyager
+    /// </summary>
+    private string GetDetailedTravelBlockReason(MapLocationDefinition destination)
+    {
+        // Vérifier d'abord la connexion directe
+        bool hasDirectConnection = locationRegistry.CanTravelBetween(mapManager.CurrentLocation.LocationID, LocationID);
+
+        if (hasDirectConnection)
+        {
+            // Il y a une connexion directe mais autre problème
+            return "problème technique";
+        }
+
+        // Vérifier le pathfinding si disponible
+        if (mapManager.PathfindingService != null)
+        {
+            var pathResult = mapManager.PathfindingService.FindPath(mapManager.CurrentLocation.LocationID, LocationID);
+
+            if (!pathResult.IsReachable)
+            {
+                return "aucun chemin disponible";
+            }
+            else
+            {
+                // Le chemin existe mais autre problème
+                return "chemin trouvé mais voyage bloqué";
+            }
+        }
+
+        return "pas de connexion directe";
+    }
+
+    /// <summary>
+    /// Affiche les détails de la location
     /// </summary>
     private void ShowLocationDetails()
     {
-        if (panelManager == null)
+        if (panelManager != null && !string.IsNullOrEmpty(locationDetailsPanelName))
         {
-            Logger.LogError($"POI ({LocationID}): PanelManager is null!", Logger.LogCategory.MapLog);
-            return;
-        }
+            // Utiliser l'API correcte du PanelManager pour naviguer vers le panel
+            panelManager.HideMapAndGoToPanel(locationDetailsPanelName);
 
-        if (string.IsNullOrEmpty(locationDetailsPanelName))
+            // Le LocationDetailsPanel se mettra automatiquement à jour avec la location actuelle
+            Logger.LogInfo($"POI ({LocationID}): Navigating to {locationDetailsPanelName}", Logger.LogCategory.MapLog);
+        }
+        else
         {
-            Logger.LogWarning($"POI ({LocationID}): locationDetailsPanelName is not set!", Logger.LogCategory.MapLog);
-            return;
+            Logger.LogWarning($"POI ({LocationID}): Cannot show location details - PanelManager or panel name not set", Logger.LogCategory.MapLog);
         }
-
-        if (enableDebugLogs)
-        {
-            Logger.LogInfo($"POI ({LocationID}): Hiding map and showing '{locationDetailsPanelName}' panel", Logger.LogCategory.MapLog);
-        }
-
-        // Utiliser la nouvelle methode du PanelManager pour aller au panel des details
-        panelManager.HideMapAndGoToPanel(locationDetailsPanelName);
     }
 
-    // Editor utility to help set up POIs
-    void OnValidate()
+    void Awake()
     {
+        // Validation des paramètres au démarrage
         if (string.IsNullOrEmpty(LocationID))
         {
-            Debug.LogWarning($"POI on GameObject '{gameObject.name}': LocationID is not set!");
+            Logger.LogError($"POI: LocationID is not set on GameObject '{gameObject.name}'", Logger.LogCategory.MapLog);
         }
 
         if (spriteRenderer == null)
@@ -397,4 +414,52 @@ public class POI : MonoBehaviour, IPointerClickHandler
             Gizmos.DrawLine(transform.position, startPos);
         }
     }
+
+    #region Debug Methods
+
+    /// <summary>
+    /// NOUVEAU: Debug le chemin vers cette destination
+    /// </summary>
+    [ContextMenu("Debug Path To This POI")]
+    public void DebugPathToThisPOI()
+    {
+        if (mapManager != null && mapManager.CurrentLocation != null)
+        {
+            mapManager.DebugPath(LocationID);
+        }
+        else
+        {
+            Logger.LogWarning($"POI ({LocationID}): Cannot debug path - MapManager or CurrentLocation not available", Logger.LogCategory.MapLog);
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU: Affiche les informations de voyage dans la console
+    /// </summary>
+    [ContextMenu("Show Travel Info")]
+    public void ShowTravelInfo()
+    {
+        if (mapManager?.CurrentLocation == null)
+        {
+            Logger.LogInfo($"POI ({LocationID}): No current location set", Logger.LogCategory.MapLog);
+            return;
+        }
+
+        var travelInfo = mapManager.GetTravelInfo(LocationID);
+        if (travelInfo == null)
+        {
+            Logger.LogInfo($"POI ({LocationID}): No travel info available", Logger.LogCategory.MapLog);
+            return;
+        }
+
+        string travelType = travelInfo.RequiresPathfinding ? "PATHFINDING" : "DIRECT";
+        Logger.LogInfo($"POI ({LocationID}): Travel type: {travelType}, Cost: {travelInfo.StepCost} steps, Can travel: {travelInfo.CanTravel}", Logger.LogCategory.MapLog);
+
+        if (travelInfo.RequiresPathfinding && travelInfo.PathDetails != null)
+        {
+            Logger.LogInfo($"POI ({LocationID}): Path has {travelInfo.SegmentCount} segments", Logger.LogCategory.MapLog);
+        }
+    }
+
+    #endregion
 }
