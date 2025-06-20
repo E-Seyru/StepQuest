@@ -1,4 +1,4 @@
-﻿// Purpose: Animates a sprite that moves along the travel path during journey
+﻿// Purpose: Animates a sprite that moves along the travel path during journey - FIXED FOR PATHFINDING
 // Filepath: Assets/Scripts/UI/Components/TravelSpriteAnimator.cs
 using MapEvents; // NOUVEAU: Import pour EventBus
 using System.Collections.Generic; // Pour Dictionary
@@ -24,6 +24,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool showDebugPath = false;
     [SerializeField] private Color debugPathColor = Color.yellow;
+    [SerializeField] private bool enablePathfindingDebug = true; // NOUVEAU
 
     // NOUVEAU : Cache des positions POI pour eviter les recherches repetees
     private Dictionary<string, Vector3> poiPositionsCache = new Dictionary<string, Vector3>();
@@ -34,11 +35,16 @@ public class TravelSpriteAnimator : MonoBehaviour
     private DataManager dataManager;
     private LocationRegistry locationRegistry;
 
-    // Etat du voyage
+    // Etat du voyage - MODIFIÉ POUR PATHFINDING
     private Vector3 startPosition;
     private Vector3 endPosition;
     private bool isAnimating = false;
     private int currentBounceId = -1;
+
+    // NOUVEAU : État pour gérer les voyages multi-segments
+    private bool isMultiSegmentTravel = false;
+    private string currentSegmentDestination = "";
+    private string finalDestination = "";
 
     public static TravelSpriteAnimator Instance { get; private set; }
 
@@ -141,6 +147,7 @@ public class TravelSpriteAnimator : MonoBehaviour
         }
 
         isCacheInitialized = true;
+        Logger.LogInfo($"TravelSpriteAnimator: POI cache initialized with {poiPositionsCache.Count} positions", Logger.LogCategory.MapLog);
     }
 
     /// <summary>
@@ -178,9 +185,8 @@ public class TravelSpriteAnimator : MonoBehaviour
         poiPositionsCache.Clear();
         isCacheInitialized = false;
         InitializePOICache();
+        Logger.LogInfo("TravelSpriteAnimator: POI cache refreshed", Logger.LogCategory.MapLog);
     }
-
-    // === LE RESTE DU CODE RESTE IDENTIQUE ===
 
     private System.Collections.IEnumerator PositionPlayerAfterDelay()
     {
@@ -188,8 +194,11 @@ public class TravelSpriteAnimator : MonoBehaviour
 
         if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            string destinationId = dataManager.PlayerData.TravelDestinationId;
-            SetupTravelPath(destinationId);
+            // MODIFIÉ : Configuration intelligente pour les voyages en cours
+            string currentDestination = dataManager.PlayerData.TravelDestinationId;
+            DetermineIfMultiSegmentTravel(currentDestination);
+
+            SetupTravelPath(currentDestination);
 
             long currentTotalSteps = dataManager.PlayerData.TotalSteps;
             long progressSteps = dataManager.PlayerData.GetTravelProgress(currentTotalSteps);
@@ -207,6 +216,11 @@ public class TravelSpriteAnimator : MonoBehaviour
             if (bounceAnimation)
             {
                 StartBounceAnimation();
+            }
+
+            if (enablePathfindingDebug)
+            {
+                Logger.LogInfo($"TravelSpriteAnimator: Resumed travel animation - {progressSteps}/{requiredSteps} steps to {currentDestination}", Logger.LogCategory.MapLog);
             }
         }
         else
@@ -228,28 +242,125 @@ public class TravelSpriteAnimator : MonoBehaviour
         StopAllAnimations();
     }
 
-    // === GESTIONNAIRES D'ÉVÉNEMENTS - ADAPTÉS POUR EVENTBUS ===
+    // === GESTIONNAIRES D'ÉVÉNEMENTS - MODIFIÉS POUR PATHFINDING ===
 
+    /// <summary>
+    /// MODIFIÉ : Gère maintenant les changements de location pendant les voyages multi-segments
+    /// </summary>
     private void OnLocationChanged(LocationChangedEvent eventData)
     {
-        if (!dataManager.PlayerData.IsCurrentlyTraveling())
+        if (enablePathfindingDebug)
         {
+            Logger.LogInfo($"TravelSpriteAnimator: Location changed from {eventData.PreviousLocation?.DisplayName} to {eventData.NewLocation?.DisplayName}", Logger.LogCategory.MapLog);
+        }
+
+        if (dataManager.PlayerData.IsCurrentlyTraveling())
+        {
+            // NOUVEAU : Pendant un voyage multi-segment, mettre à jour le chemin pour le segment suivant
+            string nextDestination = dataManager.PlayerData.TravelDestinationId;
+
+            if (nextDestination != currentSegmentDestination)
+            {
+                if (enablePathfindingDebug)
+                {
+                    Logger.LogInfo($"TravelSpriteAnimator: Segment changed - now traveling to {nextDestination}", Logger.LogCategory.MapLog);
+                }
+
+                // Configurer le nouveau segment
+                SetupTravelPath(nextDestination);
+                PositionPlayerAtStart();
+
+                if (bounceAnimation)
+                {
+                    StartBounceAnimation();
+                }
+            }
+        }
+        else
+        {
+            // Voyage terminé - positionner à la location actuelle
             PositionPlayerAtCurrentLocation();
+            ResetMultiSegmentState();
         }
     }
 
+    /// <summary>
+    /// MODIFIÉ : Gère le début d'un voyage (peut être un segment ou un voyage complet)
+    /// </summary>
     private void OnTravelStarted(TravelStartedEvent eventData)
     {
+        if (enablePathfindingDebug)
+        {
+            Logger.LogInfo($"TravelSpriteAnimator: Travel started to {eventData.DestinationLocationId}", Logger.LogCategory.MapLog);
+        }
+
         StopAllAnimations();
+
+        // NOUVEAU : Déterminer si c'est un voyage multi-segment
+        DetermineIfMultiSegmentTravel(eventData.DestinationLocationId);
+
         SetupTravelPath(eventData.DestinationLocationId);
         PositionPlayerAtStart();
-        if (bounceAnimation) StartBounceAnimation();
+
+        if (bounceAnimation)
+        {
+            StartBounceAnimation();
+        }
     }
 
+    /// <summary>
+    /// NOUVEAU : Détermine si le voyage actuel fait partie d'un pathfinding multi-segment
+    /// </summary>
+    private void DetermineIfMultiSegmentTravel(string destinationId)
+    {
+        currentSegmentDestination = destinationId;
+
+        // Vérifier si c'est un voyage pathfinding en comparant avec une connexion directe
+        if (mapManager?.CurrentLocation != null && locationRegistry != null)
+        {
+            bool hasDirectConnection = locationRegistry.CanTravelBetween(mapManager.CurrentLocation.LocationID, destinationId);
+
+            if (!hasDirectConnection && mapManager.PathfindingService != null)
+            {
+                var pathResult = mapManager.PathfindingService.FindPath(mapManager.CurrentLocation.LocationID, destinationId);
+                if (pathResult.IsReachable && pathResult.Segments.Count > 1)
+                {
+                    isMultiSegmentTravel = true;
+                    finalDestination = pathResult.Path[pathResult.Path.Count - 1]; // Dernière destination
+
+                    if (enablePathfindingDebug)
+                    {
+                        Logger.LogInfo($"TravelSpriteAnimator: Multi-segment travel detected - {pathResult.Segments.Count} segments to reach {finalDestination}", Logger.LogCategory.MapLog);
+                    }
+                    return;
+                }
+            }
+        }
+
+        // Voyage direct
+        isMultiSegmentTravel = false;
+        finalDestination = destinationId;
+    }
+
+    /// <summary>
+    /// MODIFIÉ : Gère les mises à jour de progrès avec reconnaissance des segments
+    /// </summary>
     private void OnTravelProgress(TravelProgressEvent eventData)
     {
         if (travelSprite != null && travelSprite.activeSelf)
         {
+            // Vérifier si on a changé de segment
+            if (eventData.DestinationLocationId != currentSegmentDestination)
+            {
+                if (enablePathfindingDebug)
+                {
+                    Logger.LogInfo($"TravelSpriteAnimator: Progress event for different segment ({eventData.DestinationLocationId} vs {currentSegmentDestination}) - updating path", Logger.LogCategory.MapLog);
+                }
+
+                currentSegmentDestination = eventData.DestinationLocationId;
+                SetupTravelPath(eventData.DestinationLocationId);
+            }
+
             float progress = eventData.RequiredSteps > 0 ? (float)eventData.CurrentSteps / eventData.RequiredSteps : 0f;
             progress = Mathf.Clamp01(progress);
 
@@ -257,12 +368,34 @@ public class TravelSpriteAnimator : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// MODIFIÉ : Gère la fin d'un voyage ou d'un segment
+    /// </summary>
     private void OnTravelCompleted(TravelCompletedEvent eventData)
     {
+        if (enablePathfindingDebug)
+        {
+            Logger.LogInfo($"TravelSpriteAnimator: Travel completed to {eventData.NewLocation?.DisplayName}", Logger.LogCategory.MapLog);
+        }
+
         AnimateToDestination();
         StopBounceAnimation();
+        ResetMultiSegmentState();
     }
 
+    /// <summary>
+    /// NOUVEAU : Remet à zéro l'état multi-segment
+    /// </summary>
+    private void ResetMultiSegmentState()
+    {
+        isMultiSegmentTravel = false;
+        currentSegmentDestination = "";
+        finalDestination = "";
+    }
+
+    /// <summary>
+    /// MODIFIÉ : Configure le chemin pour le segment actuel (pas la destination finale)
+    /// </summary>
     private void SetupTravelPath(string destinationId)
     {
         if (mapManager?.CurrentLocation == null || locationRegistry == null)
@@ -271,14 +404,18 @@ public class TravelSpriteAnimator : MonoBehaviour
             return;
         }
 
-        // MODIFIE : Utilise le cache au lieu de chercher dans la scène
+        // MODIFIÉ : Utilise le cache et configure pour le segment actuel
         startPosition = FindPOITravelStartPosition(mapManager.CurrentLocation.LocationID);
-        endPosition = FindPOITravelStartPosition(destinationId);
+        endPosition = FindPOITravelStartPosition(destinationId); // Destination du segment actuel
 
         startPosition += spriteOffset;
         endPosition += spriteOffset;
 
-        Logger.LogInfo($"TravelSpriteAnimator: Path setup from {startPosition} to {endPosition}", Logger.LogCategory.MapLog);
+        if (enablePathfindingDebug)
+        {
+            string segmentInfo = isMultiSegmentTravel ? $" (segment vers {destinationId}, final: {finalDestination})" : " (voyage direct)";
+            Logger.LogInfo($"TravelSpriteAnimator: Path setup from {mapManager.CurrentLocation.LocationID} to {destinationId}{segmentInfo}", Logger.LogCategory.MapLog);
+        }
     }
 
     private void PositionPlayerAtStart()
@@ -316,6 +453,11 @@ public class TravelSpriteAnimator : MonoBehaviour
 
         travelSprite.transform.position = currentPos;
         travelSprite.SetActive(true);
+
+        if (enablePathfindingDebug)
+        {
+            Logger.LogInfo($"TravelSpriteAnimator: Player positioned at {mapManager.CurrentLocation.DisplayName}", Logger.LogCategory.MapLog);
+        }
     }
 
     private void UpdateSpritePosition(float progress)
@@ -342,7 +484,10 @@ public class TravelSpriteAnimator : MonoBehaviour
             .setEase(easeType)
             .setOnComplete(() =>
             {
-                Logger.LogInfo("TravelSpriteAnimator: Player positioned at destination", Logger.LogCategory.MapLog);
+                if (enablePathfindingDebug)
+                {
+                    Logger.LogInfo("TravelSpriteAnimator: Player positioned at destination", Logger.LogCategory.MapLog);
+                }
             });
     }
 
@@ -416,5 +561,19 @@ public class TravelSpriteAnimator : MonoBehaviour
             Gizmos.DrawWireSphere(startPosition, 0.5f);
             Gizmos.DrawWireSphere(endPosition, 0.5f);
         }
+
+        // NOUVEAU : Afficher des informations de debug dans la Scene view
+        if (isMultiSegmentTravel && !string.IsNullOrEmpty(finalDestination))
+        {
+            Vector3 finalPos = FindPOITravelStartPosition(finalDestination) + spriteOffset;
+            if (finalPos != Vector3.zero)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(finalPos, 0.7f);
+                Gizmos.DrawLine(endPosition, finalPos);
+            }
+        }
     }
+
+
 }
