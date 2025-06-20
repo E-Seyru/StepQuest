@@ -40,8 +40,8 @@ public static class EventBus
     // Lock pour thread-safety
     private static readonly object lockObject = new();
 
-    // Cache pour eviter les allocations repetees
-    private static readonly List<Delegate> tempCallbackList = new();
+    // SUPPRIMÉ: tempCallbackList - était inutilisé et dangereux pour la concurrence
+    // On utilise des listes locales dans chaque méthode à la place
 
     // Compteur pour les stats
     private static int totalSubscriptions = 0;
@@ -203,7 +203,8 @@ public static class EventBus
 
         LogInfo($"Publishing {eventData}");
 
-        // Copier les callbacks dans une liste temporaire (thread-safety)
+        // THREAD-SAFE: Créer une liste locale pour chaque appel
+        // Chaque thread aura sa propre copie, évitant les conflits
         var callbacksToExecute = new List<Delegate>();
 
         lock (lockObject)
