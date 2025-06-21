@@ -184,36 +184,54 @@ public class ActivityManagerWindow : EditorWindow
 
     private void DrawCreatePOIDialog()
     {
-        GUILayout.BeginArea(new Rect(50, 100, 400, 200));
+        // Validation préalable
+        if (!ValidateSetupForPOICreation())
+        {
+            ResetCreatePOIDialog();
+            return;
+        }
+
+        GUILayout.BeginArea(new Rect(50, 100, 400, 220));
         EditorGUILayout.BeginVertical("box");
 
-        EditorGUILayout.LabelField("Create New POI", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("Créer un Nouveau POI", EditorStyles.boldLabel);
         EditorGUILayout.Space();
 
-        EditorGUILayout.LabelField("POI Name:");
+        EditorGUILayout.LabelField("Nom du POI:");
         newPOIName = EditorGUILayout.TextField(newPOIName);
 
-        EditorGUILayout.LabelField("Location ID:");
+        EditorGUILayout.LabelField("ID de Location:");
         newLocationID = EditorGUILayout.TextField(newLocationID);
+
+        // Info sur la location existante
+        if (!string.IsNullOrEmpty(newLocationID))
+        {
+            if (locationLookup != null && locationLookup.ContainsKey(newLocationID))
+            {
+                var existingLocation = locationLookup[newLocationID];
+                EditorGUILayout.LabelField($"✅ Location trouvée: {existingLocation.DisplayName}",
+                    EditorStyles.miniLabel);
+            }
+            else
+            {
+                EditorGUILayout.LabelField($"⚠️ Location '{newLocationID}' sera créée",
+                    EditorStyles.miniLabel);
+            }
+        }
 
         EditorGUILayout.Space();
 
         EditorGUILayout.BeginHorizontal();
 
-        if (GUILayout.Button("Create"))
+        GUI.enabled = !string.IsNullOrEmpty(newPOIName) && !string.IsNullOrEmpty(newLocationID);
+        if (GUILayout.Button("Créer"))
         {
-            if (!string.IsNullOrEmpty(newPOIName) && !string.IsNullOrEmpty(newLocationID))
-            {
-                CreateNewPOI(newPOIName, newLocationID);
-                ResetCreatePOIDialog();
-            }
-            else
-            {
-                EditorUtility.DisplayDialog("Invalid Input", "POI name and Location ID cannot be empty.", "OK");
-            }
+            CreateNewPOI(newPOIName, newLocationID);
+            ResetCreatePOIDialog();
         }
+        GUI.enabled = true;
 
-        if (GUILayout.Button("Cancel"))
+        if (GUILayout.Button("Annuler"))
         {
             ResetCreatePOIDialog();
         }
@@ -381,48 +399,300 @@ public class ActivityManagerWindow : EditorWindow
         Debug.Log($"Created new variant: {variantName} for activity {parentActivity.GetDisplayName()} in folder {activityFolderPath}");
     }
 
+    /// <summary>
+    /// CORRIGÉ : Crée un nouveau POI dans la scène avec toutes les validations nécessaires
+    /// </summary>
     private void CreateNewPOI(string poiName, string locationID)
     {
-        // Create GameObject in scene
-        GameObject poiObject = new GameObject(poiName);
-
-        // Add POI component
-        POI poiComponent = poiObject.AddComponent<POI>();
-        poiComponent.LocationID = locationID;
-
-        // Position at center of SceneView
-        SceneView sceneView = SceneView.lastActiveSceneView;
-        if (sceneView != null)
+        try
         {
-            // Position en face de la camera de la SceneView
-            Vector3 cameraPos = sceneView.camera.transform.position;
-            Vector3 cameraForward = sceneView.camera.transform.forward;
-            poiObject.transform.position = cameraPos + cameraForward * 10f;
+            // Validation des paramètres
+            if (string.IsNullOrEmpty(poiName) || string.IsNullOrEmpty(locationID))
+            {
+                EditorUtility.DisplayDialog("Erreur", "Le nom du POI et l'ID de location ne peuvent pas être vides.", "OK");
+                return;
+            }
+
+            // Initialiser locationLookup si nécessaire
+            if (locationLookup == null || locationLookup.Count == 0)
+            {
+                BuildLocationLookup();
+            }
+
+            // ⭐ NOUVEAU : Trouver ou créer le GameObject WorldMap
+            GameObject worldMapObject = FindOrCreateWorldMap();
+            if (worldMapObject == null)
+            {
+                EditorUtility.DisplayDialog("Erreur", "Impossible de trouver ou créer le GameObject 'WorldMap' dans la scène.", "OK");
+                return;
+            }
+
+            // ⭐ NOUVEAU : Calculer le nom avec le bon format POI_name_number
+            string finalPOIName = GeneratePOIName(poiName, worldMapObject);
+
+            // Create GameObject as child of WorldMap
+            GameObject poiObject = new GameObject(finalPOIName);
+            poiObject.transform.SetParent(worldMapObject.transform, false); // false = garde position locale
+
+            // Add required Collider2D component (required by POI script)
+            BoxCollider2D collider = poiObject.AddComponent<BoxCollider2D>();
+            collider.size = Vector2.one; // Taille par défaut
+            collider.isTrigger = false; // POI needs clickable collider
+
+            // Add POI component
+            POI poiComponent = poiObject.AddComponent<POI>();
+            poiComponent.LocationID = locationID;
+
+            // Position intelligente du POI - AU CENTRE DE WORLDMAP
+            Vector3 newPosition = CalculatePOIPosition(worldMapObject);
+            poiObject.transform.position = newPosition;
+
+            // ⭐ NOUVEAU : Créer le TravelStartPoint enfant
+            GameObject travelStartPoint = CreateTravelStartPoint(poiObject);
+
+            // ⭐ NOUVEAU : Assigner le TravelStartPoint au POI
+            AssignTravelStartPointToPOI(poiComponent, travelStartPoint.transform);
+
+            // Optional: Add visual representation
+            SpriteRenderer spriteRenderer = poiObject.AddComponent<SpriteRenderer>();
+            spriteRenderer.color = Color.white;
+
+            // Handle location creation if needed
+            HandleLocationCreation(locationID);
+
+            // Select the new POI
+            Selection.activeObject = poiObject;
+            EditorGUIUtility.PingObject(poiObject);
+
+            Debug.Log($"✅ Created new POI: {finalPOIName} with LocationID: {locationID} at position {newPosition}");
+            Debug.Log($"   └── Parent: {worldMapObject.name}");
+            Debug.Log($"   └── TravelStartPoint: {travelStartPoint.name}");
+
+            // Refresh safely
+            RefreshPOIListSafely();
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"❌ Error creating POI '{poiName}': {ex.Message}");
+            EditorUtility.DisplayDialog("Erreur", $"Impossible de créer le POI:\n{ex.Message}", "OK");
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU : Calcule une position intelligente pour le nouveau POI
+    /// </summary>
+    private Vector3 CalculatePOIPosition(GameObject worldMapParent = null)
+    {
+        // PRIORITÉ 1 : Centre du WorldMap s'il est fourni
+        if (worldMapParent != null)
+        {
+            Vector3 worldMapCenter = worldMapParent.transform.position;
+            Debug.Log($"   └── Positioning POI at WorldMap center: {worldMapCenter}");
+            return worldMapCenter;
         }
 
-        // Create MapLocationDefinition if it doesn't exist
-        if (locationRegistry != null && !locationLookup.ContainsKey(locationID))
+        // PRIORITÉ 2 : Chercher WorldMap dans la scène
+        GameObject worldMap = GameObject.Find("WorldMap");
+        if (worldMap != null)
         {
-            // Suggest creating the location
-            bool createLocation = EditorUtility.DisplayDialog(
-                "Location Not Found",
-                $"Location '{locationID}' doesn't exist in LocationRegistry.\n\nCreate it now?",
-                "Create", "Skip");
+            Vector3 worldMapCenter = worldMap.transform.position;
+            Debug.Log($"   └── Found WorldMap, using center: {worldMapCenter}");
+            return worldMapCenter;
+        }
 
-            if (createLocation)
+        // PRIORITÉ 3 : Essayer de positionner près de la caméra de la SceneView
+        SceneView sceneView = SceneView.lastActiveSceneView;
+        if (sceneView != null && sceneView.camera != null)
+        {
+            try
             {
-                newLocationID = locationID;
-                newLocationName = locationID; // Default name
-                showCreateLocationDialog = true;
+                Vector3 cameraPos = sceneView.camera.transform.position;
+                Vector3 cameraForward = sceneView.camera.transform.forward;
+                Vector3 sceneViewPosition = cameraPos + cameraForward * 10f;
+                Debug.Log($"   └── Using SceneView camera position: {sceneViewPosition}");
+                return sceneViewPosition;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"Could not use SceneView camera position: {ex.Message}");
             }
         }
 
-        // Select the new POI
-        Selection.activeObject = poiObject;
-        EditorGUIUtility.PingObject(poiObject);
+        // PRIORITÉ 4 : Position par défaut si rien d'autre ne fonctionne
+        Debug.Log($"   └── Using default position: Vector3.zero");
+        return Vector3.zero;
+    }
 
-        Debug.Log($"Created new POI: {poiName} with LocationID: {locationID}");
-        RefreshPOIList(); // Refresh POI list
+    /// <summary>
+    /// NOUVEAU : Gère la création de location de manière sécurisée
+    /// </summary>
+    private void HandleLocationCreation(string locationID)
+    {
+        if (locationRegistry != null && !locationLookup.ContainsKey(locationID))
+        {
+            // Note l'ID pour la création ultérieure mais ne montre pas le dialog maintenant
+            // (pour éviter les problèmes de GUI Layout)
+            EditorApplication.delayCall += () =>
+            {
+                bool createLocation = EditorUtility.DisplayDialog(
+                    "Location Non Trouvée",
+                    $"La location '{locationID}' n'existe pas dans LocationRegistry.\n\nLa créer maintenant ?",
+                    "Créer", "Ignorer");
+
+                if (createLocation)
+                {
+                    // Préparer les données pour le dialog de création
+                    newLocationID = locationID;
+                    newLocationName = locationID; // Nom par défaut
+                    newLocationDescription = "";
+                    showCreateLocationDialog = true;
+
+                    // Forcer un repaint de la fenêtre
+                    Repaint();
+                }
+            };
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU : Version sécurisée de RefreshPOIList qui ne cause pas d'erreurs
+    /// </summary>
+    private void RefreshPOIListSafely()
+    {
+        try
+        {
+            FindAllPOIsInScene();
+            BuildLocationLookup();
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"Warning during POI refresh: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU : Trouve le GameObject WorldMap ou le crée s'il n'existe pas
+    /// </summary>
+    private GameObject FindOrCreateWorldMap()
+    {
+        // Chercher d'abord dans la scène
+        GameObject worldMapObject = GameObject.Find("WorldMap");
+
+        if (worldMapObject != null)
+        {
+            Debug.Log($"Found existing WorldMap: {worldMapObject.name}");
+            return worldMapObject;
+        }
+
+        // Si pas trouvé, proposer de le créer
+        bool createWorldMap = EditorUtility.DisplayDialog(
+            "WorldMap Non Trouvé",
+            "Le GameObject 'WorldMap' n'existe pas dans la scène.\n\nLe créer maintenant ?",
+            "Créer", "Annuler");
+
+        if (createWorldMap)
+        {
+            worldMapObject = new GameObject("WorldMap");
+            Debug.Log($"✅ Created new WorldMap GameObject");
+            return worldMapObject;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// NOUVEAU : Génère le nom du POI au format POI_name_number
+    /// </summary>
+    private string GeneratePOIName(string baseName, GameObject worldMapParent)
+    {
+        // Compter les POIs existants avec le même nom de base
+        POI[] existingPOIs = worldMapParent.GetComponentsInChildren<POI>();
+        int count = 1;
+
+        // Chercher le prochain numéro disponible
+        string basePattern = $"POI_{baseName}_";
+
+        foreach (POI poi in existingPOIs)
+        {
+            if (poi.gameObject.name.StartsWith(basePattern))
+            {
+                // Extraire le numéro à la fin
+                string numberPart = poi.gameObject.name.Substring(basePattern.Length);
+                if (int.TryParse(numberPart, out int existingNumber) && existingNumber >= count)
+                {
+                    count = existingNumber + 1;
+                }
+            }
+        }
+
+        return $"POI_{baseName}_{count:D2}"; // Format avec 2 chiffres (01, 02, etc.)
+    }
+
+    /// <summary>
+    /// NOUVEAU : Crée le GameObject TravelStartPoint enfant
+    /// </summary>
+    private GameObject CreateTravelStartPoint(GameObject poiParent)
+    {
+        GameObject travelStartPoint = new GameObject("TravelStartPoint");
+        travelStartPoint.transform.SetParent(poiParent.transform, false);
+
+        // Position légèrement décalée du POI pour être visible
+        travelStartPoint.transform.localPosition = new Vector3(0.5f, 0.5f, 0f);
+
+        // Ajouter un petit gizmo visuel pour l'identifier dans l'éditeur
+        // (optionnel - vous pouvez enlever ceci si vous ne voulez pas de sprite)
+        SpriteRenderer travelRenderer = travelStartPoint.AddComponent<SpriteRenderer>();
+        travelRenderer.color = new Color(0f, 1f, 1f, 0.5f); // Cyan translucide
+
+        Debug.Log($"   └── Created TravelStartPoint as child of {poiParent.name}");
+        return travelStartPoint;
+    }
+
+    /// <summary>
+    /// NOUVEAU : Assigne le TravelStartPoint au component POI via réflection
+    /// </summary>
+    private void AssignTravelStartPointToPOI(POI poiComponent, Transform travelStartPoint)
+    {
+        try
+        {
+            // Utiliser la réflection pour accéder au champ privé travelPathStartPoint
+            var field = typeof(POI).GetField("travelPathStartPoint",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            if (field != null)
+            {
+                field.SetValue(poiComponent, travelStartPoint);
+                Debug.Log($"   └── Assigned TravelStartPoint to POI component");
+            }
+            else
+            {
+                Debug.LogWarning("Could not find travelPathStartPoint field in POI component. You may need to assign it manually.");
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"Failed to auto-assign TravelStartPoint: {ex.Message}. Please assign manually in the Inspector.");
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU : Validation du setup avant création de POI
+    /// </summary>
+    private bool ValidateSetupForPOICreation()
+    {
+        if (locationRegistry == null)
+        {
+            EditorUtility.DisplayDialog("Setup Incomplet",
+                "Vous devez d'abord sélectionner un LocationRegistry avant de créer des POIs.", "OK");
+            return false;
+        }
+
+        if (locationLookup == null)
+        {
+            BuildLocationLookup();
+        }
+
+        return true;
     }
 
     private void CreateNewLocation(string locationID, string displayName, string description)
@@ -983,15 +1253,36 @@ public class ActivityManagerWindow : EditorWindow
         BuildLocationLookup();
     }
 
+    /// <summary>
+    /// AMÉLIORÉ : Version plus robuste de FindAllPOIsInScene
+    /// </summary>
     private void FindAllPOIsInScene()
     {
-        allPOIs = FindObjectsOfType<POI>();
-        Debug.Log($"ActivityManager: Found {allPOIs.Length} POIs in the current scene");
+        try
+        {
+            allPOIs = FindObjectsOfType<POI>();
+            Debug.Log($"ActivityManager: Found {allPOIs?.Length ?? 0} POIs in the current scene");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"Error finding POIs in scene: {ex.Message}");
+            allPOIs = new POI[0]; // Array vide pour éviter les erreurs
+        }
     }
 
+    /// <summary>
+    /// AMÉLIORÉ : Version plus robuste de BuildLocationLookup
+    /// </summary>
     private void BuildLocationLookup()
     {
-        locationLookup.Clear();
+        if (locationLookup == null)
+        {
+            locationLookup = new Dictionary<string, MapLocationDefinition>();
+        }
+        else
+        {
+            locationLookup.Clear();
+        }
 
         if (locationRegistry?.AllLocations != null)
         {
@@ -999,10 +1290,20 @@ public class ActivityManagerWindow : EditorWindow
             {
                 if (location != null && !string.IsNullOrEmpty(location.LocationID))
                 {
-                    locationLookup[location.LocationID] = location;
+                    // Éviter les doublons
+                    if (!locationLookup.ContainsKey(location.LocationID))
+                    {
+                        locationLookup[location.LocationID] = location;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Duplicate LocationID found: {location.LocationID}");
+                    }
                 }
             }
         }
+
+        Debug.Log($"LocationLookup initialized with {locationLookup.Count} locations");
     }
 
     private POI[] FilterPOIs()

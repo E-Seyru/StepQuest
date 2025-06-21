@@ -23,6 +23,10 @@ MonoBehaviour:
     StepCost: 50
     IsAvailable: 1
     Requirements: 
+  - DestinationLocationID: 'Cabine de pecheur '
+    StepCost: 50
+    IsAvailable: 1
+    Requirements: 
   AvailableActivities:
   - ActivityReference: {fileID: 11400000, guid: a79269812d94d284187a6db556306590, type: 2}
     LocationSpecificName: 
