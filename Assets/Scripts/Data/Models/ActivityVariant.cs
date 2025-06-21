@@ -1,4 +1,4 @@
-// Purpose: Enhanced ActivityVariant with crafting support - EXTENDED VERSION
+﻿// Purpose: Enhanced ActivityVariant with crafting support - EXTENDED VERSION
 // Filepath: Assets/Scripts/Data/Models/ActivityVariant.cs
 using System.Collections.Generic;
 using System.Linq;

@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: 'Cabine de pecheur '
   Description: 'Une cabine de pecheur '
   LongDescription: 
-  LocationImage: {fileID: 0}
+  LocationImage: {fileID: 21300000, guid: 2166f399caff28540bb8e7dc8b915169, type: 3}
   LocationThemeColor: {r: 1, g: 1, b: 1, a: 1}
   Connections:
   - DestinationLocationID: Mine_01
@@ -27,8 +27,16 @@ MonoBehaviour:
     StepCost: 50
     IsAvailable: 1
     Requirements: 
-  AvailableActivities: []
-  LocationIcon: {fileID: 0}
+  AvailableActivities:
+  - ActivityReference: {fileID: 11400000, guid: eb2b652fee07d2549ad8e0d153690f5f, type: 2}
+    LocationSpecificName: 
+    LocationDescription: 
+    ActivityVariants:
+    - {fileID: 11400000, guid: b22852ac23cd23643894944697bfda82, type: 2}
+    IsAvailable: 1
+    SpecialRequirements: 
+    LocationSpecificIcon: {fileID: 0}
+  LocationIcon: {fileID: 21300000, guid: 018c2d615854e2942a219a43b15a25c8, type: 3}
   POIColor: {r: 1, g: 1, b: 1, a: 1}
   IsAccessible: 1
   UnlockRequirement: 0

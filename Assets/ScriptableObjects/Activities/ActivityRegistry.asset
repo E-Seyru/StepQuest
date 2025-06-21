@@ -66,6 +66,14 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
+  - ActivityReference: {fileID: 11400000, guid: eb2b652fee07d2549ad8e0d153690f5f, type: 2}
+    LocationSpecificName: 
+    LocationDescription: 
+    ActivityVariants:
+    - {fileID: 11400000, guid: b22852ac23cd23643894944697bfda82, type: 2}
+    IsAvailable: 1
+    SpecialRequirements: 
+    LocationSpecificIcon: {fileID: 0}
   enableFallbackSearch: 1
   logMissingVariants: 0
-  ValidationStatus: "\u2705 Registry is valid! (6 activities)"
+  ValidationStatus: "\u2705 Registry is valid! (7 activities)"

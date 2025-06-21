@@ -400,7 +400,7 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// CORRIGÉ : Crée un nouveau POI dans la scène avec toutes les validations nécessaires
+    /// CORRIGÉ : Crée un nouveau POI dans la scène avec collider adapté à la taille
     /// </summary>
     private void CreateNewPOI(string poiName, string locationID)
     {
@@ -419,7 +419,7 @@ public class ActivityManagerWindow : EditorWindow
                 BuildLocationLookup();
             }
 
-            // ⭐ NOUVEAU : Trouver ou créer le GameObject WorldMap
+            // Trouver ou créer le GameObject WorldMap
             GameObject worldMapObject = FindOrCreateWorldMap();
             if (worldMapObject == null)
             {
@@ -427,17 +427,26 @@ public class ActivityManagerWindow : EditorWindow
                 return;
             }
 
-            // ⭐ NOUVEAU : Calculer le nom avec le bon format POI_name_number
+            // Calculer le nom avec le bon format POI_name_number
             string finalPOIName = GeneratePOIName(poiName, worldMapObject);
 
             // Create GameObject as child of WorldMap
             GameObject poiObject = new GameObject(finalPOIName);
-            poiObject.transform.SetParent(worldMapObject.transform, false); // false = garde position locale
+            poiObject.transform.SetParent(worldMapObject.transform, false);
 
-            // Add required Collider2D component (required by POI script)
+            // NOUVEAU : Add visual representation FIRST
+            SpriteRenderer spriteRenderer = poiObject.AddComponent<SpriteRenderer>();
+            spriteRenderer.color = Color.white;
+
+            // Optionnel : Vous pouvez assigner un sprite par défaut ici
+            // spriteRenderer.sprite = // votre sprite par défaut
+
+            // MODIFIÉ : Add required Collider2D component avec taille adaptée
             BoxCollider2D collider = poiObject.AddComponent<BoxCollider2D>();
-            collider.size = Vector2.one; // Taille par défaut
             collider.isTrigger = false; // POI needs clickable collider
+
+            // NOUVEAU : Adapter la taille du collider au sprite ou utiliser une taille par défaut
+            SetColliderSizeToSprite(collider, spriteRenderer);
 
             // Add POI component
             POI poiComponent = poiObject.AddComponent<POI>();
@@ -447,15 +456,11 @@ public class ActivityManagerWindow : EditorWindow
             Vector3 newPosition = CalculatePOIPosition(worldMapObject);
             poiObject.transform.position = newPosition;
 
-            // ⭐ NOUVEAU : Créer le TravelStartPoint enfant
+            // Créer le TravelStartPoint enfant
             GameObject travelStartPoint = CreateTravelStartPoint(poiObject);
 
-            // ⭐ NOUVEAU : Assigner le TravelStartPoint au POI
+            // Assigner le TravelStartPoint au POI
             AssignTravelStartPointToPOI(poiComponent, travelStartPoint.transform);
-
-            // Optional: Add visual representation
-            SpriteRenderer spriteRenderer = poiObject.AddComponent<SpriteRenderer>();
-            spriteRenderer.color = Color.white;
 
             // Handle location creation if needed
             HandleLocationCreation(locationID);
@@ -467,6 +472,7 @@ public class ActivityManagerWindow : EditorWindow
             Debug.Log($"✅ Created new POI: {finalPOIName} with LocationID: {locationID} at position {newPosition}");
             Debug.Log($"   └── Parent: {worldMapObject.name}");
             Debug.Log($"   └── TravelStartPoint: {travelStartPoint.name}");
+            Debug.Log($"   └── Collider size: {collider.size}");
 
             // Refresh safely
             RefreshPOIListSafely();
@@ -475,6 +481,51 @@ public class ActivityManagerWindow : EditorWindow
         {
             Debug.LogError($"❌ Error creating POI '{poiName}': {ex.Message}");
             EditorUtility.DisplayDialog("Erreur", $"Impossible de créer le POI:\n{ex.Message}", "OK");
+        }
+    }
+
+    /// <summary>
+    /// NOUVEAU : Adapte la taille du collider à celle du sprite ou utilise une taille par défaut
+    /// </summary>
+    private void SetColliderSizeToSprite(BoxCollider2D collider, SpriteRenderer spriteRenderer)
+    {
+        if (spriteRenderer.sprite != null)
+        {
+            // Utiliser la taille du sprite en unités Unity
+            Vector2 spriteSize = spriteRenderer.sprite.bounds.size;
+            collider.size = spriteSize;
+
+            Debug.Log($"   └── Collider size set to sprite size: {spriteSize}");
+        }
+        else
+        {
+            // Taille par défaut quand aucun sprite n'est assigné
+            collider.size = Vector2.one;
+
+            Debug.Log($"   └── No sprite assigned, using default collider size: {Vector2.one}");
+            Debug.Log($"   └── Tip: Assign a sprite to the SpriteRenderer and call 'Fit Collider to Sprite' to auto-adjust");
+        }
+    }
+
+    /// <summary>
+    /// BONUS : Méthode utilitaire pour ajuster le collider à un sprite après coup
+    /// </summary>
+    private void FitColliderToSprite(POI poi)
+    {
+        if (poi == null) return;
+
+        SpriteRenderer spriteRenderer = poi.GetComponent<SpriteRenderer>();
+        BoxCollider2D collider = poi.GetComponent<BoxCollider2D>();
+
+        if (spriteRenderer != null && collider != null)
+        {
+            SetColliderSizeToSprite(collider, spriteRenderer);
+            EditorUtility.SetDirty(poi.gameObject);
+            Debug.Log($"Fitted collider to sprite for POI: {poi.gameObject.name}");
+        }
+        else
+        {
+            Debug.LogWarning($"POI {poi.gameObject.name} missing SpriteRenderer or BoxCollider2D component");
         }
     }
 
