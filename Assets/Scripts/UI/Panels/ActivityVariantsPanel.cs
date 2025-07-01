@@ -1,4 +1,4 @@
-// Purpose: Panel to select activity variants
+// Purpose: Panel to select activity variants with card-based grid layout
 // Filepath: Assets/Scripts/UI/Panels/ActivityVariantsPanel.cs
 using System;
 using System.Collections.Generic;
@@ -10,13 +10,17 @@ public class ActivityVariantsPanel : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private TextMeshProUGUI titleText;
-    [SerializeField] private Transform variantsContainer;
-    [SerializeField] private GameObject variantButtonPrefab;
+    [SerializeField] private ScrollRect scrollView;
+    [SerializeField] private Transform cardsContainer;
     [SerializeField] private Button closeButton;
+
+    [Header("Card Prefabs")]
+    [SerializeField] private GameObject craftingCardPrefab;
+    [SerializeField] private GameObject harvestingCardPrefab;
 
     // Current state
     private LocationActivity currentActivity;
-    private List<GameObject> instantiatedButtons = new List<GameObject>();
+    private List<GameObject> instantiatedCards = new List<GameObject>();
 
     // Events
     public static event Action<ActivityVariant> OnVariantSelected;
@@ -44,8 +48,37 @@ public class ActivityVariantsPanel : MonoBehaviour
             closeButton.onClick.AddListener(ClosePanel);
         }
 
+        // Setup grid layout for cards container
+        SetupGridLayout();
+
         // Start hidden
         gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// Setup the grid layout for the cards container
+    /// </summary>
+    private void SetupGridLayout()
+    {
+        if (cardsContainer == null) return;
+
+        // Add GridLayoutGroup if not present
+        GridLayoutGroup gridLayout = cardsContainer.GetComponent<GridLayoutGroup>();
+        if (gridLayout == null)
+        {
+            gridLayout = cardsContainer.gameObject.AddComponent<GridLayoutGroup>();
+        }
+
+        // Configure grid layout
+        gridLayout.childAlignment = TextAnchor.UpperCenter;
+        gridLayout.constraint = GridLayoutGroup.Constraint.Flexible;
+        gridLayout.spacing = new Vector2(10f, 10f);
+        gridLayout.padding = new RectOffset(10, 10, 10, 10);
+
+        // Set reasonable cell size (you might need to adjust this based on your card design)
+        gridLayout.cellSize = new Vector2(200f, 280f);
+
+        Debug.Log("ActivityVariantsPanel: Grid layout configured");
     }
 
     /// <summary>
@@ -60,19 +93,19 @@ public class ActivityVariantsPanel : MonoBehaviour
         }
 
         currentActivity = activity;
-        PopulateVariants();
+        PopulateVariantCards();
         gameObject.SetActive(true);
 
         Debug.Log($"ActivityVariantsPanel: Opened for {activity.GetDisplayName()}");
     }
 
     /// <summary>
-    /// Populate variants as buttons
+    /// Populate variants as cards in a grid
     /// </summary>
-    private void PopulateVariants()
+    private void PopulateVariantCards()
     {
-        // Clear existing buttons
-        ClearVariantButtons();
+        // Clear existing cards
+        ClearVariantCards();
 
         if (currentActivity == null) return;
 
@@ -82,7 +115,7 @@ public class ActivityVariantsPanel : MonoBehaviour
             titleText.text = $"Choisir une variante - {currentActivity.GetDisplayName()}";
         }
 
-        // Get valid variants - utilise ActivityVariants directement
+        // Get valid variants
         var validVariants = new List<ActivityVariant>();
 
         if (currentActivity.ActivityVariants != null)
@@ -96,68 +129,93 @@ public class ActivityVariantsPanel : MonoBehaviour
             }
         }
 
-        Debug.Log($"Found {validVariants.Count} valid variants");
+        Debug.Log($"ActivityVariantsPanel: Found {validVariants.Count} valid variants");
 
-        // Create button for each variant
+        // Create card for each variant
         foreach (var variant in validVariants)
         {
-            CreateVariantButton(variant);
+            CreateVariantCard(variant);
+        }
+
+        // Force layout rebuild
+        if (cardsContainer != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(cardsContainer.GetComponent<RectTransform>());
         }
     }
 
     /// <summary>
-    /// Create a button for a variant
+    /// Create a card for a variant (crafting or harvesting)
     /// </summary>
-    private void CreateVariantButton(ActivityVariant variant)
+    private void CreateVariantCard(ActivityVariant variant)
     {
-        if (variantButtonPrefab == null || variantsContainer == null || variant == null) return;
+        if (variant == null || cardsContainer == null) return;
 
-        // Instantiate button
-        GameObject buttonObj = Instantiate(variantButtonPrefab, variantsContainer);
-        instantiatedButtons.Add(buttonObj);
+        GameObject cardPrefab = variant.IsTimeBased ? craftingCardPrefab : harvestingCardPrefab;
 
-        // Get button component
-        Button button = buttonObj.GetComponent<Button>();
-        if (button == null) button = buttonObj.GetComponentInChildren<Button>();
-
-        // Get image component for icon
-        Image iconImage = buttonObj.GetComponentInChildren<Image>();
-
-        // Get text component for name
-        TextMeshProUGUI nameText = buttonObj.GetComponentInChildren<TextMeshProUGUI>();
-
-        // Setup button data
-        if (nameText != null)
+        if (cardPrefab == null)
         {
-            nameText.text = variant.VariantName;
+            Debug.LogError($"ActivityVariantsPanel: No prefab assigned for {(variant.IsTimeBased ? "crafting" : "harvesting")} card!");
+            return;
         }
 
-        if (iconImage != null && variant.VariantIcon != null)
+        // Instantiate the appropriate card
+        GameObject cardObj = Instantiate(cardPrefab, cardsContainer);
+        instantiatedCards.Add(cardObj);
+
+        // Setup the card based on its type
+        if (variant.IsTimeBased)
         {
-            iconImage.sprite = variant.VariantIcon;
+            SetupCraftingCard(cardObj, variant);
+        }
+        else
+        {
+            SetupHarvestingCard(cardObj, variant);
         }
 
-        // Setup click handler
-        if (button != null)
-        {
-            button.onClick.AddListener(() => OnVariantButtonClicked(variant));
-        }
-
-        Debug.Log($"Created button for variant: {variant.VariantName}");
+        Debug.Log($"ActivityVariantsPanel: Created {(variant.IsTimeBased ? "crafting" : "harvesting")} card for {variant.VariantName}");
     }
 
     /// <summary>
-    /// Handle variant button click
+    /// Setup a crafting card
     /// </summary>
-    // Dans OnVariantButtonClicked()
-    /// <summary>
-    /// Handle variant button click
-    /// </summary>
-    private void OnVariantButtonClicked(ActivityVariant variant)
+    private void SetupCraftingCard(GameObject cardObj, ActivityVariant variant)
     {
-        Debug.Log($"Variant selected: {variant.VariantName}");
+        CraftingActivityCard craftingCard = cardObj.GetComponent<CraftingActivityCard>();
+        if (craftingCard == null)
+        {
+            Debug.LogError("ActivityVariantsPanel: CraftingCardPrefab doesn't have CraftingActivityCard component!");
+            return;
+        }
 
-        // MODIFIE : Demarrer l'activite via ActivityManager avec detection automatique du type
+        craftingCard.Setup(variant);
+        craftingCard.OnCardClicked += OnVariantCardClicked;
+    }
+
+    /// <summary>
+    /// Setup a harvesting card
+    /// </summary>
+    private void SetupHarvestingCard(GameObject cardObj, ActivityVariant variant)
+    {
+        HarvestingActivityCard harvestingCard = cardObj.GetComponent<HarvestingActivityCard>();
+        if (harvestingCard == null)
+        {
+            Debug.LogError("ActivityVariantsPanel: HarvestingCardPrefab doesn't have HarvestingActivityCard component!");
+            return;
+        }
+
+        harvestingCard.Setup(variant);
+        harvestingCard.OnCardClicked += OnVariantCardClicked;
+    }
+
+    /// <summary>
+    /// Handle variant card click
+    /// </summary>
+    private void OnVariantCardClicked(ActivityVariant variant)
+    {
+        Debug.Log($"ActivityVariantsPanel: Variant selected: {variant.VariantName}");
+
+        // Start the activity via ActivityManager with automatic type detection
         if (ActivityManager.Instance != null && currentActivity != null)
         {
             string activityId = currentActivity.ActivityId;
@@ -165,7 +223,7 @@ public class ActivityVariantsPanel : MonoBehaviour
 
             bool success;
 
-            // NOUVEAU : Verifier le type d'activite et appeler la bonne methode
+            // Check activity type and call the appropriate method
             if (variant.IsTimeBased)
             {
                 Debug.Log($"Starting time-based activity: {variant.GetDisplayName()}");
@@ -187,23 +245,39 @@ public class ActivityVariantsPanel : MonoBehaviour
             }
         }
 
+        // Notify listeners
         OnVariantSelected?.Invoke(variant);
+
+        // Close panel
         ClosePanel();
     }
 
     /// <summary>
-    /// Clear all variant buttons
+    /// Clear all variant cards
     /// </summary>
-    private void ClearVariantButtons()
+    private void ClearVariantCards()
     {
-        foreach (var button in instantiatedButtons)
+        foreach (var card in instantiatedCards)
         {
-            if (button != null)
+            if (card != null)
             {
-                Destroy(button);
+                // Unsubscribe from events before destroying
+                CraftingActivityCard craftingCard = card.GetComponent<CraftingActivityCard>();
+                if (craftingCard != null)
+                {
+                    craftingCard.OnCardClicked -= OnVariantCardClicked;
+                }
+
+                HarvestingActivityCard harvestingCard = card.GetComponent<HarvestingActivityCard>();
+                if (harvestingCard != null)
+                {
+                    harvestingCard.OnCardClicked -= OnVariantCardClicked;
+                }
+
+                Destroy(card);
             }
         }
-        instantiatedButtons.Clear();
+        instantiatedCards.Clear();
     }
 
     /// <summary>
@@ -212,7 +286,12 @@ public class ActivityVariantsPanel : MonoBehaviour
     public void ClosePanel()
     {
         gameObject.SetActive(false);
-        ClearVariantButtons();
+        ClearVariantCards();
         Debug.Log("ActivityVariantsPanel: Panel closed");
+    }
+
+    void OnDestroy()
+    {
+        ClearVariantCards();
     }
 }
