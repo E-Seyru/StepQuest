@@ -85,14 +85,8 @@ public class CraftingActivityCard : MonoBehaviour
         // Level requirement (using UnlockRequirement for now)
         if (levelRequiredText != null)
         {
-            if (activityVariant.UnlockRequirement > 0)
-            {
-                levelRequiredText.text = $"Niveau requis: {activityVariant.UnlockRequirement}";
-            }
-            else
-            {
-                levelRequiredText.text = "Aucun niveau requis";
-            }
+            int level = activityVariant.UnlockRequirement > 0 ? activityVariant.UnlockRequirement : 1;
+            levelRequiredText.text = $"Lvl : {level}";
         }
 
         // Time requirement
@@ -102,11 +96,11 @@ public class CraftingActivityCard : MonoBehaviour
             if (timeInSeconds >= 60f)
             {
                 float minutes = timeInSeconds / 60f;
-                timeRequiredText.text = $"Temps: {minutes:F1}min";
+                timeRequiredText.text = $"{minutes:F1}min";
             }
             else
             {
-                timeRequiredText.text = $"Temps: {timeInSeconds:F0}s";
+                timeRequiredText.text = $"{timeInSeconds:F0}s";
             }
         }
     }
@@ -166,7 +160,7 @@ public class CraftingActivityCard : MonoBehaviour
 
         if (quantityText != null)
         {
-            quantityText.text = quantity.ToString();
+            quantityText.text = $"x{quantity}";
         }
 
         Debug.Log($"CraftingActivityCard: Created ingredient slot for {material.GetDisplayName()} x{quantity}");

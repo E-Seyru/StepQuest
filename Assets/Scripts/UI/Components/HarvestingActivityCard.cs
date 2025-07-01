@@ -78,14 +78,8 @@ public class HarvestingActivityCard : MonoBehaviour
         // Level requirement (using UnlockRequirement for now)
         if (levelRequiredText != null)
         {
-            if (activityVariant.UnlockRequirement > 0)
-            {
-                levelRequiredText.text = $"Niveau requis: {activityVariant.UnlockRequirement}";
-            }
-            else
-            {
-                levelRequiredText.text = "Aucun niveau requis";
-            }
+            int level = activityVariant.UnlockRequirement > 0 ? activityVariant.UnlockRequirement : 1;
+            levelRequiredText.text = $"Lvl : {level}";
         }
 
         // Steps requirement
@@ -93,11 +87,11 @@ public class HarvestingActivityCard : MonoBehaviour
         {
             if (activityVariant.ActionCost > 0)
             {
-                stepsRequiredText.text = $"Pas requis: {activityVariant.ActionCost}";
+                stepsRequiredText.text = $"{activityVariant.ActionCost} pas";
             }
             else
             {
-                stepsRequiredText.text = "Pas instantané";
+                stepsRequiredText.text = "Instantané";
             }
         }
     }
