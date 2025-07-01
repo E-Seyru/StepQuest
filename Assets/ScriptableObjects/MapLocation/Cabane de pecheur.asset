@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5fe739f195ecfa34486eb79525bef063, type: 3}
-  m_Name: 'Cabine de pecheur '
+  m_Name: Cabane de pecheur
   m_EditorClassIdentifier: 
-  LocationID: 'Cabine de pecheur '
-  DisplayName: 'Cabine de pecheur '
-  Description: 'Une cabine de pecheur '
+  LocationID: Cabane de pecheur
+  DisplayName: Cabane de pecheur
+  Description: Une cabane de pecheur
   LongDescription: 
   LocationImage: {fileID: 21300000, guid: 2166f399caff28540bb8e7dc8b915169, type: 3}
   LocationThemeColor: {r: 1, g: 1, b: 1, a: 1}

@@ -27,7 +27,7 @@ MonoBehaviour:
     StepCost: 50
     IsAvailable: 1
     Requirements: 
-  - DestinationLocationID: 'Cabine de pecheur '
+  - DestinationLocationID: Cabane de pecheur
     StepCost: 50
     IsAvailable: 1
     Requirements: 
