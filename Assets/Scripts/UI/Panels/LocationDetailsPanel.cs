@@ -18,12 +18,8 @@ public class LocationDetailsPanel : MonoBehaviour
     [SerializeField] private TextMeshProUGUI locationDescriptionText;
     [SerializeField] private ScrollRect descriptionScrollRect;
 
-    [Header("Interface - Section Activites")]
-    [SerializeField] private GameObject activitiesSection;
-    [SerializeField] private TextMeshProUGUI activitiesSectionTitle;
-    [SerializeField] private Transform activitiesContainer;
-    [SerializeField] private GameObject activityItemPrefab;
-    [SerializeField] private TextMeshProUGUI noActivitiesText;
+    [Header("Interface - Section Activites - DELEGUÉ")]
+    [SerializeField] private ActivitiesSectionPanel activitiesSectionPanel; // Référence vers le nouveau panel
 
     [Header("Interface - Section Infos")]
     [SerializeField] private TextMeshProUGUI locationInfoText;
@@ -56,8 +52,6 @@ public class LocationDetailsPanel : MonoBehaviour
 
     // État actuel
     private MapLocationDefinition currentLocation;
-    private List<GameObject> instantiatedActivityItems = new List<GameObject>();
-    private Queue<GameObject> activityItemPool = new Queue<GameObject>();
 
     // Animation et effets visuels
     private bool isAnimating = false;
@@ -103,8 +97,6 @@ public class LocationDetailsPanel : MonoBehaviour
 
     void OnEnable()
     {
-        CheckActivityDisplayPanel();
-
         // Reset animation state au cas où elle aurait ete interrompue
         ResetAnimationState();
 
@@ -145,10 +137,6 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     private void SetupEventSubscriptions()
     {
-        // =====================================
-        // EVENTBUS - Plus besoin de verifier if (mapManager != null)
-        // =====================================
-
         EventBus.Subscribe<LocationChangedEvent>(OnLocationChanged);
         EventBus.Subscribe<TravelCompletedEvent>(OnTravelCompleted);
         EventBus.Subscribe<TravelStartedEvent>(OnTravelStarted);
@@ -186,10 +174,6 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     private void UnsubscribeFromEvents()
     {
-        // =====================================
-        // EVENTBUS - Desabonnement simple et fiable
-        // =====================================
-
         EventBus.Unsubscribe<LocationChangedEvent>(OnLocationChanged);
         EventBus.Unsubscribe<TravelCompletedEvent>(OnTravelCompleted);
         EventBus.Unsubscribe<TravelStartedEvent>(OnTravelStarted);
@@ -214,6 +198,12 @@ public class LocationDetailsPanel : MonoBehaviour
         if (locationDescriptionText == null)
         {
             Logger.LogError("LocationDetailsPanel: LocationDescriptionText n'est pas assigne !", Logger.LogCategory.General);
+            hasErrors = true;
+        }
+
+        if (activitiesSectionPanel == null)
+        {
+            Logger.LogError("LocationDetailsPanel: ActivitiesSectionPanel n'est pas assigne !", Logger.LogCategory.General);
             hasErrors = true;
         }
 
@@ -425,7 +415,7 @@ public class LocationDetailsPanel : MonoBehaviour
 
         UpdateHeaderSection();
         UpdateDescriptionSection();
-        UpdateActivitiesSection();
+        UpdateActivitiesSection(); // DÉLÉGUÉ au ActivitiesSectionPanel
         UpdateInfoSection();
     }
 
@@ -469,39 +459,95 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Met a jour la section des activites
+    /// Met a jour la section des activites - DÉLÉGUÉ au ActivitiesSectionPanel
     /// </summary>
     private void UpdateActivitiesSection()
     {
-        // Nettoyer les elements existants
-        RecycleActivityItems();
+        if (activitiesSectionPanel == null || currentLocation == null) return;
 
-        if (activitiesSection == null || currentLocation == null) return;
+        // Récupérer les LocationActivity depuis la location
+        var availableLocationActivities = currentLocation.GetAvailableActivities();
 
-        var availableActivities = currentLocation.GetAvailableActivities();
+        // Convertir en ActivityDefinition pour le ActivitiesSectionPanel
+        var activityDefinitions = ConvertToActivityDefinitions(availableLocationActivities);
 
-        // Mettre a jour le titre de la section
-        if (activitiesSectionTitle != null)
+        activitiesSectionPanel.DisplayActivities(activityDefinitions);
+
+        // S'abonner à l'événement de sélection d'activité
+        activitiesSectionPanel.OnActivitySelected -= OnActivitySelected;
+        activitiesSectionPanel.OnActivitySelected += OnActivitySelected;
+    }
+
+    /// <summary>
+    /// Convertit les LocationActivity en ActivityDefinition
+    /// </summary>
+    private List<ActivityDefinition> ConvertToActivityDefinitions(List<LocationActivity> locationActivities)
+    {
+        var activityDefinitions = new List<ActivityDefinition>();
+
+        foreach (var locationActivity in locationActivities)
         {
-            activitiesSectionTitle.text = $"Activites disponibles ({availableActivities.Count})";
+            if (locationActivity != null && locationActivity.ActivityReference != null)
+            {
+                activityDefinitions.Add(locationActivity.ActivityReference);
+            }
         }
 
-        // Afficher ou masquer selon la disponibilite
-        if (availableActivities.Count == 0)
+        return activityDefinitions;
+    }
+
+    /// <summary>
+    /// Gère la sélection d'une activité depuis le ActivitiesSectionPanel
+    /// </summary>
+    private void OnActivitySelected(ActivityDefinition activityDefinition)
+    {
+        Logger.LogInfo($"LocationDetailsPanel: Activity selected - {activityDefinition.GetDisplayName()}", Logger.LogCategory.General);
+
+        // Retrouver la LocationActivity correspondante dans la location courante
+        var locationActivity = FindLocationActivityByDefinition(activityDefinition);
+
+        if (locationActivity != null)
         {
-            ShowNoActivitiesMessage();
+            // Ouvrir le panel de variantes d'activité
+            if (ActivityVariantsPanel.Instance != null)
+            {
+                ActivityVariantsPanel.Instance.OpenWithActivity(locationActivity);
+            }
+            else
+            {
+                Logger.LogWarning("LocationDetailsPanel: ActivityVariantsPanel introuvable !", Logger.LogCategory.General);
+            }
         }
         else
         {
-            HideNoActivitiesMessage();
-            CreateActivityItems(availableActivities);
+            Logger.LogError($"LocationDetailsPanel: Impossible de retrouver la LocationActivity pour {activityDefinition.GetDisplayName()}", Logger.LogCategory.General);
         }
     }
 
     /// <summary>
+    /// Retrouve la LocationActivity correspondant à une ActivityDefinition dans la location courante
+    /// </summary>
+    private LocationActivity FindLocationActivityByDefinition(ActivityDefinition activityDefinition)
+    {
+        if (currentLocation == null || activityDefinition == null) return null;
+
+        var availableActivities = currentLocation.GetAvailableActivities();
+
+        foreach (var locationActivity in availableActivities)
+        {
+            if (locationActivity != null &&
+                locationActivity.ActivityReference != null &&
+                locationActivity.ActivityReference.ActivityID == activityDefinition.ActivityID)
+            {
+                return locationActivity;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Met a jour la section d'informations supplementaires
-    /// MISE À JOUR: Plus besoin d'acceder directement au PlayerData pour l'affichage des infos de voyage
-    /// Les evenements de TravelProgress nous donnent deja toutes les infos necessaires !
     /// </summary>
     private void UpdateInfoSection()
     {
@@ -526,127 +572,6 @@ public class LocationDetailsPanel : MonoBehaviour
 
     #endregion
 
-    #region Gestion des Activites
-
-    /// <summary>
-    /// Cree les elements d'interface pour chaque activite
-    /// </summary>
-    private void CreateActivityItems(List<LocationActivity> activities)
-    {
-        if (activitiesContainer == null || activityItemPrefab == null) return;
-
-        foreach (var activity in activities)
-        {
-            GameObject item = GetPooledActivityItem();
-            if (item.transform.parent != activitiesContainer)
-            {
-                item.transform.SetParent(activitiesContainer, false);
-            }
-
-            instantiatedActivityItems.Add(item);
-            SetupActivityItem(item, activity);
-        }
-    }
-
-    /// <summary>
-    /// Configure un element d'activite individuel
-    /// </summary>
-    private void SetupActivityItem(GameObject item, LocationActivity activity)
-    {
-        if (item == null || activity == null) return;
-
-        // Recuperer les composants de l'element d'activite
-        var nameText = item.GetComponentInChildren<TextMeshProUGUI>();
-        var iconImage = item.GetComponentInChildren<Image>();
-        var button = item.GetComponent<Button>();
-
-        // Configurer le nom de l'activite
-        if (nameText != null)
-        {
-            nameText.text = activity.GetDisplayName();
-        }
-
-        // Configurer l'icône de l'activite
-        if (iconImage != null && activity.GetIcon() != null)
-        {
-            iconImage.sprite = activity.GetIcon();
-        }
-
-        // Configurer le gestionnaire de clic
-        if (button != null)
-        {
-            button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => OnActivityClicked(activity));
-        }
-
-        // Configuration additionnelle (tooltip, etc.)
-        SetupActivityItemTooltip(item, activity);
-    }
-
-    /// <summary>
-    /// Configure le tooltip pour un element d'activite
-    /// </summary>
-    private void SetupActivityItemTooltip(GameObject item, LocationActivity activity)
-    {
-        var descTexts = item.GetComponentsInChildren<TextMeshProUGUI>();
-        if (descTexts.Length > 1)
-        {
-            descTexts[1].text = activity.GetResourcesText();
-        }
-    }
-
-    /// <summary>
-    /// Gère le clic sur un element d'activite
-    /// </summary>
-    private void OnActivityClicked(LocationActivity activity)
-    {
-        if (ActivityVariantsPanel.Instance != null)
-        {
-            ActivityVariantsPanel.Instance.OpenWithActivity(activity);
-        }
-        else
-        {
-            Logger.LogWarning("LocationDetailsPanel: ActivityVariantsPanel introuvable !", Logger.LogCategory.General);
-        }
-    }
-
-    #endregion
-
-    #region Gestion du Pool d'Objets
-
-    /// <summary>
-    /// Recycle tous les elements d'activite instanties
-    /// </summary>
-    private void RecycleActivityItems()
-    {
-        foreach (var item in instantiatedActivityItems)
-        {
-            if (item != null)
-            {
-                item.SetActive(false);
-                activityItemPool.Enqueue(item);
-            }
-        }
-        instantiatedActivityItems.Clear();
-    }
-
-    /// <summary>
-    /// Recupère un element d'activite du pool ou en cree un nouveau
-    /// </summary>
-    private GameObject GetPooledActivityItem()
-    {
-        if (activityItemPool.Count > 0)
-        {
-            var item = activityItemPool.Dequeue();
-            item.SetActive(true);
-            return item;
-        }
-
-        return Instantiate(activityItemPrefab, activitiesContainer);
-    }
-
-    #endregion
-
     #region Methodes Utilitaires
 
     /// <summary>
@@ -658,37 +583,6 @@ public class LocationDetailsPanel : MonoBehaviour
         {
             locationDescriptionText.text = "Aucune information de location disponible.";
         }
-    }
-
-    /// <summary>
-    /// Affiche le message "aucune activite"
-    /// </summary>
-    private void ShowNoActivitiesMessage()
-    {
-        if (noActivitiesText != null)
-        {
-            noActivitiesText.gameObject.SetActive(true);
-            noActivitiesText.text = "Aucune activite disponible dans cette location.";
-        }
-    }
-
-    /// <summary>
-    /// Masque le message "aucune activite"
-    /// </summary>
-    private void HideNoActivitiesMessage()
-    {
-        if (noActivitiesText != null)
-        {
-            noActivitiesText.gameObject.SetActive(false);
-        }
-    }
-
-    /// <summary>
-    /// Verifie que le ActivityDisplayPanel est present
-    /// </summary>
-    private void CheckActivityDisplayPanel()
-    {
-        // Methode pour verifications futures si necessaire
     }
 
     /// <summary>
@@ -705,8 +599,6 @@ public class LocationDetailsPanel : MonoBehaviour
 
     /// <summary>
     /// Ajoute les informations de voyage a la liste d'infos
-    /// MISE À JOUR: Plus besoin d'acceder directement au PlayerData pour l'affichage des infos de voyage
-    /// Les evenements de TravelProgress nous donnent deja toutes les infos necessaires !
     /// </summary>
     private void AddTravelInfo(List<string> infoLines)
     {
