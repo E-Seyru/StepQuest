@@ -107,11 +107,6 @@ public class InventoryPanelUI : MonoBehaviour
             {
                 DeselectCurrentSlot();
 
-                // Fermer ItemActionPanel si ouvert
-                if (ItemActionPanel.Instance != null)
-                {
-                    ItemActionPanel.Instance.HidePanel();
-                }
             }
         }
     }
