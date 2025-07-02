@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99ddbeafac29af94ba225d9cc62cd345, type: 3}
+  m_Name: Epee de fer
+  m_EditorClassIdentifier: 
+  VariantName: Epee de fer
+  VariantDescription: Une epee faite de fer
+  ParentActivityID: Forger
+  AutoDetectParent: 1
+  IsTimeBased: 1
+  PrimaryResource: {fileID: 11400000, guid: 7b116284b7357db4fa88394e7c1dd5c3, type: 2}
+  SecondaryResources: []
+  ActionCost: 10
+  SuccessRate: 100
+  CraftingTimeMs: 30000
+  RequiredMaterials:
+  - {fileID: 11400000, guid: 0574effa80feb8141bf4c1dec5f305ee, type: 2}
+  - {fileID: 11400000, guid: 4b1adcce128ef7d49ad647ee12a71e1d, type: 2}
+  RequiredQuantities: 0200000001000000
+  IsAvailable: 1
+  Requirements: 
+  UnlockRequirement: 5
+  VariantIcon: {fileID: 21300000, guid: efd2c6d0f9883014bad71b5ce9f2e279, type: 3}
+  VariantColor: {r: 1, g: 1, b: 1, a: 1}

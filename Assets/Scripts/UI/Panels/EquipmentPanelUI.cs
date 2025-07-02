@@ -104,51 +104,32 @@ public class EquipmentPanelUI : MonoBehaviour
     {
         var itemDef = inventoryManager.GetItemRegistry().GetItem(itemId);
         if (itemDef == null || !itemDef.IsEquipment())
-        {
-            Debug.LogWarning($"EquipmentPanelUI: Item '{itemId}' is not equipment or doesn't exist");
-            return false;
-        }
+            return false;                                  // unchanged
 
         EquipmentType slotType = itemDef.EquipmentSlot;
 
-        // Check if player has this item in inventory
-        var playerContainer = inventoryManager.GetContainer("player");
-        if (playerContainer == null || !playerContainer.HasItem(itemId))
-        {
-            Debug.LogWarning($"EquipmentPanelUI: Player doesn't have item '{itemId}' in inventory");
-            return false;
-        }
-
-        // Unequip current item in this slot if any
+        // If something is already equipped here, unequip it first
         if (equippedItems.ContainsKey(slotType))
-        {
             UnequipItem(slotType);
-        }
 
-        // Remove item from inventory
-        bool removedFromInventory = inventoryManager.RemoveItem("player", itemId, 1);
-        if (!removedFromInventory)
+        // Only try to remove it if it is still present (manual click, context menu, etc.)
+        var playerContainer = inventoryManager.GetContainer("player");
+        if (playerContainer != null && playerContainer.HasItem(itemId))
         {
-            Debug.LogError($"EquipmentPanelUI: Failed to remove item '{itemId}' from inventory");
-            return false;
+            if (!inventoryManager.RemoveItem("player", itemId, 1))
+            {
+                Debug.LogError($"EquipmentPanelUI: Couldn't remove {itemId} from inventory");
+                return false;
+            }
         }
 
-        // Equip the item
+        // Equip
         equippedItems[slotType] = itemId;
+        GetSlotByType(slotType)?.SetEquippedItem(itemId);
 
-        // Update slot UI
-        var slot = GetSlotByType(slotType);
-        if (slot != null)
-        {
-            slot.SetEquippedItem(itemId);
-        }
-
-        // Trigger events and update display
         OnItemEquipped?.Invoke(slotType, itemId);
         RefreshDisplay();
         SaveEquippedItems();
-
-        Debug.Log($"EquipmentPanelUI: Equipped {itemDef.GetDisplayName()} in {slotType} slot");
         return true;
     }
 
@@ -387,5 +368,21 @@ public class EquipmentPanelUI : MonoBehaviour
 
         return info.ToString();
     }
+
+    public bool DetachItemForDrag(EquipmentType slotType, out string itemId)
+    {
+        itemId = null;
+        if (!equippedItems.TryGetValue(slotType, out itemId))
+            return false;                     // rien à détacher
+
+        equippedItems.Remove(slotType);
+        GetSlotByType(slotType)?.ClearEquippedItem();
+
+        OnItemUnequipped?.Invoke(slotType, itemId);      // stats / UI
+        RefreshDisplay();
+        SaveEquippedItems();
+        return true;
+    }
+
 }
 

@@ -1,4 +1,4 @@
-// Purpose: Contextual panel that appears when clicking on an inventory item
+﻿// Purpose: Contextual panel that appears when clicking on an inventory item
 // Filepath: Assets/Scripts/UI/Components/ItemActionPanel.cs
 using TMPro;
 using UnityEngine;
@@ -390,6 +390,8 @@ public class ItemActionPanel : MonoBehaviour
     {
         HidePanel();
     }
+
+
 
     /// <summary>
     /// Get item definition via InventoryManager (fixed version)

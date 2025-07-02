@@ -1,4 +1,4 @@
-// Purpose: Equipment slot UI with drag and drop support
+ï»¿// Purpose: Equipment slot UI with drag and drop support
 // Filepath: Assets/Scripts/UI/Components/EquipmentSlotUI.cs
 using TMPro;
 using UnityEngine;
@@ -38,10 +38,6 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
         }
     }
 
-    void OnDestroy()
-    {
-        // Plus besoin de gerer l'enregistrement avec le système event-driven
-    }
 
     void OnDisable()
     {
@@ -87,7 +83,8 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
         if (itemDef != null && itemIcon != null)
         {
             itemIcon.sprite = itemDef.ItemIcon;
-            itemIcon.enabled = true; // Affiche l'icône
+            itemIcon.color = itemDef.ItemColor;   // â†  restore correct tint/alpha
+            itemIcon.enabled = true; // Affiche l'icÃ´ne
         }
     }
 
@@ -98,9 +95,10 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     {
         equippedItemId = null;
 
-        // Cache l'icône quand il n'y a pas d'equipement
+        // Cache l'icÃ´ne quand il n'y a pas d'equipement
         if (itemIcon != null)
         {
+            itemIcon.sprite = null;
             itemIcon.enabled = false;
         }
     }
@@ -151,7 +149,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
         if (!CanAcceptItem(itemID, qty))
             return false;
 
-        // Utiliser le système d'equipement existant
+        // Utiliser le systÃ¨me d'equipement existant
         if (parentPanel != null)
         {
             return parentPanel.TryEquipItem(itemID);
@@ -160,18 +158,20 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
         return false;
     }
 
+    // EquipmentSlotUI.cs
     public bool TryRemoveItem(int qty)
     {
-        if (string.IsNullOrEmpty(equippedItemId))
+        if (string.IsNullOrEmpty(equippedItemId) || parentPanel == null)
             return false;
 
-        // Utiliser le système d'equipement existant
-        if (parentPanel != null)
+        // Si lâ€™appel vient dâ€™un drag en cours
+        if (DragDropManager.Instance != null && DragDropManager.Instance.IsDragging)
         {
-            return parentPanel.UnequipItem(slotType);
+            return parentPanel.DetachItemForDrag(slotType, out _);
         }
 
-        return false;
+        // Sinon (clic droit, menu contextuelâ€¦) on fait un unequip complet
+        return parentPanel.UnequipItem(slotType);
     }
 
     public RectTransform GetRectTransform() => transform as RectTransform;
@@ -180,7 +180,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     {
         if (background != null && !isDragSource)
         {
-            // Verifier si l'item peut être accepte
+            // Verifier si l'item peut Ãªtre accepte
             string draggedItemId = DragDropManager.Instance?.GetDraggedItemId();
             if (!string.IsNullOrEmpty(draggedItemId) && CanAcceptItem(draggedItemId, 1))
             {
@@ -236,7 +236,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
 
     public void OnDrag(PointerEventData eventData)
     {
-        // Le DragDropManager gère la position du visual
+        // Le DragDropManager gÃ¨re la position du visual
     }
 
     public void OnEndDrag(PointerEventData eventData)
