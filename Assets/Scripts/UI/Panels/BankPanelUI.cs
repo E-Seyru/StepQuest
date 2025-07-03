@@ -1,32 +1,37 @@
-// Purpose: Main UI controller for the inventory panel using UniversalSlotUI
-// Filepath: Assets/Scripts/UI/Panels/InventoryPanelUI.cs
+// Purpose: UI controller for the bank panel using UniversalSlotUI
+// Filepath: Assets/Scripts/UI/Panels/BankPanelUI.cs
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class InventoryPanelUI : MonoBehaviour
+public class BankPanelUI : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private Transform slotsContainer;
     [SerializeField] private GameObject slotPrefab; // Should have UniversalSlotUI component
     [SerializeField] private TextMeshProUGUI titleText;
-    [SerializeField] private Button addWoodButton;
+    [SerializeField] private Button closeButton;
 
     [Header("Info Display")]
     [SerializeField] private TextMeshProUGUI capacityText;
-    [SerializeField] private TextMeshProUGUI selectedItemText;
+    [SerializeField] private TextMeshProUGUI bankInfoText;
+
+    [Header("Optional Features")]
+    [SerializeField] private Button sortButton;
+    [SerializeField] private Button expandButton;
+    [SerializeField] private TextMeshProUGUI expandCostText;
 
     // Internal state
     private InventoryManager inventoryManager;
     private List<UniversalSlotUI> slotUIs = new List<UniversalSlotUI>();
     private UniversalSlotUI selectedSlot;
-    private string currentContainerId = "player";
+    private string currentContainerId = "bank";
 
     // Auto-deselection
-    private bool isPointerOverInventory = false;
+    private bool isPointerOverBank = false;
 
-    public static InventoryPanelUI Instance { get; private set; }
+    public static BankPanelUI Instance { get; private set; }
 
     void Awake()
     {
@@ -48,21 +53,34 @@ public class InventoryPanelUI : MonoBehaviour
 
         if (inventoryManager == null)
         {
-            Debug.LogError("InventoryPanelUI: InventoryManager not found!");
+            Logger.LogError("BankPanelUI: InventoryManager not found!", Logger.LogCategory.InventoryLog);
             return;
         }
 
         // Subscribe to inventory events
-        inventoryManager.OnContainerChanged += OnInventoryChanged;
+        inventoryManager.OnContainerChanged += OnContainerChanged;
+
+        // Setup buttons
+        if (closeButton != null)
+            closeButton.onClick.AddListener(ClosePanel);
+
+        if (sortButton != null)
+            sortButton.onClick.AddListener(SortBank);
+
+        if (expandButton != null)
+            expandButton.onClick.AddListener(ExpandBank);
 
         // Initial setup
         CreateSlotUIs();
         RefreshDisplay();
+
+        // Start closed
+        gameObject.SetActive(false);
     }
 
     void Update()
     {
-        // Deselectionner automatiquement si on clique/touche en dehors (mobile-friendly)
+        // Auto-deselection comme dans InventoryPanelUI
         CheckForDeselection();
     }
 
@@ -71,18 +89,17 @@ public class InventoryPanelUI : MonoBehaviour
         // Unsubscribe from events
         if (inventoryManager != null)
         {
-            inventoryManager.OnContainerChanged -= OnInventoryChanged;
+            inventoryManager.OnContainerChanged -= OnContainerChanged;
         }
     }
 
     /// <summary>
-    /// Verifier si on doit deselectionner automatiquement (mobile-friendly)
+    /// Check for auto-deselection (mobile-friendly)
     /// </summary>
     private void CheckForDeselection()
     {
         if (selectedSlot == null) return;
 
-        // Detecter clic/touch sur mobile et desktop
         bool inputDetected = false;
 
         // Pour mobile (touch)
@@ -102,8 +119,7 @@ public class InventoryPanelUI : MonoBehaviour
 
         if (inputDetected)
         {
-            // Verifier si le clic/touch est en dehors de l'inventaire
-            if (!IsPointerOverInventoryArea())
+            if (!IsPointerOverBankArea())
             {
                 DeselectCurrentSlot();
             }
@@ -111,13 +127,12 @@ public class InventoryPanelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Verifier si le pointeur/touch est sur la zone d'inventaire
+    /// Check if pointer/touch is over bank area
     /// </summary>
-    private bool IsPointerOverInventoryArea()
+    private bool IsPointerOverBankArea()
     {
         Vector2 screenPosition;
 
-        // Obtenir la position selon le type d'input
         if (Input.touchCount > 0)
         {
             screenPosition = Input.GetTouch(0).position;
@@ -127,18 +142,18 @@ public class InventoryPanelUI : MonoBehaviour
             screenPosition = Input.mousePosition;
         }
 
-        // Verifier si on est sur l'ItemActionPanel (ne pas deselectionner si on clique dessus)
+        // Check ItemActionPanel
         if (ItemActionPanel.Instance != null && ItemActionPanel.Instance.gameObject.activeInHierarchy)
         {
             RectTransform actionPanelRect = ItemActionPanel.Instance.GetComponent<RectTransform>();
             if (actionPanelRect != null && RectTransformUtility.RectangleContainsScreenPoint(
                 actionPanelRect, screenPosition, Camera.main))
             {
-                return true; // On est sur l'ActionPanel, ne pas deselectionner
+                return true;
             }
         }
 
-        // Verifier si on est sur un slot d'inventaire
+        // Check bank slots
         foreach (var slot in slotUIs)
         {
             if (slot != null && RectTransformUtility.RectangleContainsScreenPoint(
@@ -148,19 +163,19 @@ public class InventoryPanelUI : MonoBehaviour
             }
         }
 
-        // Verifier si on est sur la zone de l'inventaire en general
-        RectTransform inventoryRect = GetComponent<RectTransform>();
-        if (inventoryRect != null)
+        // Check bank panel
+        RectTransform bankRect = GetComponent<RectTransform>();
+        if (bankRect != null)
         {
             return RectTransformUtility.RectangleContainsScreenPoint(
-                inventoryRect, screenPosition, Camera.main);
+                bankRect, screenPosition, Camera.main);
         }
 
         return false;
     }
 
     /// <summary>
-    /// Deselectionner le slot actuel
+    /// Deselect current slot
     /// </summary>
     private void DeselectCurrentSlot()
     {
@@ -173,24 +188,24 @@ public class InventoryPanelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Create UI slots based on container capacity
+    /// Create UI slots based on bank capacity
     /// </summary>
     private void CreateSlotUIs()
     {
         if (slotsContainer == null || slotPrefab == null)
         {
-            Debug.LogError("InventoryPanelUI: Missing slotsContainer or slotPrefab!");
+            Logger.LogError("BankPanelUI: Missing slotsContainer or slotPrefab!", Logger.LogCategory.InventoryLog);
             return;
         }
 
         // Clear existing slots
         ClearSlotUIs();
 
-        // Get container with safety check
+        // Get bank container
         var container = inventoryManager?.GetContainer(currentContainerId);
         if (container == null)
         {
-            Debug.LogError($"InventoryPanelUI: Container '{currentContainerId}' not found! Make sure InventoryManager is initialized.");
+            Logger.LogError($"BankPanelUI: Container '{currentContainerId}' not found!", Logger.LogCategory.InventoryLog);
             return;
         }
 
@@ -202,18 +217,19 @@ public class InventoryPanelUI : MonoBehaviour
 
             if (slotUI != null)
             {
-                // Setup with PlayerInventory context
-                slotUI.Setup(container.Slots[i], i, currentContainerId, UniversalSlotUI.SlotContext.PlayerInventory);
+                // Setup with Bank context
+                slotUI.Setup(container.Slots[i], i, currentContainerId, UniversalSlotUI.SlotContext.Bank);
                 slotUI.OnSlotClicked += OnSlotClicked;
+                slotUI.OnSlotRightClicked += OnSlotRightClicked;
                 slotUIs.Add(slotUI);
             }
             else
             {
-                Debug.LogError("InventoryPanelUI: SlotPrefab doesn't have UniversalSlotUI component!");
+                Logger.LogError("BankPanelUI: SlotPrefab doesn't have UniversalSlotUI component!", Logger.LogCategory.InventoryLog);
             }
         }
 
-        Debug.Log($"InventoryPanelUI: Created {slotUIs.Count} slot UIs for container '{currentContainerId}'");
+        Logger.LogInfo($"BankPanelUI: Created {slotUIs.Count} slot UIs for bank", Logger.LogCategory.InventoryLog);
     }
 
     /// <summary>
@@ -226,6 +242,7 @@ public class InventoryPanelUI : MonoBehaviour
             if (slotUI != null)
             {
                 slotUI.OnSlotClicked -= OnSlotClicked;
+                slotUI.OnSlotRightClicked -= OnSlotRightClicked;
                 Destroy(slotUI.gameObject);
             }
         }
@@ -251,44 +268,63 @@ public class InventoryPanelUI : MonoBehaviour
 
         for (int i = 0; i < slotUIs.Count && i < container.Slots.Count; i++)
         {
-            slotUIs[i].Setup(container.Slots[i], i, currentContainerId, UniversalSlotUI.SlotContext.PlayerInventory);
+            slotUIs[i].Setup(container.Slots[i], i, currentContainerId, UniversalSlotUI.SlotContext.Bank);
         }
     }
 
     /// <summary>
-    /// Refresh info display (capacity, selected item)
+    /// Refresh info display
     /// </summary>
     private void RefreshInfo()
     {
         var container = inventoryManager?.GetContainer(currentContainerId);
         if (container == null) return;
 
-        // Update capacity display
+        // Update capacity
         if (capacityText != null)
         {
-            capacityText.text = $"{container.GetUsedSlotsCount()}/{container.MaxSlots}";
+            int used = container.GetUsedSlotsCount();
+            int max = container.MaxSlots;
+            capacityText.text = $"Capacité: {used}/{max}";
         }
 
         // Update title
         if (titleText != null)
         {
-            titleText.text = $"Inventaire ({container.ContainerType})";
+            titleText.text = "Coffre de Banque";
         }
 
-        // Update selected item info
-        if (selectedItemText != null)
+        // Update bank info
+        if (bankInfoText != null)
         {
             if (selectedSlot != null && !selectedSlot.IsEmpty())
             {
                 var slot = selectedSlot.GetSlotData();
                 var itemDef = inventoryManager.GetItemRegistry().GetItem(slot.ItemID);
                 string itemName = itemDef?.GetDisplayName() ?? slot.ItemID;
-                selectedItemText.text = $"Sélectionné: {itemName} x{slot.Quantity}";
+                bankInfoText.text = $"Sélectionné: {itemName} x{slot.Quantity}";
             }
             else
             {
-                selectedItemText.text = "Aucun objet sélectionné";
+                int totalItems = 0;
+                foreach (var slot in container.Slots)
+                {
+                    if (!slot.IsEmpty())
+                        totalItems += slot.Quantity;
+                }
+                bankInfoText.text = $"Total objets: {totalItems}";
             }
+        }
+
+        // Update expand button
+        if (expandButton != null && expandCostText != null)
+        {
+            int currentSlots = container.MaxSlots;
+            int expandCost = CalculateExpansionCost(currentSlots);
+            expandCostText.text = $"Agrandir ({expandCost} or)";
+
+            // TODO: Disable si pas assez d'or
+            expandButton.interactable = true;
         }
     }
 
@@ -297,13 +333,13 @@ public class InventoryPanelUI : MonoBehaviour
     /// </summary>
     private void OnSlotClicked(UniversalSlotUI slotUI, int index)
     {
-        // Deselect previous slot
+        // Deselect previous
         if (selectedSlot != null)
         {
             selectedSlot.SetSelected(false);
         }
 
-        // Select new slot
+        // Select new
         selectedSlot = slotUI;
         selectedSlot.SetSelected(true);
 
@@ -311,33 +347,105 @@ public class InventoryPanelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Open the panel
+    /// Handle slot right-clicked (quick transfer)
+    /// </summary>
+    private void OnSlotRightClicked(UniversalSlotUI slotUI, int index)
+    {
+        if (slotUI.IsEmpty()) return;
+
+        var slot = slotUI.GetSlotData();
+
+        // Quick transfer to player inventory
+        bool success = inventoryManager.TransferItem(currentContainerId, "player", slot.ItemID, slot.Quantity);
+
+        if (success)
+        {
+            var itemDef = inventoryManager.GetItemRegistry().GetItem(slot.ItemID);
+            string itemName = itemDef?.GetDisplayName() ?? slot.ItemID;
+            Logger.LogInfo($"BankPanelUI: Quick transferred {slot.Quantity}x {itemName} to inventory", Logger.LogCategory.InventoryLog);
+        }
+    }
+
+    /// <summary>
+    /// Open the bank panel
     /// </summary>
     public void OpenPanel()
     {
         gameObject.SetActive(true);
         RefreshDisplay();
+
+
+
+        Logger.LogInfo("BankPanelUI: Bank opened", Logger.LogCategory.InventoryLog);
     }
 
     /// <summary>
-    /// Close the panel
+    /// Close the bank panel
     /// </summary>
     public void ClosePanel()
     {
         gameObject.SetActive(false);
 
-        // Deselect slot
+        // Deselect
         DeselectCurrentSlot();
 
-        // Fermer ItemActionPanel si ouvert
-        if (ItemActionPanel.Instance != null)
-        {
-            ItemActionPanel.Instance.HidePanel();
-        }
+
+
+        Logger.LogInfo("BankPanelUI: Bank closed", Logger.LogCategory.InventoryLog);
+    }
+
+    /// <summary>
+    /// Sort bank items
+    /// </summary>
+    private void SortBank()
+    {
+        // TODO: Implement sorting logic
+        Logger.LogInfo("BankPanelUI: Sorting bank items...", Logger.LogCategory.InventoryLog);
+
+        // Ideas for sorting:
+        // - By type (equipment, consumables, materials)
+        // - By rarity
+        // - By value
+        // - Alphabetically
+    }
+
+    /// <summary>
+    /// Expand bank capacity
+    /// </summary>
+    private void ExpandBank()
+    {
+        var container = inventoryManager?.GetContainer(currentContainerId);
+        if (container == null) return;
+
+        int currentSlots = container.MaxSlots;
+        int expandCost = CalculateExpansionCost(currentSlots);
+        int newSlots = currentSlots + 10; // Add 10 slots per expansion
+
+        // TODO: Check player gold and deduct cost
+
+        // Expand the container
+        container.Resize(newSlots);
+        inventoryManager.TriggerContainerChanged(currentContainerId);
+
+        // Recreate UI to show new slots
+        CreateSlotUIs();
+        RefreshDisplay();
+
+        Logger.LogInfo($"BankPanelUI: Expanded bank from {currentSlots} to {newSlots} slots", Logger.LogCategory.InventoryLog);
+    }
+
+    /// <summary>
+    /// Calculate expansion cost based on current size
+    /// </summary>
+    private int CalculateExpansionCost(int currentSlots)
+    {
+        // Progressive cost: 100 gold per 10 slots, increasing by 50 each time
+        int expansions = (currentSlots - inventoryManager.DefaultBankSlots) / 10;
+        return 100 + (expansions * 50);
     }
 
     // Event handlers
-    private void OnInventoryChanged(string containerId)
+    private void OnContainerChanged(string containerId)
     {
         if (containerId == currentContainerId)
         {
@@ -351,19 +459,6 @@ public class InventoryPanelUI : MonoBehaviour
     public string GetDebugInfo()
     {
         var container = inventoryManager?.GetContainer(currentContainerId);
-        return $"UI State: {slotUIs.Count} slots, Container: {container?.GetDebugInfo() ?? "null"}";
-    }
-
-    // Test method for adding wood (temporary)
-    public void AddWood()
-    {
-        if (inventoryManager != null)
-        {
-            inventoryManager.AddItem(currentContainerId, "Pin", 1);
-        }
-        else
-        {
-            Debug.LogError("InventoryManager not initialized!");
-        }
+        return $"BankUI State: {slotUIs.Count} slots, Container: {container?.GetDebugInfo() ?? "null"}";
     }
 }

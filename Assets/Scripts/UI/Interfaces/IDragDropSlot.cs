@@ -1,56 +1,64 @@
-// Purpose: Interface for slots that can handle drag and drop operations
+// Purpose: Interface for any slot that can participate in drag and drop operations
 // Filepath: Assets/Scripts/UI/Interfaces/IDragDropSlot.cs
 using UnityEngine;
 
 /// <summary>
-/// Interface for UI slots that can participate in drag and drop operations
+/// Interface for any UI slot that can participate in drag and drop operations
 /// </summary>
 public interface IDragDropSlot
 {
+    // === Data Access ===
+
     /// <summary>
-    /// Get the item ID currently in this slot (null if empty)
+    /// Get the item ID in this slot (null if empty)
     /// </summary>
     string GetItemId();
 
     /// <summary>
-    /// Get the quantity of the item in this slot
+    /// Get the quantity of items in this slot
     /// </summary>
     int GetQuantity();
 
     /// <summary>
-    /// Check if this slot can accept a specific item for dropping
+    /// Check if this slot is empty
     /// </summary>
-    bool CanAcceptItem(string itemId, int quantity);
+    bool IsEmpty();
+
+    // === Validation ===
 
     /// <summary>
-    /// Try to set an item in this slot (for drop operation)
+    /// Check if this slot can accept a specific item
     /// </summary>
-    /// <returns>True if successful</returns>
-    bool TrySetItem(string itemId, int quantity);
+    bool CanAcceptItem(string itemID, int qty);
+
+    // === Modification ===
 
     /// <summary>
-    /// Try to remove an item from this slot (for drag operation)
+    /// Try to set the item in this slot (replace current contents)
     /// </summary>
-    /// <returns>True if successful</returns>
-    bool TryRemoveItem(int quantity);
+    bool TrySetItem(string itemID, int qty);
 
     /// <summary>
-    /// Get the RectTransform of this slot for positioning
+    /// Try to remove items from this slot
     /// </summary>
-    RectTransform GetRectTransform();
+    bool TryRemoveItem(int qty);
+
+    // === Visual Feedback ===
 
     /// <summary>
-    /// Visual feedback when an item is being dragged over this slot
+    /// Called when a drag enters this slot
     /// </summary>
     void OnDragEnter();
 
     /// <summary>
-    /// Visual feedback when an item stops being dragged over this slot
+    /// Called when a drag exits this slot
     /// </summary>
     void OnDragExit();
 
+    // === Unity Component Access ===
+
     /// <summary>
-    /// Check if this slot is currently empty
+    /// Get the RectTransform for positioning calculations
     /// </summary>
-    bool IsEmpty();
+    RectTransform GetRectTransform();
 }

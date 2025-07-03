@@ -63,6 +63,7 @@ MonoBehaviour:
     ActivityVariants:
     - {fileID: 11400000, guid: 8a1fd8c0c9c5aba45b26888c39f548d4, type: 2}
     - {fileID: 11400000, guid: 21241f0aa725f1a4794218d1c81006f5, type: 2}
+    - {fileID: 11400000, guid: 08d9f1f269bfd4f4a88a3d0a15c2dc15, type: 2}
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}

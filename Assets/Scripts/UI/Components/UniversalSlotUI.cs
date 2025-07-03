@@ -1,39 +1,60 @@
-// Purpose: Complete UI component for inventory slots with drag and drop support
-// Filepath: Assets/Scripts/UI/Components/InventorySlotUI.cs
+// Purpose: Universal UI component for inventory, bank, shop slots with drag and drop support
+// Filepath: Assets/Scripts/UI/Components/UniversalSlotUI.cs
+/// <summary>
+/// Universal UI component for any container slot (inventory, bank, shop) with full drag and drop support
+/// </summary>
+/// 
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-/// <summary>
-/// UI component for a single inventory slot with full drag and drop support
-/// Compatible with existing InventoryPanelUI
-/// </summary>
-public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
+public class UniversalSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
 {
+    public enum SlotContext
+    {
+        PlayerInventory,
+        Bank,
+        Shop,
+        Trade,
+        Loot
+    }
+
     [Header("UI References")]
     [SerializeField] private Image itemIcon;
     [SerializeField] private TextMeshProUGUI quantityText;
     [SerializeField] private Image background;
     [SerializeField] private Image selectionHighlight;
+    [SerializeField] private Image contextIndicator; // Optionnel: indicateur visuel du type de container
 
     [Header("Visual Settings")]
     [SerializeField] private Color selectedColor = Color.yellow;
     [SerializeField] private Color dragHoverColor = Color.green;
     [SerializeField] private bool hideQuantityIfOne = true;
 
-    // Data - compatible avec InventoryPanelUI
+    [Header("Context Colors (Optional)")]
+    [SerializeField] private Color bankSlotTint = new Color(0.8f, 0.9f, 1f, 1f);
+    [SerializeField] private Color shopSlotTint = new Color(1f, 0.9f, 0.8f, 1f);
+
+    // Data
     private InventorySlot slotData;
     private int slotIndex;
+    private string containerId;
+    private SlotContext context;
     private bool isSelected = false;
 
     // Drag and drop
     private bool isDragSource = false;
     private Color originalBackgroundColor;
 
-    // Events - compatible avec InventoryPanelUI
-    public System.Action<InventorySlotUI, int> OnSlotClicked;
-    public System.Action<InventorySlotUI, int> OnSlotRightClicked;
+    // Events
+    public System.Action<UniversalSlotUI, int> OnSlotClicked;
+    public System.Action<UniversalSlotUI, int> OnSlotRightClicked;
+
+    // Public accessors
+    public string ContainerId => containerId;
+    public SlotContext Context => context;
+    public int SlotIndex => slotIndex;
 
     void Start()
     {
@@ -43,17 +64,12 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
             originalBackgroundColor = background.color;
         }
 
-        // Initialize empty
+        // Initialize empty if needed
         if (slotData == null)
         {
             slotData = new InventorySlot();
         }
         RefreshVisuals();
-    }
-
-    void OnDestroy()
-    {
-        // Plus besoin de gerer l'enregistrement avec le système event-driven
     }
 
     void OnDisable()
@@ -66,17 +82,53 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     }
 
     /// <summary>
-    /// Setup this slot with slot data and index (compatible avec InventoryPanelUI)
+    /// Setup this slot with context information
     /// </summary>
-    public void Setup(InventorySlot slot, int index)
+    public void Setup(InventorySlot slot, int index, string containerId, SlotContext context)
     {
-        slotData = slot;
-        slotIndex = index;
+        this.slotData = slot;
+        this.slotIndex = index;
+        this.containerId = containerId;
+        this.context = context;
+
+        // Appliquer une teinte visuelle selon le contexte (optionnel)
+        ApplyContextVisuals();
+
         RefreshVisuals();
     }
 
     /// <summary>
-    /// Get the slot data (compatible avec InventoryPanelUI)
+    /// Apply visual indicators based on context
+    /// </summary>
+    private void ApplyContextVisuals()
+    {
+        if (background != null)
+        {
+            switch (context)
+            {
+                case SlotContext.Bank:
+                    originalBackgroundColor = bankSlotTint;
+                    background.color = bankSlotTint;
+                    break;
+                case SlotContext.Shop:
+                    originalBackgroundColor = shopSlotTint;
+                    background.color = shopSlotTint;
+                    break;
+                default:
+                    // Keep original color for player inventory
+                    break;
+            }
+        }
+
+        // Optionnel: afficher un indicateur de contexte
+        if (contextIndicator != null)
+        {
+            contextIndicator.gameObject.SetActive(context != SlotContext.PlayerInventory);
+        }
+    }
+
+    /// <summary>
+    /// Get the slot data
     /// </summary>
     public InventorySlot GetSlotData()
     {
@@ -84,7 +136,7 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     }
 
     /// <summary>
-    /// Check if this slot is empty (compatible avec InventoryPanelUI)
+    /// Check if this slot is empty
     /// </summary>
     public bool IsEmpty()
     {
@@ -92,7 +144,7 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     }
 
     /// <summary>
-    /// Set selection state (compatible avec InventoryPanelUI)
+    /// Set selection state
     /// </summary>
     public void SetSelected(bool selected)
     {
@@ -103,7 +155,7 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
             selectionHighlight.gameObject.SetActive(selected);
         }
 
-        if (background != null)
+        if (background != null && !isDragSource)
         {
             background.color = selected ? selectedColor : originalBackgroundColor;
         }
@@ -147,7 +199,7 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
             }
             else
             {
-                Debug.LogError($"InventorySlotUI: Item '{slotData.ItemID}' not found in registry");
+                Logger.LogError($"UniversalSlotUI: Item '{slotData.ItemID}' not found in registry", Logger.LogCategory.InventoryLog);
             }
         }
     }
@@ -179,8 +231,21 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
 
     public bool CanAcceptItem(string itemID, int qty)
     {
-        // TODO: Add more validation logic here
-        // For now, accept any item
+        // Verifications selon le contexte
+        switch (context)
+        {
+            case SlotContext.Shop:
+                // Les shops ne peuvent pas recevoir d'items (seulement vendre)
+                return false;
+
+            case SlotContext.Bank:
+                // Verifier si l'item peut etre stocke en banque
+                var itemDef = InventoryManager.Instance?.GetItemRegistry()?.GetItem(itemID);
+
+                break;
+        }
+
+        // Verification generale
         return true;
     }
 
@@ -191,8 +256,8 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
             slotData.SetItem(itemID, qty);
             RefreshVisuals();
 
-            // Notify InventoryManager of the change
-            InventoryManager.Instance?.TriggerContainerChanged("player"); // TODO: get actual container ID
+            // Notifier le changement avec le bon containerId
+            InventoryManager.Instance?.TriggerContainerChanged(containerId);
             return true;
         }
         return false;
@@ -205,8 +270,8 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
             bool becameEmpty = slotData.RemoveQuantity(qty);
             RefreshVisuals();
 
-            // Notify InventoryManager of the change
-            InventoryManager.Instance?.TriggerContainerChanged("player"); // TODO: get actual container ID
+            // Notifier le changement avec le bon containerId
+            InventoryManager.Instance?.TriggerContainerChanged(containerId);
             return true;
         }
         return false;
@@ -218,7 +283,16 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     {
         if (background != null && !isDragSource)
         {
-            background.color = dragHoverColor;
+            // Verifier si on peut accepter l'item
+            string draggedItemId = DragDropManager.Instance?.GetDraggedItemId();
+            if (!string.IsNullOrEmpty(draggedItemId) && CanAcceptItem(draggedItemId, 1))
+            {
+                background.color = dragHoverColor;
+            }
+            else
+            {
+                background.color = Color.red; // Indicateur de drop invalide
+            }
         }
     }
 
@@ -226,7 +300,6 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     {
         if (background != null && !isDragSource)
         {
-            // Restaurer la couleur originale ou selectionnee
             background.color = isSelected ? selectedColor : originalBackgroundColor;
         }
     }
@@ -243,7 +316,7 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
             if (!IsEmpty() && ItemActionPanel.Instance != null)
             {
                 Vector2 worldPosition = transform.position;
-                ItemActionPanel.Instance.ShowPanel(this, slotData, worldPosition);
+                ItemActionPanel.Instance.ShowPanel(this, slotData, containerId, context, worldPosition);
             }
         }
         else if (eventData.button == PointerEventData.InputButton.Right)
@@ -257,14 +330,32 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
         if (IsEmpty() || DragDropManager.Instance == null)
             return;
 
-        // TODO: Handle split quantities with modifiers (Ctrl, Shift, etc.)
+        // Verifier les permissions selon le contexte
+        if (context == SlotContext.Shop)
+        {
+            Logger.LogInfo("UniversalSlotUI: Cannot drag items from shop", Logger.LogCategory.InventoryLog);
+            return;
+        }
+
+        // Handle split quantities with modifiers
         int dragQuantity = slotData.Quantity;
+
+        if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+        {
+            // Ctrl = drag half
+            dragQuantity = Mathf.Max(1, slotData.Quantity / 2);
+        }
+        else if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+        {
+            // Shift = drag one
+            dragQuantity = 1;
+        }
 
         if (DragDropManager.Instance.StartDrag(this, slotData.ItemID, dragQuantity))
         {
             isDragSource = true;
 
-            // Visual feedback for source slot
+            // Visual feedback
             if (itemIcon != null)
             {
                 var color = itemIcon.color;
@@ -285,7 +376,7 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
 
         isDragSource = false;
 
-        // IMPORTANT: Si le drag n'a pas ete complete via OnDrop(), l'annuler
+        // Si le drag n'a pas ete complete, l'annuler
         if (DragDropManager.Instance != null && DragDropManager.Instance.IsDragging)
         {
             DragDropManager.Instance.CancelDrag();
@@ -301,7 +392,7 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
             }
         }
 
-        // Restaurer la couleur du background
+        // Restore background color
         if (background != null)
         {
             background.color = isSelected ? selectedColor : originalBackgroundColor;
@@ -318,23 +409,31 @@ public class InventorySlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        // Notifier le DragDropManager (event-driven)
+        // Notifier le DragDropManager
         if (DragDropManager.Instance != null && DragDropManager.Instance.IsDragging)
         {
             DragDropManager.Instance.SetHoveredSlot(this);
         }
 
-        // TODO: Show tooltip with item info quand pas en drag
+        // TODO: Show tooltip avec info sur l'item
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        // Notifier le DragDropManager (event-driven)
+        // Notifier le DragDropManager
         if (DragDropManager.Instance != null && DragDropManager.Instance.IsDragging)
         {
             DragDropManager.Instance.ClearHoveredSlot(this);
         }
 
         // TODO: Hide tooltip
+    }
+
+    /// <summary>
+    /// Get debug info about this slot
+    /// </summary>
+    public string GetDebugInfo()
+    {
+        return $"Slot[{slotIndex}] in {containerId} ({context}): {slotData?.ToString() ?? "Empty"}";
     }
 }

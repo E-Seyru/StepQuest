@@ -1,16 +1,17 @@
-// Purpose: Global manager for handling drag and drop operations between inventory slots
+// Purpose: Global manager for handling drag and drop operations between any containers
 // Filepath: Assets/Scripts/UI/Managers/DragDropManager.cs
 using UnityEngine;
 
 /// <summary>
 /// Singleton manager that handles all drag and drop operations in the game
+/// Now supports cross-container transfers
 /// </summary>
 public class DragDropManager : MonoBehaviour
 {
     [Header("Drag Visual Settings")]
-    [SerializeField] private GameObject draggedItemPrefab; // Prefab pour l'affichage pendant le drag
-    [SerializeField] private Canvas dragCanvas; // Canvas de haut niveau pour le drag
-    [SerializeField] private float dragScale = 0.8f; // Échelle de l'item pendant le drag
+    [SerializeField] private GameObject draggedItemPrefab;
+    [SerializeField] private Canvas dragCanvas;
+    [SerializeField] private float dragScale = 0.8f;
 
     // Singleton
     public static DragDropManager Instance { get; private set; }
@@ -22,11 +23,15 @@ public class DragDropManager : MonoBehaviour
     private int draggedQuantity = 0;
     private GameObject draggedItemVisual = null;
 
+    // Container info for cross-container transfers
+    private string sourceContainerId = null;
+    private UniversalSlotUI.SlotContext sourceContext;
+
     // Drop detection (event-driven)
     private IDragDropSlot currentHoveredSlot = null;
 
     // Events
-    public System.Action<string, int, IDragDropSlot, IDragDropSlot> OnItemDragCompleted; // itemId, quantity, source, destination
+    public System.Action<string, int, IDragDropSlot, IDragDropSlot> OnItemDragCompleted;
     public System.Action OnDragCancelled;
 
     void Awake()
@@ -35,7 +40,7 @@ public class DragDropManager : MonoBehaviour
         {
             Instance = this;
 
-            // Trouve le canvas principal si pas assigne
+            // Find main canvas if not assigned
             if (dragCanvas == null)
             {
                 dragCanvas = FindObjectOfType<Canvas>();
@@ -52,9 +57,8 @@ public class DragDropManager : MonoBehaviour
         if (isDragging)
         {
             UpdateDragVisual();
-            // UpdateDropDetection(); // SUPPRIMÉ - maintenant event-driven
 
-            // Annuler avec clic droit ou Escape
+            // Cancel with right click or Escape
             if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape))
             {
                 CancelDrag();
@@ -63,14 +67,14 @@ public class DragDropManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Commencer une operation de drag depuis un slot
+    /// Start a drag operation from a slot
     /// </summary>
     public bool StartDrag(IDragDropSlot slot, string itemId, int quantity)
     {
         if (isDragging || slot == null || string.IsNullOrEmpty(itemId) || quantity <= 0)
             return false;
 
-        // Verifier que le slot peut bien donner cet item
+        // Verify slot can give this item
         if (slot.GetItemId() != itemId || slot.GetQuantity() < quantity)
             return false;
 
@@ -79,14 +83,27 @@ public class DragDropManager : MonoBehaviour
         draggedItemId = itemId;
         draggedQuantity = quantity;
 
+        // Get container info if it's a UniversalSlotUI
+        if (slot is UniversalSlotUI universalSlot)
+        {
+            sourceContainerId = universalSlot.ContainerId;
+            sourceContext = universalSlot.Context;
+        }
+        // Or if it's an EquipmentSlotUI
+        else if (slot is EquipmentSlotUI)
+        {
+            sourceContainerId = "equipment";
+            sourceContext = UniversalSlotUI.SlotContext.PlayerInventory; // Treat as inventory for transfers
+        }
+
         CreateDragVisual();
 
-        Debug.Log($"DragDropManager: Started dragging {quantity}x {itemId}");
+        Logger.LogInfo($"DragDropManager: Started dragging {quantity}x {itemId} from {sourceContainerId}", Logger.LogCategory.InventoryLog);
         return true;
     }
 
     /// <summary>
-    /// Terminer une operation de drag avec drop
+    /// Complete a drag operation with drop
     /// </summary>
     public bool CompleteDrag(IDragDropSlot targetSlot)
     {
@@ -95,34 +112,49 @@ public class DragDropManager : MonoBehaviour
 
         bool success = false;
 
-        // Si on drop sur le même slot, on annule
+        // If dropping on same slot, cancel
         if (targetSlot == sourceSlot)
         {
             CancelDrag();
             return false;
         }
 
-        // Gerer l'echange ou le merge
-        string targetItemId = targetSlot.GetItemId();
-        int targetQuantity = targetSlot.GetQuantity();
+        // Get target container info
+        string targetContainerId = null;
+        UniversalSlotUI.SlotContext targetContext = UniversalSlotUI.SlotContext.PlayerInventory;
 
-        if (targetSlot.IsEmpty())
+        if (targetSlot is UniversalSlotUI targetUniversalSlot)
         {
-            // Slot vide - simple transfer (avec verification)
-            if (targetSlot.CanAcceptItem(draggedItemId, draggedQuantity))
-            {
-                success = PerformSimpleTransfer(targetSlot);
-            }
+            targetContainerId = targetUniversalSlot.ContainerId;
+            targetContext = targetUniversalSlot.Context;
         }
-        else if (targetItemId == draggedItemId)
+        else if (targetSlot is EquipmentSlotUI)
         {
-            // Même item - essayer de merge (PerformMerge gère ses propres verifications)
-            success = PerformMerge(targetSlot);
+            targetContainerId = "equipment";
+        }
+
+        // Determine if this is a cross-container transfer
+        bool isCrossContainer = sourceContainerId != targetContainerId;
+
+        if (isCrossContainer)
+        {
+            success = PerformCrossContainerTransfer(targetSlot, targetContainerId);
         }
         else
         {
-            // Items differents - essayer d'echanger (avec verification)
-            if (targetSlot.CanAcceptItem(draggedItemId, draggedQuantity))
+            // Same container transfer
+            string targetItemId = targetSlot.GetItemId();
+            int targetQuantity = targetSlot.GetQuantity();
+
+            if (targetSlot.IsEmpty())
+            {
+                success = PerformSimpleTransfer(targetSlot);
+            }
+            else if (targetItemId == draggedItemId)
+            {
+                success = PerformMerge(targetSlot);
+            }
+            else
             {
                 success = PerformSwap(targetSlot, targetItemId, targetQuantity);
             }
@@ -131,11 +163,11 @@ public class DragDropManager : MonoBehaviour
         if (success)
         {
             OnItemDragCompleted?.Invoke(draggedItemId, draggedQuantity, sourceSlot, targetSlot);
-            Debug.Log($"DragDropManager: Successfully moved {draggedQuantity}x {draggedItemId}");
+            Logger.LogInfo($"DragDropManager: Successfully moved {draggedQuantity}x {draggedItemId}", Logger.LogCategory.InventoryLog);
         }
         else
         {
-            Debug.Log($"DragDropManager: Failed to move {draggedQuantity}x {draggedItemId}");
+            Logger.LogInfo($"DragDropManager: Failed to move {draggedQuantity}x {draggedItemId}", Logger.LogCategory.InventoryLog);
         }
 
         EndDrag();
@@ -143,29 +175,29 @@ public class DragDropManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Annuler l'operation de drag en cours
+    /// Cancel the current drag operation
     /// </summary>
     public void CancelDrag()
     {
         if (!isDragging) return;
 
-        Debug.Log("DragDropManager: Drag cancelled");
+        Logger.LogInfo("DragDropManager: Drag cancelled", Logger.LogCategory.InventoryLog);
         OnDragCancelled?.Invoke();
         EndDrag();
     }
 
     /// <summary>
-    /// Verifier si une operation de drag est en cours
+    /// Check if a drag operation is in progress
     /// </summary>
     public bool IsDragging => isDragging;
 
     /// <summary>
-    /// Obtenir l'item actuellement en cours de drag
+    /// Get the item currently being dragged
     /// </summary>
     public string GetDraggedItemId() => isDragging ? draggedItemId : null;
 
     /// <summary>
-    /// Notifie par un slot quand la souris entre (event-driven)
+    /// Notified by slot when mouse enters (event-driven)
     /// </summary>
     public void SetHoveredSlot(IDragDropSlot slot)
     {
@@ -180,13 +212,12 @@ public class DragDropManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Notifie par un slot quand la souris sort (event-driven)
+    /// Notified by slot when mouse exits (event-driven)
     /// </summary>
     public void ClearHoveredSlot(IDragDropSlot slot)
     {
         if (!isDragging) return;
 
-        // Securite : verifier que le slot existe encore et correspond
         if (currentHoveredSlot == slot && currentHoveredSlot != null)
         {
             currentHoveredSlot.OnDragExit();
@@ -208,7 +239,7 @@ public class DragDropManager : MonoBehaviour
             draggedItemComponent.Setup(draggedItemId, draggedQuantity);
         }
 
-        // Configurer l'echelle et la position
+        // Configure scale and position
         draggedItemVisual.transform.localScale = Vector3.one * dragScale;
         UpdateDragVisualPosition();
     }
@@ -236,6 +267,58 @@ public class DragDropManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Perform a cross-container transfer using InventoryManager
+    /// </summary>
+    private bool PerformCrossContainerTransfer(IDragDropSlot targetSlot, string targetContainerId)
+    {
+        // Special case: Equipment slots
+        if (targetContainerId == "equipment" && targetSlot is EquipmentSlotUI equipSlot)
+        {
+            // Use EquipmentPanelUI to equip the item
+            if (EquipmentPanelUI.Instance != null)
+            {
+                // First remove from source
+                if (sourceSlot.TryRemoveItem(draggedQuantity))
+                {
+                    if (EquipmentPanelUI.Instance.TryEquipItem(draggedItemId))
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        // Rollback
+                        sourceSlot.TrySetItem(draggedItemId, draggedQuantity);
+                        return false;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // For universal slots, use InventoryManager transfer
+        if (InventoryManager.Instance != null && !string.IsNullOrEmpty(sourceContainerId) && !string.IsNullOrEmpty(targetContainerId))
+        {
+            // Check if target slot is empty or has same item
+            string targetItemId = targetSlot.GetItemId();
+
+            if (targetSlot.IsEmpty() || targetItemId == draggedItemId)
+            {
+                // Direct transfer
+                return InventoryManager.Instance.TransferItem(sourceContainerId, targetContainerId, draggedItemId, draggedQuantity);
+            }
+            else
+            {
+                // Need to swap items between containers
+                // This is more complex - for now, don't allow cross-container swaps
+                Logger.LogInfo("DragDropManager: Cross-container swaps not yet implemented", Logger.LogCategory.InventoryLog);
+                return false;
+            }
+        }
+
+        return false;
+    }
+
     private bool PerformSimpleTransfer(IDragDropSlot targetSlot)
     {
         if (sourceSlot.TryRemoveItem(draggedQuantity) && targetSlot.TrySetItem(draggedItemId, draggedQuantity))
@@ -243,7 +326,7 @@ public class DragDropManager : MonoBehaviour
             return true;
         }
 
-        // Rollback si echec
+        // Rollback if failed
         sourceSlot.TrySetItem(draggedItemId, draggedQuantity);
         return false;
     }
@@ -257,36 +340,33 @@ public class DragDropManager : MonoBehaviour
         int maxStack = itemDef.MaxStackSize;
         int spaceLeft = maxStack - targetCurrentQuantity;
 
-        if (spaceLeft <= 0) return false; // Pas de place
+        if (spaceLeft <= 0) return false;
 
-        // Calculer combien on peut effectivement merger
+        // Calculate how much we can merge
         int toMerge = Mathf.Min(draggedQuantity, spaceLeft);
         int remaining = draggedQuantity - toMerge;
 
-        // Tester l'acceptation avec la quantite qu'on va reellement merger
+        // Test acceptance
         if (!targetSlot.CanAcceptItem(draggedItemId, toMerge))
         {
             return false;
         }
 
-        // Sauvegarder l'etat initial pour rollback correct
+        // Save original state for rollback
         int originalSourceQuantity = sourceSlot.GetQuantity();
 
-        // Effectuer le merge partiel ou total
+        // Perform partial or full merge
         if (sourceSlot.TryRemoveItem(toMerge))
         {
             if (targetSlot.TrySetItem(draggedItemId, targetCurrentQuantity + toMerge))
             {
-                // Le slot source contient deja le reste après TryRemoveItem(toMerge)
-                // Pas besoin de re-injection, il est deja correct
-
-                // Mettre a jour la quantite annoncee pour l'evenement
+                // Update dragged quantity for event
                 draggedQuantity = toMerge;
                 return true;
             }
             else
             {
-                // Rollback exact : restaurer la quantite originale du source
+                // Rollback
                 sourceSlot.TrySetItem(draggedItemId, originalSourceQuantity);
                 return false;
             }
@@ -297,11 +377,11 @@ public class DragDropManager : MonoBehaviour
 
     private bool PerformSwap(IDragDropSlot targetSlot, string targetItemId, int targetQuantity)
     {
-        // Verifier que le slot source peut accepter l'item cible
+        // Verify source slot can accept target item
         if (!sourceSlot.CanAcceptItem(targetItemId, targetQuantity))
             return false;
 
-        // Effectuer l'echange
+        // Perform swap
         if (sourceSlot.TryRemoveItem(draggedQuantity) && targetSlot.TryRemoveItem(targetQuantity))
         {
             if (sourceSlot.TrySetItem(targetItemId, targetQuantity) &&
@@ -310,7 +390,7 @@ public class DragDropManager : MonoBehaviour
                 return true;
             }
 
-            // Rollback en cas d'echec
+            // Rollback on failure
             sourceSlot.TrySetItem(draggedItemId, draggedQuantity);
             targetSlot.TrySetItem(targetItemId, targetQuantity);
         }
@@ -324,8 +404,9 @@ public class DragDropManager : MonoBehaviour
         sourceSlot = null;
         draggedItemId = null;
         draggedQuantity = 0;
+        sourceContainerId = null;
 
-        // Securite : verifier si currentHoveredSlot existe encore
+        // Safety: check if hovered slot still exists
         if (currentHoveredSlot != null)
         {
             currentHoveredSlot.OnDragExit();
