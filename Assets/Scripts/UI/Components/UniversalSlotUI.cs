@@ -1,14 +1,13 @@
 // Purpose: Universal UI component for inventory, bank, shop slots with drag and drop support
 // Filepath: Assets/Scripts/UI/Components/UniversalSlotUI.cs
-/// <summary>
-/// Universal UI component for any container slot (inventory, bank, shop) with full drag and drop support
-/// </summary>
-/// 
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+/// <summary>
+/// Universal UI component for any container slot (inventory, bank, shop) with full drag and drop support
+/// </summary>
 public class UniversalSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
 {
     public enum SlotContext
@@ -308,20 +307,14 @@ public class UniversalSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (eventData.button == PointerEventData.InputButton.Left)
-        {
-            OnSlotClicked?.Invoke(this, slotIndex);
+        // Sur mobile, on a seulement le tap
+        OnSlotClicked?.Invoke(this, slotIndex);
 
-            // Ouvrir ItemActionPanel si le slot n'est pas vide
-            if (!IsEmpty() && ItemActionPanel.Instance != null)
-            {
-                Vector2 worldPosition = transform.position;
-                ItemActionPanel.Instance.ShowPanel(this, slotData, containerId, context, worldPosition);
-            }
-        }
-        else if (eventData.button == PointerEventData.InputButton.Right)
+        // Ouvrir ItemActionPanel si le slot n'est pas vide
+        if (!IsEmpty() && ItemActionPanel.Instance != null)
         {
-            OnSlotRightClicked?.Invoke(this, slotIndex);
+            Vector2 worldPosition = transform.position;
+            ItemActionPanel.Instance.ShowPanel(this, slotData, containerId, context, worldPosition);
         }
     }
 
@@ -337,19 +330,9 @@ public class UniversalSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
             return;
         }
 
-        // Handle split quantities with modifiers
+        // Sur mobile, on peut détecter un "long press" pour split
+        // mais pour l'instant on drag toute la quantité
         int dragQuantity = slotData.Quantity;
-
-        if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
-        {
-            // Ctrl = drag half
-            dragQuantity = Mathf.Max(1, slotData.Quantity / 2);
-        }
-        else if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
-        {
-            // Shift = drag one
-            dragQuantity = 1;
-        }
 
         if (DragDropManager.Instance.StartDrag(this, slotData.ItemID, dragQuantity))
         {

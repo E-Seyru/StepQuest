@@ -272,7 +272,68 @@ public class DragDropManager : MonoBehaviour
     /// </summary>
     private bool PerformCrossContainerTransfer(IDragDropSlot targetSlot, string targetContainerId)
     {
-        // Special case: Equipment slots
+        // Special case: FROM Equipment to other container
+        if (sourceContainerId == "equipment" && sourceSlot is EquipmentSlotUI equipSourceSlot)
+        {
+            // Si on drop sur un slot vide
+            if (targetSlot.IsEmpty())
+            {
+                // D'abord retirer de l'équipement
+                if (sourceSlot.TryRemoveItem(1))
+                {
+                    // Ensuite, placer directement dans le slot cible
+                    if (targetSlot.TrySetItem(draggedItemId, 1))
+                    {
+                        // IMPORTANT: Forcer la sauvegarde immédiate après un transfer d'équipement
+                        InventoryManager.Instance.SaveInventoryData();
+                        return true;
+                    }
+                    else
+                    {
+                        // Rollback - rééquiper l'item
+                        sourceSlot.TrySetItem(draggedItemId, 1);
+                        return false;
+                    }
+                }
+            }
+            // Si on drop sur un slot avec le même item (merge)
+            else if (targetSlot.GetItemId() == draggedItemId)
+            {
+                var itemDef = InventoryManager.Instance?.GetItemRegistry()?.GetItem(draggedItemId);
+                if (itemDef != null && itemDef.IsStackable)
+                {
+                    int currentQty = targetSlot.GetQuantity();
+                    if (currentQty < itemDef.MaxStackSize)
+                    {
+                        // Retirer de l'équipement
+                        if (sourceSlot.TryRemoveItem(1))
+                        {
+                            // Ajouter à la stack existante
+                            if (targetSlot.TrySetItem(draggedItemId, currentQty + 1))
+                            {
+                                InventoryManager.Instance.SaveInventoryData();
+                                return true;
+                            }
+                            else
+                            {
+                                // Rollback
+                                sourceSlot.TrySetItem(draggedItemId, 1);
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+            // Si on drop sur un slot avec un item différent - pas de swap depuis l'équipement
+            else
+            {
+                Logger.LogInfo("DragDropManager: Cannot swap items when dragging from equipment", Logger.LogCategory.InventoryLog);
+                return false;
+            }
+            return false;
+        }
+
+        // Special case: TO Equipment slots
         if (targetContainerId == "equipment" && targetSlot is EquipmentSlotUI equipSlot)
         {
             // Use EquipmentPanelUI to equip the item

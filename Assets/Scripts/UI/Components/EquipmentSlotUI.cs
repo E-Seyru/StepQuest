@@ -13,7 +13,6 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     [Header("UI References")]
     [SerializeField] private Image itemIcon;
     [SerializeField] private Image background;
-    [SerializeField] private Button slotButton;
     [SerializeField] private TextMeshProUGUI slotLabel;
 
     [Header("Visual Feedback")]
@@ -38,7 +37,6 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
         }
     }
 
-
     void OnDisable()
     {
         // Securite : se nettoyer du DragDropManager si on etait survole
@@ -56,11 +54,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
         slotType = type;
         parentPanel = parent;
 
-        // Setup button click
-        if (slotButton != null)
-        {
-            slotButton.onClick.AddListener(OnSlotClicked);
-        }
+        // PAS de button.onClick ici - on gère tout via IPointerClickHandler
 
         // Set slot label
         if (slotLabel != null)
@@ -83,8 +77,8 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
         if (itemDef != null && itemIcon != null)
         {
             itemIcon.sprite = itemDef.ItemIcon;
-            itemIcon.color = itemDef.ItemColor;   // ←  restore correct tint/alpha
-            itemIcon.enabled = true; // Affiche l'icône
+            itemIcon.color = itemDef.ItemColor;
+            itemIcon.enabled = true;
         }
     }
 
@@ -95,20 +89,11 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     {
         equippedItemId = null;
 
-        // Cache l'icône quand il n'y a pas d'equipement
         if (itemIcon != null)
         {
             itemIcon.sprite = null;
             itemIcon.enabled = false;
         }
-    }
-
-    /// <summary>
-    /// Handle slot button click
-    /// </summary>
-    private void OnSlotClicked()
-    {
-        parentPanel?.OnSlotClicked(slotType);
     }
 
     /// <summary>
@@ -158,13 +143,12 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
         return false;
     }
 
-    // EquipmentSlotUI.cs
     public bool TryRemoveItem(int qty)
     {
         if (string.IsNullOrEmpty(equippedItemId) || parentPanel == null)
             return false;
 
-        // Si l’appel vient d’un drag en cours
+        // Si l'appel vient d'un drag en cours
         if (DragDropManager.Instance != null && DragDropManager.Instance.IsDragging)
         {
             return parentPanel.DetachItemForDrag(slotType, out _);
@@ -197,7 +181,6 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     {
         if (background != null && !isDragSource)
         {
-            // Restaurer la couleur originale
             background.color = originalBackgroundColor;
         }
     }
@@ -208,9 +191,29 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (eventData.button == PointerEventData.InputButton.Left)
+        // Sur mobile, on a seulement le tap (pas de clic droit)
+        // IMPORTANT : Au lieu de desequiper, on affiche l'ItemActionPanel
+        if (!IsEmpty() && ItemActionPanel.Instance != null)
         {
-            OnSlotClicked();
+            // Créer un InventorySlot temporaire pour l'item équipé
+            var tempSlot = new InventorySlot(equippedItemId, 1);
+
+            Vector2 worldPosition = transform.position;
+
+            // Afficher le panel avec un contexte spécial pour l'équipement
+            // On passe "equipment" comme containerId et PlayerInventory comme contexte
+            // car l'équipement fait partie du joueur
+            ItemActionPanel.Instance.ShowPanel(
+                null, // On n'a pas de UniversalSlotUI ici
+                tempSlot,
+                "equipment",
+                UniversalSlotUI.SlotContext.PlayerInventory,
+                worldPosition
+            );
+        }
+        else
+        {
+            Logger.LogInfo($"EquipmentSlotUI: {slotType} slot is empty", Logger.LogCategory.InventoryLog);
         }
     }
 
@@ -261,7 +264,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
             }
         }
 
-        // Restaurer la couleur du background originale
+        // Restaurer la couleur du background
         if (background != null)
         {
             background.color = originalBackgroundColor;

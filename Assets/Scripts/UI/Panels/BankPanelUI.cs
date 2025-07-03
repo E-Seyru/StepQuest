@@ -347,23 +347,12 @@ public class BankPanelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Handle slot right-clicked (quick transfer)
+    /// Handle slot right-clicked (quick transfer) - NOT USED ON MOBILE
     /// </summary>
     private void OnSlotRightClicked(UniversalSlotUI slotUI, int index)
     {
-        if (slotUI.IsEmpty()) return;
-
-        var slot = slotUI.GetSlotData();
-
-        // Quick transfer to player inventory
-        bool success = inventoryManager.TransferItem(currentContainerId, "player", slot.ItemID, slot.Quantity);
-
-        if (success)
-        {
-            var itemDef = inventoryManager.GetItemRegistry().GetItem(slot.ItemID);
-            string itemName = itemDef?.GetDisplayName() ?? slot.ItemID;
-            Logger.LogInfo($"BankPanelUI: Quick transferred {slot.Quantity}x {itemName} to inventory", Logger.LogCategory.InventoryLog);
-        }
+        // Cette méthode n'est pas utilisée sur mobile
+        // On pourrait implémenter un long-press pour quick transfer
     }
 
     /// <summary>
@@ -389,7 +378,12 @@ public class BankPanelUI : MonoBehaviour
         // Deselect
         DeselectCurrentSlot();
 
+        // Close ItemActionPanel if open
+        if (ItemActionPanel.Instance != null)
+        {
+            ItemActionPanel.Instance.HidePanel();
 
+        }
 
         Logger.LogInfo("BankPanelUI: Bank closed", Logger.LogCategory.InventoryLog);
     }
