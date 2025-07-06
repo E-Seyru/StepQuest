@@ -465,6 +465,7 @@ public class DragDropManager : MonoBehaviour
         sourceSlot = null;
         draggedItemId = null;
         draggedQuantity = 0;
+
         sourceContainerId = null;
 
         // Safety: check if hovered slot still exists
