@@ -1,4 +1,4 @@
-﻿// Purpose: Service de pathfinding intelligent pour trouver des chemins entre POI non directement connectés
+﻿// Purpose: Service de pathfinding intelligent pour trouver des chemins entre POI non directement connectes
 // Filepath: Assets/Scripts/Gameplay/World/MapPathfindingService.cs
 using System.Collections.Generic;
 using System.Linq;
@@ -20,14 +20,14 @@ public class MapPathfindingService
     }
 
     /// <summary>
-    /// Résultat d'un calcul de chemin
+    /// Resultat d'un calcul de chemin
     /// </summary>
     public class PathResult
     {
         public bool IsReachable { get; set; }
         public int TotalCost { get; set; }
         public List<string> Path { get; set; } // Liste des LocationID du chemin
-        public List<PathSegment> Segments { get; set; } // Détails de chaque segment
+        public List<PathSegment> Segments { get; set; } // Details de chaque segment
 
         public PathResult()
         {
@@ -65,7 +65,7 @@ public class MapPathfindingService
             return CreateSameLocationResult(fromLocationId);
         }
 
-        // Vérifier le cache d'abord
+        // Verifier le cache d'abord
         if (isCacheValid && pathCache.ContainsKey(fromLocationId) && pathCache[fromLocationId].ContainsKey(toLocationId))
         {
             Logger.LogInfo($"MapPathfindingService: Using cached path from {fromLocationId} to {toLocationId}");
@@ -85,7 +85,7 @@ public class MapPathfindingService
     }
 
     /// <summary>
-    /// Vérifie si deux locations peuvent être connectées (directement ou indirectement)
+    /// Verifie si deux locations peuvent être connectees (directement ou indirectement)
     /// </summary>
     public bool CanReach(string fromLocationId, string toLocationId)
     {
@@ -103,7 +103,7 @@ public class MapPathfindingService
     }
 
     /// <summary>
-    /// Invalide le cache (à appeler quand les connexions changent)
+    /// Invalide le cache (a appeler quand les connexions changent)
     /// </summary>
     public void InvalidateCache()
     {
@@ -113,7 +113,7 @@ public class MapPathfindingService
     }
 
     /// <summary>
-    /// Reconstruit le cache complet (utile au démarrage)
+    /// Reconstruit le cache complet (utile au demarrage)
     /// </summary>
     public void RebuildCache()
     {
@@ -148,11 +148,11 @@ public class MapPathfindingService
     #region Algorithme de Dijkstra
 
     /// <summary>
-    /// Implémentation de l'algorithme de Dijkstra pour trouver le chemin le plus court
+    /// Implementation de l'algorithme de Dijkstra pour trouver le chemin le plus court
     /// </summary>
     private PathResult CalculateShortestPath(string startLocationId, string targetLocationId)
     {
-        // Vérifier que les locations existent
+        // Verifier que les locations existent
         if (!locationRegistry.HasLocation(startLocationId) || !locationRegistry.HasLocation(targetLocationId))
         {
             Logger.LogWarning($"MapPathfindingService: One or both locations not found: {startLocationId}, {targetLocationId}");
@@ -176,7 +176,7 @@ public class MapPathfindingService
 
         while (unvisited.Count > 0)
         {
-            // Trouver la location non visitée avec la distance minimale
+            // Trouver la location non visitee avec la distance minimale
             string currentLocationId = unvisited.OrderBy(id => distances[id]).First();
 
             if (distances[currentLocationId] == int.MaxValue)
@@ -214,13 +214,13 @@ public class MapPathfindingService
             }
         }
 
-        // Aucun chemin trouvé
+        // Aucun chemin trouve
         Logger.LogInfo($"MapPathfindingService: No path found from {startLocationId} to {targetLocationId}");
         return new PathResult { IsReachable = false };
     }
 
     /// <summary>
-    /// Construit le résultat du chemin à partir des données de Dijkstra
+    /// Construit le resultat du chemin a partir des donnees de Dijkstra
     /// </summary>
     private PathResult BuildPathResult(string startLocationId, string targetLocationId,
                                      Dictionary<string, int> distances, Dictionary<string, string> previous)
@@ -244,7 +244,7 @@ public class MapPathfindingService
         path.Reverse();
         result.Path = path;
 
-        // Créer les segments détaillés
+        // Creer les segments detailles
         for (int i = 0; i < path.Count - 1; i++)
         {
             string fromId = path[i];
@@ -275,7 +275,7 @@ public class MapPathfindingService
     #region Gestion du Cache
 
     /// <summary>
-    /// Met en cache un résultat de chemin
+    /// Met en cache un resultat de chemin
     /// </summary>
     private void CachePathResult(string fromLocationId, string toLocationId, PathResult result)
     {
@@ -287,7 +287,7 @@ public class MapPathfindingService
     }
 
     /// <summary>
-    /// Crée un résultat pour le cas où source = destination
+    /// Cree un resultat pour le cas où source = destination
     /// </summary>
     private PathResult CreateSameLocationResult(string locationId)
     {

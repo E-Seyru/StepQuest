@@ -26,7 +26,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
 
     void Start()
     {
-        // Valider les références
+        // Valider les references
         ValidateReferences();
 
         // Setup grid layout automatiquement
@@ -36,7 +36,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
     #region Public Methods
 
     /// <summary>
-    /// Affiche les activités primaires
+    /// Affiche les activites primaires
     /// </summary>
     public void DisplayActivities(List<ActivityDefinition> activities)
     {
@@ -51,10 +51,10 @@ public class ActivitiesSectionPanel : MonoBehaviour
         // Nettoyer les cartes existantes
         RecycleActivityCards();
 
-        // Mettre à jour le titre de la section
+        // Mettre a jour le titre de la section
         UpdateSectionTitle(activities.Count);
 
-        // Afficher ou masquer selon la disponibilité
+        // Afficher ou masquer selon la disponibilite
         if (activities.Count == 0)
         {
             ShowNoActivitiesMessage();
@@ -69,7 +69,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Efface toutes les activités affichées
+    /// Efface toutes les activites affichees
     /// </summary>
     public void ClearActivities()
     {
@@ -95,7 +95,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
     #region Private Methods - Setup
 
     /// <summary>
-    /// Valide que toutes les références sont correctement assignées
+    /// Valide que toutes les references sont correctement assignees
     /// </summary>
     private void ValidateReferences()
     {
@@ -103,19 +103,19 @@ public class ActivitiesSectionPanel : MonoBehaviour
 
         if (activitiesContainer == null)
         {
-            Debug.LogError("ActivitiesSectionPanel: ActivitiesContainer n'est pas assigné !");
+            Debug.LogError("ActivitiesSectionPanel: ActivitiesContainer n'est pas assigne !");
             hasErrors = true;
         }
 
         if (primaryActivityCardPrefab == null)
         {
-            Debug.LogError("ActivitiesSectionPanel: PrimaryActivityCardPrefab n'est pas assigné !");
+            Debug.LogError("ActivitiesSectionPanel: PrimaryActivityCardPrefab n'est pas assigne !");
             hasErrors = true;
         }
 
         if (hasErrors)
         {
-            Debug.LogError("ActivitiesSectionPanel: Des références critiques manquent ! Le panel peut ne pas fonctionner correctement.");
+            Debug.LogError("ActivitiesSectionPanel: Des references critiques manquent ! Le panel peut ne pas fonctionner correctement.");
         }
     }
 
@@ -126,7 +126,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
     {
         if (activitiesContainer == null) return;
 
-        // Ajouter GridLayoutGroup si pas présent
+        // Ajouter GridLayoutGroup si pas present
         GridLayoutGroup gridLayout = activitiesContainer.GetComponent<GridLayoutGroup>();
         if (gridLayout == null)
         {
@@ -142,7 +142,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
         // Taille des cellules (ajustable selon votre design de cartes)
         gridLayout.cellSize = new Vector2(210f, 290f);
 
-        // Ajouter ContentSizeFitter si pas présent
+        // Ajouter ContentSizeFitter si pas present
         ContentSizeFitter contentSizeFitter = activitiesContainer.GetComponent<ContentSizeFitter>();
         if (contentSizeFitter == null)
         {
@@ -153,7 +153,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
         contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
 
-        Debug.Log("ActivitiesSectionPanel: Grid layout configuré automatiquement");
+        Debug.Log("ActivitiesSectionPanel: Grid layout configure automatiquement");
     }
 
     #endregion
@@ -161,30 +161,30 @@ public class ActivitiesSectionPanel : MonoBehaviour
     #region Private Methods - UI Updates
 
     /// <summary>
-    /// Met à jour le titre de la section
+    /// Met a jour le titre de la section
     /// </summary>
     private void UpdateSectionTitle(int activityCount)
     {
         if (activitiesSectionTitle != null)
         {
-            activitiesSectionTitle.text = $"Activités disponibles ({activityCount})";
+            activitiesSectionTitle.text = $"Activites disponibles ({activityCount})";
         }
     }
 
     /// <summary>
-    /// Affiche le message "aucune activité"
+    /// Affiche le message "aucune activite"
     /// </summary>
     private void ShowNoActivitiesMessage()
     {
         if (noActivitiesText != null)
         {
             noActivitiesText.gameObject.SetActive(true);
-            noActivitiesText.text = "Aucune activité disponible.";
+            noActivitiesText.text = "Aucune activite disponible.";
         }
     }
 
     /// <summary>
-    /// Masque le message "aucune activité"
+    /// Masque le message "aucune activite"
     /// </summary>
     private void HideNoActivitiesMessage()
     {
@@ -199,7 +199,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
     #region Private Methods - Activity Cards Management
 
     /// <summary>
-    /// Crée les cartes d'activité pour la liste donnée
+    /// Cree les cartes d'activite pour la liste donnee
     /// </summary>
     private void CreateActivityCards(List<ActivityDefinition> activities)
     {
@@ -219,18 +219,18 @@ public class ActivitiesSectionPanel : MonoBehaviour
             SetupActivityCard(cardObject, activity);
         }
 
-        // Forcer la mise à jour du layout
+        // Forcer la mise a jour du layout
         LayoutRebuilder.ForceRebuildLayoutImmediate(activitiesContainer.GetComponent<RectTransform>());
     }
 
     /// <summary>
-    /// Configure une carte d'activité individuelle
+    /// Configure une carte d'activite individuelle
     /// </summary>
     private void SetupActivityCard(GameObject cardObject, ActivityDefinition activity)
     {
         if (cardObject == null || activity == null) return;
 
-        // Récupérer le composant PrimaryActivityCard
+        // Recuperer le composant PrimaryActivityCard
         var activityCard = cardObject.GetComponent<PrimaryActivityCard>();
         if (activityCard == null)
         {
@@ -238,22 +238,22 @@ public class ActivitiesSectionPanel : MonoBehaviour
             return;
         }
 
-        // Setup de la carte avec les données d'activité
+        // Setup de la carte avec les donnees d'activite
         activityCard.Setup(activity);
 
-        // S'abonner à l'événement de clic
+        // S'abonner a l'evenement de clic
         activityCard.OnCardClicked -= OnActivityCardClicked; // Éviter les doublons
         activityCard.OnCardClicked += OnActivityCardClicked;
     }
 
     /// <summary>
-    /// Gère le clic sur une carte d'activité
+    /// Gère le clic sur une carte d'activite
     /// </summary>
     private void OnActivityCardClicked(ActivityDefinition activity)
     {
         Debug.Log($"ActivitiesSectionPanel: Activity card clicked for {activity.GetDisplayName()}");
 
-        // Propager l'événement
+        // Propager l'evenement
         OnActivitySelected?.Invoke(activity);
     }
 
@@ -262,7 +262,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
     #region Private Methods - Object Pooling
 
     /// <summary>
-    /// Recycle toutes les cartes d'activité instantiées
+    /// Recycle toutes les cartes d'activite instantiees
     /// </summary>
     private void RecycleActivityCards()
     {
@@ -270,7 +270,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
         {
             if (card != null)
             {
-                // Nettoyer les événements
+                // Nettoyer les evenements
                 var activityCard = card.GetComponent<PrimaryActivityCard>();
                 if (activityCard != null)
                 {
@@ -285,7 +285,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Récupère une carte d'activité du pool ou en crée une nouvelle
+    /// Recupère une carte d'activite du pool ou en cree une nouvelle
     /// </summary>
     private GameObject GetPooledActivityCard()
     {
@@ -305,7 +305,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
 
     void OnDestroy()
     {
-        // Nettoyer tous les événements pour éviter les fuites mémoire
+        // Nettoyer tous les evenements pour eviter les fuites memoire
         foreach (var card in instantiatedActivityCards)
         {
             if (card != null)

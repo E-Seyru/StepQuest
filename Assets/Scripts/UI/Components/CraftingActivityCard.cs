@@ -1,5 +1,6 @@
-// Purpose: UI Card for Crafting Activities (Time-based activities)
+// Purpose: UI Card for Crafting Activities (Time-based activities) with red overlay and shake
 // Filepath: Assets/Scripts/UI/Components/CraftingActivityCard.cs
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -15,12 +16,20 @@ public class CraftingActivityCard : MonoBehaviour
     [SerializeField] private Transform ingredientsContainer;
     [SerializeField] private Button cardButton;
 
+    [Header("Red Overlay")]
+    [SerializeField] private GameObject redOverlay; // Voile rouge par-dessus la carte
+
+    [Header("Shake Animation")]
+    [SerializeField] private float shakeDuration = 0.5f;
+    [SerializeField] private float shakeIntensity = 10f;
+
     [Header("Prefabs")]
     [SerializeField] private GameObject ingredientPrefab;
 
     // Data
     private ActivityVariant activityVariant;
     private List<GameObject> instantiatedIngredients = new List<GameObject>();
+    private bool hasEnoughIngredients = true;
 
     // Events
     public System.Action<ActivityVariant> OnCardClicked;
@@ -55,8 +64,78 @@ public class CraftingActivityCard : MonoBehaviour
         SetupBasicInfo();
         SetupRequirements();
         SetupIngredients();
+        CheckIngredientsAvailability();
 
         Debug.Log($"CraftingActivityCard: Setup completed for {variant.VariantName}");
+    }
+
+    /// <summary>
+    /// Vérifier si on a assez d'ingrédients et mettre à jour l'affichage
+    /// </summary>
+    private void CheckIngredientsAvailability()
+    {
+        hasEnoughIngredients = true;
+
+        if (activityVariant.RequiredMaterials != null && activityVariant.RequiredQuantities != null)
+        {
+            var inventoryManager = InventoryManager.Instance;
+            if (inventoryManager != null)
+            {
+                for (int i = 0; i < activityVariant.RequiredMaterials.Length; i++)
+                {
+                    var material = activityVariant.RequiredMaterials[i];
+                    var requiredQuantity = activityVariant.RequiredQuantities[i];
+
+                    if (material != null)
+                    {
+                        var container = inventoryManager.GetContainer("player");
+                        int availableQuantity = container?.GetItemQuantity(material.ItemID) ?? 0;
+                        if (availableQuantity < requiredQuantity)
+                        {
+                            hasEnoughIngredients = false;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        UpdateVisualState();
+    }
+
+    /// <summary>
+    /// Mettre à jour l'état visuel de la carte (voile rouge)
+    /// </summary>
+    private void UpdateVisualState()
+    {
+        if (redOverlay != null)
+        {
+            redOverlay.SetActive(!hasEnoughIngredients);
+        }
+    }
+
+    /// <summary>
+    /// Animation de shake quand on clique sans avoir les ingrédients
+    /// </summary>
+    private IEnumerator ShakeAnimation()
+    {
+        // Capturer la position actuelle au moment du shake
+        Vector3 currentPosition = transform.localPosition;
+        float elapsed = 0f;
+
+        while (elapsed < shakeDuration)
+        {
+            float x = Random.Range(-shakeIntensity, shakeIntensity);
+            float y = Random.Range(-shakeIntensity, shakeIntensity);
+
+            transform.localPosition = currentPosition + new Vector3(x, y, 0);
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // Remettre à la position actuelle (pas l'originale)
+        transform.localPosition = currentPosition;
     }
 
     /// <summary>
@@ -85,7 +164,8 @@ public class CraftingActivityCard : MonoBehaviour
         // Level requirement (using UnlockRequirement for now)
         if (levelRequiredText != null)
         {
-            int level = activityVariant.UnlockRequirement > 0 ? activityVariant.UnlockRequirement : 1;
+            int level = activityVariant.UnlockRequirement > 0 ?
+                activityVariant.UnlockRequirement : 1;
             levelRequiredText.text = $"Lvl : {level}";
         }
 
@@ -188,6 +268,14 @@ public class CraftingActivityCard : MonoBehaviour
     {
         if (activityVariant != null)
         {
+            // Si on n'a pas assez d'ingrédients, faire l'animation de shake
+            if (!hasEnoughIngredients)
+            {
+                Debug.Log($"CraftingActivityCard: Not enough ingredients for {activityVariant.VariantName}, shaking card");
+                StartCoroutine(ShakeAnimation());
+                return;
+            }
+
             Debug.Log($"CraftingActivityCard: Card clicked for {activityVariant.VariantName}");
             OnCardClicked?.Invoke(activityVariant);
         }
@@ -199,6 +287,14 @@ public class CraftingActivityCard : MonoBehaviour
     public ActivityVariant GetActivityVariant()
     {
         return activityVariant;
+    }
+
+    /// <summary>
+    /// Mettre à jour manuellement l'état des ingrédients (à appeler quand l'inventaire change)
+    /// </summary>
+    public void RefreshIngredientsState()
+    {
+        CheckIngredientsAvailability();
     }
 
     void OnDestroy()

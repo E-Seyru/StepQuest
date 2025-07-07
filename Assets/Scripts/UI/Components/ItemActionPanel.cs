@@ -180,7 +180,7 @@ public class ItemActionPanel : MonoBehaviour
         // Quantity
         if (quantityText != null)
         {
-            quantityText.text = $"Quantité: {itemSlot.Quantity}";
+            quantityText.text = $"Quantite: {itemSlot.Quantity}";
         }
 
         // Location
@@ -254,14 +254,14 @@ public class ItemActionPanel : MonoBehaviour
             }
         }
 
-        // Transfer - si on a accès à un autre container
+        // Transfer - si on a accès a un autre container
         if (transferButton != null && HasOtherContainerOpen())
         {
             transferButton.gameObject.SetActive(true);
             if (transferButtonText != null)
             {
                 string targetName = GetTransferTargetName();
-                transferButtonText.text = $"Déposer → {targetName}";
+                transferButtonText.text = $"Deposer → {targetName}";
             }
         }
 
@@ -293,7 +293,7 @@ public class ItemActionPanel : MonoBehaviour
             transferButton.gameObject.SetActive(true);
             if (transferButtonText != null)
             {
-                transferButtonText.text = $"Récupérer → Inventaire";
+                transferButtonText.text = $"Recuperer → Inventaire";
             }
         }
 
@@ -320,7 +320,7 @@ public class ItemActionPanel : MonoBehaviour
 
     private void SetupTradeButtons()
     {
-        // TODO: Implémenter les boutons pour le trade
+        // TODO: Implementer les boutons pour le trade
     }
 
     private void SetupLootButtons()
@@ -366,7 +366,7 @@ public class ItemActionPanel : MonoBehaviour
     /// </summary>
     private bool IsShopOpen()
     {
-        // TODO: Implémenter quand ShopPanelUI existe
+        // TODO: Implementer quand ShopPanelUI existe
         return false;
     }
 

@@ -46,7 +46,7 @@ public class AboveCanvasDisplayService
         var mapManager = MapManager.Instance;
         var dataManager = DataManager.Instance;
 
-        // ⭐ NOUVEAU : Vérifier si on est en voyage
+        // ⭐ NOUVEAU : Verifier si on est en voyage
         if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
         {
             // Pendant le voyage : afficher "En voyage vers X" et icône de voyage
@@ -75,7 +75,7 @@ public class AboveCanvasDisplayService
 
         Logger.LogInfo($"AboveCanvasManager: Updated location display to traveling state towards {destinationName}", Logger.LogCategory.General);
     }
-    // ⭐ NOUVEAU : Affiche l'état "location actuelle"
+    // ⭐ NOUVEAU : Affiche l'etat "location actuelle"
     private void ShowCurrentLocationState(MapLocationDefinition location)
     {
         // Texte normal
@@ -87,7 +87,7 @@ public class AboveCanvasDisplayService
         Logger.LogInfo($"AboveCanvasManager: Updated location display to {location.DisplayName}", Logger.LogCategory.General);
     }
 
-    // ⭐ NOUVEAU : Configure le LocationButton pour l'état voyage
+    // ⭐ NOUVEAU : Configure le LocationButton pour l'etat voyage
     private void UpdateLocationButtonForTravel()
     {
         if (manager.LocationButtonIcon == null) return;
@@ -100,7 +100,7 @@ public class AboveCanvasDisplayService
         }
         else
         {
-            // Pas d'icône de voyage définie, cacher l'icône
+            // Pas d'icône de voyage definie, cacher l'icône
             manager.LocationButtonIcon.sprite = null;
             manager.LocationButtonIcon.color = Color.clear;
             Logger.LogWarning("AboveCanvasManager: No travel icon assigned, hiding LocationButton icon", Logger.LogCategory.General);

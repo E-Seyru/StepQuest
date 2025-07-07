@@ -285,7 +285,7 @@ public class BankPanelUI : MonoBehaviour
         {
             int used = container.GetUsedSlotsCount();
             int max = container.MaxSlots;
-            capacityText.text = $"Capacité: {used}/{max}";
+            capacityText.text = $"Capacite: {used}/{max}";
         }
 
         // Update title
@@ -302,7 +302,7 @@ public class BankPanelUI : MonoBehaviour
                 var slot = selectedSlot.GetSlotData();
                 var itemDef = inventoryManager.GetItemRegistry().GetItem(slot.ItemID);
                 string itemName = itemDef?.GetDisplayName() ?? slot.ItemID;
-                bankInfoText.text = $"Sélectionné: {itemName} x{slot.Quantity}";
+                bankInfoText.text = $"Selectionne: {itemName} x{slot.Quantity}";
             }
             else
             {
@@ -351,8 +351,8 @@ public class BankPanelUI : MonoBehaviour
     /// </summary>
     private void OnSlotRightClicked(UniversalSlotUI slotUI, int index)
     {
-        // Cette méthode n'est pas utilisée sur mobile
-        // On pourrait implémenter un long-press pour quick transfer
+        // Cette methode n'est pas utilisee sur mobile
+        // On pourrait implementer un long-press pour quick transfer
     }
 
     /// <summary>

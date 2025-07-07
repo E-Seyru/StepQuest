@@ -72,7 +72,7 @@ public class ActivityVariantsPanel : MonoBehaviour
         // Configure grid layout
         gridLayout.childAlignment = TextAnchor.UpperCenter;
         gridLayout.constraint = GridLayoutGroup.Constraint.Flexible;
-        gridLayout.spacing = new Vector2(30f, 30f); // Plus d'écart entre les cartes
+        gridLayout.spacing = new Vector2(30f, 30f); // Plus d'ecart entre les cartes
         gridLayout.padding = new RectOffset(30, 30, 30, 30);
 
         // Set reasonable cell size (you might need to adjust this based on your card design)

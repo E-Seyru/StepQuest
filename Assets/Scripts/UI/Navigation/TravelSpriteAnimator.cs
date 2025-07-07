@@ -27,7 +27,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     [SerializeField] private Color debugPathColor = Color.yellow;
     [SerializeField] private bool enablePathfindingDebug = true;
 
-    // NOUVEAU : Cache des positions POI pour éviter les recherches répétées
+    // NOUVEAU : Cache des positions POI pour eviter les recherches repetees
     private Dictionary<string, Vector3> poiPositionsCache = new Dictionary<string, Vector3>();
     private bool isCacheInitialized = false;
 
@@ -42,11 +42,11 @@ public class TravelSpriteAnimator : MonoBehaviour
     private bool isAnimating = false;
     private int currentBounceId = -1;
 
-    // NOUVEAU : État pour gérer les voyages multi-segments et CurrentLocation null
+    // NOUVEAU : État pour gerer les voyages multi-segments et CurrentLocation null
     private bool isMultiSegmentTravel = false;
     private string currentSegmentDestination = "";
     private string finalDestination = "";
-    private string lastKnownLocationId = null; // ⭐ NOUVEAU : Pour gérer CurrentLocation null
+    private string lastKnownLocationId = null; // ⭐ NOUVEAU : Pour gerer CurrentLocation null
 
     public static TravelSpriteAnimator Instance { get; private set; }
 
@@ -71,7 +71,7 @@ public class TravelSpriteAnimator : MonoBehaviour
 
     void Start()
     {
-        // Obtenir les références
+        // Obtenir les references
         mapManager = MapManager.Instance;
         dataManager = DataManager.Instance;
 
@@ -81,7 +81,7 @@ public class TravelSpriteAnimator : MonoBehaviour
         }
 
         // =====================================
-        // EVENTBUS - S'abonner aux événements de voyage
+        // EVENTBUS - S'abonner aux evenements de voyage
         // =====================================
         EventBus.Subscribe<TravelStartedEvent>(OnTravelStarted);
         EventBus.Subscribe<TravelCompletedEvent>(OnTravelCompleted);
@@ -115,12 +115,12 @@ public class TravelSpriteAnimator : MonoBehaviour
             }
         }
 
-        // Positionner le personnage à sa location actuelle au démarrage
+        // Positionner le personnage a sa location actuelle au demarrage
         StartCoroutine(PositionPlayerAfterDelay());
     }
 
     /// <summary>
-    /// NOUVEAU : Initialise le cache des positions POI une seule fois au démarrage
+    /// NOUVEAU : Initialise le cache des positions POI une seule fois au demarrage
     /// </summary>
     private void InitializePOICache()
     {
@@ -134,17 +134,17 @@ public class TravelSpriteAnimator : MonoBehaviour
             return;
         }
 
-        // Sauvegarder l'état actuel de la carte
+        // Sauvegarder l'etat actuel de la carte
         bool wasMapActive = worldMapObject.activeInHierarchy;
 
-        // Activer temporairement la WorldMap si elle était désactivée
+        // Activer temporairement la WorldMap si elle etait desactivee
         if (!wasMapActive)
         {
             worldMapObject.SetActive(true);
         }
 
         // OPTIMISATION : Chercher les POI seulement dans WorldMap au lieu de toute la scène
-        POI[] allPOIs = worldMapObject.GetComponentsInChildren<POI>(true); // 'true' pour inclure les POI désactivés
+        POI[] allPOIs = worldMapObject.GetComponentsInChildren<POI>(true); // 'true' pour inclure les POI desactives
 
         // Mettre en cache toutes les positions
         foreach (POI poi in allPOIs)
@@ -160,7 +160,7 @@ public class TravelSpriteAnimator : MonoBehaviour
             }
         }
 
-        // Remettre la WorldMap dans son état d'origine
+        // Remettre la WorldMap dans son etat d'origine
         if (!wasMapActive)
         {
             worldMapObject.SetActive(false);
@@ -175,7 +175,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     /// </summary>
     private Vector3 FindPOITravelStartPosition(string locationId)
     {
-        // Vérifier que le cache est initialisé
+        // Verifier que le cache est initialise
         if (!isCacheInitialized)
         {
             Logger.LogWarning("TravelSpriteAnimator: POI cache not initialized! Trying to initialize now...", Logger.LogCategory.MapLog);
@@ -188,7 +188,7 @@ public class TravelSpriteAnimator : MonoBehaviour
             return cachedPosition;
         }
 
-        // Si pas trouvé dans le cache, logger une erreur détaillée
+        // Si pas trouve dans le cache, logger une erreur detaillee
         string availableLocations = string.Join(", ", poiPositionsCache.Keys);
         Logger.LogError($"TravelSpriteAnimator: POI position not found in cache for location '{locationId}'. " +
                        $"Available cached locations: [{availableLocations}]", Logger.LogCategory.MapLog);
@@ -197,7 +197,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// NOUVEAU : Méthode utilitaire pour rafraîchir le cache si nécessaire
+    /// NOUVEAU : Methode utilitaire pour rafraîchir le cache si necessaire
     /// </summary>
     public void RefreshPOICache()
     {
@@ -216,7 +216,7 @@ public class TravelSpriteAnimator : MonoBehaviour
             // MODIFIÉ : Configuration intelligente pour les voyages en cours
             string currentDestination = dataManager.PlayerData.TravelDestinationId;
 
-            // ⭐ MODIFIÉ : Vérifier qu'on a une position de départ valide
+            // ⭐ MODIFIÉ : Verifier qu'on a une position de depart valide
             if (string.IsNullOrEmpty(lastKnownLocationId))
             {
                 Logger.LogError("TravelSpriteAnimator: Cannot restore travel - no start location available", Logger.LogCategory.MapLog);
@@ -255,7 +255,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     void OnDestroy()
     {
         // =====================================
-        // EVENTBUS - Se désabonner des événements
+        // EVENTBUS - Se desabonner des evenements
         // =====================================
         EventBus.Unsubscribe<TravelStartedEvent>(OnTravelStarted);
         EventBus.Unsubscribe<TravelCompletedEvent>(OnTravelCompleted);
@@ -285,7 +285,7 @@ public class TravelSpriteAnimator : MonoBehaviour
 
         if (dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            // NOUVEAU : Pendant un voyage multi-segment, mettre à jour le chemin pour le segment suivant
+            // NOUVEAU : Pendant un voyage multi-segment, mettre a jour le chemin pour le segment suivant
             string nextDestination = dataManager.PlayerData.TravelDestinationId;
 
             if (nextDestination != currentSegmentDestination)
@@ -307,14 +307,14 @@ public class TravelSpriteAnimator : MonoBehaviour
         }
         else
         {
-            // Voyage terminé - positionner à la location actuelle
+            // Voyage termine - positionner a la location actuelle
             PositionPlayerAtCurrentLocation();
             ResetMultiSegmentState();
         }
     }
 
     /// <summary>
-    /// MODIFIÉ : Gère le début d'un voyage avec gestion de CurrentLocation null
+    /// MODIFIÉ : Gère le debut d'un voyage avec gestion de CurrentLocation null
     /// </summary>
     private void OnTravelStarted(TravelStartedEvent eventData)
     {
@@ -325,10 +325,10 @@ public class TravelSpriteAnimator : MonoBehaviour
 
         StopAllAnimations();
 
-        // ⭐ NOUVEAU : Utiliser la location de départ de l'événement
+        // ⭐ NOUVEAU : Utiliser la location de depart de l'evenement
         string fromLocationId = eventData.CurrentLocation?.LocationID;
 
-        // Si pas de location dans l'événement, utiliser la dernière connue
+        // Si pas de location dans l'evenement, utiliser la dernière connue
         if (string.IsNullOrEmpty(fromLocationId))
         {
             fromLocationId = lastKnownLocationId;
@@ -343,7 +343,7 @@ public class TravelSpriteAnimator : MonoBehaviour
             lastKnownLocationId = fromLocationId;
         }
 
-        // NOUVEAU : Déterminer si c'est un voyage multi-segment
+        // NOUVEAU : Determiner si c'est un voyage multi-segment
         DetermineIfMultiSegmentTravel(eventData.DestinationLocationId, fromLocationId);
 
         SetupTravelPath(eventData.DestinationLocationId, fromLocationId);
@@ -356,13 +356,13 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// NOUVEAU : Détermine si le voyage actuel fait partie d'un pathfinding multi-segment
+    /// NOUVEAU : Determine si le voyage actuel fait partie d'un pathfinding multi-segment
     /// </summary>
     private void DetermineIfMultiSegmentTravel(string destinationId, string fromLocationId)
     {
         currentSegmentDestination = destinationId;
 
-        // Vérifier si c'est un voyage pathfinding en comparant avec une connexion directe
+        // Verifier si c'est un voyage pathfinding en comparant avec une connexion directe
         if (!string.IsNullOrEmpty(fromLocationId) && locationRegistry != null)
         {
             bool hasDirectConnection = locationRegistry.CanTravelBetween(fromLocationId, destinationId);
@@ -390,13 +390,13 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// MODIFIÉ : Gère les mises à jour de progrès avec reconnaissance des segments
+    /// MODIFIÉ : Gère les mises a jour de progrès avec reconnaissance des segments
     /// </summary>
     private void OnTravelProgress(TravelProgressEvent eventData)
     {
         if (travelSprite != null && travelSprite.activeSelf)
         {
-            // Vérifier si on a changé de segment
+            // Verifier si on a change de segment
             if (eventData.DestinationLocationId != currentSegmentDestination)
             {
                 if (enablePathfindingDebug)
@@ -438,7 +438,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// NOUVEAU : Remet à zéro l'état multi-segment
+    /// NOUVEAU : Remet a zero l'etat multi-segment
     /// </summary>
     private void ResetMultiSegmentState()
     {

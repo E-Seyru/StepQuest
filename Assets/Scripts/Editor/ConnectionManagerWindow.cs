@@ -128,7 +128,7 @@ public class ConnectionManagerWindow : EditorWindow
         autoCreateBidirectional = EditorGUILayout.Toggle("Auto Bidirectional:", autoCreateBidirectional);
         if (autoCreateBidirectional)
         {
-            EditorGUILayout.LabelField("↔ (A→B créera automatiquement B→A)", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField("↔ (A→B creera automatiquement B→A)", EditorStyles.miniLabel);
         }
         EditorGUILayout.EndHorizontal();
 
@@ -215,7 +215,7 @@ public class ConnectionManagerWindow : EditorWindow
             QuickAddConnection(location, newDestination);
         }
 
-        // Bouton pour créer une connection unidirectionnelle si auto-bidirectional est activé
+        // Bouton pour creer une connection unidirectionnelle si auto-bidirectional est active
         if (autoCreateBidirectional && newDestination != null)
         {
             if (GUILayout.Button("→", GUILayout.Width(20)))
@@ -456,7 +456,7 @@ public class ConnectionManagerWindow : EditorWindow
         newConnectionIsAvailable = EditorGUILayout.Toggle("Available:", newConnectionIsAvailable);
         createBidirectional = EditorGUILayout.Toggle("Bidirectional:", createBidirectional);
 
-        // Info sur l'état du setting global
+        // Info sur l'etat du setting global
         if (autoCreateBidirectional)
         {
             EditorGUILayout.LabelField("ℹ️ Auto bidirectional is ON", EditorStyles.miniLabel);
@@ -545,10 +545,10 @@ public class ConnectionManagerWindow : EditorWindow
 
         string logMessage = $"✅ Created connection: {from.DisplayName} → {to.DisplayName} (50 steps)";
 
-        // ⭐ NOUVEAU : Créer automatiquement la connection inverse si activé
+        // ⭐ NOUVEAU : Creer automatiquement la connection inverse si active
         if (autoCreateBidirectional)
         {
-            // Vérifier que la connection inverse n'existe pas déjà
+            // Verifier que la connection inverse n'existe pas deja
             bool reverseExists = to.Connections.Any(c => c.DestinationLocationID == from.LocationID);
 
             if (!reverseExists)

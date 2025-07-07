@@ -128,7 +128,7 @@ public class PlayerData
         set { _travelFinalDestinationId = value; }
     }
 
-    // ⭐ NOUVEAU : Location de départ originale du voyage (Version 7)
+    // ⭐ NOUVEAU : Location de depart originale du voyage (Version 7)
     private string _travelOriginLocationId;
     [Column("TravelOriginLocationId")]
     public string TravelOriginLocationId
@@ -206,7 +206,7 @@ public class PlayerData
         _travelDestinationId = null; // Pas de voyage en cours
         _travelStartSteps = 0;
         _travelRequiredSteps = 0;
-        _travelFinalDestinationId = null; // ⭐ NOUVEAU : Pas de voyage multi-segment par défaut
+        _travelFinalDestinationId = null; // ⭐ NOUVEAU : Pas de voyage multi-segment par defaut
         _travelOriginLocationId = null; // ⭐ NOUVEAU : Pas de voyage en cours
 
         // NOUVEAU: Pas d'activite active par defaut

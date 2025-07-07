@@ -278,19 +278,19 @@ public class DragDropManager : MonoBehaviour
             // Si on drop sur un slot vide
             if (targetSlot.IsEmpty())
             {
-                // D'abord retirer de l'équipement
+                // D'abord retirer de l'equipement
                 if (sourceSlot.TryRemoveItem(1))
                 {
                     // Ensuite, placer directement dans le slot cible
                     if (targetSlot.TrySetItem(draggedItemId, 1))
                     {
-                        // IMPORTANT: Forcer la sauvegarde immédiate après un transfer d'équipement
+                        // IMPORTANT: Forcer la sauvegarde immediate après un transfer d'equipement
                         InventoryManager.Instance.SaveInventoryData();
                         return true;
                     }
                     else
                     {
-                        // Rollback - rééquiper l'item
+                        // Rollback - reequiper l'item
                         sourceSlot.TrySetItem(draggedItemId, 1);
                         return false;
                     }
@@ -305,10 +305,10 @@ public class DragDropManager : MonoBehaviour
                     int currentQty = targetSlot.GetQuantity();
                     if (currentQty < itemDef.MaxStackSize)
                     {
-                        // Retirer de l'équipement
+                        // Retirer de l'equipement
                         if (sourceSlot.TryRemoveItem(1))
                         {
-                            // Ajouter à la stack existante
+                            // Ajouter a la stack existante
                             if (targetSlot.TrySetItem(draggedItemId, currentQty + 1))
                             {
                                 InventoryManager.Instance.SaveInventoryData();
@@ -324,7 +324,7 @@ public class DragDropManager : MonoBehaviour
                     }
                 }
             }
-            // Si on drop sur un slot avec un item différent - pas de swap depuis l'équipement
+            // Si on drop sur un slot avec un item different - pas de swap depuis l'equipement
             else
             {
                 Logger.LogInfo("DragDropManager: Cannot swap items when dragging from equipment", Logger.LogCategory.InventoryLog);

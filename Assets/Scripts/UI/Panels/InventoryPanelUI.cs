@@ -283,11 +283,11 @@ public class InventoryPanelUI : MonoBehaviour
                 var slot = selectedSlot.GetSlotData();
                 var itemDef = inventoryManager.GetItemRegistry().GetItem(slot.ItemID);
                 string itemName = itemDef?.GetDisplayName() ?? slot.ItemID;
-                selectedItemText.text = $"Sélectionné: {itemName} x{slot.Quantity}";
+                selectedItemText.text = $"Selectionne: {itemName} x{slot.Quantity}";
             }
             else
             {
-                selectedItemText.text = "Aucun objet sélectionné";
+                selectedItemText.text = "Aucun objet selectionne";
             }
         }
     }

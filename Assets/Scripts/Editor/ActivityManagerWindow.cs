@@ -184,7 +184,7 @@ public class ActivityManagerWindow : EditorWindow
 
     private void DrawCreatePOIDialog()
     {
-        // Validation préalable
+        // Validation prealable
         if (!ValidateSetupForPOICreation())
         {
             ResetCreatePOIDialog();
@@ -194,7 +194,7 @@ public class ActivityManagerWindow : EditorWindow
         GUILayout.BeginArea(new Rect(50, 100, 400, 220));
         EditorGUILayout.BeginVertical("box");
 
-        EditorGUILayout.LabelField("Créer un Nouveau POI", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("Creer un Nouveau POI", EditorStyles.boldLabel);
         EditorGUILayout.Space();
 
         EditorGUILayout.LabelField("Nom du POI:");
@@ -209,12 +209,12 @@ public class ActivityManagerWindow : EditorWindow
             if (locationLookup != null && locationLookup.ContainsKey(newLocationID))
             {
                 var existingLocation = locationLookup[newLocationID];
-                EditorGUILayout.LabelField($"✅ Location trouvée: {existingLocation.DisplayName}",
+                EditorGUILayout.LabelField($"✅ Location trouvee: {existingLocation.DisplayName}",
                     EditorStyles.miniLabel);
             }
             else
             {
-                EditorGUILayout.LabelField($"⚠️ Location '{newLocationID}' sera créée",
+                EditorGUILayout.LabelField($"⚠️ Location '{newLocationID}' sera creee",
                     EditorStyles.miniLabel);
             }
         }
@@ -224,7 +224,7 @@ public class ActivityManagerWindow : EditorWindow
         EditorGUILayout.BeginHorizontal();
 
         GUI.enabled = !string.IsNullOrEmpty(newPOIName) && !string.IsNullOrEmpty(newLocationID);
-        if (GUILayout.Button("Créer"))
+        if (GUILayout.Button("Creer"))
         {
             CreateNewPOI(newPOIName, newLocationID);
             ResetCreatePOIDialog();
@@ -400,7 +400,7 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// CORRIGÉ : Crée un nouveau POI dans la scène avec collider adapté à la taille
+    /// CORRIGÉ : Cree un nouveau POI dans la scène avec collider adapte a la taille
     /// </summary>
     private void CreateNewPOI(string poiName, string locationID)
     {
@@ -413,17 +413,17 @@ public class ActivityManagerWindow : EditorWindow
                 return;
             }
 
-            // Initialiser locationLookup si nécessaire
+            // Initialiser locationLookup si necessaire
             if (locationLookup == null || locationLookup.Count == 0)
             {
                 BuildLocationLookup();
             }
 
-            // Trouver ou créer le GameObject WorldMap
+            // Trouver ou creer le GameObject WorldMap
             GameObject worldMapObject = FindOrCreateWorldMap();
             if (worldMapObject == null)
             {
-                EditorUtility.DisplayDialog("Erreur", "Impossible de trouver ou créer le GameObject 'WorldMap' dans la scène.", "OK");
+                EditorUtility.DisplayDialog("Erreur", "Impossible de trouver ou creer le GameObject 'WorldMap' dans la scène.", "OK");
                 return;
             }
 
@@ -438,14 +438,14 @@ public class ActivityManagerWindow : EditorWindow
             SpriteRenderer spriteRenderer = poiObject.AddComponent<SpriteRenderer>();
             spriteRenderer.color = Color.white;
 
-            // Optionnel : Vous pouvez assigner un sprite par défaut ici
-            // spriteRenderer.sprite = // votre sprite par défaut
+            // Optionnel : Vous pouvez assigner un sprite par defaut ici
+            // spriteRenderer.sprite = // votre sprite par defaut
 
-            // MODIFIÉ : Add required Collider2D component avec taille adaptée
+            // MODIFIÉ : Add required Collider2D component avec taille adaptee
             BoxCollider2D collider = poiObject.AddComponent<BoxCollider2D>();
             collider.isTrigger = false; // POI needs clickable collider
 
-            // NOUVEAU : Adapter la taille du collider au sprite ou utiliser une taille par défaut
+            // NOUVEAU : Adapter la taille du collider au sprite ou utiliser une taille par defaut
             SetColliderSizeToSprite(collider, spriteRenderer);
 
             // Add POI component
@@ -456,7 +456,7 @@ public class ActivityManagerWindow : EditorWindow
             Vector3 newPosition = CalculatePOIPosition(worldMapObject);
             poiObject.transform.position = newPosition;
 
-            // Créer le TravelStartPoint enfant
+            // Creer le TravelStartPoint enfant
             GameObject travelStartPoint = CreateTravelStartPoint(poiObject);
 
             // Assigner le TravelStartPoint au POI
@@ -480,18 +480,18 @@ public class ActivityManagerWindow : EditorWindow
         catch (System.Exception ex)
         {
             Debug.LogError($"❌ Error creating POI '{poiName}': {ex.Message}");
-            EditorUtility.DisplayDialog("Erreur", $"Impossible de créer le POI:\n{ex.Message}", "OK");
+            EditorUtility.DisplayDialog("Erreur", $"Impossible de creer le POI:\n{ex.Message}", "OK");
         }
     }
 
     /// <summary>
-    /// NOUVEAU : Adapte la taille du collider à celle du sprite ou utilise une taille par défaut
+    /// NOUVEAU : Adapte la taille du collider a celle du sprite ou utilise une taille par defaut
     /// </summary>
     private void SetColliderSizeToSprite(BoxCollider2D collider, SpriteRenderer spriteRenderer)
     {
         if (spriteRenderer.sprite != null)
         {
-            // Utiliser la taille du sprite en unités Unity
+            // Utiliser la taille du sprite en unites Unity
             Vector2 spriteSize = spriteRenderer.sprite.bounds.size;
             collider.size = spriteSize;
 
@@ -499,7 +499,7 @@ public class ActivityManagerWindow : EditorWindow
         }
         else
         {
-            // Taille par défaut quand aucun sprite n'est assigné
+            // Taille par defaut quand aucun sprite n'est assigne
             collider.size = Vector2.one;
 
             Debug.Log($"   └── No sprite assigned, using default collider size: {Vector2.one}");
@@ -508,7 +508,7 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// BONUS : Méthode utilitaire pour ajuster le collider à un sprite après coup
+    /// BONUS : Methode utilitaire pour ajuster le collider a un sprite après coup
     /// </summary>
     private void FitColliderToSprite(POI poi)
     {
@@ -551,7 +551,7 @@ public class ActivityManagerWindow : EditorWindow
             return worldMapCenter;
         }
 
-        // PRIORITÉ 3 : Essayer de positionner près de la caméra de la SceneView
+        // PRIORITÉ 3 : Essayer de positionner près de la camera de la SceneView
         SceneView sceneView = SceneView.lastActiveSceneView;
         if (sceneView != null && sceneView.camera != null)
         {
@@ -569,32 +569,32 @@ public class ActivityManagerWindow : EditorWindow
             }
         }
 
-        // PRIORITÉ 4 : Position par défaut si rien d'autre ne fonctionne
+        // PRIORITÉ 4 : Position par defaut si rien d'autre ne fonctionne
         Debug.Log($"   └── Using default position: Vector3.zero");
         return Vector3.zero;
     }
 
     /// <summary>
-    /// NOUVEAU : Gère la création de location de manière sécurisée
+    /// NOUVEAU : Gère la creation de location de manière securisee
     /// </summary>
     private void HandleLocationCreation(string locationID)
     {
         if (locationRegistry != null && !locationLookup.ContainsKey(locationID))
         {
-            // Note l'ID pour la création ultérieure mais ne montre pas le dialog maintenant
-            // (pour éviter les problèmes de GUI Layout)
+            // Note l'ID pour la creation ulterieure mais ne montre pas le dialog maintenant
+            // (pour eviter les problèmes de GUI Layout)
             EditorApplication.delayCall += () =>
             {
                 bool createLocation = EditorUtility.DisplayDialog(
-                    "Location Non Trouvée",
-                    $"La location '{locationID}' n'existe pas dans LocationRegistry.\n\nLa créer maintenant ?",
-                    "Créer", "Ignorer");
+                    "Location Non Trouvee",
+                    $"La location '{locationID}' n'existe pas dans LocationRegistry.\n\nLa creer maintenant ?",
+                    "Creer", "Ignorer");
 
                 if (createLocation)
                 {
-                    // Préparer les données pour le dialog de création
+                    // Preparer les donnees pour le dialog de creation
                     newLocationID = locationID;
-                    newLocationName = locationID; // Nom par défaut
+                    newLocationName = locationID; // Nom par defaut
                     newLocationDescription = "";
                     showCreateLocationDialog = true;
 
@@ -606,7 +606,7 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// NOUVEAU : Version sécurisée de RefreshPOIList qui ne cause pas d'erreurs
+    /// NOUVEAU : Version securisee de RefreshPOIList qui ne cause pas d'erreurs
     /// </summary>
     private void RefreshPOIListSafely()
     {
@@ -622,7 +622,7 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// NOUVEAU : Trouve le GameObject WorldMap ou le crée s'il n'existe pas
+    /// NOUVEAU : Trouve le GameObject WorldMap ou le cree s'il n'existe pas
     /// </summary>
     private GameObject FindOrCreateWorldMap()
     {
@@ -635,11 +635,11 @@ public class ActivityManagerWindow : EditorWindow
             return worldMapObject;
         }
 
-        // Si pas trouvé, proposer de le créer
+        // Si pas trouve, proposer de le creer
         bool createWorldMap = EditorUtility.DisplayDialog(
-            "WorldMap Non Trouvé",
-            "Le GameObject 'WorldMap' n'existe pas dans la scène.\n\nLe créer maintenant ?",
-            "Créer", "Annuler");
+            "WorldMap Non Trouve",
+            "Le GameObject 'WorldMap' n'existe pas dans la scène.\n\nLe creer maintenant ?",
+            "Creer", "Annuler");
 
         if (createWorldMap)
         {
@@ -652,7 +652,7 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// NOUVEAU : Génère le nom du POI au format POI_name_number
+    /// NOUVEAU : Genère le nom du POI au format POI_name_number
     /// </summary>
     private string GeneratePOIName(string baseName, GameObject worldMapParent)
     {
@@ -660,14 +660,14 @@ public class ActivityManagerWindow : EditorWindow
         POI[] existingPOIs = worldMapParent.GetComponentsInChildren<POI>();
         int count = 1;
 
-        // Chercher le prochain numéro disponible
+        // Chercher le prochain numero disponible
         string basePattern = $"POI_{baseName}_";
 
         foreach (POI poi in existingPOIs)
         {
             if (poi.gameObject.name.StartsWith(basePattern))
             {
-                // Extraire le numéro à la fin
+                // Extraire le numero a la fin
                 string numberPart = poi.gameObject.name.Substring(basePattern.Length);
                 if (int.TryParse(numberPart, out int existingNumber) && existingNumber >= count)
                 {
@@ -680,17 +680,17 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// NOUVEAU : Crée le GameObject TravelStartPoint enfant
+    /// NOUVEAU : Cree le GameObject TravelStartPoint enfant
     /// </summary>
     private GameObject CreateTravelStartPoint(GameObject poiParent)
     {
         GameObject travelStartPoint = new GameObject("TravelStartPoint");
         travelStartPoint.transform.SetParent(poiParent.transform, false);
 
-        // Position légèrement décalée du POI pour être visible
+        // Position legèrement decalee du POI pour être visible
         travelStartPoint.transform.localPosition = new Vector3(0.5f, 0.5f, 0f);
 
-        // Ajouter un petit gizmo visuel pour l'identifier dans l'éditeur
+        // Ajouter un petit gizmo visuel pour l'identifier dans l'editeur
         // (optionnel - vous pouvez enlever ceci si vous ne voulez pas de sprite)
         SpriteRenderer travelRenderer = travelStartPoint.AddComponent<SpriteRenderer>();
         travelRenderer.color = new Color(0f, 1f, 1f, 0.5f); // Cyan translucide
@@ -700,13 +700,13 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// NOUVEAU : Assigne le TravelStartPoint au component POI via réflection
+    /// NOUVEAU : Assigne le TravelStartPoint au component POI via reflection
     /// </summary>
     private void AssignTravelStartPointToPOI(POI poiComponent, Transform travelStartPoint)
     {
         try
         {
-            // Utiliser la réflection pour accéder au champ privé travelPathStartPoint
+            // Utiliser la reflection pour acceder au champ prive travelPathStartPoint
             var field = typeof(POI).GetField("travelPathStartPoint",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
@@ -727,14 +727,14 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// NOUVEAU : Validation du setup avant création de POI
+    /// NOUVEAU : Validation du setup avant creation de POI
     /// </summary>
     private bool ValidateSetupForPOICreation()
     {
         if (locationRegistry == null)
         {
             EditorUtility.DisplayDialog("Setup Incomplet",
-                "Vous devez d'abord sélectionner un LocationRegistry avant de créer des POIs.", "OK");
+                "Vous devez d'abord selectionner un LocationRegistry avant de creer des POIs.", "OK");
             return false;
         }
 
@@ -1317,7 +1317,7 @@ public class ActivityManagerWindow : EditorWindow
         catch (System.Exception ex)
         {
             Debug.LogError($"Error finding POIs in scene: {ex.Message}");
-            allPOIs = new POI[0]; // Array vide pour éviter les erreurs
+            allPOIs = new POI[0]; // Array vide pour eviter les erreurs
         }
     }
 

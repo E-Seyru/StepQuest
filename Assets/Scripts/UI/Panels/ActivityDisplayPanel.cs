@@ -144,6 +144,30 @@ public class ActivityDisplayPanel : MonoBehaviour
     private void OnActivityStopped(ActivityStoppedEvent eventData)
     {
         Logger.LogInfo($"ActivityDisplayPanel: Activity stopped - {eventData.Activity?.ActivityId}/{eventData.Variant?.VariantName} (Completed: {eventData.WasCompleted})", Logger.LogCategory.General);
+
+        // NOUVEAU: Si c'est une activité de crafting qui n'a PAS été complétée, rendre les matériaux
+        if (eventData.Activity != null && eventData.Variant != null &&
+            eventData.Variant.IsTimeBased && !eventData.WasCompleted)
+        {
+            Logger.LogInfo($"ActivityDisplayPanel: Crafting activity cancelled, attempting to refund materials for {eventData.Variant.GetDisplayName()}", Logger.LogCategory.General);
+
+            // Rendre les matériaux consommés
+            bool refunded = eventData.Variant.RefundCraftingMaterials(InventoryManager.Instance);
+
+            if (refunded)
+            {
+                Logger.LogInfo($"ActivityDisplayPanel: Successfully refunded crafting materials for {eventData.Variant.GetDisplayName()}", Logger.LogCategory.General);
+
+                // Optionnel: Afficher un message à l'utilisateur
+                // Tu peux ajouter ici une notification ou un feedback visuel
+                // Exemple: NotificationManager.ShowMessage("Matériaux rendus !");
+            }
+            else
+            {
+                Logger.LogWarning($"ActivityDisplayPanel: Failed to refund some or all materials for {eventData.Variant.GetDisplayName()}", Logger.LogCategory.General);
+            }
+        }
+
         HidePanel();
     }
 

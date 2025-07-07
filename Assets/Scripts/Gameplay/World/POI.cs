@@ -31,15 +31,15 @@ public class POI : MonoBehaviour, IPointerClickHandler
     [SerializeField] private LeanTweenType clickAnimationEase = LeanTweenType.easeOutBack;
 
     [Header("Error Display")]
-    [Tooltip("Le panel d'erreur sera géré automatiquement via ErrorPanel.Instance")]
+    [Tooltip("Le panel d'erreur sera gere automatiquement via ErrorPanel.Instance")]
     [SerializeField] private bool enableErrorMessages = true;
 
     [Header("Location Details")]
-    [Tooltip("Nom du panel à afficher pour les détails de la location")]
+    [Tooltip("Nom du panel a afficher pour les details de la location")]
     [SerializeField] private string locationDetailsPanelName = "LocationDetailsPanel";
 
     [Header("Pathfinding Settings - NOUVEAU")]
-    [Tooltip("Afficher des informations détaillées sur le pathfinding")]
+    [Tooltip("Afficher des informations detaillees sur le pathfinding")]
     [SerializeField] private bool showPathfindingDetails = true;
     [Tooltip("Afficher le nombre de segments dans le message de voyage")]
     [SerializeField] private bool showSegmentCount = true;
@@ -59,7 +59,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     private bool isAnimating = false;
 
     /// <summary>
-    /// Retourne la position de départ pour le chemin de voyage
+    /// Retourne la position de depart pour le chemin de voyage
     /// </summary>
     public Vector3 GetTravelPathStartPosition()
     {
@@ -72,10 +72,10 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     void Start()
     {
-        // Sauvegarder l'échelle originale pour l'animation
+        // Sauvegarder l'echelle originale pour l'animation
         originalScale = transform.localScale;
 
-        // Initialiser les références
+        // Initialiser les references
         mapManager = MapManager.Instance;
         dataManager = DataManager.Instance;
         panelManager = PanelManager.Instance;
@@ -88,7 +88,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
         // Trouver le TravelConfirmationPopup dans la scène
         travelPopup = FindObjectOfType<TravelConfirmationPopup>();
 
-        // Valider les références critiques
+        // Valider les references critiques
         if (mapManager == null)
         {
             Logger.LogError($"POI ({LocationID}): MapManager.Instance is null!", Logger.LogCategory.MapLog);
@@ -137,7 +137,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     /// </summary>
     private void PlayClickAnimation()
     {
-        // Ne pas jouer l'animation si elle est désactivée ou si une animation est déjà en cours
+        // Ne pas jouer l'animation si elle est desactivee ou si une animation est deja en cours
         if (!enableClickAnimation || isAnimating)
             return;
 
@@ -146,9 +146,9 @@ public class POI : MonoBehaviour, IPointerClickHandler
         // Annuler toute animation en cours sur cet objet
         LeanTween.cancel(gameObject);
 
-        // Animation en 2 étapes :
+        // Animation en 2 etapes :
         // 1. Grandir rapidement
-        // 2. Revenir à la taille normale avec un effet bounce
+        // 2. Revenir a la taille normale avec un effet bounce
         LeanTween.scale(gameObject, originalScale * clickScaleAmount, clickAnimationDuration * 0.4f)
             .setEase(LeanTweenType.easeOutQuart)
             .setOnComplete(() =>
@@ -175,10 +175,10 @@ public class POI : MonoBehaviour, IPointerClickHandler
             return;
         }
 
-        // ⭐ NOUVEAU : Vérifier si on est en voyage AVANT toute autre vérification
+        // ⭐ NOUVEAU : Verifier si on est en voyage AVANT toute autre verification
         if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            // Pendant le voyage, bloquer l'accès aux détails de TOUTES les locations
+            // Pendant le voyage, bloquer l'accès aux details de TOUTES les locations
             string destinationName = dataManager.PlayerData.TravelDestinationId;
             var destinationLocation = locationRegistry.GetLocationById(destinationName);
             if (destinationLocation != null)
@@ -188,26 +188,26 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
             if (enableErrorMessages && ErrorPanel.Instance != null)
             {
-                ErrorPanel.Instance.ShowError($"Vous êtes en voyage vers {destinationName}. Attendez d'arriver à destination.");
+                ErrorPanel.Instance.ShowError($"Vous êtes en voyage vers {destinationName}. Attendez d'arriver a destination.");
             }
 
             Logger.LogInfo($"POI ({LocationID}): Click blocked - currently traveling to {destinationName}", Logger.LogCategory.MapLog);
             return;
         }
 
-        // ⭐ NOUVEAU : Vérifier si CurrentLocation est null (normalement ça n'arrive plus maintenant qu'on vérifie IsCurrentlyTraveling() avant)
+        // ⭐ NOUVEAU : Verifier si CurrentLocation est null (normalement ça n'arrive plus maintenant qu'on verifie IsCurrentlyTraveling() avant)
         if (mapManager.CurrentLocation == null)
         {
             if (enableErrorMessages && ErrorPanel.Instance != null)
             {
-                ErrorPanel.Instance.ShowError("Position actuelle inconnue. Impossible d'accéder aux détails.");
+                ErrorPanel.Instance.ShowError("Position actuelle inconnue. Impossible d'acceder aux details.");
             }
 
             Logger.LogWarning($"POI ({LocationID}): Click blocked - CurrentLocation is null", Logger.LogCategory.MapLog);
             return;
         }
 
-        // Vérifier si on est déjà à cette location
+        // Verifier si on est deja a cette location
         if (mapManager.CurrentLocation.LocationID == LocationID)
         {
             if (enableDebugLogs)
@@ -219,7 +219,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
             return;
         }
 
-        // ENHANCED: Vérifier si le voyage est possible (direct ou pathfinding)
+        // ENHANCED: Verifier si le voyage est possible (direct ou pathfinding)
         if (mapManager.CanTravelTo(LocationID))
         {
             if (travelPopup != null)
@@ -253,7 +253,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// NOUVEAU: Affiche une popup de confirmation avec détails pathfinding
+    /// NOUVEAU: Affiche une popup de confirmation avec details pathfinding
     /// </summary>
     private void ShowEnhancedTravelConfirmation(MapManager.TravelInfo travelInfo)
     {
@@ -263,11 +263,11 @@ public class POI : MonoBehaviour, IPointerClickHandler
             return;
         }
 
-        // Si TravelConfirmationPopup a des méthodes pour afficher des détails étendus, les utiliser
-        // Sinon, utiliser la méthode standard
+        // Si TravelConfirmationPopup a des methodes pour afficher des details etendus, les utiliser
+        // Sinon, utiliser la methode standard
         travelPopup.ShowTravelConfirmation(LocationID);
 
-        // TODO: Si tu veux modifier TravelConfirmationPopup pour supporter les détails pathfinding,
+        // TODO: Si tu veux modifier TravelConfirmationPopup pour supporter les details pathfinding,
         // tu peux ajouter quelque chose comme :
         // travelPopup.ShowTravelConfirmationWithDetails(LocationID, travelInfo);
     }
@@ -282,15 +282,15 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
         if (mapManager.CurrentLocation == null)
         {
-            errorMessage = "Impossible - aucune location définie !";
+            errorMessage = "Impossible - aucune location definie !";
         }
         else if (dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            errorMessage = "Impossible - vous êtes déjà en train de voyager !";
+            errorMessage = "Impossible - vous êtes deja en train de voyager !";
         }
         else if (ActivityManager.Instance?.HasActiveActivity() == true)
         {
-            errorMessage = "Impossible - vous êtes en activité !";
+            errorMessage = "Impossible - vous êtes en activite !";
         }
         else if (destinationLocation == null)
         {
@@ -298,11 +298,11 @@ public class POI : MonoBehaviour, IPointerClickHandler
         }
         else if (mapManager.CurrentLocation.LocationID == LocationID)
         {
-            errorMessage = $"Impossible - déjà à '{destinationLocation.DisplayName}' !";
+            errorMessage = $"Impossible - deja a '{destinationLocation.DisplayName}' !";
         }
         else
         {
-            // ENHANCED: Message plus détaillé basé sur le pathfinding
+            // ENHANCED: Message plus detaille base sur le pathfinding
             string detailedReason = GetDetailedTravelBlockReason(destinationLocation);
             errorMessage = $"Impossible de voyager vers '{destinationLocation.DisplayName}' - {detailedReason}";
         }
@@ -318,11 +318,11 @@ public class POI : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// NOUVEAU: Retourne une raison détaillée pour l'impossibilité de voyager
+    /// NOUVEAU: Retourne une raison detaillee pour l'impossibilite de voyager
     /// </summary>
     private string GetDetailedTravelBlockReason(MapLocationDefinition destination)
     {
-        // Vérifier d'abord la connexion directe
+        // Verifier d'abord la connexion directe
         bool hasDirectConnection = locationRegistry.CanTravelBetween(mapManager.CurrentLocation.LocationID, LocationID);
 
         if (hasDirectConnection)
@@ -331,7 +331,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
             return "problème technique";
         }
 
-        // Vérifier le pathfinding si disponible
+        // Verifier le pathfinding si disponible
         if (mapManager.PathfindingService != null)
         {
             var pathResult = mapManager.PathfindingService.FindPath(mapManager.CurrentLocation.LocationID, LocationID);
@@ -343,7 +343,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
             else
             {
                 // Le chemin existe mais autre problème
-                return "chemin trouvé mais voyage bloqué";
+                return "chemin trouve mais voyage bloque";
             }
         }
 
@@ -351,7 +351,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// Affiche les détails de la location
+    /// Affiche les details de la location
     /// </summary>
     private void ShowLocationDetails()
     {
@@ -360,7 +360,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
             // Utiliser l'API correcte du PanelManager pour naviguer vers le panel
             panelManager.HideMapAndGoToPanel(locationDetailsPanelName);
 
-            // Le LocationDetailsPanel se mettra automatiquement à jour avec la location actuelle
+            // Le LocationDetailsPanel se mettra automatiquement a jour avec la location actuelle
             Logger.LogInfo($"POI ({LocationID}): Navigating to {locationDetailsPanelName}", Logger.LogCategory.MapLog);
         }
         else
@@ -371,7 +371,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     void Awake()
     {
-        // Validation des paramètres au démarrage
+        // Validation des paramètres au demarrage
         if (string.IsNullOrEmpty(LocationID))
         {
             Logger.LogError($"POI: LocationID is not set on GameObject '{gameObject.name}'", Logger.LogCategory.MapLog);

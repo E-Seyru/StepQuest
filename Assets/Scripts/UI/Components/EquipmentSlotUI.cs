@@ -195,14 +195,14 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
         // IMPORTANT : Au lieu de desequiper, on affiche l'ItemActionPanel
         if (!IsEmpty() && ItemActionPanel.Instance != null)
         {
-            // Créer un InventorySlot temporaire pour l'item équipé
+            // Creer un InventorySlot temporaire pour l'item equipe
             var tempSlot = new InventorySlot(equippedItemId, 1);
 
             Vector2 worldPosition = transform.position;
 
-            // Afficher le panel avec un contexte spécial pour l'équipement
+            // Afficher le panel avec un contexte special pour l'equipement
             // On passe "equipment" comme containerId et PlayerInventory comme contexte
-            // car l'équipement fait partie du joueur
+            // car l'equipement fait partie du joueur
             ItemActionPanel.Instance.ShowPanel(
                 null, // On n'a pas de UniversalSlotUI ici
                 tempSlot,

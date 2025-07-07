@@ -1,5 +1,5 @@
-﻿// Script temporaire pour debugger le problème d'équipement
-// À placer sur un GameObject temporaire avec un bouton dans l'UI ou appelé via console
+﻿// Script temporaire pour debugger le problème d'equipement
+// À placer sur un GameObject temporaire avec un bouton dans l'UI ou appele via console
 using UnityEngine;
 
 public class EquipmentDebugger : MonoBehaviour
@@ -11,7 +11,7 @@ public class EquipmentDebugger : MonoBehaviour
 
     void Update()
     {
-        // Vérification des boutons dans l'inspector
+        // Verification des boutons dans l'inspector
         if (debugEquipmentIssue)
         {
             debugEquipmentIssue = false;

@@ -19,7 +19,7 @@ public class LocationDetailsPanel : MonoBehaviour
     [SerializeField] private ScrollRect descriptionScrollRect;
 
     [Header("Interface - Section Activites - DELEGUÉ")]
-    [SerializeField] private ActivitiesSectionPanel activitiesSectionPanel; // Référence vers le nouveau panel
+    [SerializeField] private ActivitiesSectionPanel activitiesSectionPanel; // Reference vers le nouveau panel
 
     [Header("Interface - Section Infos")]
     [SerializeField] private TextMeshProUGUI locationInfoText;
@@ -465,7 +465,7 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         if (activitiesSectionPanel == null || currentLocation == null) return;
 
-        // Récupérer les LocationActivity depuis la location
+        // Recuperer les LocationActivity depuis la location
         var availableLocationActivities = currentLocation.GetAvailableActivities();
 
         // Convertir en ActivityDefinition pour le ActivitiesSectionPanel
@@ -473,7 +473,7 @@ public class LocationDetailsPanel : MonoBehaviour
 
         activitiesSectionPanel.DisplayActivities(activityDefinitions);
 
-        // S'abonner à l'événement de sélection d'activité
+        // S'abonner a l'evenement de selection d'activite
         activitiesSectionPanel.OnActivitySelected -= OnActivitySelected;
         activitiesSectionPanel.OnActivitySelected += OnActivitySelected;
     }
@@ -497,7 +497,7 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Gère la sélection d'une activité depuis le ActivitiesSectionPanel
+    /// Gère la selection d'une activite depuis le ActivitiesSectionPanel
     /// </summary>
     private void OnActivitySelected(ActivityDefinition activityDefinition)
     {
@@ -508,7 +508,7 @@ public class LocationDetailsPanel : MonoBehaviour
 
         if (locationActivity != null)
         {
-            // Ouvrir le panel de variantes d'activité
+            // Ouvrir le panel de variantes d'activite
             if (ActivityVariantsPanel.Instance != null)
             {
                 ActivityVariantsPanel.Instance.OpenWithActivity(locationActivity);
@@ -525,7 +525,7 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Retrouve la LocationActivity correspondant à une ActivityDefinition dans la location courante
+    /// Retrouve la LocationActivity correspondant a une ActivityDefinition dans la location courante
     /// </summary>
     private LocationActivity FindLocationActivityByDefinition(ActivityDefinition activityDefinition)
     {

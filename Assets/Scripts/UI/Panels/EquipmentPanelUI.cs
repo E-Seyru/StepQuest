@@ -373,7 +373,7 @@ public class EquipmentPanelUI : MonoBehaviour
     {
         itemId = null;
         if (!equippedItems.TryGetValue(slotType, out itemId))
-            return false;                     // rien à détacher
+            return false;                     // rien a detacher
 
         equippedItems.Remove(slotType);
         GetSlotByType(slotType)?.ClearEquippedItem();

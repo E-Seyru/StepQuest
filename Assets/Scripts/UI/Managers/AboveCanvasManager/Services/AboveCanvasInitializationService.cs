@@ -156,7 +156,7 @@ public class AboveCanvasInitializationService
     // NOUVEAU: Gestionnaire pour le clic sur LocationButton
     private void OnLocationButtonClicked()
     {
-        // ⭐ NOUVEAU : Vérifier si on est en voyage AVANT tout le reste
+        // ⭐ NOUVEAU : Verifier si on est en voyage AVANT tout le reste
         var dataManager = DataManager.Instance;
         if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
         {
@@ -174,7 +174,7 @@ public class AboveCanvasInitializationService
             // Utiliser ErrorPanel pour afficher le message
             if (ErrorPanel.Instance != null)
             {
-                ErrorPanel.Instance.ShowError($"Vous êtes en voyage vers {destinationName}. Attendez d'arriver à destination.");
+                ErrorPanel.Instance.ShowError($"Vous êtes en voyage vers {destinationName}. Attendez d'arriver a destination.");
             }
 
             Logger.LogInfo("AboveCanvasManager: LocationButton clicked during travel - access blocked", Logger.LogCategory.General);
@@ -184,7 +184,7 @@ public class AboveCanvasInitializationService
         // État normal : jouer l'effet de clic
         PlayLocationButtonClickEffect();
 
-        // Vérifier que PanelManager est disponible
+        // Verifier que PanelManager est disponible
         if (PanelManager.Instance == null)
         {
             Logger.LogWarning("AboveCanvasManager: PanelManager.Instance is null", Logger.LogCategory.General);

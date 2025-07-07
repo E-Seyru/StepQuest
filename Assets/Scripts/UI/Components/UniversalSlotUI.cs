@@ -330,8 +330,8 @@ public class UniversalSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
             return;
         }
 
-        // Sur mobile, on peut détecter un "long press" pour split
-        // mais pour l'instant on drag toute la quantité
+        // Sur mobile, on peut detecter un "long press" pour split
+        // mais pour l'instant on drag toute la quantite
         int dragQuantity = slotData.Quantity;
 
         if (DragDropManager.Instance.StartDrag(this, slotData.ItemID, dragQuantity))

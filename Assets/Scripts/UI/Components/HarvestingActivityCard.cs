@@ -91,7 +91,7 @@ public class HarvestingActivityCard : MonoBehaviour
             }
             else
             {
-                stepsRequiredText.text = "Instantané";
+                stepsRequiredText.text = "Instantane";
             }
         }
     }

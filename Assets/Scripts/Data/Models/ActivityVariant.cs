@@ -154,6 +154,32 @@ public class ActivityVariant : ScriptableObject
     }
 
     /// <summary>
+    /// NOUVEAU: Rend les matériaux consommés pour le crafting (quand on annule)
+    /// </summary>
+    public bool RefundCraftingMaterials(InventoryManager inventoryManager, string playerId = "player")
+    {
+        if (!IsTimeBased) return false;
+        if (RequiredMaterials == null || RequiredQuantities == null) return false;
+        if (RequiredMaterials.Length != RequiredQuantities.Length) return false;
+
+        // Rendre tous les matériaux
+        for (int i = 0; i < RequiredMaterials.Length; i++)
+        {
+            if (RequiredMaterials[i] == null) continue;
+
+            bool added = inventoryManager.AddItem(playerId, RequiredMaterials[i].ItemID, RequiredQuantities[i]);
+            if (!added)
+            {
+                Logger.LogError($"ActivityVariant: Failed to refund {RequiredQuantities[i]} {RequiredMaterials[i].GetDisplayName()}", Logger.LogCategory.General);
+                // On continue quand même pour essayer de rendre les autres matériaux
+            }
+        }
+
+        Logger.LogInfo($"ActivityVariant: Refunded materials for cancelled crafting {GetDisplayName()}", Logger.LogCategory.General);
+        return true;
+    }
+
+    /// <summary>
     /// NOUVEAU: Obtient le temps de crafting sous forme lisible
     /// </summary>
     public string GetCraftingTimeText()
