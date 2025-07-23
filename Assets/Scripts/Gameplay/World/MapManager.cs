@@ -273,7 +273,7 @@ public class MapTravelService
     private readonly MapPathfindingService pathfindingService; // NOUVEAU !
     private int lastProgressSteps = -1;
 
-    // NOUVEAU : État pour voyage multi-segments
+    // NOUVEAU : etat pour voyage multi-segments
     private MapPathfindingService.PathResult currentPathDetails;
     private int currentSegmentIndex;
     private bool isMultiSegmentTravel;
@@ -344,7 +344,7 @@ public class MapTravelService
     }
 
     /// <summary>
-    /// MODIFIÉ : Demarre un voyage direct avec sauvegarde de l'origine
+    /// MODIFIe : Demarre un voyage direct avec sauvegarde de l'origine
     /// </summary>
     private void StartDirectTravel(string destinationLocationId, MapLocationDefinition destination, DataManager dataManager)
     {
@@ -767,7 +767,7 @@ public class MapTravelService
         // ⭐ NOUVEAU : Restaurer l'etat multi-segment si necessaire
         RestoreMultiSegmentState();
 
-        // État de voyage valide, continuer normalement
+        // etat de voyage valide, continuer normalement
         Logger.LogInfo($"MapManager: Travel state valid - continuing travel to {destination}", Logger.LogCategory.MapLog);
     }
 
@@ -833,7 +833,7 @@ public class MapTravelService
             return;
         }
 
-        // ⭐ RESTAURER L'ÉTAT MULTI-SEGMENT
+        // ⭐ RESTAURER L'eTAT MULTI-SEGMENT
         isMultiSegmentTravel = true;
         currentPathDetails = originalPath;
         currentSegmentIndex = foundSegmentIndex;

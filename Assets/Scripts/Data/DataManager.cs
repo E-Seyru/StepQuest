@@ -240,7 +240,7 @@ public class DataManagerPlayerDataService
 // ===============================================
 public class DataManagerValidationService
 {
-    // Constantes pour la detection d'anomalies (DÉSACTIVÉES EN ÉDITEUR)
+    // Constantes pour la detection d'anomalies (DeSACTIVeES EN eDITEUR)
     private const long MAX_ACCEPTABLE_STEPS_DELTA = 10000;
     private const long MAX_ACCEPTABLE_DAILY_STEPS = 50000;
 

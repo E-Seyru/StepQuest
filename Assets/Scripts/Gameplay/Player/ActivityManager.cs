@@ -1,5 +1,5 @@
 // ===============================================
-// ActivityManager (Facade Pattern) - MIGRÉ VERS EVENTBUS
+// ActivityManager (Facade Pattern) - MIGRe VERS EVENTBUS
 // ===============================================
 // Purpose: Manages player activities (mining, gathering, crafting, etc.) with step-based AND time-based progression
 // Filepath: Assets/Scripts/Gameplay/Player/ActivityManager.cs
@@ -245,7 +245,7 @@ public class ActivityManager : MonoBehaviour
 }
 
 // ===============================================
-// NOUVEAU SERVICE: ActivityTimeService - MIGRÉ VERS EVENTBUS
+// NOUVEAU SERVICE: ActivityTimeService - MIGRe VERS EVENTBUS
 // ===============================================
 public class ActivityTimeService
 {
@@ -477,7 +477,7 @@ public class ActivityTimeService
 }
 
 // ===============================================
-// SERVICE: ActivityExecutionService - MIGRÉ VERS EVENTBUS
+// SERVICE: ActivityExecutionService - MIGRe VERS EVENTBUS
 // ===============================================
 public class ActivityExecutionService
 {
@@ -626,7 +626,7 @@ public class ActivityExecutionService
 }
 
 // ===============================================
-// SERVICE: ActivityProgressService - MIGRÉ VERS EVENTBUS
+// SERVICE: ActivityProgressService - MIGRe VERS EVENTBUS
 // ===============================================
 public class ActivityProgressService
 {

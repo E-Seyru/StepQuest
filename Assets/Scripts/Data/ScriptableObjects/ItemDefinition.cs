@@ -66,7 +66,7 @@ public class ItemDefinition : ScriptableObject
             1 => "Commun",
             2 => "Peu commun",
             3 => "Rare",
-            4 => "Épique",
+            4 => "epique",
             5 => "Legendaire",
             _ => "Inconnu"
         };

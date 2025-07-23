@@ -15,7 +15,7 @@ public class AboveCanvasAnimationService
     private int currentPopId = -1;        // Renomme pour le pop
     private Color originalFillColor;
     private Vector3 originalFillScale;
-    private Vector3 originalRightIconScale;  // Échelle originale de l'icône droite
+    private Vector3 originalRightIconScale;  // echelle originale de l'icône droite
     private Color originalRightIconColor;    // Couleur originale de l'icône droite
 
     // NOUVEAU : Positions originales pour les animations de slide
@@ -24,7 +24,7 @@ public class AboveCanvasAnimationService
     private bool positionsSaved = false;
 
     // NOUVEAU : Variables pour l'animation de l'IdleBar
-    private Vector3 idleBarImageOriginalScale;    // Échelle originale de l'image IdleBar
+    private Vector3 idleBarImageOriginalScale;    // echelle originale de l'image IdleBar
     private Vector3 idleBarImageOriginalPosition; // Position originale de l'image IdleBar
     private int idleAnimationTimerId = -1;        // ID du timer pour repeter l'animation
     private int idleSnoreAnimationId = -1;        // ID de l'animation de ronflement
@@ -131,7 +131,7 @@ public class AboveCanvasAnimationService
                 currentAnimationId = -1;
             }).id;
 
-        // 2. IMMÉDIATEMENT declencher le pulse en parallèle (pas a la fin !)
+        // 2. IMMeDIATEMENT declencher le pulse en parallèle (pas a la fin !)
         PulseFillBarParallel();
 
         lastProgressValue = targetProgress;
@@ -446,7 +446,7 @@ public class AboveCanvasAnimationService
         StopIdleBarAnimation();
 
         // Version securisee : annuler par GameObject plutôt que par ID
-        // Évite les "orphan tweens" quand l'objet est detruit
+        // evite les "orphan tweens" quand l'objet est detruit
         if (manager.FillBar != null)
         {
             LeanTween.cancel(manager.FillBar.gameObject);

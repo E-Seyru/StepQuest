@@ -18,7 +18,7 @@ public class LocationDetailsPanel : MonoBehaviour
     [SerializeField] private TextMeshProUGUI locationDescriptionText;
     [SerializeField] private ScrollRect descriptionScrollRect;
 
-    [Header("Interface - Section Activites - DELEGUÉ")]
+    [Header("Interface - Section Activites - DELEGUe")]
     [SerializeField] private ActivitiesSectionPanel activitiesSectionPanel; // Reference vers le nouveau panel
 
     [Header("Interface - Section Infos")]
@@ -50,7 +50,7 @@ public class LocationDetailsPanel : MonoBehaviour
     private DataManager dataManager;
     private PanelManager panelManager;
 
-    // État actuel
+    // etat actuel
     private MapLocationDefinition currentLocation;
 
     // Animation et effets visuels
@@ -215,7 +215,7 @@ public class LocationDetailsPanel : MonoBehaviour
 
     #endregion
 
-    #region Gestion des Évenements - ADAPTÉE POUR EVENTBUS
+    #region Gestion des evenements - ADAPTeE POUR EVENTBUS
 
     private void OnLocationChanged(LocationChangedEvent eventData)
     {
@@ -415,7 +415,7 @@ public class LocationDetailsPanel : MonoBehaviour
 
         UpdateHeaderSection();
         UpdateDescriptionSection();
-        UpdateActivitiesSection(); // DÉLÉGUÉ au ActivitiesSectionPanel
+        UpdateActivitiesSection(); // DeLeGUe au ActivitiesSectionPanel
         UpdateInfoSection();
     }
 
@@ -459,7 +459,7 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Met a jour la section des activites - DÉLÉGUÉ au ActivitiesSectionPanel
+    /// Met a jour la section des activites - DeLeGUe au ActivitiesSectionPanel
     /// </summary>
     private void UpdateActivitiesSection()
     {

@@ -400,7 +400,7 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// CORRIGÉ : Cree un nouveau POI dans la scène avec collider adapte a la taille
+    /// CORRIGe : Cree un nouveau POI dans la scène avec collider adapte a la taille
     /// </summary>
     private void CreateNewPOI(string poiName, string locationID)
     {
@@ -441,7 +441,7 @@ public class ActivityManagerWindow : EditorWindow
             // Optionnel : Vous pouvez assigner un sprite par defaut ici
             // spriteRenderer.sprite = // votre sprite par defaut
 
-            // MODIFIÉ : Add required Collider2D component avec taille adaptee
+            // MODIFIe : Add required Collider2D component avec taille adaptee
             BoxCollider2D collider = poiObject.AddComponent<BoxCollider2D>();
             collider.isTrigger = false; // POI needs clickable collider
 
@@ -534,7 +534,7 @@ public class ActivityManagerWindow : EditorWindow
     /// </summary>
     private Vector3 CalculatePOIPosition(GameObject worldMapParent = null)
     {
-        // PRIORITÉ 1 : Centre du WorldMap s'il est fourni
+        // PRIORITe 1 : Centre du WorldMap s'il est fourni
         if (worldMapParent != null)
         {
             Vector3 worldMapCenter = worldMapParent.transform.position;
@@ -542,7 +542,7 @@ public class ActivityManagerWindow : EditorWindow
             return worldMapCenter;
         }
 
-        // PRIORITÉ 2 : Chercher WorldMap dans la scène
+        // PRIORITe 2 : Chercher WorldMap dans la scène
         GameObject worldMap = GameObject.Find("WorldMap");
         if (worldMap != null)
         {
@@ -551,7 +551,7 @@ public class ActivityManagerWindow : EditorWindow
             return worldMapCenter;
         }
 
-        // PRIORITÉ 3 : Essayer de positionner près de la camera de la SceneView
+        // PRIORITe 3 : Essayer de positionner près de la camera de la SceneView
         SceneView sceneView = SceneView.lastActiveSceneView;
         if (sceneView != null && sceneView.camera != null)
         {
@@ -569,7 +569,7 @@ public class ActivityManagerWindow : EditorWindow
             }
         }
 
-        // PRIORITÉ 4 : Position par defaut si rien d'autre ne fonctionne
+        // PRIORITe 4 : Position par defaut si rien d'autre ne fonctionne
         Debug.Log($"   └── Using default position: Vector3.zero");
         return Vector3.zero;
     }
@@ -1305,7 +1305,7 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// AMÉLIORÉ : Version plus robuste de FindAllPOIsInScene
+    /// AMeLIORe : Version plus robuste de FindAllPOIsInScene
     /// </summary>
     private void FindAllPOIsInScene()
     {
@@ -1322,7 +1322,7 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// AMÉLIORÉ : Version plus robuste de BuildLocationLookup
+    /// AMeLIORe : Version plus robuste de BuildLocationLookup
     /// </summary>
     private void BuildLocationLookup()
     {
@@ -1341,7 +1341,7 @@ public class ActivityManagerWindow : EditorWindow
             {
                 if (location != null && !string.IsNullOrEmpty(location.LocationID))
                 {
-                    // Éviter les doublons
+                    // eviter les doublons
                     if (!locationLookup.ContainsKey(location.LocationID))
                     {
                         locationLookup[location.LocationID] = location;

@@ -9,7 +9,7 @@ public class SkillData
     public int Level;
     public int Experience;
 
-    // Constructeur par défaut pour JSON
+    // Constructeur par defaut pour JSON
     public SkillData()
     {
         SkillId = "";

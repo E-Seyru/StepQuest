@@ -21,7 +21,7 @@ public class ActivityVariantEditor : EditorWindow
     private string selectedActivityFilter = "All";
     private bool showOnlyMissingXP = false;
 
-    // Cache des activités disponibles
+    // Cache des activites disponibles
     private List<string> availableActivities = new List<string>();
 
     void OnEnable()
@@ -45,7 +45,7 @@ public class ActivityVariantEditor : EditorWindow
             {
                 allVariants.Add(variant);
 
-                // Collecter les activités uniques
+                // Collecter les activites uniques
                 string activityId = !string.IsNullOrEmpty(variant.ParentActivityID)
                     ? variant.ParentActivityID
                     : "Unknown";
@@ -109,7 +109,7 @@ public class ActivityVariantEditor : EditorWindow
 
         GUILayout.Space(10);
 
-        // Filtre par activité
+        // Filtre par activite
         GUILayout.Label("Activity:", GUILayout.Width(60));
         int currentIndex = availableActivities.IndexOf(selectedActivityFilter);
         int newIndex = EditorGUILayout.Popup(currentIndex, availableActivities.ToArray(), GUILayout.Width(120));
@@ -185,7 +185,7 @@ public class ActivityVariantEditor : EditorWindow
         EditorGUILayout.BeginHorizontal();
         EditorGUILayout.LabelField($"{variant.ParentActivityID} / {variant.VariantName}", EditorStyles.boldLabel, GUILayout.Width(200));
 
-        // Type d'activité (bouton pour changer)
+        // Type d'activite (bouton pour changer)
         EditorGUI.BeginChangeCheck();
         bool newIsTimeBased = variant.IsTimeBased;
 
@@ -201,7 +201,7 @@ public class ActivityVariantEditor : EditorWindow
             EditorUtility.SetDirty(variant);
         }
 
-        // Valeur du coût/temps (éditable)
+        // Valeur du coût/temps (editable)
         EditorGUI.BeginChangeCheck();
         if (variant.IsTimeBased)
         {
@@ -266,7 +266,7 @@ public class ActivityVariantEditor : EditorWindow
         GUILayout.Label("Sub:", GUILayout.Width(30));
         int newSubXP = EditorGUILayout.IntField(variant.SubSkillXPPerTick, GUILayout.Width(40));
 
-        // Compétence automatique basée sur ParentActivityID
+        // Competence automatique basee sur ParentActivityID
         string autoSkillId = !string.IsNullOrEmpty(variant.ParentActivityID) ? variant.ParentActivityID : "Unknown";
         GUILayout.Label($"→ {autoSkillId}", EditorStyles.miniLabel, GUILayout.Width(80));
 
@@ -275,7 +275,7 @@ public class ActivityVariantEditor : EditorWindow
             Undo.RecordObject(variant, "Modify ActivityVariant XP");
             variant.MainSkillXPPerTick = newMainXP;
             variant.SubSkillXPPerTick = newSubXP;
-            // Auto-assigner la compétence principale
+            // Auto-assigner la competence principale
             variant.MainSkillId = autoSkillId;
             EditorUtility.SetDirty(variant);
         }
@@ -288,7 +288,7 @@ public class ActivityVariantEditor : EditorWindow
 
         EditorGUILayout.EndHorizontal();
 
-        // Troisième ligne : Informations supplémentaires
+        // Troisième ligne : Informations supplementaires
         EditorGUILayout.BeginHorizontal();
         if (variant.PrimaryResource != null)
         {
@@ -304,7 +304,7 @@ public class ActivityVariantEditor : EditorWindow
         }
         GUILayout.FlexibleSpace();
 
-        // Preview de la compétence calculée
+        // Preview de la competence calculee
         string previewSkill = variant.GetSubSkillId();
         if (!string.IsNullOrEmpty(previewSkill))
         {
@@ -333,7 +333,7 @@ public class ActivityVariantEditor : EditorWindow
             );
         }
 
-        // Filtre par activité
+        // Filtre par activite
         if (selectedActivityFilter != "All")
         {
             filtered = filtered.Where(v => v.ParentActivityID == selectedActivityFilter);
@@ -370,7 +370,7 @@ public class ActivityVariantEditor : EditorWindow
             // Auto-assigner MainSkillId
             variant.MainSkillId = variant.ParentActivityID;
 
-            // Valeurs par défaut intelligentes
+            // Valeurs par defaut intelligentes
             if (variant.MainSkillXPPerTick == 0)
             {
                 variant.MainSkillXPPerTick = variant.IsTimeBased ? 15 : 10;

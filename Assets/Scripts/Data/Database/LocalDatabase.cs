@@ -25,7 +25,7 @@ public class LocalDatabase
         {
             // Force la suppression de la base de donnees existante uniquement en mode editeur
 #if UNITY_EDITOR
-            bool forceReset = false; // À activer seulement pour les tests en editeur
+            bool forceReset = false; // a activer seulement pour les tests en editeur
             if (forceReset && File.Exists(_databasePath))
             {
                 File.Delete(_databasePath);
@@ -163,7 +163,7 @@ public class LocalDatabase
 
                     try
                     {
-                        // Vérifier et ajouter les colonnes XP seulement si elles n'existent pas
+                        // Verifier et ajouter les colonnes XP seulement si elles n'existent pas
                         var tableInfo = _connection.GetTableInfo("PlayerData");
                         bool hasSkillsJson = tableInfo.Any(col => col.Name == "SkillsJson");
                         bool hasSubSkillsJson = tableInfo.Any(col => col.Name == "SubSkillsJson");

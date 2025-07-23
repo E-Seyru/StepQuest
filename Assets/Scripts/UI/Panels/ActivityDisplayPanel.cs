@@ -123,7 +123,7 @@ public class ActivityDisplayPanel : MonoBehaviour
         Logger.LogInfo("ActivityDisplayPanel: Unsubscribed from EventBus events", Logger.LogCategory.General);
     }
 
-    // === GESTIONNAIRES D'ÉVÉNEMENTS - ADAPTÉS POUR EVENTBUS ===
+    // === GESTIONNAIRES D'eVeNEMENTS - ADAPTeS POUR EVENTBUS ===
 
     /// <summary>
     /// Appele quand une activite commence
@@ -145,22 +145,22 @@ public class ActivityDisplayPanel : MonoBehaviour
     {
         Logger.LogInfo($"ActivityDisplayPanel: Activity stopped - {eventData.Activity?.ActivityId}/{eventData.Variant?.VariantName} (Completed: {eventData.WasCompleted})", Logger.LogCategory.General);
 
-        // NOUVEAU: Si c'est une activité de crafting qui n'a PAS été complétée, rendre les matériaux
+        // NOUVEAU: Si c'est une activite de crafting qui n'a PAS ete completee, rendre les materiaux
         if (eventData.Activity != null && eventData.Variant != null &&
             eventData.Variant.IsTimeBased && !eventData.WasCompleted)
         {
             Logger.LogInfo($"ActivityDisplayPanel: Crafting activity cancelled, attempting to refund materials for {eventData.Variant.GetDisplayName()}", Logger.LogCategory.General);
 
-            // Rendre les matériaux consommés
+            // Rendre les materiaux consommes
             bool refunded = eventData.Variant.RefundCraftingMaterials(InventoryManager.Instance);
 
             if (refunded)
             {
                 Logger.LogInfo($"ActivityDisplayPanel: Successfully refunded crafting materials for {eventData.Variant.GetDisplayName()}", Logger.LogCategory.General);
 
-                // Optionnel: Afficher un message à l'utilisateur
+                // Optionnel: Afficher un message a l'utilisateur
                 // Tu peux ajouter ici une notification ou un feedback visuel
-                // Exemple: NotificationManager.ShowMessage("Matériaux rendus !");
+                // Exemple: NotificationManager.ShowMessage("Materiaux rendus !");
             }
             else
             {

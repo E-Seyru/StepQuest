@@ -34,13 +34,13 @@ public class ActivityVariant : ScriptableObject
     public int SuccessRate = 100;
 
     [Header("Experience & Progression")]
-    [Tooltip("XP gagnée par tick/completion pour la compétence principale (ex: Mining)")]
+    [Tooltip("XP gagnee par tick/completion pour la competence principale (ex: Mining)")]
     public int MainSkillXPPerTick = 10;
 
-    [Tooltip("XP gagnée par tick/completion pour cette sous-compétence spécifique")]
+    [Tooltip("XP gagnee par tick/completion pour cette sous-competence specifique")]
     public int SubSkillXPPerTick = 5;
 
-    [Tooltip("ID de la compétence principale que cette activité entraîne (ex: Mining, Woodcutting, Crafting)")]
+    [Tooltip("ID de la competence principale que cette activite entraîne (ex: Mining, Woodcutting, Crafting)")]
     public string MainSkillId = "";
 
     [Header("Time-Based Settings (Crafting)")]
@@ -62,19 +62,19 @@ public class ActivityVariant : ScriptableObject
 
 
     /// <summary>
-    /// Obtenir l'ID de la compétence principale basé sur ParentActivityID si MainSkillId n'est pas défini
+    /// Obtenir l'ID de la competence principale base sur ParentActivityID si MainSkillId n'est pas defini
     /// </summary>
     public string GetMainSkillId()
     {
         if (!string.IsNullOrEmpty(MainSkillId))
             return MainSkillId;
 
-        // Fallback sur ParentActivityID si MainSkillId n'est pas défini
+        // Fallback sur ParentActivityID si MainSkillId n'est pas defini
         return !string.IsNullOrEmpty(ParentActivityID) ? ParentActivityID : "Unknown";
     }
 
     /// <summary>
-    /// Obtenir l'ID de la sous-compétence (basé sur le nom de la variante)
+    /// Obtenir l'ID de la sous-competence (base sur le nom de la variante)
     /// </summary>
     public string GetSubSkillId()
     {
@@ -189,7 +189,7 @@ public class ActivityVariant : ScriptableObject
     }
 
     /// <summary>
-    /// NOUVEAU: Rend les matériaux consommés pour le crafting (quand on annule)
+    /// NOUVEAU: Rend les materiaux consommes pour le crafting (quand on annule)
     /// </summary>
     public bool RefundCraftingMaterials(InventoryManager inventoryManager, string playerId = "player")
     {
@@ -197,7 +197,7 @@ public class ActivityVariant : ScriptableObject
         if (RequiredMaterials == null || RequiredQuantities == null) return false;
         if (RequiredMaterials.Length != RequiredQuantities.Length) return false;
 
-        // Rendre tous les matériaux
+        // Rendre tous les materiaux
         for (int i = 0; i < RequiredMaterials.Length; i++)
         {
             if (RequiredMaterials[i] == null) continue;
@@ -206,7 +206,7 @@ public class ActivityVariant : ScriptableObject
             if (!added)
             {
                 Logger.LogError($"ActivityVariant: Failed to refund {RequiredQuantities[i]} {RequiredMaterials[i].GetDisplayName()}", Logger.LogCategory.General);
-                // On continue quand même pour essayer de rendre les autres matériaux
+                // On continue quand même pour essayer de rendre les autres materiaux
             }
         }
 

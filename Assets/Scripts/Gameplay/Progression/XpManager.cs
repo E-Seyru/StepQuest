@@ -7,7 +7,7 @@ public class XpManager : MonoBehaviour
     public static XpManager Instance { get; private set; }
 
     [Header("XP Configuration")]
-    [SerializeField] private int baseXpForLevel2 = 100;      // XP nécessaire pour passer au niveau 2
+    [SerializeField] private int baseXpForLevel2 = 100;      // XP necessaire pour passer au niveau 2
     [SerializeField] private float xpGrowthRate = 1.5f;      // Multiplicateur d'XP par niveau (1.5 = +50% par niveau)
     [SerializeField] private int maxLevel = 100;             // Niveau maximum
 
@@ -27,7 +27,7 @@ public class XpManager : MonoBehaviour
     // === CALCULS DE PROGRESSION ===
 
     /// <summary>
-    /// XP nécessaire pour passer du niveau N au niveau N+1
+    /// XP necessaire pour passer du niveau N au niveau N+1
     /// </summary>
     public int GetXPRequiredForLevelUp(int currentLevel)
     {
@@ -43,7 +43,7 @@ public class XpManager : MonoBehaviour
     }
 
     /// <summary>
-    /// XP total nécessaire pour atteindre un niveau donné (cumulatif)
+    /// XP total necessaire pour atteindre un niveau donne (cumulatif)
     /// </summary>
     public int GetTotalXPRequiredForLevel(int targetLevel)
     {
@@ -58,7 +58,7 @@ public class XpManager : MonoBehaviour
     }
 
     /// <summary>
-    /// XP nécessaire pour passer au niveau suivant (depuis l'XP actuelle)
+    /// XP necessaire pour passer au niveau suivant (depuis l'XP actuelle)
     /// </summary>
     public int GetXPNeededForNextLevel(SkillData skill)
     {
@@ -69,7 +69,7 @@ public class XpManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Pourcentage de progression vers le niveau suivant (0.0 à 1.0)
+    /// Pourcentage de progression vers le niveau suivant (0.0 a 1.0)
     /// </summary>
     public float GetProgressToNextLevel(SkillData skill)
     {
@@ -84,7 +84,7 @@ public class XpManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Vérifier si une compétence peut monter de niveau
+    /// Verifier si une competence peut monter de niveau
     /// </summary>
     public bool CanLevelUp(SkillData skill)
     {
@@ -93,7 +93,7 @@ public class XpManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Faire monter une compétence de niveau (retourne le nombre de niveaux gagnés)
+    /// Faire monter une competence de niveau (retourne le nombre de niveaux gagnes)
     /// </summary>
     public int ProcessLevelUps(SkillData skill)
     {
@@ -113,7 +113,7 @@ public class XpManager : MonoBehaviour
     // === CALCULS DE BONUS ===
 
     /// <summary>
-    /// Calculer le bonus d'efficacité basé sur le niveau
+    /// Calculer le bonus d'efficacite base sur le niveau
     /// </summary>
     public float GetEfficiencyBonus(int level)
     {
@@ -141,19 +141,19 @@ public class XpManager : MonoBehaviour
         if (level <= 25)
             return "Apprenti";
         else if (level <= 50)
-            return "Compétent";
+            return "Competent";
         else if (level <= 75)
             return "Expert";
         else if (level <= 90)
             return "Maître";
         else
-            return "Légendaire";
+            return "Legendaire";
     }
 
-    // === CALCULS D'XP GAGNÉE ===
+    // === CALCULS D'XP GAGNeE ===
 
     /// <summary>
-    /// Calculer l'XP gagnée pour une activité step-based
+    /// Calculer l'XP gagnee pour une activite step-based
     /// </summary>
     public XPReward CalculateStepBasedXP(int ticksCompleted, ActivityVariant variant)
     {
@@ -172,7 +172,7 @@ public class XpManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Calculer l'XP gagnée pour une activité time-based
+    /// Calculer l'XP gagnee pour une activite time-based
     /// </summary>
     public XPReward CalculateTimeBasedXP(int completedCrafts, ActivityVariant variant)
     {
@@ -191,7 +191,7 @@ public class XpManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Appliquer une récompense d'XP au joueur
+    /// Appliquer une recompense d'XP au joueur
     /// </summary>
     public void ApplyXPReward(XPReward xpReward)
     {
@@ -206,10 +206,10 @@ public class XpManager : MonoBehaviour
         }
     }
 
-    // === INTÉGRATION AVEC PLAYERDATA ===
+    // === INTeGRATION AVEC PLAYERDATA ===
 
     /// <summary>
-    /// Ajouter de l'XP à une compétence principale et traiter les montées de niveau
+    /// Ajouter de l'XP a une competence principale et traiter les montees de niveau
     /// </summary>
     public bool AddSkillXP(string skillId, int xpGained)
     {
@@ -226,7 +226,7 @@ public class XpManager : MonoBehaviour
         var skill = skills[skillId];
         skill.Experience += xpGained;
 
-        // Traiter les montées de niveau
+        // Traiter les montees de niveau
         int levelsGained = ProcessLevelUps(skill);
 
         skills[skillId] = skill;
@@ -238,7 +238,7 @@ public class XpManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Ajouter de l'XP à une sous-compétence et traiter les montées de niveau
+    /// Ajouter de l'XP a une sous-competence et traiter les montees de niveau
     /// </summary>
     public bool AddSubSkillXP(string variantId, int xpGained)
     {
@@ -255,7 +255,7 @@ public class XpManager : MonoBehaviour
         var subSkill = subSkills[variantId];
         subSkill.Experience += xpGained;
 
-        // Traiter les montées de niveau
+        // Traiter les montees de niveau
         int levelsGained = ProcessLevelUps(subSkill);
 
         subSkills[variantId] = subSkill;
@@ -266,10 +266,10 @@ public class XpManager : MonoBehaviour
         return levelsGained > 0;
     }
 
-    // === MÉTHODES UTILITAIRES PUBLIQUES ===
+    // === MeTHODES UTILITAIRES PUBLIQUES ===
 
     /// <summary>
-    /// Obtenir une compétence du joueur (créée si n'existe pas)
+    /// Obtenir une competence du joueur (creee si n'existe pas)
     /// </summary>
     public SkillData GetPlayerSkill(string skillId)
     {
@@ -286,7 +286,7 @@ public class XpManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Obtenir une sous-compétence du joueur (créée si n'existe pas)
+    /// Obtenir une sous-competence du joueur (creee si n'existe pas)
     /// </summary>
     public SkillData GetPlayerSubSkill(string variantId)
     {

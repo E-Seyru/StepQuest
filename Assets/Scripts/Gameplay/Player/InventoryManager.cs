@@ -493,14 +493,14 @@ public class InventoryContainerService
         // Transaction atomique avec rollback verifie
         lock (containersLock)
         {
-            // Étape 1: Retirer les items
+            // etape 1: Retirer les items
             if (!RemoveItem(fromId, itemId, quantity, registry))
             {
                 Logger.LogError($"InventoryContainerService: Transfer failed - could not remove items from '{fromId}'", Logger.LogCategory.InventoryLog);
                 return false;
             }
 
-            // Étape 2: Ajouter les items
+            // etape 2: Ajouter les items
             if (!AddItem(toId, itemId, quantity, registry))
             {
                 // CORRECTION: Rollback verifie

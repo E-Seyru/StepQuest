@@ -62,7 +62,7 @@ public class AboveCanvasInitializationService
     private System.Collections.IEnumerator WaitForCriticalManagers()
     {
         // Version optimisee : WaitUntil() arrête immediatement quand la condition est remplie
-        // → Évite de boucler toutes les 0.1s ; tu gagnes quelques ms au lancement
+        // → evite de boucler toutes les 0.1s ; tu gagnes quelques ms au lancement
         yield return new WaitUntil(() => DataManager.Instance != null && MapManager.Instance != null);
 
         // Attendre un frame supplementaire pour la stabilite
@@ -181,7 +181,7 @@ public class AboveCanvasInitializationService
             return;
         }
 
-        // État normal : jouer l'effet de clic
+        // etat normal : jouer l'effet de clic
         PlayLocationButtonClickEffect();
 
         // Verifier que PanelManager est disponible

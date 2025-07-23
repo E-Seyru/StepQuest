@@ -138,7 +138,7 @@ public class UIManager : MonoBehaviour
 
                 // OPTIMISATION : Mettre a jour le texte seulement si necessaire
                 string newText = $"{steps}";
-                if (totalStepsText.text != newText) // MODIFICATION APPLIQUÉE
+                if (totalStepsText.text != newText) // MODIFICATION APPLIQUeE
                 {
                     totalStepsText.text = newText;
                 }
@@ -150,7 +150,7 @@ public class UIManager : MonoBehaviour
                     {
                         string readableDate = LocalDatabase.GetReadableDateFromEpoch(lastChangeMs);
                         string newUpdateText = $"Dernière mise a jour: {readableDate}";
-                        if (lastUpdateText.text != newUpdateText) // MODIFICATION APPLIQUÉE
+                        if (lastUpdateText.text != newUpdateText) // MODIFICATION APPLIQUeE
                         {
                             lastUpdateText.text = newUpdateText;
                         }
@@ -180,7 +180,7 @@ public class UIManager : MonoBehaviour
 
                 // OPTIMISATION : Mettre a jour seulement si necessaire
                 string newText = $"{steps}";
-                if (dailyStepsText.text != newText) // MODIFICATION APPLIQUÉE
+                if (dailyStepsText.text != newText) // MODIFICATION APPLIQUeE
                 {
                     dailyStepsText.text = newText;
                 }
@@ -194,7 +194,7 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // OPTIMISATION : Éviter les coroutines multiples pour le même element
+    // OPTIMISATION : eviter les coroutines multiples pour le même element
     private System.Collections.Generic.Dictionary<TextMeshProUGUI, Coroutine> flashCoroutines =
         new System.Collections.Generic.Dictionary<TextMeshProUGUI, Coroutine>();
 

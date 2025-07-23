@@ -83,13 +83,13 @@ public class GameManager : MonoBehaviour
     private void SubscribeToManagerEvents()
     {
         // =====================================
-        // EVENTBUS - Évenements de voyage
+        // EVENTBUS - evenements de voyage
         // =====================================
         EventBus.Subscribe<TravelStartedEvent>(OnTravelStarted);
         EventBus.Subscribe<TravelCompletedEvent>(OnTravelCompleted);
 
         // =====================================
-        // EVENTBUS - Évenements d'activite  
+        // EVENTBUS - evenements d'activite  
         // =====================================
         EventBus.Subscribe<ActivityStartedEvent>(OnActivityStarted);
         EventBus.Subscribe<ActivityStoppedEvent>(OnActivityStopped);
@@ -120,7 +120,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // === MÉTHODES POUR CHANGER D'ÉTAT ===
+    // === MeTHODES POUR CHANGER D'eTAT ===
 
     private void ChangeState(GameState newState)
     {
@@ -137,7 +137,7 @@ public class GameManager : MonoBehaviour
         EventBus.Publish(new GameStateChangedEvent(oldState, newState));
     }
 
-    // === GESTIONNAIRES D'ÉVÉNEMENTS - ADAPTÉS POUR EVENTBUS ===
+    // === GESTIONNAIRES D'eVeNEMENTS - ADAPTeS POUR EVENTBUS ===
 
     private void OnTravelStarted(TravelStartedEvent eventData)
     {
@@ -181,7 +181,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // === MÉTHODES PUBLIQUES POUR FORCER UN CHANGEMENT D'ÉTAT ===
+    // === MeTHODES PUBLIQUES POUR FORCER UN CHANGEMENT D'eTAT ===
 
     public void SetGamePaused(bool isPaused)
     {
@@ -196,7 +196,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // === GESTION DES ÉVÉNEMENTS SYSTÈME ===
+    // === GESTION DES eVeNEMENTS SYSTÈME ===
 
     void OnApplicationPause(bool pauseStatus)
     {
@@ -231,7 +231,7 @@ public class GameManager : MonoBehaviour
         EventBus.Unsubscribe<ActivityStoppedEvent>(OnActivityStopped);
     }
 
-    // === MÉTHODES DE DEBUG ===
+    // === MeTHODES DE DEBUG ===
 
     public string GetGameStateInfo()
     {

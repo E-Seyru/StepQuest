@@ -242,7 +242,7 @@ public class PlayerDataDebugger : EditorWindow
 
         var playerData = dataManager.PlayerData;
 
-        // État de voyage
+        // etat de voyage
         EditorGUILayout.LabelField("VOYAGE:", EditorStyles.boldLabel);
         EditorGUILayout.LabelField($"   Location: {playerData.CurrentLocationId}", EditorStyles.miniLabel);
         EditorGUILayout.LabelField($"   En voyage: {(playerData.IsCurrentlyTraveling() ? "PROBLEME - OUI" : "OK - Non")}", EditorStyles.miniLabel);
@@ -256,7 +256,7 @@ public class PlayerDataDebugger : EditorWindow
 
         EditorGUILayout.Space();
 
-        // État d'activite
+        // etat d'activite
         EditorGUILayout.LabelField("ACTIVITE:", EditorStyles.boldLabel);
         EditorGUILayout.LabelField($"   Activite active: {(playerData.HasActiveActivity() ? "Oui" : "Non")}", EditorStyles.miniLabel);
 

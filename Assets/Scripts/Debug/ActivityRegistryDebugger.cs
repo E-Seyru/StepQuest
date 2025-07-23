@@ -127,7 +127,7 @@ public class ActivityRegistryDebugger : EditorWindow
 
     private void SearchForMiningReferences()
     {
-        Debug.Log("=== RECHERCHE DE RÉFÉRENCES À 'MINING' ===");
+        Debug.Log("=== RECHERCHE DE ReFeRENCES a 'MINING' ===");
 
         // Chercher dans tous les ActivityVariant du projet
         string[] variantGuids = AssetDatabase.FindAssets("t:ActivityVariant");
@@ -143,7 +143,7 @@ public class ActivityRegistryDebugger : EditorWindow
 
                 if (parentId.Contains("Mining") || parentId.Contains("mining"))
                 {
-                    Debug.LogError($"❌ TROUVÉ : Le variant '{variant.VariantName}' dans '{path}' " +
+                    Debug.LogError($"❌ TROUVe : Le variant '{variant.VariantName}' dans '{path}' " +
                                  $"reference '{parentId}' qui contient 'Mining' !");
                 }
             }
@@ -161,7 +161,7 @@ public class ActivityRegistryDebugger : EditorWindow
             {
                 if (activity.ActivityID.Contains("Mining") || activity.ActivityID.Contains("mining"))
                 {
-                    Debug.LogError($"❌ TROUVÉ : L'activite '{activity.ActivityName}' dans '{path}' " +
+                    Debug.LogError($"❌ TROUVe : L'activite '{activity.ActivityName}' dans '{path}' " +
                                  $"a un ID '{activity.ActivityID}' qui contient 'Mining' !");
                 }
             }
@@ -170,7 +170,7 @@ public class ActivityRegistryDebugger : EditorWindow
 
     private void CleanNullReferences()
     {
-        Debug.Log("=== NETTOYAGE DES RÉFÉRENCES NULLES ===");
+        Debug.Log("=== NETTOYAGE DES ReFeRENCES NULLES ===");
 
         bool hasChanges = false;
 

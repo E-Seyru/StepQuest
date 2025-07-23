@@ -120,7 +120,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Configure le grid layout automatiquement - AMÉLIORÉ comme ActivityVariantsPanel
+    /// Configure le grid layout automatiquement - AMeLIORe comme ActivityVariantsPanel
     /// </summary>
     private void SetupGridLayout()
     {
@@ -242,7 +242,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
         activityCard.Setup(activity);
 
         // S'abonner a l'evenement de clic
-        activityCard.OnCardClicked -= OnActivityCardClicked; // Éviter les doublons
+        activityCard.OnCardClicked -= OnActivityCardClicked; // eviter les doublons
         activityCard.OnCardClicked += OnActivityCardClicked;
     }
 

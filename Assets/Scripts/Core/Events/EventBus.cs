@@ -11,7 +11,7 @@ using UnityEngine;
 /// </summary>
 public static class EventBus
 {
-    #region Configuration et État
+    #region Configuration et etat
 
     /// <summary>
     /// Active/desactive le logging detaille des evenements
@@ -40,7 +40,7 @@ public static class EventBus
     // Lock pour thread-safety
     private static readonly object lockObject = new();
 
-    // SUPPRIMÉ: tempCallbackList - etait inutilise et dangereux pour la concurrence
+    // SUPPRIMe: tempCallbackList - etait inutilise et dangereux pour la concurrence
     // On utilise des listes locales dans chaque methode a la place
 
     // Compteur pour les stats

@@ -54,7 +54,7 @@ public class AboveCanvasDisplayService
         }
         else if (mapManager?.CurrentLocation != null)
         {
-            // État normal : afficher la location actuelle
+            // etat normal : afficher la location actuelle
             ShowCurrentLocationState(mapManager.CurrentLocation);
         }
         else
@@ -247,7 +247,7 @@ public class AboveCanvasDisplayService
         // CORRECTION: Recuperer l'activite principale pour l'icône gauche
         var activityDefinition = activityManager.ActivityRegistry?.GetActivity(activity.ActivityId);
 
-        // Configurer l'icône gauche avec l'ACTIVITÉ PRINCIPALE
+        // Configurer l'icône gauche avec l'ACTIVITe PRINCIPALE
         if (manager.LeftIcon != null)
         {
             var activityIcon = activityDefinition?.ActivityReference?.GetIcon();
@@ -412,7 +412,7 @@ public class AboveCanvasDisplayService
     }
 
     // ===============================================
-    // NOUVELLES MÉTHODES POUR IDLEBAR
+    // NOUVELLES MeTHODES POUR IDLEBAR
     // ===============================================
 
     private void ShowIdleBar()

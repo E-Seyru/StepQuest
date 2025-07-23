@@ -64,7 +64,7 @@ public class InventoryDataDebugger : EditorWindow
 
     private void AnalyzeInventoryData()
     {
-        Debug.Log("=== ANALYSE DES DONNÉES D'INVENTAIRE ===");
+        Debug.Log("=== ANALYSE DES DONNeES D'INVENTAIRE ===");
 
         if (!Application.isPlaying)
         {
@@ -92,7 +92,7 @@ public class InventoryDataDebugger : EditorWindow
         // Analyser les conteneurs
         var containers = dataManager.LocalDatabase.LoadAllInventoryContainers();
 
-        Debug.Log($"=== {containers.Count} CONTENEUR(S) TROUVÉ(S) ===");
+        Debug.Log($"=== {containers.Count} CONTENEUR(S) TROUVe(S) ===");
 
         foreach (var containerData in containers)
         {

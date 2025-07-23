@@ -19,7 +19,7 @@ public class StepManager : MonoBehaviour
     private bool isInitialized = false;
 
 #if UNITY_EDITOR
-    // EN ÉDITEUR: Fonctionnement simplifie
+    // EN eDITEUR: Fonctionnement simplifie
     private Coroutine editorUpdateCoroutine;
 #else
     // SUR DEVICE: Variables pour la gestion complète des capteurs
@@ -131,7 +131,7 @@ public class StepManager : MonoBehaviour
     }
 
 #if UNITY_EDITOR
-    // ===== MODE ÉDITEUR SIMPLIFIÉ =====
+    // ===== MODE eDITEUR SIMPLIFIe =====
     IEnumerator InitializeEditorMode()
     {
         Logger.LogInfo("StepManager: [EDITOR] Initializing in Editor mode", Logger.LogCategory.StepLog);
@@ -870,7 +870,7 @@ public class StepManager : MonoBehaviour
     }
 #endif
 
-    // ===== MÉTHODES COMMUNES =====
+    // ===== MeTHODES COMMUNES =====
     void HandleAppPausingOrClosing()
     {
         if (!isInitialized) return;

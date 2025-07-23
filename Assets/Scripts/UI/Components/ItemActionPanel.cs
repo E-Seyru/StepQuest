@@ -200,7 +200,7 @@ public class ItemActionPanel : MonoBehaviour
             UniversalSlotUI.SlotContext.PlayerInventory => "Inventaire",
             UniversalSlotUI.SlotContext.Bank => "Banque",
             UniversalSlotUI.SlotContext.Shop => "Magasin",
-            UniversalSlotUI.SlotContext.Trade => "Échange",
+            UniversalSlotUI.SlotContext.Trade => "echange",
             UniversalSlotUI.SlotContext.Loot => "Butin",
             _ => sourceContainerId
         };

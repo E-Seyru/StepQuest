@@ -1,4 +1,4 @@
-// ManagersPersistence.cs - À attacher sur le GameObject "Managers"
+// ManagersPersistence.cs - a attacher sur le GameObject "Managers"
 using UnityEngine;
 
 public class ManagersPersistence : MonoBehaviour

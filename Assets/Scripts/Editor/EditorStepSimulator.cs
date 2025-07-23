@@ -213,7 +213,7 @@ public class EditorStepSimulator : EditorWindow
         EditorGUILayout.EndVertical();
     }
 
-    // SIMPLIFIÉ: Logique d'ajout de pas plus directe
+    // SIMPLIFIe: Logique d'ajout de pas plus directe
     bool AddStepsInternal(int steps)
     {
         if (!Application.isPlaying)

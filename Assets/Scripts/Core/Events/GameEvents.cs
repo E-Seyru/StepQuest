@@ -1,8 +1,8 @@
-﻿// Purpose: Évenements concrets du jeu pour remplacer les evenements existants
+﻿// Purpose: evenements concrets du jeu pour remplacer les evenements existants
 // Filepath: Assets/Scripts/Core/Events/GameEvents.cs
 
 /// <summary>
-/// Évenements lies au GameManager
+/// evenements lies au GameManager
 /// </summary>
 namespace GameEvents
 {
@@ -50,7 +50,7 @@ namespace GameEvents
 }
 
 /// <summary>
-/// Évenements lies au MapManager et aux deplacements
+/// evenements lies au MapManager et aux deplacements
 /// </summary>
 namespace MapEvents
 {
@@ -149,7 +149,7 @@ namespace MapEvents
 }
 
 /// <summary>
-/// Évenements lies aux activites (mining, crafting, combat, etc.)
+/// evenements lies aux activites (mining, crafting, combat, etc.)
 /// </summary>
 namespace ActivityEvents
 {

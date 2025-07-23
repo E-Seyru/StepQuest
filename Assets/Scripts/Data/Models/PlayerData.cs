@@ -105,7 +105,7 @@ public class PlayerData
         set { _travelDestinationId = value; }
     }
 
-    // À combien de pas le voyage a commence
+    // a combien de pas le voyage a commence
     private long _travelStartSteps;
     [Column("TravelStartSteps")]
     public long TravelStartSteps
@@ -141,7 +141,7 @@ public class PlayerData
         set { _travelOriginLocationId = value; }
     }
 
-    // === SYSTÈME D'ACTIVITÉ ===
+    // === SYSTÈME D'ACTIVITe ===
 
     // Activite en cours (JSON serialise)
     private string _currentActivityJson;
@@ -192,9 +192,9 @@ public class PlayerData
         }
     }
 
-    // === NOUVEAU: SYSTÈME D'EXPÉRIENCE ===
+    // === NOUVEAU: SYSTÈME D'EXPeRIENCE ===
 
-    // XP et niveaux des activités principales (Mining, Woodcutting, etc.)
+    // XP et niveaux des activites principales (Mining, Woodcutting, etc.)
     private string _skillsJson;
     [Column("SkillsJson")]
     public string SkillsJson
@@ -203,7 +203,7 @@ public class PlayerData
         set { _skillsJson = value; }
     }
 
-    // XP et niveaux des sous-activités (Iron Mining, Oak Cutting, etc.)  
+    // XP et niveaux des sous-activites (Iron Mining, Oak Cutting, etc.)  
     private string _subSkillsJson;
     [Column("SubSkillsJson")]
     public string SubSkillsJson
@@ -212,7 +212,7 @@ public class PlayerData
         set { _subSkillsJson = value; }
     }
 
-    // Propriétés pour accéder facilement aux compétences (ne sont pas sauvegardées)
+    // Proprietes pour acceder facilement aux competences (ne sont pas sauvegardees)
     [Ignore]
     public Dictionary<string, SkillData> Skills
     {
@@ -300,7 +300,7 @@ public class PlayerData
         _travelFinalDestinationId = null;
         _travelOriginLocationId = null;
 
-        // Activité
+        // Activite
         _currentActivityJson = null;
 
         // XP System
@@ -308,7 +308,7 @@ public class PlayerData
         _subSkillsJson = null;
     }
 
-    // === MÉTHODES DE VOYAGE ===
+    // === MeTHODES DE VOYAGE ===
 
     /// <summary>
     /// Le joueur est-il actuellement en voyage ?
@@ -373,7 +373,7 @@ public class PlayerData
         _travelOriginLocationId = null;
     }
 
-    // === MÉTHODES D'ACTIVITÉ ===
+    // === MeTHODES D'ACTIVITe ===
 
     /// <summary>
     /// Le joueur a-t-il une activite en cours ?
@@ -391,10 +391,10 @@ public class PlayerData
         _currentActivityJson = null;
     }
 
-    // === MÉTHODES D'EXPÉRIENCE ===
+    // === MeTHODES D'EXPeRIENCE ===
 
     /// <summary>
-    /// Obtenir le niveau d'une compétence principale (ex: "Mining")
+    /// Obtenir le niveau d'une competence principale (ex: "Mining")
     /// </summary>
     public int GetSkillLevel(string skillId)
     {
@@ -407,7 +407,7 @@ public class PlayerData
     }
 
     /// <summary>
-    /// Obtenir l'XP d'une compétence principale (ex: "Mining")
+    /// Obtenir l'XP d'une competence principale (ex: "Mining")
     /// </summary>
     public int GetSkillXP(string skillId)
     {
@@ -420,7 +420,7 @@ public class PlayerData
     }
 
     /// <summary>
-    /// Obtenir le niveau d'une sous-compétence (ex: "Iron_Mining")
+    /// Obtenir le niveau d'une sous-competence (ex: "Iron_Mining")
     /// </summary>
     public int GetSubSkillLevel(string variantId)
     {
@@ -433,7 +433,7 @@ public class PlayerData
     }
 
     /// <summary>
-    /// Obtenir l'XP d'une sous-compétence (ex: "Iron_Mining")
+    /// Obtenir l'XP d'une sous-competence (ex: "Iron_Mining")
     /// </summary>
     public int GetSubSkillXP(string variantId)
     {
@@ -445,10 +445,10 @@ public class PlayerData
         return 0;
     }
 
-    // === PROPRIÉTÉS CALCULÉES ET ALIASES ===
+    // === PROPRIeTeS CALCULeES ET ALIASES ===
 
     /// <summary>
-    /// Alias pour TotalPlayerSteps (compatibilite) - Lecture ET écriture
+    /// Alias pour TotalPlayerSteps (compatibilite) - Lecture ET ecriture
     /// </summary>
     [Ignore]
     public long TotalSteps

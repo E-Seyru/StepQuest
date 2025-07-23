@@ -19,7 +19,7 @@ public class TravelProgressBar : MonoBehaviour
     [SerializeField] private float updateInterval = 0.5f; // Frequence de mise a jour
     [SerializeField] private float animationDuration = 0.3f; // Duree d'animation LeanTween
 
-    // État interne
+    // etat interne
     private MapManager mapManager;
     private DataManager dataManager;
     private float lastUpdateTime;
@@ -109,7 +109,7 @@ public class TravelProgressBar : MonoBehaviour
         }
     }
 
-    // === GESTIONNAIRES D'ÉVÉNEMENTS - ADAPTÉS POUR EVENTBUS ===
+    // === GESTIONNAIRES D'eVeNEMENTS - ADAPTeS POUR EVENTBUS ===
 
     /// <summary>
     /// Appele quand un voyage commence

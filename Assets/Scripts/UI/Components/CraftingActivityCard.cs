@@ -70,7 +70,7 @@ public class CraftingActivityCard : MonoBehaviour
     }
 
     /// <summary>
-    /// Vérifier si on a assez d'ingrédients et mettre à jour l'affichage
+    /// Verifier si on a assez d'ingredients et mettre a jour l'affichage
     /// </summary>
     private void CheckIngredientsAvailability()
     {
@@ -104,7 +104,7 @@ public class CraftingActivityCard : MonoBehaviour
     }
 
     /// <summary>
-    /// Mettre à jour l'état visuel de la carte (voile rouge)
+    /// Mettre a jour l'etat visuel de la carte (voile rouge)
     /// </summary>
     private void UpdateVisualState()
     {
@@ -115,7 +115,7 @@ public class CraftingActivityCard : MonoBehaviour
     }
 
     /// <summary>
-    /// Animation de shake quand on clique sans avoir les ingrédients
+    /// Animation de shake quand on clique sans avoir les ingredients
     /// </summary>
     private IEnumerator ShakeAnimation()
     {
@@ -134,7 +134,7 @@ public class CraftingActivityCard : MonoBehaviour
             yield return null;
         }
 
-        // Remettre à la position actuelle (pas l'originale)
+        // Remettre a la position actuelle (pas l'originale)
         transform.localPosition = currentPosition;
     }
 
@@ -268,7 +268,7 @@ public class CraftingActivityCard : MonoBehaviour
     {
         if (activityVariant != null)
         {
-            // Si on n'a pas assez d'ingrédients, faire l'animation de shake
+            // Si on n'a pas assez d'ingredients, faire l'animation de shake
             if (!hasEnoughIngredients)
             {
                 Debug.Log($"CraftingActivityCard: Not enough ingredients for {activityVariant.VariantName}, shaking card");
@@ -290,7 +290,7 @@ public class CraftingActivityCard : MonoBehaviour
     }
 
     /// <summary>
-    /// Mettre à jour manuellement l'état des ingrédients (à appeler quand l'inventaire change)
+    /// Mettre a jour manuellement l'etat des ingredients (a appeler quand l'inventaire change)
     /// </summary>
     public void RefreshIngredientsState()
     {

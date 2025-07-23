@@ -10,7 +10,7 @@ public class XpEventHandler : MonoBehaviour
 
     void Start()
     {
-        // S'abonner aux événements d'activité
+        // S'abonner aux evenements d'activite
         EventBus.Subscribe<ActivityTickEvent>(OnActivityTick);
 
         if (enableDebugLogs)
@@ -21,7 +21,7 @@ public class XpEventHandler : MonoBehaviour
 
     void OnDestroy()
     {
-        // Se désabonner pour éviter les fuites mémoire
+        // Se desabonner pour eviter les fuites memoire
         EventBus.Unsubscribe<ActivityTickEvent>(OnActivityTick);
 
         if (enableDebugLogs)
@@ -31,11 +31,11 @@ public class XpEventHandler : MonoBehaviour
     }
 
     /// <summary>
-    /// Gérer les ticks d'activité et donner de l'XP
+    /// Gerer les ticks d'activite et donner de l'XP
     /// </summary>
     private void OnActivityTick(ActivityTickEvent eventData)
     {
-        // Vérifier que nous avons les données nécessaires
+        // Verifier que nous avons les donnees necessaires
         if (eventData.Variant == null || eventData.TicksCompleted <= 0)
         {
             if (enableDebugLogs)
@@ -45,28 +45,28 @@ public class XpEventHandler : MonoBehaviour
             return;
         }
 
-        // Vérifier que XpManager existe
+        // Verifier que XpManager existe
         if (XpManager.Instance == null)
         {
             Logger.LogError("XpEventHandler: XpManager.Instance is null! Make sure XpManager is in the scene.", Logger.LogCategory.General);
             return;
         }
 
-        // Calculer l'XP gagnée selon le type d'activité
+        // Calculer l'XP gagnee selon le type d'activite
         XPReward xpReward;
 
         if (eventData.Variant.IsTimeBased)
         {
-            // Activité time-based (crafting)
+            // Activite time-based (crafting)
             xpReward = XpManager.Instance.CalculateTimeBasedXP(eventData.TicksCompleted, eventData.Variant);
         }
         else
         {
-            // Activité step-based (gathering)
+            // Activite step-based (gathering)
             xpReward = XpManager.Instance.CalculateStepBasedXP(eventData.TicksCompleted, eventData.Variant);
         }
 
-        // Vérifier qu'on a de l'XP à donner
+        // Verifier qu'on a de l'XP a donner
         if (!xpReward.HasAnyXP())
         {
             if (enableDebugLogs)
@@ -90,7 +90,7 @@ public class XpEventHandler : MonoBehaviour
             subSkillLeveledUp = XpManager.Instance.AddSubSkillXP(xpReward.SubSkillId, xpReward.SubSkillXP);
         }
 
-        // Log des résultats
+        // Log des resultats
         if (enableDebugLogs)
         {
             string logMessage = $"XpEventHandler: {eventData.Variant.VariantName} completed {eventData.TicksCompleted} ticks → ";
@@ -104,7 +104,7 @@ public class XpEventHandler : MonoBehaviour
             Logger.LogInfo(logMessage, Logger.LogCategory.General);
         }
 
-        // Optionnel : Publier un événement de level up si nécessaire
+        // Optionnel : Publier un evenement de level up si necessaire
         if (mainSkillLeveledUp)
         {
             PublishLevelUpEvent(xpReward.MainSkillId, XpManager.Instance.GetPlayerSkill(xpReward.MainSkillId).Level, false);
@@ -115,23 +115,23 @@ public class XpEventHandler : MonoBehaviour
             PublishLevelUpEvent(xpReward.SubSkillId, XpManager.Instance.GetPlayerSubSkill(xpReward.SubSkillId).Level, true);
         }
 
-        // Sauvegarder les données du joueur
+        // Sauvegarder les donnees du joueur
         DataManager.Instance?.SaveGame();
     }
 
     /// <summary>
-    /// Publier un événement de level up (optionnel, pour l'UI par exemple)
+    /// Publier un evenement de level up (optionnel, pour l'UI par exemple)
     /// </summary>
     private void PublishLevelUpEvent(string skillId, int newLevel, bool isSubSkill)
     {
-        // Vous pouvez créer un SkillLevelUpEvent si vous voulez des animations/notifications
+        // Vous pouvez creer un SkillLevelUpEvent si vous voulez des animations/notifications
         // EventBus.Publish(new SkillLevelUpEvent(skillId, newLevel, isSubSkill));
 
         Logger.LogInfo($"🎉 {skillId} leveled up to {newLevel}!", Logger.LogCategory.General);
     }
 
     /// <summary>
-    /// Méthode publique pour tester le système d'XP
+    /// Methode publique pour tester le système d'XP
     /// </summary>
     [ContextMenu("Test XP System")]
     public void TestXPSystem()
@@ -142,7 +142,7 @@ public class XpEventHandler : MonoBehaviour
             return;
         }
 
-        // Créer un événement de test
+        // Creer un evenement de test
         var testVariant = ScriptableObject.CreateInstance<ActivityVariant>();
         testVariant.VariantName = "Test Mining";
         testVariant.ParentActivityID = "Mining";

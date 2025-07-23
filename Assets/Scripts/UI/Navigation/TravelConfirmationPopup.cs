@@ -26,7 +26,7 @@ public class TravelConfirmationPopup : MonoBehaviour
     private MapManager mapManager;
     private LocationRegistry locationRegistry;
 
-    // État actuel
+    // etat actuel
     private string pendingDestinationId;
     private MapManager.TravelInfo currentTravelInfo;
 
@@ -183,7 +183,7 @@ public class TravelConfirmationPopup : MonoBehaviour
             currentLocationText.text = $"Depuis: {currentTravelInfo.From.DisplayName}";
         }
 
-        // État du bouton de confirmation
+        // etat du bouton de confirmation
         if (confirmTravelButton != null)
         {
             confirmTravelButton.interactable = currentTravelInfo.CanTravel;

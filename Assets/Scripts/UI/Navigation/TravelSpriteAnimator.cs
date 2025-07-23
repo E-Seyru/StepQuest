@@ -36,13 +36,13 @@ public class TravelSpriteAnimator : MonoBehaviour
     private DataManager dataManager;
     private LocationRegistry locationRegistry;
 
-    // État du voyage - MODIFIÉ POUR PATHFINDING
+    // etat du voyage - MODIFIe POUR PATHFINDING
     private Vector3 startPosition;
     private Vector3 endPosition;
     private bool isAnimating = false;
     private int currentBounceId = -1;
 
-    // NOUVEAU : État pour gerer les voyages multi-segments et CurrentLocation null
+    // NOUVEAU : etat pour gerer les voyages multi-segments et CurrentLocation null
     private bool isMultiSegmentTravel = false;
     private string currentSegmentDestination = "";
     private string finalDestination = "";
@@ -97,7 +97,7 @@ public class TravelSpriteAnimator : MonoBehaviour
         // NOUVEAU : Initialiser le cache des positions POI
         InitializePOICache();
 
-        // ⭐ NOUVEAU : Initialiser lastKnownLocationId PRIORITÉ 1: PlayerData, PRIORITÉ 2: CurrentLocation
+        // ⭐ NOUVEAU : Initialiser lastKnownLocationId PRIORITe 1: PlayerData, PRIORITe 2: CurrentLocation
         if (dataManager?.PlayerData != null && !string.IsNullOrEmpty(dataManager.PlayerData.CurrentLocationId))
         {
             lastKnownLocationId = dataManager.PlayerData.CurrentLocationId;
@@ -171,7 +171,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// MODIFIÉ : Utilise maintenant le cache au lieu de chercher dans la scène
+    /// MODIFIe : Utilise maintenant le cache au lieu de chercher dans la scène
     /// </summary>
     private Vector3 FindPOITravelStartPosition(string locationId)
     {
@@ -213,10 +213,10 @@ public class TravelSpriteAnimator : MonoBehaviour
 
         if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            // MODIFIÉ : Configuration intelligente pour les voyages en cours
+            // MODIFIe : Configuration intelligente pour les voyages en cours
             string currentDestination = dataManager.PlayerData.TravelDestinationId;
 
-            // ⭐ MODIFIÉ : Verifier qu'on a une position de depart valide
+            // ⭐ MODIFIe : Verifier qu'on a une position de depart valide
             if (string.IsNullOrEmpty(lastKnownLocationId))
             {
                 Logger.LogError("TravelSpriteAnimator: Cannot restore travel - no start location available", Logger.LogCategory.MapLog);
@@ -265,10 +265,10 @@ public class TravelSpriteAnimator : MonoBehaviour
         StopAllAnimations();
     }
 
-    // === GESTIONNAIRES D'ÉVÉNEMENTS - MODIFIÉS POUR PATHFINDING ===
+    // === GESTIONNAIRES D'eVeNEMENTS - MODIFIeS POUR PATHFINDING ===
 
     /// <summary>
-    /// MODIFIÉ : Gère maintenant les changements de location pendant les voyages multi-segments
+    /// MODIFIe : Gère maintenant les changements de location pendant les voyages multi-segments
     /// </summary>
     private void OnLocationChanged(LocationChangedEvent eventData)
     {
@@ -314,7 +314,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// MODIFIÉ : Gère le debut d'un voyage avec gestion de CurrentLocation null
+    /// MODIFIe : Gère le debut d'un voyage avec gestion de CurrentLocation null
     /// </summary>
     private void OnTravelStarted(TravelStartedEvent eventData)
     {
@@ -390,7 +390,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// MODIFIÉ : Gère les mises a jour de progrès avec reconnaissance des segments
+    /// MODIFIe : Gère les mises a jour de progrès avec reconnaissance des segments
     /// </summary>
     private void OnTravelProgress(TravelProgressEvent eventData)
     {
@@ -417,7 +417,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// MODIFIÉ : Gère la fin d'un voyage ou d'un segment
+    /// MODIFIe : Gère la fin d'un voyage ou d'un segment
     /// </summary>
     private void OnTravelCompleted(TravelCompletedEvent eventData)
     {
@@ -448,7 +448,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// MODIFIÉ : Configure le chemin pour le segment actuel avec gestion de CurrentLocation null
+    /// MODIFIe : Configure le chemin pour le segment actuel avec gestion de CurrentLocation null
     /// </summary>
     private void SetupTravelPath(string destinationId, string fromLocationId = null)
     {
@@ -473,7 +473,7 @@ public class TravelSpriteAnimator : MonoBehaviour
         // Sauvegarder pour usage futur
         lastKnownLocationId = startLocationId;
 
-        // MODIFIÉ : Utilise le cache et configure pour le segment actuel
+        // MODIFIe : Utilise le cache et configure pour le segment actuel
         startPosition = FindPOITravelStartPosition(startLocationId);
         endPosition = FindPOITravelStartPosition(destinationId);
 
@@ -504,7 +504,7 @@ public class TravelSpriteAnimator : MonoBehaviour
 
     public void PositionPlayerAtCurrentLocation()
     {
-        // ⭐ MODIFIÉ : Utiliser lastKnownLocationId au lieu de CurrentLocation
+        // ⭐ MODIFIe : Utiliser lastKnownLocationId au lieu de CurrentLocation
         string locationId = null;
 
         if (mapManager?.CurrentLocation != null)
@@ -523,7 +523,7 @@ public class TravelSpriteAnimator : MonoBehaviour
             return;
         }
 
-        // MODIFIÉ : Utilise le cache
+        // MODIFIe : Utilise le cache
         Vector3 currentPos = FindPOITravelStartPosition(locationId);
 
         if (currentPos == Vector3.zero)

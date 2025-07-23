@@ -19,7 +19,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
 
     public static RecordingAPIStepCounter Instance { get; private set; }
 
-    // SIMPLIFIÉ: Variables pour l'editeur - plus simples
+    // SIMPLIFIe: Variables pour l'editeur - plus simples
 #if UNITY_EDITOR
     private bool editorSensorActive = false;
 #endif

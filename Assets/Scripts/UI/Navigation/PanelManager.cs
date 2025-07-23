@@ -177,7 +177,7 @@ public class PanelManager : MonoBehaviour
 
     public void NextPanel()
     {
-        if (isTransitioning) return; // OPTIMISATION : Éviter les appels multiples
+        if (isTransitioning) return; // OPTIMISATION : eviter les appels multiples
 
         int nextIndex = currentPanelIndex + 1;
 
@@ -194,7 +194,7 @@ public class PanelManager : MonoBehaviour
 
     public void PreviousPanel()
     {
-        if (isTransitioning) return; // OPTIMISATION : Éviter les appels multiples
+        if (isTransitioning) return; // OPTIMISATION : eviter les appels multiples
 
         int prevIndex = currentPanelIndex - 1;
 
@@ -331,7 +331,7 @@ public class PanelManager : MonoBehaviour
         }
     }
 
-    // === NOUVELLES MÉTHODES POUR LA GESTION DE LA CARTE ===
+    // === NOUVELLES MeTHODES POUR LA GESTION DE LA CARTE ===
 
     /// <summary>
     /// Affiche la carte en cachant le panel actuel
@@ -354,7 +354,7 @@ public class PanelManager : MonoBehaviour
 
     /// <summary>
     /// Cache la carte et affiche le panel specifie par son nom
-    /// MODIFIÉ: Fonctionne maintenant depuis n'importe où (carte ou panel)
+    /// MODIFIe: Fonctionne maintenant depuis n'importe où (carte ou panel)
     /// </summary>
     /// <param name="panelName">Nom du GameObject panel a afficher</param>
     public void HideMapAndGoToPanel(string panelName)
@@ -372,7 +372,7 @@ public class PanelManager : MonoBehaviour
 
     /// <summary>
     /// Cache la carte et affiche le panel specifie par son index
-    /// MODIFIÉ: Fonctionne maintenant depuis n'importe où + corrige les positions
+    /// MODIFIe: Fonctionne maintenant depuis n'importe où + corrige les positions
     /// </summary>
     /// <param name="panelIndex">Index du panel a afficher</param>
     public void HideMapAndGoToPanel(int panelIndex)
