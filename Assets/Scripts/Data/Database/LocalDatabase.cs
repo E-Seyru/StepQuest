@@ -13,7 +13,7 @@ public class LocalDatabase
     private string _databasePath;
 
     private const string DatabaseFilename = "StepQuestRPG_Data.db";
-    private const int DATABASE_VERSION = 7; // MODIFIE: Incremente pour ActivityData (5 -> 6)
+    private const int DATABASE_VERSION = 8; // MODIFIE: Incremente pour ActivityData (5 -> 6)
 
     public void InitializeDatabase()
     {
@@ -154,6 +154,47 @@ public class LocalDatabase
                     catch (Exception ex)
                     {
                         Logger.LogError($"LocalDatabase: Migration to version 7 error: {ex.Message}");
+                    }
+                }
+                // Version 7 -> 8 pour le système d'XP
+                if (currentVersion < 8 && DATABASE_VERSION >= 8)
+                {
+                    Logger.LogInfo("LocalDatabase: Migrating to version 8 - Adding XP system support...");
+
+                    try
+                    {
+                        // Vérifier et ajouter les colonnes XP seulement si elles n'existent pas
+                        var tableInfo = _connection.GetTableInfo("PlayerData");
+                        bool hasSkillsJson = tableInfo.Any(col => col.Name == "SkillsJson");
+                        bool hasSubSkillsJson = tableInfo.Any(col => col.Name == "SubSkillsJson");
+
+                        if (!hasSkillsJson)
+                        {
+                            _connection.Execute("ALTER TABLE PlayerData ADD COLUMN SkillsJson TEXT DEFAULT NULL");
+                            Logger.LogInfo("LocalDatabase: Added SkillsJson column");
+                        }
+                        else
+                        {
+                            Logger.LogInfo("LocalDatabase: SkillsJson column already exists");
+                        }
+
+                        if (!hasSubSkillsJson)
+                        {
+                            _connection.Execute("ALTER TABLE PlayerData ADD COLUMN SubSkillsJson TEXT DEFAULT NULL");
+                            Logger.LogInfo("LocalDatabase: Added SubSkillsJson column");
+                        }
+                        else
+                        {
+                            Logger.LogInfo("LocalDatabase: SubSkillsJson column already exists");
+                        }
+
+                        // Mettre a jour la version
+                        _connection.Execute("UPDATE DatabaseVersion SET Version = 8");
+                        Logger.LogInfo("LocalDatabase: Migration to version 8 completed");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError($"LocalDatabase: Migration to version 8 error: {ex.Message}");
                     }
                 }
             }

@@ -33,6 +33,16 @@ public class ActivityVariant : ScriptableObject
     [Range(0, 100)]
     public int SuccessRate = 100;
 
+    [Header("Experience & Progression")]
+    [Tooltip("XP gagnée par tick/completion pour la compétence principale (ex: Mining)")]
+    public int MainSkillXPPerTick = 10;
+
+    [Tooltip("XP gagnée par tick/completion pour cette sous-compétence spécifique")]
+    public int SubSkillXPPerTick = 5;
+
+    [Tooltip("ID de la compétence principale que cette activité entraîne (ex: Mining, Woodcutting, Crafting)")]
+    public string MainSkillId = "";
+
     [Header("Time-Based Settings (Crafting)")]
     [Tooltip("Time required to complete crafting in milliseconds (30000 = 30 seconds)")]
     public long CraftingTimeMs = 30000;
@@ -49,6 +59,31 @@ public class ActivityVariant : ScriptableObject
     [Header("Visual")]
     public Sprite VariantIcon;
     public Color VariantColor = Color.white;
+
+
+    /// <summary>
+    /// Obtenir l'ID de la compétence principale basé sur ParentActivityID si MainSkillId n'est pas défini
+    /// </summary>
+    public string GetMainSkillId()
+    {
+        if (!string.IsNullOrEmpty(MainSkillId))
+            return MainSkillId;
+
+        // Fallback sur ParentActivityID si MainSkillId n'est pas défini
+        return !string.IsNullOrEmpty(ParentActivityID) ? ParentActivityID : "Unknown";
+    }
+
+    /// <summary>
+    /// Obtenir l'ID de la sous-compétence (basé sur le nom de la variante)
+    /// </summary>
+    public string GetSubSkillId()
+    {
+        // Format: ParentActivity_VariantName (ex: "Mining_Iron", "Woodcutting_Oak")
+        string parentId = GetMainSkillId();
+        string variantName = !string.IsNullOrEmpty(VariantName) ? VariantName : name;
+
+        return $"{parentId}_{variantName}";
+    }
 
     /// <summary>
     /// Get display name for UI

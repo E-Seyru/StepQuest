@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using SQLite;
 using System;
+using System.Collections.Generic;
 
 [Serializable]
 [Table("PlayerData")]
@@ -9,6 +10,8 @@ public class PlayerData
 {
     [PrimaryKey]
     public int Id { get; set; }
+
+    // === SYSTÈME DE PAS ===
 
     // Conversion des champs en proprietes pour pouvoir utiliser l'attribut Column
     private long _totalPlayerSteps;
@@ -81,7 +84,7 @@ public class PlayerData
         set { _lastApiCatchUpEpochMs = value; }
     }
 
-    // === NOUVEAU: Système de localisation et voyage ===
+    // === SYSTÈME DE LOCALISATION ET VOYAGE ===
 
     // Où est le joueur actuellement (ID de location comme "Village_01")
     private string _currentLocationId;
@@ -92,7 +95,8 @@ public class PlayerData
         set { _currentLocationId = value; }
     }
 
-    // Est-ce que le joueur voyage actuellement ? (null = non, sinon = destination du segment actuel)
+    // Est-ce que le joueur voyage actuellement ?
+    // (null = non, sinon = destination du segment actuel)
     private string _travelDestinationId;
     [Column("TravelDestinationId")]
     public string TravelDestinationId
@@ -119,7 +123,7 @@ public class PlayerData
         set { _travelRequiredSteps = value; }
     }
 
-    // ⭐ NOUVEAU : Destination finale pour les voyages multi-segments (Version 7)
+    // NOUVEAU : Destination finale pour les voyages multi-segments (Version 7)
     private string _travelFinalDestinationId;
     [Column("TravelFinalDestinationId")]
     public string TravelFinalDestinationId
@@ -128,7 +132,7 @@ public class PlayerData
         set { _travelFinalDestinationId = value; }
     }
 
-    // ⭐ NOUVEAU : Location de depart originale du voyage (Version 7)
+    // NOUVEAU : Location de depart originale du voyage (Version 7)
     private string _travelOriginLocationId;
     [Column("TravelOriginLocationId")]
     public string TravelOriginLocationId
@@ -137,7 +141,7 @@ public class PlayerData
         set { _travelOriginLocationId = value; }
     }
 
-    // === NOUVEAU: Système d'activite ===
+    // === SYSTÈME D'ACTIVITÉ ===
 
     // Activite en cours (JSON serialise)
     private string _currentActivityJson;
@@ -188,87 +192,268 @@ public class PlayerData
         }
     }
 
+    // === NOUVEAU: SYSTÈME D'EXPÉRIENCE ===
+
+    // XP et niveaux des activités principales (Mining, Woodcutting, etc.)
+    private string _skillsJson;
+    [Column("SkillsJson")]
+    public string SkillsJson
+    {
+        get { return _skillsJson; }
+        set { _skillsJson = value; }
+    }
+
+    // XP et niveaux des sous-activités (Iron Mining, Oak Cutting, etc.)  
+    private string _subSkillsJson;
+    [Column("SubSkillsJson")]
+    public string SubSkillsJson
+    {
+        get { return _subSkillsJson; }
+        set { _subSkillsJson = value; }
+    }
+
+    // Propriétés pour accéder facilement aux compétences (ne sont pas sauvegardées)
+    [Ignore]
+    public Dictionary<string, SkillData> Skills
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_skillsJson))
+                return new Dictionary<string, SkillData>();
+
+            try
+            {
+                return JsonConvert.DeserializeObject<Dictionary<string, SkillData>>(_skillsJson);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error deserializing Skills: {ex.Message}", Logger.LogCategory.General);
+                return new Dictionary<string, SkillData>();
+            }
+        }
+        set
+        {
+            try
+            {
+                _skillsJson = JsonConvert.SerializeObject(value);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error serializing Skills: {ex.Message}", Logger.LogCategory.General);
+                _skillsJson = null;
+            }
+        }
+    }
+
+    [Ignore]
+    public Dictionary<string, SkillData> SubSkills
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_subSkillsJson))
+                return new Dictionary<string, SkillData>();
+
+            try
+            {
+                return JsonConvert.DeserializeObject<Dictionary<string, SkillData>>(_subSkillsJson);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error deserializing SubSkills: {ex.Message}", Logger.LogCategory.General);
+                return new Dictionary<string, SkillData>();
+            }
+        }
+        set
+        {
+            try
+            {
+                _subSkillsJson = JsonConvert.SerializeObject(value);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error serializing SubSkills: {ex.Message}", Logger.LogCategory.General);
+                _subSkillsJson = null;
+            }
+        }
+    }
+
+    // === CONSTRUCTEUR ===
+
     // Constructeur par defaut
     public PlayerData()
     {
         Id = 1; // Fixons l'Id a 1 pour notre joueur unique
         _totalPlayerSteps = 0;
         _lastSyncEpochMs = 0; // 0 indique qu'aucune synchro n'a encore eu lieu
-        _lastPauseEpochMs = 0; // 0 indique que l'app n'a jamais ete mise en pause auparavant
+        _lastPauseEpochMs = 0;
         _lastStepsDelta = 0;
         _lastStepsChangeEpochMs = 0;
         _dailySteps = 0;
-        _lastDailyResetDate = DateTime.Now.ToString("yyyy-MM-dd"); // MODIFIE: Utiliser DateTime.Now au lieu de DateTime.UtcNow (Faille B)
-        _lastApiCatchUpEpochMs = 0; // Nouvelle propriete
+        _lastDailyResetDate = "";
+        _lastApiCatchUpEpochMs = 0;
 
-        // NOUVEAU: Valeurs par defaut pour le système de voyage
-        _currentLocationId = "Foret_01"; // Le joueur commence au village
-        _travelDestinationId = null; // Pas de voyage en cours
+        // Location et voyage
+        _currentLocationId = "";
+        _travelDestinationId = null;
         _travelStartSteps = 0;
         _travelRequiredSteps = 0;
-        _travelFinalDestinationId = null; // ⭐ NOUVEAU : Pas de voyage multi-segment par defaut
-        _travelOriginLocationId = null; // ⭐ NOUVEAU : Pas de voyage en cours
+        _travelFinalDestinationId = null;
+        _travelOriginLocationId = null;
 
-        // NOUVEAU: Pas d'activite active par defaut
+        // Activité
+        _currentActivityJson = null;
+
+        // XP System
+        _skillsJson = null;
+        _subSkillsJson = null;
+    }
+
+    // === MÉTHODES DE VOYAGE ===
+
+    /// <summary>
+    /// Le joueur est-il actuellement en voyage ?
+    /// </summary>
+    public bool IsCurrentlyTraveling()
+    {
+        return !string.IsNullOrEmpty(_travelDestinationId);
+    }
+
+    /// <summary>
+    /// Calculer le progres du voyage actuel
+    /// </summary>
+    public long GetTravelProgress(long currentPlayerSteps)
+    {
+        if (!IsCurrentlyTraveling()) return 0;
+        return Math.Max(0, currentPlayerSteps - _travelStartSteps);
+    }
+
+    /// <summary>
+    /// Le voyage est-il complete ?
+    /// </summary>
+    public bool IsTravelComplete(long currentPlayerSteps)
+    {
+        if (!IsCurrentlyTraveling()) return false;
+        return GetTravelProgress(currentPlayerSteps) >= _travelRequiredSteps;
+    }
+
+    /// <summary>
+    /// Commencer un voyage
+    /// </summary>
+    public void StartTravel(string destinationId, int requiredSteps, long currentPlayerSteps)
+    {
+        _travelDestinationId = destinationId;
+        _travelStartSteps = currentPlayerSteps;
+        _travelRequiredSteps = requiredSteps;
+    }
+
+    /// <summary>
+    /// Terminer le voyage actuel
+    /// </summary>
+    public void CompleteTravel()
+    {
+        _currentLocationId = _travelDestinationId;
+        _travelDestinationId = null;
+        _travelStartSteps = 0;
+        _travelRequiredSteps = 0;
+
+        // Clear multi-segment data too
+        _travelFinalDestinationId = null;
+        _travelOriginLocationId = null;
+    }
+
+    /// <summary>
+    /// Annuler le voyage actuel
+    /// </summary>
+    public void CancelTravel()
+    {
+        _travelDestinationId = null;
+        _travelStartSteps = 0;
+        _travelRequiredSteps = 0;
+        _travelFinalDestinationId = null;
+        _travelOriginLocationId = null;
+    }
+
+    // === MÉTHODES D'ACTIVITÉ ===
+
+    /// <summary>
+    /// Le joueur a-t-il une activite en cours ?
+    /// </summary>
+    public bool HasActiveActivity()
+    {
+        return !string.IsNullOrEmpty(_currentActivityJson);
+    }
+
+    /// <summary>
+    /// Arreter l'activite courante
+    /// </summary>
+    public void StopActivity()
+    {
         _currentActivityJson = null;
     }
 
-    // Propriete pour acceder a TotalPlayerSteps avec le nom simplifie TotalSteps
+    // === MÉTHODES D'EXPÉRIENCE ===
+
+    /// <summary>
+    /// Obtenir le niveau d'une compétence principale (ex: "Mining")
+    /// </summary>
+    public int GetSkillLevel(string skillId)
+    {
+        var skills = Skills;
+        if (skills.ContainsKey(skillId))
+        {
+            return skills[skillId].Level;
+        }
+        return 1; // Niveau de base
+    }
+
+    /// <summary>
+    /// Obtenir l'XP d'une compétence principale (ex: "Mining")
+    /// </summary>
+    public int GetSkillXP(string skillId)
+    {
+        var skills = Skills;
+        if (skills.ContainsKey(skillId))
+        {
+            return skills[skillId].Experience;
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Obtenir le niveau d'une sous-compétence (ex: "Iron_Mining")
+    /// </summary>
+    public int GetSubSkillLevel(string variantId)
+    {
+        var subSkills = SubSkills;
+        if (subSkills.ContainsKey(variantId))
+        {
+            return subSkills[variantId].Level;
+        }
+        return 1; // Niveau de base
+    }
+
+    /// <summary>
+    /// Obtenir l'XP d'une sous-compétence (ex: "Iron_Mining")
+    /// </summary>
+    public int GetSubSkillXP(string variantId)
+    {
+        var subSkills = SubSkills;
+        if (subSkills.ContainsKey(variantId))
+        {
+            return subSkills[variantId].Experience;
+        }
+        return 0;
+    }
+
+    // === PROPRIÉTÉS CALCULÉES ET ALIASES ===
+
+    /// <summary>
+    /// Alias pour TotalPlayerSteps (compatibilite) - Lecture ET écriture
+    /// </summary>
+    [Ignore]
     public long TotalSteps
     {
-        get { return TotalPlayerSteps; }
-        set
-        {
-            // Calculer et stocker le delta pour detecter les anomalies
-            long delta = value - TotalPlayerSteps;
-            if (delta != 0)
-            {
-                LastStepsDelta = delta;
-                LastStepsChangeEpochMs = new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds(); // MODIFIE: Utiliser DateTime.Now (Faille B)
-            }
-            TotalPlayerSteps = value;
-        }
-    }
-
-    // NOUVEAU: Methodes utiles pour le voyage
-
-    // Est-ce que le joueur voyage actuellement ?
-    public bool IsCurrentlyTraveling()
-    {
-        return !string.IsNullOrEmpty(TravelDestinationId);
-    }
-
-    // ⭐ NOUVEAU : Est-ce que c'est un voyage multi-segment ?
-    public bool IsMultiSegmentTravel()
-    {
-        return IsCurrentlyTraveling() && !string.IsNullOrEmpty(TravelFinalDestinationId);
-    }
-
-    // Combien de pas a fait le joueur depuis le debut du voyage ?
-    public long GetTravelProgress(long currentTotalSteps)
-    {
-        if (!IsCurrentlyTraveling()) return 0;
-        return currentTotalSteps - TravelStartSteps;
-    }
-
-    // Le voyage est-il termine ?
-    public bool IsTravelComplete(long currentTotalSteps)
-    {
-        if (!IsCurrentlyTraveling()) return false;
-        return GetTravelProgress(currentTotalSteps) >= TravelRequiredSteps;
-    }
-
-    // NOUVEAU: Methodes utiles pour les activites
-
-    // Est-ce que le joueur a une activite active ?
-    public bool HasActiveActivity()
-    {
-        return CurrentActivity != null;
-    }
-
-    // Arreter l'activite courante
-    public void StopActivity()
-    {
-        CurrentActivity = null;
+        get => _totalPlayerSteps;
+        set => _totalPlayerSteps = value;
     }
 }

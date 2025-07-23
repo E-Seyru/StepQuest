@@ -4,7 +4,7 @@ public static class Logger
 {
     public enum LogLevel { Debug, Info, Warning, Error }
     public enum LogCategory { None, General, StepLog, MapLog, CombatLog, InventoryLog }
-    public static LogLevel CurrentLogLevel = LogLevel.Warning;
+    public static LogLevel CurrentLogLevel = LogLevel.Debug;
 
 
 

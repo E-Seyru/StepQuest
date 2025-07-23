@@ -21,6 +21,9 @@ MonoBehaviour:
   SecondaryResources: []
   ActionCost: 10
   SuccessRate: 100
+  MainSkillXPPerTick: 10
+  SubSkillXPPerTick: 5
+  MainSkillId: 
   CraftingTimeMs: 30000
   RequiredMaterials: []
   RequiredQuantities: 
