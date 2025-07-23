@@ -115,7 +115,7 @@ public class LocalDatabase
                 // MIGRATION: Version 5 -> 6 pour ActivityData (existante)
                 if (currentVersion < 6 && DATABASE_VERSION >= 6)
                 {
-                    Logger.LogInfo("LocalDatabase: Migrating to version 6 - Adding ActivityData support...");
+                    
 
                     try
                     {
@@ -406,7 +406,7 @@ public class LocalDatabase
 
             if (data.LastSyncEpochMs <= 0 && data.TotalPlayerSteps > 0)
             {
-                Logger.LogWarning("LocalDatabase: LastSyncEpochMs needs initialization");
+                
                 data.LastSyncEpochMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             }
 
@@ -423,16 +423,7 @@ public class LocalDatabase
             }
 
             int result = _connection.InsertOrReplace(data);
-            Logger.LogInfo($"LocalDatabase: PlayerData saved - TotalSteps: {data.TotalPlayerSteps}, " +
-                           $"LastSync: {GetReadableDateFromEpoch(data.LastSyncEpochMs)}, " +
-                           $"LastPause: {GetReadableDateFromEpoch(data.LastPauseEpochMs)}, " +
-                           $"LastDelta: {data.LastStepsDelta}, " +
-                           $"LastChange: {GetReadableDateFromEpoch(data.LastStepsChangeEpochMs)}, " +
-                           $"DailySteps: {data.DailySteps}, " +
-                           $"LastReset: {data.LastDailyResetDate}, " +
-                           $"LastApiCatchUp: {GetReadableDateFromEpoch(data.LastApiCatchUpEpochMs)}, " +
-                           $"Activity: {(data.HasActiveActivity() ? data.CurrentActivity.ActivityId : "None")}, " +
-                           $"Result: {result}");
+         
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD 
             VerifySaveSuccess(data);

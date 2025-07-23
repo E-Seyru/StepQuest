@@ -1,22 +1,39 @@
-﻿// Purpose: Manager for all XP calculations and skill progression
-// Filepath: Assets/Scripts/Systems/XpManager.cs
+﻿// Purpose: Manages player experience and skill progression
+// Filepath: Assets/Scripts/Gameplay/Progression/XpManager.cs
+using System.Collections.Generic;
 using UnityEngine;
 
 public class XpManager : MonoBehaviour
 {
+    [Header("XP Settings")]
+
+    [SerializeField] private int maxLevel = 100;
+    public int MaxLevel => maxLevel; // Propriété publique en lecture seule
+    [SerializeField] private int baseXpForLevel2 = 100;
+    [SerializeField] private float xpGrowthRate = 1.2f;
+
+    [Header("Performance")]
+    [SerializeField] private float saveDelay = 5f; // Delai avant sauvegarde automatique
+
+    [Header("Debug")]
+    [SerializeField] private bool enableDebugLogs = true;
+
     public static XpManager Instance { get; private set; }
 
-    [Header("XP Configuration")]
-    [SerializeField] private int baseXpForLevel2 = 100;      // XP necessaire pour passer au niveau 2
-    [SerializeField] private float xpGrowthRate = 1.5f;      // Multiplicateur d'XP par niveau (1.5 = +50% par niveau)
-    [SerializeField] private int maxLevel = 100;             // Niveau maximum
+    // Cache pour optimiser les calculs repetes
+    private Dictionary<int, int> xpRequiredCache = new Dictionary<int, int>();
+    private bool pendingSave = false;
 
-    void Awake()
+    #region Unity Lifecycle
+
+    private void Awake()
     {
+        // Singleton pattern securise
         if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            InitializeXpCache();
         }
         else
         {
@@ -24,21 +41,295 @@ public class XpManager : MonoBehaviour
         }
     }
 
-    // === CALCULS DE PROGRESSION ===
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            // Sauvegarder avant destruction si necessaire
+            if (pendingSave)
+            {
+                SaveGameData();
+            }
+            Instance = null;
+        }
+    }
+
+    #endregion
+
+    #region Initialization
 
     /// <summary>
-    /// XP necessaire pour passer du niveau N au niveau N+1
+    /// Precalculer les XP requis pour optimiser les performances
+    /// </summary>
+    private void InitializeXpCache()
+    {
+        for (int level = 1; level <= maxLevel; level++)
+        {
+            xpRequiredCache[level] = CalculateXPRequiredForLevelUp(level);
+        }
+
+        if (enableDebugLogs)
+        {
+            Logger.LogInfo("XpManager: XP cache initialized", Logger.LogCategory.General);
+        }
+    }
+
+    #endregion
+
+    #region Public API - Skill Management
+
+    /// <summary>
+    /// Ajouter de l'XP a une competence principale de manière securisee
+    /// </summary>
+    public bool AddSkillXP(string skillId, int xpGained)
+    {
+        if (!ValidateXpInput(skillId, xpGained)) return false;
+        if (!EnsurePlayerDataExists()) return false;
+
+        var playerData = DataManager.Instance.PlayerData;
+        var skills = playerData.Skills;
+
+        // Creer la competence si elle n'existe pas
+        if (!skills.ContainsKey(skillId))
+        {
+            skills[skillId] = new SkillData(skillId, 1, 0);
+        }
+
+        var skill = skills[skillId];
+        skill.Experience += xpGained;
+
+        // Traiter les montees de niveau
+        int levelsGained = ProcessLevelUps(skill);
+        bool leveledUp = levelsGained > 0;
+
+        // Sauvegarder les modifications
+        skills[skillId] = skill;
+        playerData.Skills = skills;
+
+        // Programmer une sauvegarde differee
+        ScheduleSave();
+
+        if (enableDebugLogs)
+        {
+            Logger.LogInfo($"XpManager: {skillId} gained {xpGained} XP (Level {skill.Level}, Total: {skill.Experience})",
+                Logger.LogCategory.General);
+        }
+
+        return leveledUp;
+    }
+
+    /// <summary>
+    /// Ajouter de l'XP a une sous-competence de manière securisee
+    /// </summary>
+    public bool AddSubSkillXP(string subSkillId, int xpGained)
+    {
+        if (!ValidateXpInput(subSkillId, xpGained)) return false;
+        if (!EnsurePlayerDataExists()) return false;
+
+        var playerData = DataManager.Instance.PlayerData;
+        var subSkills = playerData.SubSkills;
+
+        // Creer la sous-competence si elle n'existe pas
+        if (!subSkills.ContainsKey(subSkillId))
+        {
+            subSkills[subSkillId] = new SkillData(subSkillId, 1, 0);
+        }
+
+        var subSkill = subSkills[subSkillId];
+        subSkill.Experience += xpGained;
+
+        // Traiter les montees de niveau
+        int levelsGained = ProcessLevelUps(subSkill);
+        bool leveledUp = levelsGained > 0;
+
+        // Sauvegarder les modifications
+        subSkills[subSkillId] = subSkill;
+        playerData.SubSkills = subSkills;
+
+        // Programmer une sauvegarde differee
+        ScheduleSave();
+
+        if (enableDebugLogs)
+        {
+            Logger.LogInfo($"XpManager: SubSkill {subSkillId} gained {xpGained} XP (Level {subSkill.Level}, Total: {subSkill.Experience})",
+                Logger.LogCategory.General);
+        }
+
+        return leveledUp;
+    }
+
+    /// <summary>
+    /// Appliquer une recompense d'XP complète de manière optimisee
+    /// </summary>
+    public XpApplyResult ApplyXPReward(XPReward xpReward)
+    {
+        if (xpReward == null || !xpReward.HasAnyXP())
+        {
+            return new XpApplyResult(false, false);
+        }
+
+        bool mainSkillLeveledUp = false;
+        bool subSkillLeveledUp = false;
+
+        // Appliquer l'XP principale
+        if (xpReward.MainSkillXP > 0)
+        {
+            mainSkillLeveledUp = AddSkillXP(xpReward.MainSkillId, xpReward.MainSkillXP);
+        }
+
+        // Appliquer l'XP secondaire
+        if (xpReward.SubSkillXP > 0)
+        {
+            subSkillLeveledUp = AddSubSkillXP(xpReward.SubSkillId, xpReward.SubSkillXP);
+        }
+
+        return new XpApplyResult(mainSkillLeveledUp, subSkillLeveledUp);
+    }
+
+    #endregion
+
+    #region Public API - Data Access
+
+    /// <summary>
+    /// Obtenir les donnees d'une competence principale de manière securisee
+    /// </summary>
+    public SkillData GetPlayerSkill(string skillId)
+    {
+        if (!EnsurePlayerDataExists() || string.IsNullOrEmpty(skillId))
+        {
+            return new SkillData(skillId ?? "Unknown", 1, 0);
+        }
+
+        var skills = DataManager.Instance.PlayerData.Skills;
+
+        if (skills.ContainsKey(skillId))
+        {
+            return skills[skillId];
+        }
+
+        // Creer une nouvelle competence si elle n'existe pas
+        var newSkill = new SkillData(skillId, 1, 0);
+        skills[skillId] = newSkill;
+        ScheduleSave();
+        return newSkill;
+    }
+
+    /// <summary>
+    /// Obtenir les donnees d'une sous-competence de manière securisee
+    /// </summary>
+    public SkillData GetPlayerSubSkill(string subSkillId)
+    {
+        if (!EnsurePlayerDataExists() || string.IsNullOrEmpty(subSkillId))
+        {
+            return new SkillData(subSkillId ?? "Unknown", 1, 0);
+        }
+
+        var subSkills = DataManager.Instance.PlayerData.SubSkills;
+
+        if (subSkills.ContainsKey(subSkillId))
+        {
+            return subSkills[subSkillId];
+        }
+
+        // Creer une nouvelle sous-competence si elle n'existe pas
+        var newSubSkill = new SkillData(subSkillId, 1, 0);
+        subSkills[subSkillId] = newSubSkill;
+        ScheduleSave();
+        return newSubSkill;
+    }
+
+    #endregion
+
+    #region XP Calculation Methods
+
+    /// <summary>
+    /// Calculer l'XP gagnee pour une activite step-based avec bonus de niveau
+    /// </summary>
+    public XPReward CalculateStepBasedXP(int ticksCompleted, ActivityVariant variant)
+    {
+        if (variant == null || ticksCompleted <= 0)
+        {
+            return new XPReward("Unknown", "Unknown", 0, 0);
+        }
+
+        // Obtenir les niveaux actuels pour calculer les bonus
+        var mainSkill = GetPlayerSkill(variant.GetMainSkillId());
+        var subSkill = GetPlayerSubSkill(variant.GetSubSkillId());
+
+        // Calculer l'XP de base
+        int baseMainXP = variant.MainSkillXPPerTick * ticksCompleted;
+        int baseSubXP = variant.SubSkillXPPerTick * ticksCompleted;
+
+        // Appliquer les bonus de niveau (legèrement reduits pour equilibrer)
+        float mainBonus = GetLevelBonus(mainSkill.Level);
+        float subBonus = GetLevelBonus(subSkill.Level);
+
+        int finalMainXP = Mathf.RoundToInt(baseMainXP * mainBonus);
+        int finalSubXP = Mathf.RoundToInt(baseSubXP * subBonus);
+
+        return new XPReward(
+            variant.GetMainSkillId(),
+            variant.GetSubSkillId(),
+            finalMainXP,
+            finalSubXP
+        );
+    }
+
+    /// <summary>
+    /// Calculer l'XP gagnee pour une activite time-based avec bonus de niveau
+    /// </summary>
+    public XPReward CalculateTimeBasedXP(int completedCrafts, ActivityVariant variant)
+    {
+        if (variant == null || completedCrafts <= 0)
+        {
+            return new XPReward("Unknown", "Unknown", 0, 0);
+        }
+
+        // Obtenir les niveaux actuels pour calculer les bonus
+        var mainSkill = GetPlayerSkill(variant.GetMainSkillId());
+        var subSkill = GetPlayerSubSkill(variant.GetSubSkillId());
+
+        // Calculer l'XP de base
+        int baseMainXP = variant.MainSkillXPPerTick * completedCrafts;
+        int baseSubXP = variant.SubSkillXPPerTick * completedCrafts;
+
+        // Appliquer les bonus de niveau
+        float mainBonus = GetLevelBonus(mainSkill.Level);
+        float subBonus = GetLevelBonus(subSkill.Level);
+
+        int finalMainXP = Mathf.RoundToInt(baseMainXP * mainBonus);
+        int finalSubXP = Mathf.RoundToInt(baseSubXP * subBonus);
+
+        return new XPReward(
+            variant.GetMainSkillId(),
+            variant.GetSubSkillId(),
+            finalMainXP,
+            finalSubXP
+        );
+    }
+
+    #endregion
+
+    #region Level System
+
+    /// <summary>
+    /// XP necessaire pour passer du niveau actuel au suivant
     /// </summary>
     public int GetXPRequiredForLevelUp(int currentLevel)
     {
         if (currentLevel >= maxLevel) return 0;
 
-        // Formule exponentielle : baseXP * (growthRate ^ (level - 1))
-        // Niveau 1→2 : 100 XP
-        // Niveau 2→3 : 100 * 1.5 = 150 XP  
-        // Niveau 3→4 : 100 * 1.5² = 225 XP
-        // etc.
+        if (xpRequiredCache.ContainsKey(currentLevel))
+        {
+            return xpRequiredCache[currentLevel];
+        }
 
+        return CalculateXPRequiredForLevelUp(currentLevel);
+    }
+
+    private int CalculateXPRequiredForLevelUp(int currentLevel)
+    {
+        if (currentLevel <= 0) return baseXpForLevel2;
         return Mathf.RoundToInt(baseXpForLevel2 * Mathf.Pow(xpGrowthRate, currentLevel - 1));
     }
 
@@ -80,7 +371,29 @@ public class XpManager : MonoBehaviour
         int currentProgress = skill.Experience - currentLevelTotalXP;
         int xpNeededForThisLevel = nextLevelTotalXP - currentLevelTotalXP;
 
-        return (float)currentProgress / xpNeededForThisLevel;
+        return Mathf.Clamp01((float)currentProgress / xpNeededForThisLevel);
+    }
+
+    /// <summary>
+    /// Faire monter une competence de niveau (retourne le nombre de niveaux gagnes)
+    /// </summary>
+    public int ProcessLevelUps(SkillData skill)
+    {
+        int levelsGained = 0;
+
+        while (CanLevelUp(skill) && skill.Level < maxLevel)
+        {
+            skill.Level++;
+            levelsGained++;
+
+            if (enableDebugLogs)
+            {
+                Logger.LogInfo($"XpManager: {skill.SkillId} leveled up to {skill.Level}! (Total XP: {skill.Experience})",
+                    Logger.LogCategory.General);
+            }
+        }
+
+        return levelsGained;
     }
 
     /// <summary>
@@ -92,45 +405,41 @@ public class XpManager : MonoBehaviour
         return skill.Experience >= GetTotalXPRequiredForLevel(skill.Level + 1);
     }
 
-    /// <summary>
-    /// Faire monter une competence de niveau (retourne le nombre de niveaux gagnes)
-    /// </summary>
-    public int ProcessLevelUps(SkillData skill)
-    {
-        int levelsGained = 0;
+    #endregion
 
-        while (CanLevelUp(skill))
-        {
-            skill.Level++;
-            levelsGained++;
-
-            Logger.LogInfo($"XpManager: {skill.SkillId} leveled up to {skill.Level}! (Total XP: {skill.Experience})", Logger.LogCategory.General);
-        }
-
-        return levelsGained;
-    }
-
-    // === CALCULS DE BONUS ===
+    #region Bonus System
 
     /// <summary>
-    /// Calculer le bonus d'efficacite base sur le niveau
+    /// Calculer le bonus d'efficacite base sur le niveau (version equilibree)
     /// </summary>
     public float GetEfficiencyBonus(int level)
     {
-        // Système de bonus progressif :
+        // Système de bonus progressif equilibre :
         // Niveaux 1-25 : Pas de bonus (apprentissage)
-        // Niveaux 26-50 : +1% par niveau
-        // Niveaux 51-75 : +2% par niveau  
-        // Niveaux 76-100 : +3% par niveau
+        // Niveaux 26-50 : +0.5% par niveau
+        // Niveaux 51-75 : +1% par niveau  
+        // Niveaux 76-100 : +1.5% par niveau
 
         if (level <= 25)
             return 1.0f; // Pas de bonus
         else if (level <= 50)
-            return 1.0f + (level - 25) * 0.01f; // +1% par niveau
+            return 1.0f + (level - 25) * 0.005f; // +0.5% par niveau
         else if (level <= 75)
-            return 1.25f + (level - 50) * 0.02f; // +25% + 2% par niveau
+            return 1.125f + (level - 50) * 0.01f; // +12.5% + 1% par niveau
         else
-            return 1.75f + (level - 75) * 0.03f; // +75% + 3% par niveau
+            return 1.375f + (level - 75) * 0.015f; // +37.5% + 1.5% par niveau
+    }
+
+    /// <summary>
+    /// Calculer le bonus d'XP base sur le niveau (nouveau)
+    /// </summary>
+    private float GetLevelBonus(int level)
+    {
+        // Petit bonus d'XP pour recompenser la progression
+        if (level <= 10) return 1.0f;
+        if (level <= 25) return 1.0f + (level - 10) * 0.01f; // +1% par niveau après 10
+        if (level <= 50) return 1.15f + (level - 25) * 0.005f; // +0.5% par niveau après 25
+        return 1.275f + (level - 50) * 0.002f; // +0.2% par niveau après 50
     }
 
     /// <summary>
@@ -138,167 +447,131 @@ public class XpManager : MonoBehaviour
     /// </summary>
     public string GetLevelDescription(int level)
     {
-        if (level <= 25)
-            return "Apprenti";
-        else if (level <= 50)
-            return "Competent";
-        else if (level <= 75)
-            return "Expert";
-        else if (level <= 90)
-            return "Maître";
-        else
-            return "Legendaire";
+        if (level <= 25) return "Apprenti";
+        if (level <= 50) return "Competent";
+        if (level <= 75) return "Expert";
+        if (level <= 90) return "Maître";
+        return "Legendaire";
     }
 
-    // === CALCULS D'XP GAGNeE ===
+    #endregion
+
+    #region Validation & Safety
 
     /// <summary>
-    /// Calculer l'XP gagnee pour une activite step-based
+    /// Valider les paramètres d'entree pour l'XP
     /// </summary>
-    public XPReward CalculateStepBasedXP(int ticksCompleted, ActivityVariant variant)
+    private bool ValidateXpInput(string skillId, int xpGained)
     {
-        if (variant == null)
-            return new XPReward("Unknown", "Unknown", 0, 0);
-
-        int mainSkillXP = variant.MainSkillXPPerTick * ticksCompleted;
-        int subSkillXP = variant.SubSkillXPPerTick * ticksCompleted;
-
-        return new XPReward(
-            variant.GetMainSkillId(),
-            variant.GetSubSkillId(),
-            mainSkillXP,
-            subSkillXP
-        );
-    }
-
-    /// <summary>
-    /// Calculer l'XP gagnee pour une activite time-based
-    /// </summary>
-    public XPReward CalculateTimeBasedXP(int completedCrafts, ActivityVariant variant)
-    {
-        if (variant == null)
-            return new XPReward("Unknown", "Unknown", 0, 0);
-
-        int mainSkillXP = variant.MainSkillXPPerTick * completedCrafts;
-        int subSkillXP = variant.SubSkillXPPerTick * completedCrafts;
-
-        return new XPReward(
-            variant.GetMainSkillId(),
-            variant.GetSubSkillId(),
-            mainSkillXP,
-            subSkillXP
-        );
-    }
-
-    /// <summary>
-    /// Appliquer une recompense d'XP au joueur
-    /// </summary>
-    public void ApplyXPReward(XPReward xpReward)
-    {
-        if (xpReward.MainSkillXP > 0)
+        if (string.IsNullOrEmpty(skillId))
         {
-            AddSkillXP(xpReward.MainSkillId, xpReward.MainSkillXP);
+            if (enableDebugLogs)
+            {
+                Logger.LogWarning("XpManager: Cannot add XP - skillId is null or empty", Logger.LogCategory.General);
+            }
+            return false;
         }
 
-        if (xpReward.SubSkillXP > 0)
+        if (xpGained <= 0)
         {
-            AddSubSkillXP(xpReward.SubSkillId, xpReward.SubSkillXP);
-        }
-    }
-
-    // === INTeGRATION AVEC PLAYERDATA ===
-
-    /// <summary>
-    /// Ajouter de l'XP a une competence principale et traiter les montees de niveau
-    /// </summary>
-    public bool AddSkillXP(string skillId, int xpGained)
-    {
-        if (DataManager.Instance?.PlayerData == null) return false;
-
-        var playerData = DataManager.Instance.PlayerData;
-        var skills = playerData.Skills;
-
-        if (!skills.ContainsKey(skillId))
-        {
-            skills[skillId] = new SkillData(skillId, 1, 0);
+            if (enableDebugLogs)
+            {
+                Logger.LogWarning($"XpManager: Cannot add XP - invalid amount: {xpGained}", Logger.LogCategory.General);
+            }
+            return false;
         }
 
-        var skill = skills[skillId];
-        skill.Experience += xpGained;
-
-        // Traiter les montees de niveau
-        int levelsGained = ProcessLevelUps(skill);
-
-        skills[skillId] = skill;
-        playerData.Skills = skills; // Sauvegarder
-
-        Logger.LogInfo($"XpManager: {skillId} gained {xpGained} XP (Level {skill.Level})", Logger.LogCategory.General);
-
-        return levelsGained > 0;
+        return true;
     }
 
     /// <summary>
-    /// Ajouter de l'XP a une sous-competence et traiter les montees de niveau
+    /// S'assurer que les donnees du joueur existent
     /// </summary>
-    public bool AddSubSkillXP(string variantId, int xpGained)
+    private bool EnsurePlayerDataExists()
     {
-        if (DataManager.Instance?.PlayerData == null) return false;
-
-        var playerData = DataManager.Instance.PlayerData;
-        var subSkills = playerData.SubSkills;
-
-        if (!subSkills.ContainsKey(variantId))
+        if (DataManager.Instance == null)
         {
-            subSkills[variantId] = new SkillData(variantId, 1, 0);
+            if (enableDebugLogs)
+            {
+                Logger.LogError("XpManager: DataManager.Instance is null!", Logger.LogCategory.General);
+            }
+            return false;
         }
 
-        var subSkill = subSkills[variantId];
-        subSkill.Experience += xpGained;
+        if (DataManager.Instance.PlayerData == null)
+        {
+            if (enableDebugLogs)
+            {
+                Logger.LogError("XpManager: PlayerData is null!", Logger.LogCategory.General);
+            }
+            return false;
+        }
 
-        // Traiter les montees de niveau
-        int levelsGained = ProcessLevelUps(subSkill);
-
-        subSkills[variantId] = subSkill;
-        playerData.SubSkills = subSkills; // Sauvegarder
-
-        Logger.LogInfo($"XpManager: {variantId} sub-skill gained {xpGained} XP (Level {subSkill.Level})", Logger.LogCategory.General);
-
-        return levelsGained > 0;
+        return true;
     }
 
-    // === MeTHODES UTILITAIRES PUBLIQUES ===
+    #endregion
+
+    #region Save Management
 
     /// <summary>
-    /// Obtenir une competence du joueur (creee si n'existe pas)
+    /// Programmer une sauvegarde differee pour optimiser les performances
     /// </summary>
-    public SkillData GetPlayerSkill(string skillId)
+    private void ScheduleSave()
     {
-        if (DataManager.Instance?.PlayerData == null) return new SkillData(skillId);
-
-        var skills = DataManager.Instance.PlayerData.Skills;
-        if (!skills.ContainsKey(skillId))
+        if (!pendingSave)
         {
-            skills[skillId] = new SkillData(skillId, 1, 0);
-            DataManager.Instance.PlayerData.Skills = skills;
+            pendingSave = true;
+            Invoke(nameof(SaveGameData), saveDelay);
         }
-
-        return skills[skillId];
     }
 
     /// <summary>
-    /// Obtenir une sous-competence du joueur (creee si n'existe pas)
+    /// Sauvegarder les donnees du jeu
     /// </summary>
-    public SkillData GetPlayerSubSkill(string variantId)
+    private void SaveGameData()
     {
-        if (DataManager.Instance?.PlayerData == null) return new SkillData(variantId);
+        pendingSave = false;
 
-        var subSkills = DataManager.Instance.PlayerData.SubSkills;
-        if (!subSkills.ContainsKey(variantId))
+        if (DataManager.Instance != null)
         {
-            subSkills[variantId] = new SkillData(variantId, 1, 0);
-            DataManager.Instance.PlayerData.SubSkills = subSkills;
-        }
+            DataManager.Instance.SaveGame();
 
-        return subSkills[variantId];
+            if (enableDebugLogs)
+            {
+                Logger.LogInfo("XpManager: Game data saved", Logger.LogCategory.General);
+            }
+        }
     }
+
+    /// <summary>
+    /// Forcer une sauvegarde immediate (pour les cas critiques)
+    /// </summary>
+    public void ForceSave()
+    {
+        if (pendingSave)
+        {
+            CancelInvoke(nameof(SaveGameData));
+        }
+        SaveGameData();
+    }
+
+    #endregion
+}
+
+/// <summary>
+/// Resultat de l'application d'une recompense d'XP
+/// </summary>
+public struct XpApplyResult
+{
+    public bool MainSkillLeveledUp;
+    public bool SubSkillLeveledUp;
+
+    public XpApplyResult(bool mainSkillLeveledUp, bool subSkillLeveledUp)
+    {
+        MainSkillLeveledUp = mainSkillLeveledUp;
+        SubSkillLeveledUp = subSkillLeveledUp;
+    }
+
+    public bool AnyLevelUp => MainSkillLeveledUp || SubSkillLeveledUp;
 }

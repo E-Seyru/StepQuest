@@ -1,5 +1,5 @@
 ﻿// Purpose: Handles XP rewards when activities complete
-// Filepath: Assets/Scripts/Systems/XpEventHandler.cs
+// Filepath: Assets/Scripts/Gameplay/Progression/XpEventHandler.cs
 using ActivityEvents;
 using UnityEngine;
 
@@ -8,65 +8,86 @@ public class XpEventHandler : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
 
+    [Header("Performance")]
+    [SerializeField] private bool batchLevelUpEvents = true; // Grouper les evenements de level up
+
+    #region Unity Lifecycle
+
     void Start()
     {
-        // S'abonner aux evenements d'activite
-        EventBus.Subscribe<ActivityTickEvent>(OnActivityTick);
-
-        if (enableDebugLogs)
-        {
-            Logger.LogInfo("XpEventHandler: Subscribed to ActivityTickEvent", Logger.LogCategory.General);
-        }
+        InitializeEventSubscriptions();
     }
 
     void OnDestroy()
     {
-        // Se desabonner pour eviter les fuites memoire
-        EventBus.Unsubscribe<ActivityTickEvent>(OnActivityTick);
+        CleanupEventSubscriptions();
+    }
 
-        if (enableDebugLogs)
+    #endregion
+
+    #region Event Management
+
+    /// <summary>
+    /// Initialiser les abonnements aux evenements de manière securisee
+    /// </summary>
+    private void InitializeEventSubscriptions()
+    {
+        if (!ValidateEventBus()) return;
+
+        try
         {
-            Logger.LogInfo("XpEventHandler: Unsubscribed from ActivityTickEvent", Logger.LogCategory.General);
+            EventBus.Subscribe<ActivityTickEvent>(OnActivityTick);
+
+            if (enableDebugLogs)
+            {
+                Logger.LogInfo("XpEventHandler: Successfully subscribed to ActivityTickEvent", Logger.LogCategory.General);
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Logger.LogError($"XpEventHandler: Failed to subscribe to events - {ex.Message}", Logger.LogCategory.General);
         }
     }
 
     /// <summary>
-    /// Gerer les ticks d'activite et donner de l'XP
+    /// Nettoyer les abonnements aux evenements pour eviter les fuites memoire
+    /// </summary>
+    private void CleanupEventSubscriptions()
+    {
+        if (!ValidateEventBus()) return;
+
+        try
+        {
+            EventBus.Unsubscribe<ActivityTickEvent>(OnActivityTick);
+
+            if (enableDebugLogs)
+            {
+                Logger.LogInfo("XpEventHandler: Successfully unsubscribed from ActivityTickEvent", Logger.LogCategory.General);
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Logger.LogError($"XpEventHandler: Failed to unsubscribe from events - {ex.Message}", Logger.LogCategory.General);
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers
+
+    /// <summary>
+    /// Gerer les ticks d'activite et distribuer l'XP de manière optimisee
     /// </summary>
     private void OnActivityTick(ActivityTickEvent eventData)
     {
-        // Verifier que nous avons les donnees necessaires
-        if (eventData.Variant == null || eventData.TicksCompleted <= 0)
-        {
-            if (enableDebugLogs)
-            {
-                Logger.LogWarning("XpEventHandler: ActivityTickEvent has null variant or no ticks completed", Logger.LogCategory.General);
-            }
-            return;
-        }
+        // Validation des donnees d'entree
+        if (!ValidateActivityEvent(eventData)) return;
 
-        // Verifier que XpManager existe
-        if (XpManager.Instance == null)
-        {
-            Logger.LogError("XpEventHandler: XpManager.Instance is null! Make sure XpManager is in the scene.", Logger.LogCategory.General);
-            return;
-        }
+        // Validation du système XP
+        if (!ValidateXpSystem()) return;
 
-        // Calculer l'XP gagnee selon le type d'activite
-        XPReward xpReward;
-
-        if (eventData.Variant.IsTimeBased)
-        {
-            // Activite time-based (crafting)
-            xpReward = XpManager.Instance.CalculateTimeBasedXP(eventData.TicksCompleted, eventData.Variant);
-        }
-        else
-        {
-            // Activite step-based (gathering)
-            xpReward = XpManager.Instance.CalculateStepBasedXP(eventData.TicksCompleted, eventData.Variant);
-        }
-
-        // Verifier qu'on a de l'XP a donner
+        // Calculer la recompense d'XP
+        XPReward xpReward = CalculateXpReward(eventData);
         if (!xpReward.HasAnyXP())
         {
             if (enableDebugLogs)
@@ -76,89 +97,330 @@ public class XpEventHandler : MonoBehaviour
             return;
         }
 
-        // Appliquer l'XP au joueur
-        bool mainSkillLeveledUp = false;
-        bool subSkillLeveledUp = false;
+        // Appliquer la recompense d'XP de manière optimisee
+        ApplyXpReward(xpReward, eventData);
+    }
 
-        if (xpReward.MainSkillXP > 0)
+    #endregion
+
+    #region XP Processing
+
+    /// <summary>
+    /// Calculer la recompense d'XP basee sur le type d'activite
+    /// </summary>
+    private XPReward CalculateXpReward(ActivityTickEvent eventData)
+    {
+        if (eventData.Variant.IsTimeBased)
         {
-            mainSkillLeveledUp = XpManager.Instance.AddSkillXP(xpReward.MainSkillId, xpReward.MainSkillXP);
+            return XpManager.Instance.CalculateTimeBasedXP(eventData.TicksCompleted, eventData.Variant);
         }
-
-        if (xpReward.SubSkillXP > 0)
+        else
         {
-            subSkillLeveledUp = XpManager.Instance.AddSubSkillXP(xpReward.SubSkillId, xpReward.SubSkillXP);
+            return XpManager.Instance.CalculateStepBasedXP(eventData.TicksCompleted, eventData.Variant);
         }
-
-        // Log des resultats
-        if (enableDebugLogs)
-        {
-            string logMessage = $"XpEventHandler: {eventData.Variant.VariantName} completed {eventData.TicksCompleted} ticks → ";
-            logMessage += $"{xpReward.MainSkillId} +{xpReward.MainSkillXP}XP, {xpReward.SubSkillId} +{xpReward.SubSkillXP}XP";
-
-            if (mainSkillLeveledUp || subSkillLeveledUp)
-            {
-                logMessage += " 🎉 LEVEL UP!";
-            }
-
-            Logger.LogInfo(logMessage, Logger.LogCategory.General);
-        }
-
-        // Optionnel : Publier un evenement de level up si necessaire
-        if (mainSkillLeveledUp)
-        {
-            PublishLevelUpEvent(xpReward.MainSkillId, XpManager.Instance.GetPlayerSkill(xpReward.MainSkillId).Level, false);
-        }
-
-        if (subSkillLeveledUp)
-        {
-            PublishLevelUpEvent(xpReward.SubSkillId, XpManager.Instance.GetPlayerSubSkill(xpReward.SubSkillId).Level, true);
-        }
-
-        // Sauvegarder les donnees du joueur
-        DataManager.Instance?.SaveGame();
     }
 
     /// <summary>
-    /// Publier un evenement de level up (optionnel, pour l'UI par exemple)
+    /// Appliquer la recompense d'XP et gerer les evenements de level up
+    /// </summary>
+    private void ApplyXpReward(XPReward xpReward, ActivityTickEvent eventData)
+    {
+        // Utiliser la methode optimisee de XpManager
+        XpApplyResult result = XpManager.Instance.ApplyXPReward(xpReward);
+
+        // Logging des resultats
+        if (enableDebugLogs)
+        {
+            LogXpRewardResult(xpReward, eventData, result);
+        }
+
+        // Publier les evenements de level up si necessaire
+        if (result.AnyLevelUp)
+        {
+            PublishLevelUpEvents(xpReward, result);
+        }
+    }
+
+    /// <summary>
+    /// Publier les evenements de level up de manière optimisee
+    /// </summary>
+    private void PublishLevelUpEvents(XPReward xpReward, XpApplyResult result)
+    {
+        if (batchLevelUpEvents)
+        {
+            // Publier un seul evenement groupe pour de meilleures performances
+            PublishBatchedLevelUpEvent(xpReward, result);
+        }
+        else
+        {
+            // Publier des evenements individuels
+            PublishIndividualLevelUpEvents(xpReward, result);
+        }
+    }
+
+    /// <summary>
+    /// Publier un evenement de level up groupe
+    /// </summary>
+    private void PublishBatchedLevelUpEvent(XPReward xpReward, XpApplyResult result)
+    {
+        var levelUpData = new BatchedLevelUpEventData();
+
+        if (result.MainSkillLeveledUp)
+        {
+            var mainSkill = XpManager.Instance.GetPlayerSkill(xpReward.MainSkillId);
+            levelUpData.AddLevelUp(xpReward.MainSkillId, mainSkill.Level, false);
+        }
+
+        if (result.SubSkillLeveledUp)
+        {
+            var subSkill = XpManager.Instance.GetPlayerSubSkill(xpReward.SubSkillId);
+            levelUpData.AddLevelUp(xpReward.SubSkillId, subSkill.Level, true);
+        }
+
+        // Publier l'evenement groupe (a implementer selon votre système d'evenements)
+        // EventBus.Publish(new BatchedSkillLevelUpEvent(levelUpData));
+
+        if (enableDebugLogs)
+        {
+            Logger.LogInfo($"🎉 Level up batch published: {levelUpData}", Logger.LogCategory.General);
+        }
+    }
+
+    /// <summary>
+    /// Publier des evenements de level up individuels
+    /// </summary>
+    private void PublishIndividualLevelUpEvents(XPReward xpReward, XpApplyResult result)
+    {
+        if (result.MainSkillLeveledUp)
+        {
+            var mainSkill = XpManager.Instance.GetPlayerSkill(xpReward.MainSkillId);
+            PublishLevelUpEvent(xpReward.MainSkillId, mainSkill.Level, false);
+        }
+
+        if (result.SubSkillLeveledUp)
+        {
+            var subSkill = XpManager.Instance.GetPlayerSubSkill(xpReward.SubSkillId);
+            PublishLevelUpEvent(xpReward.SubSkillId, subSkill.Level, true);
+        }
+    }
+
+    /// <summary>
+    /// Publier un evenement de level up individuel
     /// </summary>
     private void PublishLevelUpEvent(string skillId, int newLevel, bool isSubSkill)
     {
         // Vous pouvez creer un SkillLevelUpEvent si vous voulez des animations/notifications
         // EventBus.Publish(new SkillLevelUpEvent(skillId, newLevel, isSubSkill));
 
-        Logger.LogInfo($"🎉 {skillId} leveled up to {newLevel}!", Logger.LogCategory.General);
+        if (enableDebugLogs)
+        {
+            string skillType = isSubSkill ? "SubSkill" : "Skill";
+            Logger.LogInfo($"🎉 {skillType} {skillId} leveled up to {newLevel}!", Logger.LogCategory.General);
+        }
+    }
+
+    #endregion
+
+    #region Validation
+
+    /// <summary>
+    /// Valider l'evenement d'activite
+    /// </summary>
+    private bool ValidateActivityEvent(ActivityTickEvent eventData)
+    {
+        if (eventData == null)
+        {
+            if (enableDebugLogs)
+            {
+                Logger.LogWarning("XpEventHandler: ActivityTickEvent is null", Logger.LogCategory.General);
+            }
+            return false;
+        }
+
+        if (eventData.Variant == null)
+        {
+            if (enableDebugLogs)
+            {
+                Logger.LogWarning("XpEventHandler: ActivityTickEvent has null variant", Logger.LogCategory.General);
+            }
+            return false;
+        }
+
+        if (eventData.TicksCompleted <= 0)
+        {
+            if (enableDebugLogs)
+            {
+                Logger.LogWarning($"XpEventHandler: ActivityTickEvent has invalid ticks completed: {eventData.TicksCompleted}", Logger.LogCategory.General);
+            }
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>
-    /// Methode publique pour tester le système d'XP
+    /// Valider que le système XP est disponible
+    /// </summary>
+    private bool ValidateXpSystem()
+    {
+        if (XpManager.Instance == null)
+        {
+            Logger.LogError("XpEventHandler: XpManager.Instance is null! Make sure XpManager is in the scene.", Logger.LogCategory.General);
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Valider que l'EventBus est disponible
+    /// </summary>
+    private bool ValidateEventBus()
+    {
+        // EventBus est probablement une classe statique, donc pas besoin de verifier null
+        // Si votre EventBus a une methode pour verifier s'il est initialise, utilisez-la ici
+        // Par exemple : return EventBus.IsInitialized;
+
+        // Pour l'instant, on assume qu'il est toujours disponible
+        return true;
+    }
+
+    #endregion
+
+    #region Logging
+
+    /// <summary>
+    /// Logger les resultats de la recompense d'XP
+    /// </summary>
+    private void LogXpRewardResult(XPReward xpReward, ActivityTickEvent eventData, XpApplyResult result)
+    {
+        string logMessage = $"XpEventHandler: {eventData.Variant.VariantName} completed {eventData.TicksCompleted} ticks → ";
+        logMessage += $"{xpReward.MainSkillId} +{xpReward.MainSkillXP}XP, {xpReward.SubSkillId} +{xpReward.SubSkillXP}XP";
+
+        if (result.AnyLevelUp)
+        {
+            logMessage += " 🎉 LEVEL UP!";
+        }
+
+        Logger.LogInfo(logMessage, Logger.LogCategory.General);
+    }
+
+    #endregion
+
+    #region Testing
+
+    /// <summary>
+    /// Methode publique pour tester le système d'XP (version amelioree)
     /// </summary>
     [ContextMenu("Test XP System")]
     public void TestXPSystem()
     {
-        if (XpManager.Instance == null)
+        if (!ValidateXpSystem())
         {
             Debug.LogError("XpManager not found!");
             return;
         }
 
-        // Creer un evenement de test
+        // Creer un evenement de test avec des donnees plus realistes
         var testVariant = ScriptableObject.CreateInstance<ActivityVariant>();
-        testVariant.VariantName = "Test Mining";
+        testVariant.VariantName = "Test Mining Iron";
         testVariant.ParentActivityID = "Mining";
-        testVariant.MainSkillXPPerTick = 10;
-        testVariant.SubSkillXPPerTick = 5;
+        testVariant.MainSkillXPPerTick = 15;
+        testVariant.SubSkillXPPerTick = 8;
         testVariant.IsTimeBased = false;
 
         var testActivity = new ActivityData
         {
             ActivityId = "Mining",
-            VariantId = "Test_Mining"
+            VariantId = "Test_Mining_Iron"
         };
 
-        var testEvent = new ActivityTickEvent(testActivity, testVariant, 3); // 3 ticks
+        var testEvent = new ActivityTickEvent(testActivity, testVariant, 5); // 5 ticks
         OnActivityTick(testEvent);
 
         Debug.Log("Test XP event processed! Check console for results.");
+    }
+
+    /// <summary>
+    /// Tester le système avec plusieurs evenements pour simuler une session de jeu
+    /// </summary>
+    [ContextMenu("Test XP System - Multiple Events")]
+    public void TestMultipleXPEvents()
+    {
+        if (!ValidateXpSystem())
+        {
+            Debug.LogError("XpManager not found!");
+            return;
+        }
+
+        Debug.Log("Testing multiple XP events...");
+
+        // Test Mining
+        TestSingleActivity("Mining Iron", "Mining", 12, 6, false, 3);
+
+        // Test Crafting
+        TestSingleActivity("Crafting Sword", "Crafting", 20, 10, true, 2);
+
+        // Test Gathering
+        TestSingleActivity("Gathering Wood", "Gathering", 8, 4, false, 7);
+
+        Debug.Log("Multiple XP events test completed!");
+    }
+
+    private void TestSingleActivity(string variantName, string activityId, int mainXP, int subXP, bool isTimeBased, int ticks)
+    {
+        var testVariant = ScriptableObject.CreateInstance<ActivityVariant>();
+        testVariant.VariantName = variantName;
+        testVariant.ParentActivityID = activityId;
+        testVariant.MainSkillXPPerTick = mainXP;
+        testVariant.SubSkillXPPerTick = subXP;
+        testVariant.IsTimeBased = isTimeBased;
+
+        var testActivity = new ActivityData
+        {
+            ActivityId = activityId,
+            VariantId = variantName.Replace(" ", "_")
+        };
+
+        var testEvent = new ActivityTickEvent(testActivity, testVariant, ticks);
+        OnActivityTick(testEvent);
+    }
+
+    #endregion
+}
+
+/// <summary>
+/// Donnees pour les evenements de level up groupes
+/// </summary>
+public class BatchedLevelUpEventData
+{
+    public System.Collections.Generic.List<LevelUpInfo> LevelUps = new System.Collections.Generic.List<LevelUpInfo>();
+
+    public void AddLevelUp(string skillId, int newLevel, bool isSubSkill)
+    {
+        LevelUps.Add(new LevelUpInfo(skillId, newLevel, isSubSkill));
+    }
+
+    public override string ToString()
+    {
+        return $"BatchedLevelUp: {LevelUps.Count} skills leveled up";
+    }
+}
+
+/// <summary>
+/// Information sur une montee de niveau
+/// </summary>
+[System.Serializable]
+public struct LevelUpInfo
+{
+    public string SkillId;
+    public int NewLevel;
+    public bool IsSubSkill;
+
+    public LevelUpInfo(string skillId, int newLevel, bool isSubSkill)
+    {
+        SkillId = skillId;
+        NewLevel = newLevel;
+        IsSubSkill = isSubSkill;
     }
 }
