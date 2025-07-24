@@ -224,7 +224,7 @@ public class EditorStepSimulator : EditorWindow
 
         if (steps <= 0)
         {
-            Debug.LogWarning("Simulator: Nombre de pas doit être positif!");
+            Debug.LogWarning("Simulator: Nombre de pas doit etre positif!");
             return false;
         }
 
@@ -237,7 +237,7 @@ public class EditorStepSimulator : EditorWindow
         long oldTotal = dataManager.PlayerData.TotalSteps;
         long oldDaily = dataManager.PlayerData.DailySteps;
 
-        // DIRECT: Ajouter les pas sans passer par des systèmes compliques
+        // DIRECT: Ajouter les pas sans passer par des systemes compliques
         dataManager.PlayerData.TotalPlayerSteps += steps;
         dataManager.PlayerData.DailySteps += steps;
 

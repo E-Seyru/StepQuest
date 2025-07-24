@@ -85,7 +85,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
             locationRegistry = mapManager.LocationRegistry;
         }
 
-        // Trouver le TravelConfirmationPopup dans la scène
+        // Trouver le TravelConfirmationPopup dans la scene
         travelPopup = FindObjectOfType<TravelConfirmationPopup>();
 
         // Valider les references critiques
@@ -116,7 +116,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     void OnDestroy()
     {
-        // Arrêter toutes les animations LeanTween sur cet objet
+        // Arreter toutes les animations LeanTween sur cet objet
         LeanTween.cancel(gameObject);
     }
 
@@ -163,7 +163,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// ENHANCED: Gère le clic sur le POI avec support pathfinding et CurrentLocation null
+    /// ENHANCED: Gere le clic sur le POI avec support pathfinding et CurrentLocation null
     /// </summary>
     private void HandleClick()
     {
@@ -178,7 +178,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
         // ⭐ NOUVEAU : Verifier si on est en voyage AVANT toute autre verification
         if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            // Pendant le voyage, bloquer l'accès aux details de TOUTES les locations
+            // Pendant le voyage, bloquer l'acces aux details de TOUTES les locations
             string destinationName = dataManager.PlayerData.TravelDestinationId;
             var destinationLocation = locationRegistry.GetLocationById(destinationName);
             if (destinationLocation != null)
@@ -188,7 +188,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
             if (enableErrorMessages && ErrorPanel.Instance != null)
             {
-                ErrorPanel.Instance.ShowError($"Vous êtes en voyage vers {destinationName}. Attendez d'arriver a destination.");
+                ErrorPanel.Instance.ShowError($"Vous etes en voyage vers {destinationName}. Attendez d'arriver a destination.");
             }
 
             Logger.LogInfo($"POI ({LocationID}): Click blocked - currently traveling to {destinationName}", Logger.LogCategory.MapLog);
@@ -286,11 +286,11 @@ public class POI : MonoBehaviour, IPointerClickHandler
         }
         else if (dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            errorMessage = "Impossible - vous êtes deja en train de voyager !";
+            errorMessage = "Impossible - vous etes deja en train de voyager !";
         }
         else if (ActivityManager.Instance?.HasActiveActivity() == true)
         {
-            errorMessage = "Impossible - vous êtes en activite !";
+            errorMessage = "Impossible - vous etes en activite !";
         }
         else if (destinationLocation == null)
         {
@@ -327,8 +327,8 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
         if (hasDirectConnection)
         {
-            // Il y a une connexion directe mais autre problème
-            return "problème technique";
+            // Il y a une connexion directe mais autre probleme
+            return "probleme technique";
         }
 
         // Verifier le pathfinding si disponible
@@ -342,7 +342,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
             }
             else
             {
-                // Le chemin existe mais autre problème
+                // Le chemin existe mais autre probleme
                 return "chemin trouve mais voyage bloque";
             }
         }
@@ -371,7 +371,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
 
     void Awake()
     {
-        // Validation des paramètres au demarrage
+        // Validation des parametres au demarrage
         if (string.IsNullOrEmpty(LocationID))
         {
             Logger.LogError($"POI: LocationID is not set on GameObject '{gameObject.name}'", Logger.LogCategory.MapLog);
@@ -382,7 +382,7 @@ public class POI : MonoBehaviour, IPointerClickHandler
             spriteRenderer = GetComponent<SpriteRenderer>();
         }
 
-        // Validation des paramètres d'animation
+        // Validation des parametres d'animation
         if (clickScaleAmount < 1.0f)
         {
             Debug.LogWarning($"POI ({LocationID}): clickScaleAmount should be >= 1.0 for a growing effect");

@@ -54,7 +54,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
         slotType = type;
         parentPanel = parent;
 
-        // PAS de button.onClick ici - on gère tout via IPointerClickHandler
+        // PAS de button.onClick ici - on gere tout via IPointerClickHandler
 
         // Set slot label
         if (slotLabel != null)
@@ -134,7 +134,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
         if (!CanAcceptItem(itemID, qty))
             return false;
 
-        // Utiliser le système d'equipement existant
+        // Utiliser le systeme d'equipement existant
         if (parentPanel != null)
         {
             return parentPanel.TryEquipItem(itemID);
@@ -164,7 +164,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     {
         if (background != null && !isDragSource)
         {
-            // Verifier si l'item peut être accepte
+            // Verifier si l'item peut etre accepte
             string draggedItemId = DragDropManager.Instance?.GetDraggedItemId();
             if (!string.IsNullOrEmpty(draggedItemId) && CanAcceptItem(draggedItemId, 1))
             {
@@ -239,7 +239,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
 
     public void OnDrag(PointerEventData eventData)
     {
-        // Le DragDropManager gère la position du visual
+        // Le DragDropManager gere la position du visual
     }
 
     public void OnEndDrag(PointerEventData eventData)

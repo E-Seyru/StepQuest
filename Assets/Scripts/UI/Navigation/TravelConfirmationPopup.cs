@@ -37,7 +37,7 @@ public class TravelConfirmationPopup : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            // Ne pas utiliser DontDestroyOnLoad car ce popup fait partie de l'UI de la scène
+            // Ne pas utiliser DontDestroyOnLoad car ce popup fait partie de l'UI de la scene
         }
         else
         {
@@ -192,7 +192,7 @@ public class TravelConfirmationPopup : MonoBehaviour
         // Image de destination (optionnel)
         if (destinationImage != null)
         {
-            // TODO: Ajouter un système d'images pour les locations
+            // TODO: Ajouter un systeme d'images pour les locations
             // destinationImage.sprite = GetLocationSprite(currentTravelInfo.To.LocationID);
         }
     }
@@ -273,7 +273,7 @@ public class TravelConfirmationPopup : MonoBehaviour
     // Optionnel : Methodes pour personnaliser l'apparence
     public void SetPopupTheme(Color backgroundColor, Color textColor)
     {
-        // TODO: Implementer la personnalisation de thème si necessaire
+        // TODO: Implementer la personnalisation de theme si necessaire
     }
 
     // Debug : Methode pour tester la popup depuis l'editeur

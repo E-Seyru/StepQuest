@@ -1,4 +1,4 @@
-// Purpose: EventBus principal - Système de communication decouple pour Unity
+// Purpose: EventBus principal - Systeme de communication decouple pour Unity
 // Filepath: Assets/Scripts/Core/Events/EventBus.cs
 
 using System;
@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// EventBus global pour la communication decouplee entre les systèmes du jeu.
+/// EventBus global pour la communication decouplee entre les systemes du jeu.
 /// Thread-safe et optimise pour Unity.
 /// </summary>
 public static class EventBus
@@ -15,7 +15,7 @@ public static class EventBus
 
     /// <summary>
     /// Active/desactive le logging detaille des evenements
-    /// Utile pour debugger, mais peut être verbeux
+    /// Utile pour debugger, mais peut etre verbeux
     /// </summary>
     public static bool EnableDetailedLogging { get; set; } = false;
 
@@ -233,7 +233,7 @@ public static class EventBus
                     typedCallback.Invoke(eventData);
                     successCount++;
 
-                    // Si l'evenement est annulable et a ete annule, on s'arrête
+                    // Si l'evenement est annulable et a ete annule, on s'arrete
                     if (eventData is ICancellableEvent cancellable && cancellable.IsCancelled)
                     {
                         LogInfo($"Event {eventData} was cancelled by a subscriber");
@@ -245,7 +245,7 @@ public static class EventBus
             {
                 errorCount++;
                 LogError($"Error in event callback for {eventType.Name}: {ex.Message}");
-                // Continue avec les autres callbacks même si un echoue
+                // Continue avec les autres callbacks meme si un echoue
             }
         }
 

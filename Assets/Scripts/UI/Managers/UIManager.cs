@@ -115,7 +115,7 @@ public class UIManager : MonoBehaviour
             }
             else
             {
-                yield return new WaitForSeconds(1f); // Attendre plus longtemps si StepManager pas prêt
+                yield return new WaitForSeconds(1f); // Attendre plus longtemps si StepManager pas pret
             }
         }
     }
@@ -149,7 +149,7 @@ public class UIManager : MonoBehaviour
                     if (lastChangeMs > 0)
                     {
                         string readableDate = LocalDatabase.GetReadableDateFromEpoch(lastChangeMs);
-                        string newUpdateText = $"Dernière mise a jour: {readableDate}";
+                        string newUpdateText = $"Derniere mise a jour: {readableDate}";
                         if (lastUpdateText.text != newUpdateText) // MODIFICATION APPLIQUeE
                         {
                             lastUpdateText.text = newUpdateText;
@@ -194,7 +194,7 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // OPTIMISATION : eviter les coroutines multiples pour le même element
+    // OPTIMISATION : eviter les coroutines multiples pour le meme element
     private System.Collections.Generic.Dictionary<TextMeshProUGUI, Coroutine> flashCoroutines =
         new System.Collections.Generic.Dictionary<TextMeshProUGUI, Coroutine>();
 
@@ -202,7 +202,7 @@ public class UIManager : MonoBehaviour
     {
         if (textElement != null)
         {
-            // OPTIMISATION : Arrêter la coroutine precedente si elle existe
+            // OPTIMISATION : Arreter la coroutine precedente si elle existe
             if (flashCoroutines.ContainsKey(textElement) && flashCoroutines[textElement] != null)
             {
                 StopCoroutine(flashCoroutines[textElement]);
@@ -254,7 +254,7 @@ public class UIManager : MonoBehaviour
     {
         StopUIUpdateCoroutine();
 
-        // Arrêter toutes les coroutines de flash en cours
+        // Arreter toutes les coroutines de flash en cours
         foreach (var flashCoroutine in flashCoroutines.Values)
         {
             if (flashCoroutine != null)

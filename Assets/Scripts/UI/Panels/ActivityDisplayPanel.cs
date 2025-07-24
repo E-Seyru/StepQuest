@@ -12,7 +12,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     [SerializeField] private TextMeshProUGUI progressText;
     [SerializeField] private TextMeshProUGUI rewardText;
     [SerializeField] private Button closeButton;
-    [SerializeField] private Button stopActivityButton; // Optionnel pour arrêter l'activite
+    [SerializeField] private Button stopActivityButton; // Optionnel pour arreter l'activite
 
     [Header("Custom Progress Bar")]
     [SerializeField] private Image progressBarBackground; // Image de fond de la barre
@@ -141,7 +141,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Appele quand une activite s'arrête
+    /// Appele quand une activite s'arrete
     /// </summary>
     private void OnActivityStopped(ActivityStoppedEvent eventData)
     {
@@ -220,7 +220,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Cacher le panel (n'arrête PAS l'activite)
+    /// Cacher le panel (n'arrete PAS l'activite)
     /// </summary>
     public void HidePanel()
     {
@@ -232,7 +232,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Arrêter l'activite en cours via l'ActivityManager
+    /// Arreter l'activite en cours via l'ActivityManager
     /// </summary>
     private void StopCurrentActivity()
     {
@@ -240,11 +240,11 @@ public class ActivityDisplayPanel : MonoBehaviour
 
         bool success = ActivityManager.Instance.StopActivity();
 
-        // Si aucune activité n’était active, on ferme quand même l’UI
+        // Si aucune activite n’etait active, on ferme quand meme l’UI
         if (!success)
             HidePanel();                 // <── AJOUT
         else
-            stopActivityButton.interactable = false; // Désactive le bouton en attendant l’événement (optionnel)
+            stopActivityButton.interactable = false; // Desactive le bouton en attendant l’evenement (optionnel)
     }
 
     /// <summary>
@@ -388,7 +388,7 @@ public class ActivityDisplayPanel : MonoBehaviour
         // Exemple simple : effet visuel sur la barre custom
         if (progressBarFill != null)
         {
-            // L'UpdateDisplay() va être appele après, donc la barre se remplira automatiquement
+            // L'UpdateDisplay() va etre appele apres, donc la barre se remplira automatiquement
             // Ici on pourrait ajouter un effet de "flash" ou d'animation
         }
     }

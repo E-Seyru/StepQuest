@@ -1,5 +1,5 @@
 ﻿// ===============================================
-// InventoryManager.cs - Version Complète Corrigee
+// InventoryManager.cs - Version Complete Corrigee
 // Thread-Safe, Robuste, Zero-Impact API
 // ===============================================
 // Purpose: Main manager for all inventory operations - REFACTORED & SECURED
@@ -327,7 +327,7 @@ public class InventoryContainerService
     public void Initialize(int defaultPlayerSlots, int defaultBankSlots)
     {
         // IMPORTANT: Ne pas creer les containers ici !
-        // Ils seront crees dans EnsureDefaultContainers() après le chargement
+        // Ils seront crees dans EnsureDefaultContainers() apres le chargement
         Logger.LogInfo("InventoryContainerService: Initialized (containers will be loaded/created later)", Logger.LogCategory.InventoryLog);
     }
 
@@ -342,7 +342,7 @@ public class InventoryContainerService
         }
     }
 
-    // Methode interne pour accès direct (thread-safe)
+    // Methode interne pour acces direct (thread-safe)
     internal Dictionary<string, InventoryContainer> GetContainersInternal()
     {
         lock (containersLock)
@@ -514,14 +514,14 @@ public class InventoryContainerService
                     // CRITIQUE: Perte d'items detectee !
                     Logger.LogError($"InventoryContainerService: CRITICAL - Rollback failed! {quantity} of '{itemId}' may be lost!", Logger.LogCategory.InventoryLog);
 
-                    // TODO: Ajouter un système de recuperation d'urgence
+                    // TODO: Ajouter un systeme de recuperation d'urgence
                     // Par exemple, log dans un fichier special pour recuperation manuelle
                 }
 
                 return false;
             }
 
-            // Succès complet
+            // Succes complet
             var itemDef = registry.GetItem(itemId);
             string itemName = itemDef?.GetDisplayName() ?? itemId;
             Logger.LogInfo($"InventoryContainerService: Successfully transferred {quantity} of '{itemName}' from '{fromId}' to '{toId}'", Logger.LogCategory.InventoryLog);
@@ -657,7 +657,7 @@ public class InventoryPersistenceService
         Dictionary<string, InventoryContainer> snapshot;
         HashSet<string> dirtySnapshot;
 
-        // Creer le snapshot de manière atomique
+        // Creer le snapshot de maniere atomique
         lock (dirtyLock)
         {
             snapshot = containerService.CreateSnapshotForSave();
@@ -679,7 +679,7 @@ public class InventoryPersistenceService
                 }
             });
 
-            // Clear dirty flags seulement après succès
+            // Clear dirty flags seulement apres succes
             lock (dirtyLock)
             {
                 foreach (var containerId in dirtySnapshot)
@@ -721,7 +721,7 @@ public class InventoryPersistenceService
                 savedCount++;
             }
 
-            // Clear dirty flags après succès
+            // Clear dirty flags apres succes
             lock (dirtyLock)
             {
                 dirtyContainers.Clear();

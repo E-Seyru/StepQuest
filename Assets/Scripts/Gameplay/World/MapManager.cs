@@ -622,7 +622,7 @@ public class MapTravelService
         dataManager.SaveGame();
         Logger.LogInfo($"MapManager: Travel state cleared and game saved", Logger.LogCategory.MapLog);
 
-        // Declencher les evenements APRÈS que tout l'etat soit mis a jour et sauve
+        // Declencher les evenements APReS que tout l'etat soit mis a jour et sauve
         eventService.TriggerTravelCompleted(destinationId, destinationLocation, totalStepsTaken);
         eventService.TriggerLocationChanged(previousLocation, destinationLocation);
     }

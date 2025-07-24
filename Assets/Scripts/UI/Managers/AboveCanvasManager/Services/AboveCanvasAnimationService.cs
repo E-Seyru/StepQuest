@@ -106,7 +106,7 @@ public class AboveCanvasAnimationService
         if (manager.FillBar == null) return;
         if (Mathf.Approximately(targetProgress, lastProgressValue)) return;
 
-        // Arrêter les animations precedentes
+        // Arreter les animations precedentes
         if (currentAnimationId != -1)
         {
             LeanTween.cancel(currentAnimationId);
@@ -131,7 +131,7 @@ public class AboveCanvasAnimationService
                 currentAnimationId = -1;
             }).id;
 
-        // 2. IMMeDIATEMENT declencher le pulse en parallèle (pas a la fin !)
+        // 2. IMMeDIATEMENT declencher le pulse en parallele (pas a la fin !)
         PulseFillBarParallel();
 
         lastProgressValue = targetProgress;
@@ -141,7 +141,7 @@ public class AboveCanvasAnimationService
     {
         if (manager.FillBar == null) return;
 
-        // Pulse d'echelle EN MÊME TEMPS que l'animation de remplissage
+        // Pulse d'echelle EN MeME TEMPS que l'animation de remplissage
         currentPulseId = LeanTween.scale(manager.FillBar.gameObject, originalFillScale * manager.PulseScaleAmount, manager.PulseDuration)
             .setEase(LeanTweenType.easeOutQuart)
             .setLoopPingPong(1)
@@ -154,7 +154,7 @@ public class AboveCanvasAnimationService
                 }
             }).id;
 
-        // Animation de couleur EN PARALLÈLE (pas d'ID a stocker, courte duree)
+        // Animation de couleur EN PARALLeLE (pas d'ID a stocker, courte duree)
         LeanTween.color(manager.FillBar.rectTransform, manager.PulseColor, manager.PulseDuration)
             .setEase(LeanTweenType.easeOutQuart)
             .setLoopPingPong(1)
@@ -244,7 +244,7 @@ public class AboveCanvasAnimationService
     {
         if (manager.RightIcon == null) return;
 
-        // Arrêter le pop precedent
+        // Arreter le pop precedent
         if (currentPopId != -1)
         {
             LeanTween.cancel(currentPopId);
@@ -254,7 +254,7 @@ public class AboveCanvasAnimationService
         // 1. Grossit rapidement avec couleur plus lumineuse
         // 2. Retourne a la normale avec bounce
 
-        // Scale + couleur en parallèle
+        // Scale + couleur en parallele
         currentPopId = LeanTween.scale(manager.RightIcon.gameObject, originalRightIconScale * manager.PopScaleAmount, manager.PopDuration * 0.4f)
             .setEase(LeanTweenType.easeOutQuart)
             .setOnComplete(() =>
@@ -268,7 +268,7 @@ public class AboveCanvasAnimationService
                     });
             }).id;
 
-        // Animation de couleur en parallèle (illumination)
+        // Animation de couleur en parallele (illumination)
         LeanTween.color(manager.RightIcon.rectTransform, manager.PopBrightColor, manager.PopDuration * 0.4f)
             .setEase(LeanTweenType.easeOutQuart)
             .setOnComplete(() =>
@@ -301,7 +301,7 @@ public class AboveCanvasAnimationService
     }
 
     /// <summary>
-    /// Arrête l'animation repetitive de ronflement de l'IdleBar
+    /// Arrete l'animation repetitive de ronflement de l'IdleBar
     /// </summary>
     public void StopIdleBarAnimation()
     {
@@ -345,10 +345,10 @@ public class AboveCanvasAnimationService
     {
         if (!isIdleAnimationActive) return;
 
-        // Programmer le prochain ronflement après l'intervalle defini
+        // Programmer le prochain ronflement apres l'intervalle defini
         idleAnimationTimerId = LeanTween.delayedCall(manager.IdleAnimationInterval, () =>
         {
-            if (isIdleAnimationActive) // Verifier qu'on n'a pas arrête entre temps
+            if (isIdleAnimationActive) // Verifier qu'on n'a pas arrete entre temps
             {
                 PlayIdleSnoreAnimation();
                 ScheduleNextIdleAnimation(); // Programmer la suivante (recursion)
@@ -396,7 +396,7 @@ public class AboveCanvasAnimationService
                 idleSnoreAnimationId = -1;
             }).id;
 
-        // EN PARALLÈLE : Animation de shake/vibration pour simuler le ronflement
+        // EN PARALLeLE : Animation de shake/vibration pour simuler le ronflement
         PlaySnoreShakeEffect(duration);
     }
 
@@ -410,7 +410,7 @@ public class AboveCanvasAnimationService
 
         // VRAIE vibration : mouvement rapide et continu en X (horizontal)
         // Vibration rapide de gauche a droite pendant toute la duree
-        float vibrateFrequency = 15f; // Hz - très rapide pour effet vibration
+        float vibrateFrequency = 15f; // Hz - tres rapide pour effet vibration
         float totalCycles = duration * vibrateFrequency;
 
         idleShakeAnimationId = LeanTween.value(manager.IdleBarImage.gameObject, 0f, totalCycles * 2f * Mathf.PI, duration)
@@ -442,7 +442,7 @@ public class AboveCanvasAnimationService
 
     public void Cleanup()
     {
-        // Arrêter l'animation de l'IdleBar
+        // Arreter l'animation de l'IdleBar
         StopIdleBarAnimation();
 
         // Version securisee : annuler par GameObject plutôt que par ID

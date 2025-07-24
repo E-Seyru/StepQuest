@@ -70,7 +70,7 @@ public class ActivityData
         StartSteps = 0;
         AccumulatedSteps = 0;
         LastProcessedTotalSteps = 0;
-        IsTimeBased = isTimeBased; // Utiliser le paramètre
+        IsTimeBased = isTimeBased; // Utiliser le parametre
         AccumulatedTimeMs = 0;
         RequiredTimeMs = requiredTimeMs;
         LastProcessedTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
@@ -91,7 +91,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// Calcule le progrès vers le prochain tic (0.0 a 1.0)
+    /// Calcule le progres vers le prochain tic (0.0 a 1.0)
     /// Pour les activites pas: utilise le ActivityVariant pour connaître le ActionCost
     /// Pour les activites temps: utilise RequiredTimeMs
     /// </summary>
@@ -110,7 +110,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// MODIFIE: Calcule combien de tics complets peuvent être effectues
+    /// MODIFIE: Calcule combien de tics complets peuvent etre effectues
     /// Pour les pas: utilise les pas donnes
     /// Pour le temps: verifie si le temps requis est atteint
     /// </summary>
@@ -130,7 +130,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// MODIFIE: Met a jour après avoir effectue des tics
+    /// MODIFIE: Met a jour apres avoir effectue des tics
     /// </summary>
     public void ProcessTicks(ActivityVariant variant, int ticksCompleted)
     {
@@ -239,7 +239,7 @@ public class ActivityData
     }
 
     /// <summary>
-    /// MODIFIE: Remet a zero l'activite (pour arrêter proprement)
+    /// MODIFIE: Remet a zero l'activite (pour arreter proprement)
     /// </summary>
     public void Clear()
     {

@@ -108,7 +108,7 @@ public class PanelManager : MonoBehaviour
     {
         while (true)
         {
-            // OPTIMISATION : Arrêter la detection si la carte est visible ou en transition
+            // OPTIMISATION : Arreter la detection si la carte est visible ou en transition
             if (!mapIsHidden || isTransitioning)
             {
                 yield return new WaitForSeconds(0.1f); // Verifier moins souvent
@@ -345,7 +345,7 @@ public class PanelManager : MonoBehaviour
         mapPanel.SetActive(true);
         mapIsHidden = false;
 
-        // OPTIMISATION : Arrêter la detection d'input quand la carte est visible
+        // OPTIMISATION : Arreter la detection d'input quand la carte est visible
         StopInputDetection();
 
         // Notifier le changement d'etat
@@ -383,7 +383,7 @@ public class PanelManager : MonoBehaviour
             return;
         }
 
-        // NOUVEAU: Arrêter toute transition en cours et nettoyer les positions
+        // NOUVEAU: Arreter toute transition en cours et nettoyer les positions
         CleanupTransitionsAndPositions();
 
         // NOUVEAU: Gerer les deux cas
@@ -421,12 +421,12 @@ public class PanelManager : MonoBehaviour
     /// </summary>
     private void CleanupTransitionsAndPositions()
     {
-        // Arrêter toute transition en cours
+        // Arreter toute transition en cours
         if (isTransitioning)
         {
             isTransitioning = false;
 
-            // Arrêter la coroutine de transition si elle existe
+            // Arreter la coroutine de transition si elle existe
             StopAllCoroutines();
 
             Logger.LogInfo("PanelManager: Stopped ongoing transition", Logger.LogCategory.General);
@@ -483,7 +483,7 @@ public class PanelManager : MonoBehaviour
         {
             panels[panelIndex].SetActive(true);
 
-            // S'assurer que la position est correcte même pour les panels normaux
+            // S'assurer que la position est correcte meme pour les panels normaux
             RectTransform rectTransform = panels[panelIndex].GetComponent<RectTransform>();
             if (rectTransform != null && originalPositions.ContainsKey(panelIndex))
             {

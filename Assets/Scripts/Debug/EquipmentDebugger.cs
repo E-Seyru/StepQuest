@@ -1,4 +1,4 @@
-﻿// Script temporaire pour debugger le problème d'equipement
+﻿// Script temporaire pour debugger le probleme d'equipement
 // a placer sur un GameObject temporaire avec un bouton dans l'UI ou appele via console
 using UnityEngine;
 

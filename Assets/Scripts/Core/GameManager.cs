@@ -7,7 +7,7 @@ using UnityEngine;
 public enum GameState
 {
     Loading,        // Chargement initial
-    Idle,          // Aucune activite particulière
+    Idle,          // Aucune activite particuliere
     Traveling,     // En voyage entre locations
     DoingActivity, // Activite en cours (mining, gathering, etc.)
     InCombat,      // En combat (pour le futur)
@@ -50,7 +50,7 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        // Attendre que les autres managers soient prêts
+        // Attendre que les autres managers soient prets
         StartCoroutine(InitializeGameState());
     }
 
@@ -149,7 +149,7 @@ public class GameManager : MonoBehaviour
     {
         Logger.LogInfo($"GameManager: Travel completed at {eventData.NewLocation?.DisplayName ?? eventData.DestinationLocationId}", Logger.LogCategory.General);
 
-        // Après un voyage, verifier s'il y a une activite en cours
+        // Apres un voyage, verifier s'il y a une activite en cours
         if (activityManager.HasActiveActivity())
         {
             ChangeState(GameState.DoingActivity);
@@ -170,7 +170,7 @@ public class GameManager : MonoBehaviour
     {
         Logger.LogInfo($"GameManager: Activity stopped: {eventData.Activity?.ActivityId}/{eventData.Variant?.VariantName} (Completed: {eventData.WasCompleted})", Logger.LogCategory.General);
 
-        // Après arrêt d'activite, verifier s'il y a un voyage en cours
+        // Apres arret d'activite, verifier s'il y a un voyage en cours
         if (dataManager.PlayerData.IsCurrentlyTraveling())
         {
             ChangeState(GameState.Traveling);
@@ -196,7 +196,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // === GESTION DES eVeNEMENTS SYSTÈME ===
+    // === GESTION DES eVeNEMENTS SYSTeME ===
 
     void OnApplicationPause(bool pauseStatus)
     {

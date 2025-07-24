@@ -254,7 +254,7 @@ public class ItemActionPanel : MonoBehaviour
             }
         }
 
-        // Transfer - si on a accès a un autre container
+        // Transfer - si on a acces a un autre container
         if (transferButton != null && HasOtherContainerOpen())
         {
             transferButton.gameObject.SetActive(true);
@@ -439,14 +439,14 @@ public class ItemActionPanel : MonoBehaviour
         {
             var targetSlot = container.Slots[sourceSlot.SlotIndex];
 
-            // Vérifier que c'est bien le bon slot
+            // Verifier que c'est bien le bon slot
             if (targetSlot.HasItem(itemSlot.ItemID))
             {
-                // Supprimer la quantité complète du slot spécifique
+                // Supprimer la quantite complete du slot specifique
                 int quantityToRemove = targetSlot.Quantity;
                 targetSlot.Clear();
 
-                // Déclencher les événements appropriés
+                // Declencher les evenements appropries
                 inventoryManager.TriggerContainerChanged(sourceContainerId);
 
                 // Sauvegarder les changements

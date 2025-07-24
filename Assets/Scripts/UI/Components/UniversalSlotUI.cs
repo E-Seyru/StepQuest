@@ -350,7 +350,7 @@ public class UniversalSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
 
     public void OnDrag(PointerEventData eventData)
     {
-        // Le DragDropManager gère la position du visual
+        // Le DragDropManager gere la position du visual
     }
 
     public void OnEndDrag(PointerEventData eventData)

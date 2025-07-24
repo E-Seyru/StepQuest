@@ -24,7 +24,7 @@ public class ErrorPanel : MonoBehaviour
 
     private bool isDisplaying = false;
     private Transform currentPOI = null; // Pour suivre le POI pendant l'affichage
-    private Vector2 currentOffset; // Offset calcule (peut être different de poiOffset si decale)
+    private Vector2 currentOffset; // Offset calcule (peut etre different de poiOffset si decale)
 
     void Awake()
     {
@@ -82,7 +82,7 @@ public class ErrorPanel : MonoBehaviour
         // Calculer l'offset adapte selon la position du POI (seulement au moment du clic)
         CalculateAdaptedOffset();
 
-        // Positionner près du POI
+        // Positionner pres du POI
         UpdatePosition();
 
         // Preparer l'animation d'entree

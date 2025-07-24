@@ -196,7 +196,7 @@ public class ActivityManager : MonoBehaviour
             return false;
         }
 
-        // Arrêter l'activite actuelle s'il y en a une
+        // Arreter l'activite actuelle s'il y en a une
         if (DataManager.Instance.PlayerData.HasActiveActivity())
         {
             StopActivity();
@@ -375,13 +375,13 @@ public class ActivityTimeService
             }
             else
             {
-                // Impossible de consommer, arrêter l'activite
+                // Impossible de consommer, arreter l'activite
                 StopTimedActivity(activityCache, variantCache);
             }
         }
         else
         {
-            // Plus de materiaux, arrêter l'activite
+            // Plus de materiaux, arreter l'activite
             StopTimedActivity(activityCache, variantCache);
         }
 
@@ -391,7 +391,7 @@ public class ActivityTimeService
     }
 
     /// <summary>
-    /// Arrête une activite temporelle
+    /// Arrete une activite temporelle
     /// </summary>
     private void StopTimedActivity(ActivityData activityCache, ActivityVariant variantCache)
     {
@@ -400,7 +400,7 @@ public class ActivityTimeService
         ActivityManager.Instance.PersistenceService.MarkDirty();
 
         // =====================================
-        // EVENTBUS - Publier l'evenement d'arrêt
+        // EVENTBUS - Publier l'evenement d'arret
         // =====================================
         EventBus.Publish(new ActivityStoppedEvent(activityCache, variantCache, true, "Materials depleted"));
     }
@@ -450,7 +450,7 @@ public class ActivityTimeService
                 }
                 else
                 {
-                    // Plus de materiaux, arrêter
+                    // Plus de materiaux, arreter
                     currentActivityCache.Clear();
                     DataManager.Instance.PlayerData.CurrentActivity = null;
                     break;
@@ -588,7 +588,7 @@ public class ActivityExecutionService
         ActivityManager.Instance.PersistenceService.MarkDirty();
 
         // =====================================
-        // EVENTBUS - Publier l'evenement d'arrêt
+        // EVENTBUS - Publier l'evenement d'arret
         // =====================================
         EventBus.Publish(new ActivityStoppedEvent(currentActivity, currentVariant, false, "Manually stopped"));
 

@@ -8,7 +8,7 @@ public class XpManager : MonoBehaviour
     [Header("XP Settings")]
 
     [SerializeField] private int maxLevel = 100;
-    public int MaxLevel => maxLevel; // Propriété publique en lecture seule
+    public int MaxLevel => maxLevel; // Propriete publique en lecture seule
     [SerializeField] private int baseXpForLevel2 = 100;
     [SerializeField] private float xpGrowthRate = 1.2f;
 
@@ -79,7 +79,7 @@ public class XpManager : MonoBehaviour
     #region Public API - Skill Management
 
     /// <summary>
-    /// Ajouter de l'XP a une competence principale de manière securisee
+    /// Ajouter de l'XP a une competence principale de maniere securisee
     /// </summary>
     public bool AddSkillXP(string skillId, int xpGained)
     {
@@ -119,7 +119,7 @@ public class XpManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Ajouter de l'XP a une sous-competence de manière securisee
+    /// Ajouter de l'XP a une sous-competence de maniere securisee
     /// </summary>
     public bool AddSubSkillXP(string subSkillId, int xpGained)
     {
@@ -159,7 +159,7 @@ public class XpManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Appliquer une recompense d'XP complète de manière optimisee
+    /// Appliquer une recompense d'XP complete de maniere optimisee
     /// </summary>
     public XpApplyResult ApplyXPReward(XPReward xpReward)
     {
@@ -191,7 +191,7 @@ public class XpManager : MonoBehaviour
     #region Public API - Data Access
 
     /// <summary>
-    /// Obtenir les donnees d'une competence principale de manière securisee
+    /// Obtenir les donnees d'une competence principale de maniere securisee
     /// </summary>
     public SkillData GetPlayerSkill(string skillId)
     {
@@ -215,7 +215,7 @@ public class XpManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Obtenir les donnees d'une sous-competence de manière securisee
+    /// Obtenir les donnees d'une sous-competence de maniere securisee
     /// </summary>
     public SkillData GetPlayerSubSkill(string subSkillId)
     {
@@ -260,7 +260,7 @@ public class XpManager : MonoBehaviour
         int baseMainXP = variant.MainSkillXPPerTick * ticksCompleted;
         int baseSubXP = variant.SubSkillXPPerTick * ticksCompleted;
 
-        // Appliquer les bonus de niveau (legèrement reduits pour equilibrer)
+        // Appliquer les bonus de niveau (legerement reduits pour equilibrer)
         float mainBonus = GetLevelBonus(mainSkill.Level);
         float subBonus = GetLevelBonus(subSkill.Level);
 
@@ -414,7 +414,7 @@ public class XpManager : MonoBehaviour
     /// </summary>
     public float GetEfficiencyBonus(int level)
     {
-        // Système de bonus progressif equilibre :
+        // Systeme de bonus progressif equilibre :
         // Niveaux 1-25 : Pas de bonus (apprentissage)
         // Niveaux 26-50 : +0.5% par niveau
         // Niveaux 51-75 : +1% par niveau  
@@ -437,9 +437,9 @@ public class XpManager : MonoBehaviour
     {
         // Petit bonus d'XP pour recompenser la progression
         if (level <= 10) return 1.0f;
-        if (level <= 25) return 1.0f + (level - 10) * 0.01f; // +1% par niveau après 10
-        if (level <= 50) return 1.15f + (level - 25) * 0.005f; // +0.5% par niveau après 25
-        return 1.275f + (level - 50) * 0.002f; // +0.2% par niveau après 50
+        if (level <= 25) return 1.0f + (level - 10) * 0.01f; // +1% par niveau apres 10
+        if (level <= 50) return 1.15f + (level - 25) * 0.005f; // +0.5% par niveau apres 25
+        return 1.275f + (level - 50) * 0.002f; // +0.2% par niveau apres 50
     }
 
     /// <summary>
@@ -459,7 +459,7 @@ public class XpManager : MonoBehaviour
     #region Validation & Safety
 
     /// <summary>
-    /// Valider les paramètres d'entree pour l'XP
+    /// Valider les parametres d'entree pour l'XP
     /// </summary>
     private bool ValidateXpInput(string skillId, int xpGained)
     {

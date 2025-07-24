@@ -126,7 +126,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     {
         Logger.LogInfo("TravelSpriteAnimator: Initializing POI positions cache...", Logger.LogCategory.MapLog);
 
-        // Chercher le GameObject "WorldMap" dans la scène
+        // Chercher le GameObject "WorldMap" dans la scene
         GameObject worldMapObject = GameObject.Find("WorldMap");
         if (worldMapObject == null)
         {
@@ -143,7 +143,7 @@ public class TravelSpriteAnimator : MonoBehaviour
             worldMapObject.SetActive(true);
         }
 
-        // OPTIMISATION : Chercher les POI seulement dans WorldMap au lieu de toute la scène
+        // OPTIMISATION : Chercher les POI seulement dans WorldMap au lieu de toute la scene
         POI[] allPOIs = worldMapObject.GetComponentsInChildren<POI>(true); // 'true' pour inclure les POI desactives
 
         // Mettre en cache toutes les positions
@@ -171,7 +171,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// MODIFIe : Utilise maintenant le cache au lieu de chercher dans la scène
+    /// MODIFIe : Utilise maintenant le cache au lieu de chercher dans la scene
     /// </summary>
     private Vector3 FindPOITravelStartPosition(string locationId)
     {
@@ -268,7 +268,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     // === GESTIONNAIRES D'eVeNEMENTS - MODIFIeS POUR PATHFINDING ===
 
     /// <summary>
-    /// MODIFIe : Gère maintenant les changements de location pendant les voyages multi-segments
+    /// MODIFIe : Gere maintenant les changements de location pendant les voyages multi-segments
     /// </summary>
     private void OnLocationChanged(LocationChangedEvent eventData)
     {
@@ -314,7 +314,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// MODIFIe : Gère le debut d'un voyage avec gestion de CurrentLocation null
+    /// MODIFIe : Gere le debut d'un voyage avec gestion de CurrentLocation null
     /// </summary>
     private void OnTravelStarted(TravelStartedEvent eventData)
     {
@@ -328,7 +328,7 @@ public class TravelSpriteAnimator : MonoBehaviour
         // ⭐ NOUVEAU : Utiliser la location de depart de l'evenement
         string fromLocationId = eventData.CurrentLocation?.LocationID;
 
-        // Si pas de location dans l'evenement, utiliser la dernière connue
+        // Si pas de location dans l'evenement, utiliser la derniere connue
         if (string.IsNullOrEmpty(fromLocationId))
         {
             fromLocationId = lastKnownLocationId;
@@ -373,7 +373,7 @@ public class TravelSpriteAnimator : MonoBehaviour
                 if (pathResult.IsReachable && pathResult.Segments.Count > 1)
                 {
                     isMultiSegmentTravel = true;
-                    finalDestination = pathResult.Path[pathResult.Path.Count - 1]; // Dernière destination
+                    finalDestination = pathResult.Path[pathResult.Path.Count - 1]; // Derniere destination
 
                     if (enablePathfindingDebug)
                     {
@@ -390,7 +390,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// MODIFIe : Gère les mises a jour de progrès avec reconnaissance des segments
+    /// MODIFIe : Gere les mises a jour de progres avec reconnaissance des segments
     /// </summary>
     private void OnTravelProgress(TravelProgressEvent eventData)
     {
@@ -417,7 +417,7 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
-    /// MODIFIe : Gère la fin d'un voyage ou d'un segment
+    /// MODIFIe : Gere la fin d'un voyage ou d'un segment
     /// </summary>
     private void OnTravelCompleted(TravelCompletedEvent eventData)
     {

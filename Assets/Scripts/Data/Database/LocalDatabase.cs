@@ -156,7 +156,7 @@ public class LocalDatabase
                         Logger.LogError($"LocalDatabase: Migration to version 7 error: {ex.Message}");
                     }
                 }
-                // Version 7 -> 8 pour le système d'XP
+                // Version 7 -> 8 pour le systeme d'XP
                 if (currentVersion < 8 && DATABASE_VERSION >= 8)
                 {
                     Logger.LogInfo("LocalDatabase: Migrating to version 8 - Adding XP system support...");
@@ -294,7 +294,7 @@ public class LocalDatabase
     }
 
     /// <summary>
-    /// Initialiser les conteneurs par defaut lors de la première migration (version 5)
+    /// Initialiser les conteneurs par defaut lors de la premiere migration (version 5)
     /// </summary>
     private void InitializeDefaultContainers()
     {
@@ -386,7 +386,7 @@ public class LocalDatabase
 
     public void SavePlayerData(PlayerData data)
     {
-        // AJOUT: Protection contre les appels après fermeture
+        // AJOUT: Protection contre les appels apres fermeture
         if (_connection == null)
         {
             Logger.LogWarning("LocalDatabase: SavePlayerData called but connection is null (probably shutting down)");
@@ -474,7 +474,7 @@ public class LocalDatabase
     /// </summary>
     public void SaveInventoryContainer(InventoryContainerData containerData)
     {
-        // AJOUT: Protection contre les appels après fermeture
+        // AJOUT: Protection contre les appels apres fermeture
         if (_connection == null)
         {
             Logger.LogWarning($"LocalDatabase: SaveInventoryContainer called but connection is null (probably shutting down)");

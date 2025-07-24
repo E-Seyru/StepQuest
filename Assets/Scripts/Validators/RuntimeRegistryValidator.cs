@@ -27,7 +27,7 @@ public class RuntimeRegistryValidator : MonoBehaviour
 
     void Start()
     {
-        // Double-check après que tous les systèmes soient initialises
+        // Double-check apres que tous les systemes soient initialises
         if (!validateOnAwake)
         {
             ValidateRegistries();
@@ -35,7 +35,7 @@ public class RuntimeRegistryValidator : MonoBehaviour
     }
 
     /// <summary>
-    /// Valide et nettoie tous les registries de manière silencieuse
+    /// Valide et nettoie tous les registries de maniere silencieuse
     /// </summary>
     public void ValidateRegistries()
     {

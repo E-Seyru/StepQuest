@@ -28,7 +28,7 @@ public class XpEventHandler : MonoBehaviour
     #region Event Management
 
     /// <summary>
-    /// Initialiser les abonnements aux evenements de manière securisee
+    /// Initialiser les abonnements aux evenements de maniere securisee
     /// </summary>
     private void InitializeEventSubscriptions()
     {
@@ -76,14 +76,14 @@ public class XpEventHandler : MonoBehaviour
     #region Event Handlers
 
     /// <summary>
-    /// Gerer les ticks d'activite et distribuer l'XP de manière optimisee
+    /// Gerer les ticks d'activite et distribuer l'XP de maniere optimisee
     /// </summary>
     private void OnActivityTick(ActivityTickEvent eventData)
     {
         // Validation des donnees d'entree
         if (!ValidateActivityEvent(eventData)) return;
 
-        // Validation du système XP
+        // Validation du systeme XP
         if (!ValidateXpSystem()) return;
 
         // Calculer la recompense d'XP
@@ -97,7 +97,7 @@ public class XpEventHandler : MonoBehaviour
             return;
         }
 
-        // Appliquer la recompense d'XP de manière optimisee
+        // Appliquer la recompense d'XP de maniere optimisee
         ApplyXpReward(xpReward, eventData);
     }
 
@@ -142,7 +142,7 @@ public class XpEventHandler : MonoBehaviour
     }
 
     /// <summary>
-    /// Publier les evenements de level up de manière optimisee
+    /// Publier les evenements de level up de maniere optimisee
     /// </summary>
     private void PublishLevelUpEvents(XPReward xpReward, XpApplyResult result)
     {
@@ -177,7 +177,7 @@ public class XpEventHandler : MonoBehaviour
             levelUpData.AddLevelUp(xpReward.SubSkillId, subSkill.Level, true);
         }
 
-        // Publier l'evenement groupe (a implementer selon votre système d'evenements)
+        // Publier l'evenement groupe (a implementer selon votre systeme d'evenements)
         // EventBus.Publish(new BatchedSkillLevelUpEvent(levelUpData));
 
         if (enableDebugLogs)
@@ -259,7 +259,7 @@ public class XpEventHandler : MonoBehaviour
     }
 
     /// <summary>
-    /// Valider que le système XP est disponible
+    /// Valider que le systeme XP est disponible
     /// </summary>
     private bool ValidateXpSystem()
     {
@@ -310,7 +310,7 @@ public class XpEventHandler : MonoBehaviour
     #region Testing
 
     /// <summary>
-    /// Methode publique pour tester le système d'XP (version amelioree)
+    /// Methode publique pour tester le systeme d'XP (version amelioree)
     /// </summary>
     [ContextMenu("Test XP System")]
     public void TestXPSystem()
@@ -342,7 +342,7 @@ public class XpEventHandler : MonoBehaviour
     }
 
     /// <summary>
-    /// Tester le système avec plusieurs evenements pour simuler une session de jeu
+    /// Tester le systeme avec plusieurs evenements pour simuler une session de jeu
     /// </summary>
     [ContextMenu("Test XP System - Multiple Events")]
     public void TestMultipleXPEvents()

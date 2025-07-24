@@ -45,7 +45,7 @@ public class POIEditor : Editor
         GameObject startPoint = new GameObject("TravelStartPoint");
         startPoint.transform.SetParent(poi.transform);
 
-        // Le positionner legèrement decale du POI pour qu'il soit visible
+        // Le positionner legerement decale du POI pour qu'il soit visible
         startPoint.transform.localPosition = new Vector3(0.5f, 0f, 0f);
 
         // Assigner le Transform au POI
@@ -54,7 +54,7 @@ public class POIEditor : Editor
         startPointProperty.objectReferenceValue = startPoint.transform;
         serializedPOI.ApplyModifiedProperties();
 
-        // Marquer la scène comme modifiee
+        // Marquer la scene comme modifiee
         EditorUtility.SetDirty(poi);
         UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(poi.gameObject.scene);
 

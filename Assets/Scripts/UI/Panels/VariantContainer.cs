@@ -16,10 +16,10 @@ public class VariantContainer : MonoBehaviour
     [SerializeField] private Image activityHeaderIcon;
 
     [Header("Activity Registry")]
-    [SerializeField] private ActivityRegistry activityRegistry; // Référence au registry des activités
+    [SerializeField] private ActivityRegistry activityRegistry; // Reference au registry des activites
 
     [Header("Panel Management")]
-    [SerializeField] private GameObject activityXpContainer; // Référence au panel des activités principales
+    [SerializeField] private GameObject activityXpContainer; // Reference au panel des activites principales
 
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
@@ -32,7 +32,7 @@ public class VariantContainer : MonoBehaviour
 
     void Start()
     {
-        // Essayer de trouver l'ActivityRegistry automatiquement s'il n'est pas assigné
+        // Essayer de trouver l'ActivityRegistry automatiquement s'il n'est pas assigne
         if (activityRegistry == null)
         {
             activityRegistry = FindObjectOfType<ActivityRegistry>();
@@ -47,7 +47,7 @@ public class VariantContainer : MonoBehaviour
 
     void Update()
     {
-        // Détecter les clics en dehors du panel quand il est ouvert
+        // Detecter les clics en dehors du panel quand il est ouvert
         if (panel != null && panel.activeInHierarchy)
         {
             DetectClickOutside();
@@ -59,7 +59,7 @@ public class VariantContainer : MonoBehaviour
     #region Public Methods
 
     /// <summary>
-    /// Afficher les variants pour une activité donnée
+    /// Afficher les variants pour une activite donnee
     /// </summary>
     public void ShowVariantsForActivity(ActivityDefinition activity)
     {
@@ -76,17 +76,17 @@ public class VariantContainer : MonoBehaviour
 
         if (activityHeaderIcon != null)
         {
-            // Mettre à jour l'icône de l'activité
+            // Mettre a jour l'icône de l'activite
             activityHeaderIcon.sprite = activity.GetActivityIcon();
         }
 
-        // Mettre à jour le titre
+        // Mettre a jour le titre
         if (titleText != null)
         {
             titleText.text = $"{activity.GetDisplayName()} Variants";
         }
 
-        // Obtenir tous les variants pour cette activité
+        // Obtenir tous les variants pour cette activite
         var variants = GetVariantsForActivity(activity.ActivityID);
 
         if (enableDebugLogs)
@@ -94,10 +94,10 @@ public class VariantContainer : MonoBehaviour
             Debug.Log($"VariantContainer: Found {variants.Count} variants for {activity.GetDisplayName()}");
         }
 
-        // Créer les icônes de variants
+        // Creer les icônes de variants
         CreateVariantIcons(variants);
 
-        // Masquer le panel des activités principales et afficher celui des variants
+        // Masquer le panel des activites principales et afficher celui des variants
         HideActivityXpContainer();
         ShowPanel();
     }
@@ -112,7 +112,7 @@ public class VariantContainer : MonoBehaviour
             panel.SetActive(false);
         }
 
-        // Réafficher le panel des activités principales
+        // Reafficher le panel des activites principales
         ShowActivityXpContainer();
     }
 
@@ -128,7 +128,7 @@ public class VariantContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Définir le registry d'activités
+    /// Definir le registry d'activites
     /// </summary>
     public void SetActivityRegistry(ActivityRegistry registry)
     {
@@ -140,7 +140,7 @@ public class VariantContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Masquer le panel des activités principales
+    /// Masquer le panel des activites principales
     /// </summary>
     private void HideActivityXpContainer()
     {
@@ -151,7 +151,7 @@ public class VariantContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Afficher le panel des activités principales
+    /// Afficher le panel des activites principales
     /// </summary>
     private void ShowActivityXpContainer()
     {
@@ -165,15 +165,15 @@ public class VariantContainer : MonoBehaviour
 
     #region Private Methods
 
-    // Cache pour éviter de recalculer les variants à chaque fois
+    // Cache pour eviter de recalculer les variants a chaque fois
     private Dictionary<string, List<ActivityVariant>> variantsCache = new Dictionary<string, List<ActivityVariant>>();
 
     /// <summary>
-    /// Obtenir tous les variants d'une activité via le registry - VERSION OPTIMISÉE
+    /// Obtenir tous les variants d'une activite via le registry - VERSION OPTIMISeE
     /// </summary>
     private List<ActivityVariant> GetVariantsForActivity(string activityId)
     {
-        // Vérifier le cache d'abord
+        // Verifier le cache d'abord
         if (variantsCache.ContainsKey(activityId))
         {
             if (enableDebugLogs)
@@ -209,22 +209,22 @@ public class VariantContainer : MonoBehaviour
             if (locationActivity?.ActivityReference == null)
                 continue;
 
-            // Si c'est l'activité qu'on cherche
+            // Si c'est l'activite qu'on cherche
             if (locationActivity.ActivityReference.ActivityID == activityId)
             {
-                // Récupérer les variants de cette LocationActivity (plus rapide)
+                // Recuperer les variants de cette LocationActivity (plus rapide)
                 if (locationActivity.ActivityVariants != null)
                 {
                     foreach (var variant in locationActivity.ActivityVariants)
                     {
-                        if (variant != null) // Enlever IsValidVariant() qui peut être lent
+                        if (variant != null) // Enlever IsValidVariant() qui peut etre lent
                         {
                             variants.Add(variant);
                         }
                     }
                 }
 
-                // On a trouvé l'activité, pas besoin de continuer
+                // On a trouve l'activite, pas besoin de continuer
                 break;
             }
         }
@@ -241,7 +241,7 @@ public class VariantContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Vider le cache des variants (à appeler si les données changent)
+    /// Vider le cache des variants (a appeler si les donnees changent)
     /// </summary>
     public void ClearVariantsCache()
     {
@@ -253,11 +253,11 @@ public class VariantContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Créer les icônes pour tous les variants - VERSION OPTIMISÉE
+    /// Creer les icônes pour tous les variants - VERSION OPTIMISeE
     /// </summary>
     private void CreateVariantIcons(List<ActivityVariant> variants)
     {
-        // Nettoyer les icônes existants de manière optimisée
+        // Nettoyer les icônes existants de maniere optimisee
         ClearVariantIconsOptimized();
 
         if (variants.Count == 0)
@@ -269,10 +269,10 @@ public class VariantContainer : MonoBehaviour
             return;
         }
 
-        // Pré-allouer la liste pour éviter les réallocations
+        // Pre-allouer la liste pour eviter les reallocations
         variantIcons.Capacity = variants.Count;
 
-        // Créer un icône pour chaque variant
+        // Creer un icône pour chaque variant
         foreach (var variant in variants)
         {
             CreateVariantIconOptimized(variant);
@@ -280,7 +280,7 @@ public class VariantContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Créer un icône pour un variant spécifique - VERSION OPTIMISÉE
+    /// Creer un icône pour un variant specifique - VERSION OPTIMISeE
     /// </summary>
     private void CreateVariantIconOptimized(ActivityVariant variant)
     {
@@ -304,13 +304,13 @@ public class VariantContainer : MonoBehaviour
             variantIcon = iconObject.AddComponent<VariantIconContainer>();
         }
 
-        // Initialiser avec les données du variant
+        // Initialiser avec les donnees du variant
         variantIcon.Initialize(variant);
 
-        // Ajouter à la liste
+        // Ajouter a la liste
         variantIcons.Add(variantIcon);
 
-        // Logs réduits pour éviter le spam
+        // Logs reduits pour eviter le spam
         if (enableDebugLogs && variantIcons.Count == 1)
         {
             Debug.Log($"VariantContainer: Creating {variantIcons.Capacity} variant icons...");
@@ -318,11 +318,11 @@ public class VariantContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Nettoyer tous les icônes de variants existants - VERSION OPTIMISÉE
+    /// Nettoyer tous les icônes de variants existants - VERSION OPTIMISeE
     /// </summary>
     private void ClearVariantIconsOptimized()
     {
-        // Batch destroy pour être plus efficace
+        // Batch destroy pour etre plus efficace
         for (int i = variantIcons.Count - 1; i >= 0; i--)
         {
             var variantIcon = variantIcons[i];
@@ -347,7 +347,7 @@ public class VariantContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Configurer la référence au ActivityXpContainer (appelé par ActivityXpContainer)
+    /// Configurer la reference au ActivityXpContainer (appele par ActivityXpContainer)
     /// </summary>
     public void SetActivityXpContainer(GameObject container)
     {
@@ -355,11 +355,11 @@ public class VariantContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Détecter les clics en dehors du panel pour le fermer
+    /// Detecter les clics en dehors du panel pour le fermer
     /// </summary>
     private void DetectClickOutside()
     {
-        // Vérifier s'il y a un clic de souris ou un touch
+        // Verifier s'il y a un clic de souris ou un touch
         if (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
         {
             Vector2 clickPosition;
@@ -374,7 +374,7 @@ public class VariantContainer : MonoBehaviour
                 clickPosition = Input.mousePosition;
             }
 
-            // Vérifier si le clic est en dehors du panel
+            // Verifier si le clic est en dehors du panel
             if (!IsClickInsidePanel(clickPosition))
             {
                 HidePanel();
@@ -383,17 +383,17 @@ public class VariantContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Vérifier si le clic est à l'intérieur du panel
+    /// Verifier si le clic est a l'interieur du panel
     /// </summary>
     private bool IsClickInsidePanel(Vector2 screenPosition)
     {
         if (panel == null) return false;
 
-        // Convertir la position d'écran en position Canvas
+        // Convertir la position d'ecran en position Canvas
         RectTransform panelRect = panel.GetComponent<RectTransform>();
         if (panelRect == null) return false;
 
-        // Utiliser RectTransformUtility pour vérifier si le point est dans le rectangle
+        // Utiliser RectTransformUtility pour verifier si le point est dans le rectangle
         Canvas canvas = panel.GetComponentInParent<Canvas>();
         if (canvas == null) return false;
 
@@ -404,7 +404,7 @@ public class VariantContainer : MonoBehaviour
 
 #if UNITY_EDITOR
     /// <summary>
-    /// Méthode d'assistance pour l'éditeur - auto-assignment du registry
+    /// Methode d'assistance pour l'editeur - auto-assignment du registry
     /// </summary>
     void OnValidate()
     {

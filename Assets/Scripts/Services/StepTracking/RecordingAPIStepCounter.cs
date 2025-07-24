@@ -336,7 +336,7 @@ public class RecordingAPIStepCounter : MonoBehaviour
     public long GetCurrentRawSensorSteps()
     {
 #if UNITY_EDITOR
-        // Dans l'editeur, retourne -1 pour desactiver le système de capteur direct
+        // Dans l'editeur, retourne -1 pour desactiver le systeme de capteur direct
         // Les pas seront geres uniquement par EditorStepSimulator
         return -1;
 #else

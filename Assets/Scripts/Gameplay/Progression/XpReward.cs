@@ -272,9 +272,9 @@ public class XPReward
     }
 
     /// <summary>
-    /// NOUVELLE MÉTHODE PUBLIQUE : Valider et nettoyer un ID de competence
+    /// NOUVELLE MeTHODE PUBLIQUE : Valider et nettoyer un ID de competence
     /// Convertit les espaces en underscores et assure la coherence du format
-    /// Cette méthode peut être utilisée par d'autres classes pour standardiser les IDs
+    /// Cette methode peut etre utilisee par d'autres classes pour standardiser les IDs
     /// </summary>
     public static string ValidateSkillId(string skillId)
     {
@@ -286,14 +286,14 @@ public class XPReward
 
     #endregion
 
-    #region Validation (Méthode privée conservée pour compatibilité)
+    #region Validation (Methode privee conservee pour compatibilite)
 
     /// <summary>
-    /// Méthode privée qui utilise la méthode statique publique
+    /// Methode privee qui utilise la methode statique publique
     /// </summary>
     private string ValidateSkillId_Private(string skillId)
     {
-        return ValidateSkillId(skillId);  // Délègue à la méthode statique publique
+        return ValidateSkillId(skillId);  // Delegue a la methode statique publique
     }
 
     #endregion

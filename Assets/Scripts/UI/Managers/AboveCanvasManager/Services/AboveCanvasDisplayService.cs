@@ -210,7 +210,7 @@ public class AboveCanvasDisplayService
             manager.FillBar.fillAmount = Mathf.Clamp01(progressPercent);
         }
 
-        // Montrer la flèche pour le voyage
+        // Montrer la fleche pour le voyage
         if (manager.ArrowIcon != null)
         {
             manager.ArrowIcon.SetActive(true);
@@ -289,7 +289,7 @@ public class AboveCanvasDisplayService
 
         }
 
-        // Masquer la flèche pour les activites (la flèche sert seulement pour les voyages)
+        // Masquer la fleche pour les activites (la fleche sert seulement pour les voyages)
         if (manager.ArrowIcon != null)
         {
             manager.ArrowIcon.SetActive(false);
@@ -315,7 +315,7 @@ public class AboveCanvasDisplayService
         }
     }
 
-    // NOUVEAU : Methode pour formater le temps de manière intelligente
+    // NOUVEAU : Methode pour formater le temps de maniere intelligente
     private string FormatTimeForProgress(long timeMs)
     {
         if (timeMs <= 0) return "0 s";
@@ -436,7 +436,7 @@ public class AboveCanvasDisplayService
 
     private void HideIdleBar()
     {
-        // NOUVEAU : Arrêter l'animation repetitive d'inactivite
+        // NOUVEAU : Arreter l'animation repetitive d'inactivite
         animationService?.StopIdleBarAnimation();
         animationService?.HideBar(manager.IdleBar);
     }

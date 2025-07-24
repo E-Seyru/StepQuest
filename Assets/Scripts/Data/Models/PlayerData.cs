@@ -11,7 +11,7 @@ public class PlayerData
     [PrimaryKey]
     public int Id { get; set; }
 
-    // === SYSTÈME DE PAS ===
+    // === SYSTeME DE PAS ===
 
     // Conversion des champs en proprietes pour pouvoir utiliser l'attribut Column
     private long _totalPlayerSteps;
@@ -30,7 +30,7 @@ public class PlayerData
         set { _lastSyncEpochMs = value; }
     }
 
-    // Timestamp de la dernière mise en pause/fermeture de l'application
+    // Timestamp de la derniere mise en pause/fermeture de l'application
     private long _lastPauseEpochMs;
     [Column("LastPauseEpochMs")]
     public long LastPauseEpochMs
@@ -84,7 +84,7 @@ public class PlayerData
         set { _lastApiCatchUpEpochMs = value; }
     }
 
-    // === SYSTÈME DE LOCALISATION ET VOYAGE ===
+    // === SYSTeME DE LOCALISATION ET VOYAGE ===
 
     // Où est le joueur actuellement (ID de location comme "Village_01")
     private string _currentLocationId;
@@ -141,7 +141,7 @@ public class PlayerData
         set { _travelOriginLocationId = value; }
     }
 
-    // === SYSTÈME D'ACTIVITe ===
+    // === SYSTeME D'ACTIVITe ===
 
     // Activite en cours (JSON serialise)
     private string _currentActivityJson;
@@ -192,7 +192,7 @@ public class PlayerData
         }
     }
 
-    // === NOUVEAU: SYSTÈME D'EXPeRIENCE ===
+    // === NOUVEAU: SYSTeME D'EXPeRIENCE ===
 
     // XP et niveaux des activites principales (Mining, Woodcutting, etc.)
     private string _skillsJson;

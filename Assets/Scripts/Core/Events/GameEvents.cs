@@ -29,7 +29,7 @@ namespace GameEvents
 
     /// <summary>
     /// Publie AVANT que l'etat du jeu change (annulable)
-    /// Nouveau: permet d'empêcher un changement d'etat si necessaire
+    /// Nouveau: permet d'empecher un changement d'etat si necessaire
     /// </summary>
     public class BeforeGameStateChangeEvent : CancellableEventBusEvent
     {
@@ -125,7 +125,7 @@ namespace MapEvents
     }
 
     /// <summary>
-    /// Publie quand un voyage se termine avec succès
+    /// Publie quand un voyage se termine avec succes
     /// Remplace: MapManager.OnTravelCompleted
     /// </summary>
     public class TravelCompletedEvent : EventBusEvent
@@ -179,7 +179,7 @@ namespace ActivityEvents
     }
 
     /// <summary>
-    /// Publie quand une activite s'arrête (volontairement ou automatiquement)
+    /// Publie quand une activite s'arrete (volontairement ou automatiquement)
     /// Remplace: ActivityManager.OnActivityStopped
     /// </summary>
     public class ActivityStoppedEvent : EventBusEvent

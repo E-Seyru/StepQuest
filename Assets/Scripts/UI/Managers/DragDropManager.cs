@@ -284,7 +284,7 @@ public class DragDropManager : MonoBehaviour
                     // Ensuite, placer directement dans le slot cible
                     if (targetSlot.TrySetItem(draggedItemId, 1))
                     {
-                        // IMPORTANT: Forcer la sauvegarde immediate après un transfer d'equipement
+                        // IMPORTANT: Forcer la sauvegarde immediate apres un transfer d'equipement
                         InventoryManager.Instance.SaveInventoryData();
                         return true;
                     }
@@ -296,7 +296,7 @@ public class DragDropManager : MonoBehaviour
                     }
                 }
             }
-            // Si on drop sur un slot avec le même item (merge)
+            // Si on drop sur un slot avec le meme item (merge)
             else if (targetSlot.GetItemId() == draggedItemId)
             {
                 var itemDef = InventoryManager.Instance?.GetItemRegistry()?.GetItem(draggedItemId);

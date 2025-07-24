@@ -11,10 +11,10 @@ public class ActivityXpContainer : MonoBehaviour
     [SerializeField] private GameObject iconContainerPrefab;
 
     [Header("Panel References")]
-    [SerializeField] private VariantContainer variantContainer; // Référence au panel des variants
+    [SerializeField] private VariantContainer variantContainer; // Reference au panel des variants
 
     [Header("Activity Registry")]
-    [SerializeField] private ActivityRegistry activityRegistry; // Référence au registry des activités
+    [SerializeField] private ActivityRegistry activityRegistry; // Reference au registry des activites
 
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
@@ -28,7 +28,7 @@ public class ActivityXpContainer : MonoBehaviour
 
     void Start()
     {
-        // Vérifier les références essentielles
+        // Verifier les references essentielles
         if (!ValidateReferences())
         {
             return;
@@ -42,7 +42,7 @@ public class ActivityXpContainer : MonoBehaviour
 
     void OnEnable()
     {
-        // S'abonner aux événements de changement d'XP si nécessaire
+        // S'abonner aux evenements de changement d'XP si necessaire
         if (ValidateReferences())
         {
             RefreshActivityIcons();
@@ -54,7 +54,7 @@ public class ActivityXpContainer : MonoBehaviour
     #region Public Methods
 
     /// <summary>
-    /// Actualiser tous les icônes d'activités
+    /// Actualiser tous les icônes d'activites
     /// </summary>
     [ContextMenu("Refresh Activity Icons")]
     public void RefreshActivityIcons()
@@ -64,7 +64,7 @@ public class ActivityXpContainer : MonoBehaviour
             return;
         }
 
-        // Obtenir toutes les activités principales
+        // Obtenir toutes les activites principales
         var mainActivities = GetAllMainActivities();
 
         if (enableDebugLogs)
@@ -72,12 +72,12 @@ public class ActivityXpContainer : MonoBehaviour
             Logger.LogInfo($"ActivityXpContainer: Found {mainActivities.Count} main activities", Logger.LogCategory.General);
         }
 
-        // Créer ou mettre à jour les icônes
+        // Creer ou mettre a jour les icônes
         UpdateActivityIcons(mainActivities);
     }
 
     /// <summary>
-    /// Forcer la mise à jour d'une activité spécifique
+    /// Forcer la mise a jour d'une activite specifique
     /// </summary>
     public void RefreshActivity(string activityId)
     {
@@ -89,7 +89,7 @@ public class ActivityXpContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Obtenir le nombre d'activités affichées
+    /// Obtenir le nombre d'activites affichees
     /// </summary>
     public int GetDisplayedActivityCount()
     {
@@ -97,7 +97,7 @@ public class ActivityXpContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Définir le registry d'activités (peut être appelé depuis l'inspecteur ou le code)
+    /// Definir le registry d'activites (peut etre appele depuis l'inspecteur ou le code)
     /// </summary>
     public void SetActivityRegistry(ActivityRegistry registry)
     {
@@ -113,7 +113,7 @@ public class ActivityXpContainer : MonoBehaviour
     #region Private Methods
 
     /// <summary>
-    /// Valider que toutes les références nécessaires sont présentes
+    /// Valider que toutes les references necessaires sont presentes
     /// </summary>
     private bool ValidateReferences()
     {
@@ -140,7 +140,7 @@ public class ActivityXpContainer : MonoBehaviour
             // Tenter de trouver le registry automatiquement
             activityRegistry = FindObjectOfType<ActivityRegistry>();
 
-            // Si toujours pas trouvé, chercher dans les Resources
+            // Si toujours pas trouve, chercher dans les Resources
             if (activityRegistry == null)
             {
                 activityRegistry = Resources.Load<ActivityRegistry>("ActivityRegistry");
@@ -167,7 +167,7 @@ public class ActivityXpContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Obtenir toutes les activités principales du jeu via le registry
+    /// Obtenir toutes les activites principales du jeu via le registry
     /// </summary>
     private List<ActivityDefinition> GetAllMainActivities()
     {
@@ -188,10 +188,10 @@ public class ActivityXpContainer : MonoBehaviour
             if (locationActivity == null || locationActivity.ActivityReference == null)
                 continue;
 
-            // Récupérer l'ActivityDefinition de la LocationActivity
+            // Recuperer l'ActivityDefinition de la LocationActivity
             var activityDefinition = locationActivity.ActivityReference;
 
-            // Vérifier si c'est une activité principale et qu'on ne l'a pas déjà ajoutée
+            // Verifier si c'est une activite principale et qu'on ne l'a pas deja ajoutee
             if (IsMainActivity(activityDefinition) &&
                 !allActivities.Any(a => a.ActivityID == activityDefinition.ActivityID))
             {
@@ -199,26 +199,26 @@ public class ActivityXpContainer : MonoBehaviour
             }
         }
 
-        // Trier par nom pour un affichage cohérent
+        // Trier par nom pour un affichage coherent
         return allActivities.OrderBy(a => a.GetDisplayName()).ToList();
     }
 
     /// <summary>
-    /// Vérifier si une activité est une activité principale
-    /// (par opposition aux sous-activités ou variantes)
+    /// Verifier si une activite est une activite principale
+    /// (par opposition aux sous-activites ou variantes)
     /// </summary>
     private bool IsMainActivity(ActivityDefinition activity)
     {
-        // Une activité principale a un ActivityID et n'est pas une sous-activité
+        // Une activite principale a un ActivityID et n'est pas une sous-activite
         if (string.IsNullOrEmpty(activity.ActivityID))
             return false;
 
-        // Vérifier s'il y a des variantes associées (ce qui indique une activité principale)
+        // Verifier s'il y a des variantes associees (ce qui indique une activite principale)
         return HasActivityVariants(activity.ActivityID);
     }
 
     /// <summary>
-    /// Vérifier si une activité a des variantes via le registry
+    /// Verifier si une activite a des variantes via le registry
     /// </summary>
     private bool HasActivityVariants(string activityId)
     {
@@ -233,16 +233,16 @@ public class ActivityXpContainer : MonoBehaviour
             if (locationActivity?.ActivityReference == null)
                 continue;
 
-            // Si c'est l'activité qu'on cherche
+            // Si c'est l'activite qu'on cherche
             if (locationActivity.ActivityReference.ActivityID == activityId)
             {
-                // Vérifier si elle a des variantes dans la LocationActivity
+                // Verifier si elle a des variantes dans la LocationActivity
                 if (locationActivity.ActivityVariants != null && locationActivity.ActivityVariants.Count > 0)
                 {
                     return true;
                 }
 
-                // Ou vérifier dans l'ActivityDefinition elle-même
+                // Ou verifier dans l'ActivityDefinition elle-meme
                 var variants = locationActivity.ActivityReference.GetAllVariants();
                 if (variants != null && variants.Count > 0)
                 {
@@ -251,19 +251,19 @@ public class ActivityXpContainer : MonoBehaviour
             }
         }
 
-        // Si pas de variants trouvés, considérer comme activité principale quand même
+        // Si pas de variants trouves, considerer comme activite principale quand meme
         return !string.IsNullOrEmpty(activityId);
     }
 
     /// <summary>
-    /// Mettre à jour les icônes d'activités
+    /// Mettre a jour les icônes d'activites
     /// </summary>
     private void UpdateActivityIcons(List<ActivityDefinition> activities)
     {
-        // Nettoyer les icônes existants si nécessaire
+        // Nettoyer les icônes existants si necessaire
         ClearOldIcons(activities);
 
-        // Créer de nouveaux icônes pour les activités manquantes
+        // Creer de nouveaux icônes pour les activites manquantes
         foreach (var activity in activities)
         {
             if (!displayedActivities.Contains(activity.ActivityID))
@@ -272,7 +272,7 @@ public class ActivityXpContainer : MonoBehaviour
             }
         }
 
-        // Mettre à jour tous les icônes existants
+        // Mettre a jour tous les icônes existants
         foreach (var iconContainer in iconContainers)
         {
             if (iconContainer != null)
@@ -283,13 +283,13 @@ public class ActivityXpContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Nettoyer les icônes qui ne correspondent plus aux activités
+    /// Nettoyer les icônes qui ne correspondent plus aux activites
     /// </summary>
     private void ClearOldIcons(List<ActivityDefinition> currentActivities)
     {
         var currentActivityIds = currentActivities.Select(a => a.ActivityID).ToList();
 
-        // Supprimer les icônes d'activités qui n'existent plus
+        // Supprimer les icônes d'activites qui n'existent plus
         for (int i = iconContainers.Count - 1; i >= 0; i--)
         {
             var iconContainer = iconContainers[i];
@@ -319,11 +319,11 @@ public class ActivityXpContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Créer un icône pour une activité
+    /// Creer un icône pour une activite
     /// </summary>
     private void CreateIconForActivity(ActivityDefinition activity)
     {
-        // Vérifier que le prefab et le container sont valides
+        // Verifier que le prefab et le container sont valides
         if (iconContainerPrefab == null || iconsContainer == null)
         {
             if (enableDebugLogs)
@@ -344,18 +344,18 @@ public class ActivityXpContainer : MonoBehaviour
             iconContainer = iconObject.AddComponent<IconContainer>();
         }
 
-        // Initialiser l'icône avec les données d'activité
+        // Initialiser l'icône avec les donnees d'activite
         iconContainer.Initialize(activity);
 
-        // Forcer une première mise à jour pour afficher les données existantes
+        // Forcer une premiere mise a jour pour afficher les donnees existantes
         iconContainer.RefreshDisplay();
 
-        // Configurer la référence au panel des variants
+        // Configurer la reference au panel des variants
         if (variantContainer != null)
         {
             iconContainer.SetVariantContainer(variantContainer);
 
-            // Configurer la référence au panel principal pour la gestion d'affichage
+            // Configurer la reference au panel principal pour la gestion d'affichage
             variantContainer.SetActivityXpContainer(gameObject);
         }
 
@@ -373,7 +373,7 @@ public class ActivityXpContainer : MonoBehaviour
 
 #if UNITY_EDITOR
     /// <summary>
-    /// Méthode d'assistance pour l'éditeur - auto-assignment du registry
+    /// Methode d'assistance pour l'editeur - auto-assignment du registry
     /// </summary>
     void OnValidate()
     {

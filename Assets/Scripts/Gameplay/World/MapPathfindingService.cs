@@ -85,7 +85,7 @@ public class MapPathfindingService
     }
 
     /// <summary>
-    /// Verifie si deux locations peuvent être connectees (directement ou indirectement)
+    /// Verifie si deux locations peuvent etre connectees (directement ou indirectement)
     /// </summary>
     public bool CanReach(string fromLocationId, string toLocationId)
     {

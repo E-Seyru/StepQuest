@@ -22,7 +22,7 @@ public class StepManager : MonoBehaviour
     // EN eDITEUR: Fonctionnement simplifie
     private Coroutine editorUpdateCoroutine;
 #else
-    // SUR DEVICE: Variables pour la gestion complète des capteurs
+    // SUR DEVICE: Variables pour la gestion complete des capteurs
     private bool isAppInForeground = true;
     private bool isReturningFromBackground = false;
     private bool isSensorStartCountValid = false;
@@ -32,18 +32,18 @@ public class StepManager : MonoBehaviour
     private long sensorDeltaThisSession = 0;
     private long lastRecordedSensorValue = -1;
     
-    // Paramètres de debounce et filtrage
+    // Parametres de debounce et filtrage
     private const int SENSOR_SPIKE_THRESHOLD = 50;
     private const int SENSOR_DEBOUNCE_SECONDS = 3;
     private float lastLargeUpdateTime = 0f;
     private const long MAX_STEPS_PER_UPDATE = 100000;
     
-    // Periode de grâce après le retour au premier plan
+    // Periode de grâce apres le retour au premier plan
     private const float SENSOR_GRACE_PERIOD = 5.0f;
     private float sensorGraceTimer = 0f;
     private bool inSensorGracePeriod = false;
     
-    // Paramètre pour contrôler la frequence des sauvegardes DB
+    // Parametre pour contrôler la frequence des sauvegardes DB
     private const float DB_SAVE_INTERVAL = 3.0f;
     private float lastDBSaveTime = 0f;
     
@@ -278,7 +278,7 @@ public class StepManager : MonoBehaviour
         }
         else
         {
-            // Pour tous les autres cas (y compris retour d'arrière-plan), recuperer les pas via l'API
+            // Pour tous les autres cas (y compris retour d'arriere-plan), recuperer les pas via l'API
 
             // S'assurer que LastApiCatchUpEpochMs a une valeur valide
             if (lastApiCatchUpEpochMs <= 0)
@@ -302,7 +302,7 @@ public class StepManager : MonoBehaviour
             // 3. On ne declenche l'API que si l'intervalle est toujours valide
             if (endTimeMs > startTimeMs)
             {
-                // Recuperer les pas depuis la dernière synchronisation jusqu'a maintenant
+                // Recuperer les pas depuis la derniere synchronisation jusqu'a maintenant
                 // avec gestion speciale en cas de chevauchement de minuit
                 if (isReturningFromBackground)
                 {
@@ -315,7 +315,7 @@ public class StepManager : MonoBehaviour
 
                 yield return StartCoroutine(HandleMidnightSplitStepCount(startTimeMs, endTimeMs));
 
-                // Après un catch-up API reussi, mettre a jour le timestamp dedie
+                // Apres un catch-up API reussi, mettre a jour le timestamp dedie
                 lastApiCatchUpEpochMs = nowEpochMs;
                 // Sauvegarder la valeur dans PlayerData
                 dataManager.PlayerData.LastApiCatchUpEpochMs = lastApiCatchUpEpochMs;
@@ -325,13 +325,13 @@ public class StepManager : MonoBehaviour
                 apiCounter.ClearStoredRange();
 
                 // Sauvegarde immediate pour eviter la perte de l'horodatage en cas de crash
-                // juste après un catch-up
+                // juste apres un catch-up
                 dataManager.SaveGame();
                 Logger.LogInfo("StepManager: Saved LastApiCatchUpEpochMs immediately after API catch-up to prevent loss on crash", Logger.LogCategory.StepLog);
             }
             else
             {
-                Logger.LogInfo("StepManager: API catch-up skipped – pas d'intervalle valide après ajustement.", Logger.LogCategory.StepLog);
+                Logger.LogInfo("StepManager: API catch-up skipped – pas d'intervalle valide apres ajustement.", Logger.LogCategory.StepLog);
             }
 
             // Toujours mettre a jour LastSyncEpochMs et LastPauseEpochMs au temps actuel
@@ -341,7 +341,7 @@ public class StepManager : MonoBehaviour
             Logger.LogInfo($"StepManager: Updated LastSync and LastPause to: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}", Logger.LogCategory.StepLog);
         }
 
-        // Si on revient de l'arrière-plan, activer la periode de grâce pour le sensor
+        // Si on revient de l'arriere-plan, activer la periode de grâce pour le sensor
         if (isReturningFromBackground)
         {
             Logger.LogInfo("StepManager: Activating sensor grace period after returning from background.", Logger.LogCategory.StepLog);
@@ -380,12 +380,12 @@ public class StepManager : MonoBehaviour
 
             if (currentSensorValue > 0)
             {
-                // Verifier si la lecture est stable (même valeur plusieurs fois)
+                // Verifier si la lecture est stable (meme valeur plusieurs fois)
                 if (currentSensorValue == previousReading)
                 {
                     stableReadingCount++;
 
-                    // Si on a 3 lectures stables consecutives, on considère que la valeur est valide
+                    // Si on a 3 lectures stables consecutives, on considere que la valeur est valide
                     if (stableReadingCount >= 3)
                     {
                         sensorStartCount = currentSensorValue;
@@ -409,7 +409,7 @@ public class StepManager : MonoBehaviour
             waitTime += 0.5f;
         }
 
-        // Si on n'a pas reussi a obtenir une valeur stable, on utilise la dernière valeur obtenue
+        // Si on n'a pas reussi a obtenir une valeur stable, on utilise la derniere valeur obtenue
         if (!isSensorStartCountValid && currentSensorValue > 0)
         {
             sensorStartCount = currentSensorValue;
@@ -426,7 +426,7 @@ public class StepManager : MonoBehaviour
             sensorDeltaThisSession = 0;
         }
 
-        // La periode de grâce commence après l'initialisation du capteur
+        // La periode de grâce commence apres l'initialisation du capteur
         inSensorGracePeriod = true;
         sensorGraceTimer = 0f;
         Logger.LogInfo("StepManager: Direct sensor initialization complete. Grace period started.", Logger.LogCategory.StepLog);
@@ -515,7 +515,7 @@ public class StepManager : MonoBehaviour
             // Creer une cle unique pour cette division speciale
             string splitKey = $"multiday_{startTimeMs}_{todayMidnightMs}_{endTimeMs}";
 
-            // Verifier si nous avons deja effectue cette requête recemment
+            // Verifier si nous avons deja effectue cette requete recemment
             if (splitKey == lastMidnightSplitKey)
             {
                 Logger.LogWarning($"StepManager: DUPLICATE MULTIDAY SPLIT DETECTED! Skipping to avoid double counting. SplitKey: {splitKey}", Logger.LogCategory.StepLog);
@@ -583,7 +583,7 @@ public class StepManager : MonoBehaviour
         }
         else
         {
-            // Cas avec chevauchement de minuit sur une seule nuit : diviser en deux requêtes
+            // Cas avec chevauchement de minuit sur une seule nuit : diviser en deux requetes
 
             // Force explicitement la reinitialisation du compteur quotidien
             string currentDateStr = GetLocalDateString();
@@ -601,7 +601,7 @@ public class StepManager : MonoBehaviour
             // Creer une cle unique pour cette split de minuit pour detecter les doublons
             string splitKey = $"{startTimeMs}_{midnightMs}_{endTimeMs}";
 
-            // Verifier si nous avons deja effectue cette requête recemment
+            // Verifier si nous avons deja effectue cette requete recemment
             if (splitKey == lastMidnightSplitKey)
             {
                 Logger.LogWarning($"StepManager: DUPLICATE MIDNIGHT SPLIT DETECTED! Skipping to avoid double counting. SplitKey: {splitKey}", Logger.LogCategory.StepLog);
@@ -631,7 +631,7 @@ public class StepManager : MonoBehaviour
                 stepsBeforeMidnight = MAX_STEPS_PER_UPDATE;
             }
 
-            // 3. Recuperer les pas de la periode après minuit (jour courant)
+            // 3. Recuperer les pas de la periode apres minuit (jour courant)
             long stepsAfterMidnight = 0;
             yield return StartCoroutine(apiCounter.GetDeltaSinceFromAPI(midnightPlus, endTimeMs, (result) =>
             {
@@ -652,7 +652,7 @@ public class StepManager : MonoBehaviour
 
             // 4. Mettre a jour les compteurs
             TotalSteps += (stepsBeforeMidnight + stepsAfterMidnight); // Ajouter tous les pas au total
-            DailySteps += stepsAfterMidnight; // N'ajouter que les pas après minuit au compteur journalier
+            DailySteps += stepsAfterMidnight; // N'ajouter que les pas apres minuit au compteur journalier
 
             // Enregistrer cette split pour ne pas la repeter
             lastMidnightSplitKey = splitKey;
@@ -716,7 +716,7 @@ public class StepManager : MonoBehaviour
                     {
                         Logger.LogInfo($"StepManager: [GRACE PERIOD] Ignoring sensor update from {lastRecordedSensorValue} to {currentRawValue}", Logger.LogCategory.StepLog);
 
-                        // Mettre a jour la valeur de reference pour eviter les ecarts importants après la periode de grâce
+                        // Mettre a jour la valeur de reference pour eviter les ecarts importants apres la periode de grâce
                         lastRecordedSensorValue = currentRawValue;
                         sensorStartCount = currentRawValue;
                         sensorDeltaThisSession = 0;
@@ -844,7 +844,7 @@ public class StepManager : MonoBehaviour
                         dataManager.PlayerData.TotalSteps = TotalSteps;
                         dataManager.PlayerData.DailySteps = DailySteps;
 
-                        // Mettre a jour les timestamps de dernière synchronisation et pause
+                        // Mettre a jour les timestamps de derniere synchronisation et pause
                         UpdateLastDirectSensorTimestamp();
 
                         // Verifier si c'est le moment de sauvegarder
@@ -883,19 +883,19 @@ public class StepManager : MonoBehaviour
 #else
         isAppInForeground = false;
 
-        // Arrêter le capteur direct quand l'application n'est plus au premier plan
+        // Arreter le capteur direct quand l'application n'est plus au premier plan
         apiCounter.StopDirectSensorListener();
         Logger.LogInfo("StepManager: Direct sensor listener stopped.", Logger.LogCategory.StepLog);
 #endif
 
-        // Enregistrer le timestamp de pause pour resoudre le problème de double comptage
+        // Enregistrer le timestamp de pause pour resoudre le probleme de double comptage
         long nowEpochMs = GetCurrentEpochMs();
         dataManager.PlayerData.LastSyncEpochMs = nowEpochMs;
         dataManager.PlayerData.LastPauseEpochMs = nowEpochMs;
 
 #if !UNITY_EDITOR
         // IMPORTANT: Mettre egalement a jour LastApiCatchUpEpochMs pour eviter le double comptage
-        // lors du prochain retour de l'arrière-plan
+        // lors du prochain retour de l'arriere-plan
         dataManager.PlayerData.LastApiCatchUpEpochMs = nowEpochMs;
         Logger.LogInfo($"StepManager: Updated LastApiCatchUpEpochMs to {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)} when going to background", Logger.LogCategory.StepLog);
 #endif
@@ -915,7 +915,7 @@ public class StepManager : MonoBehaviour
 
         if (pauseStatus)
         {
-            // L'application va en arrière-plan
+            // L'application va en arriere-plan
             Logger.LogInfo("StepManager: OnApplicationPause → app goes to background", Logger.LogCategory.StepLog);
             HandleAppPausingOrClosing();
         }
@@ -925,7 +925,7 @@ public class StepManager : MonoBehaviour
             Logger.LogInfo("StepManager: OnApplicationPause → app returns to foreground", Logger.LogCategory.StepLog);
 
 #if !UNITY_EDITOR
-            // Marquer que l'application retourne au premier plan après avoir ete en arrière-plan
+            // Marquer que l'application retourne au premier plan apres avoir ete en arriere-plan
             isReturningFromBackground = true;
 
             if (isInitialized)

@@ -74,7 +74,7 @@ public class TravelProgressBar : MonoBehaviour
     // NOUVEAU: Verifier l'etat de voyage au demarrage
     private System.Collections.IEnumerator CheckTravelStateOnStart()
     {
-        // Attendre que tous les managers soient prêts
+        // Attendre que tous les managers soient prets
         yield return new WaitForSeconds(0.5f);
 
         if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
@@ -135,7 +135,7 @@ public class TravelProgressBar : MonoBehaviour
     }
 
     /// <summary>
-    /// Appele pendant le voyage pour mettre a jour le progrès
+    /// Appele pendant le voyage pour mettre a jour le progres
     /// </summary>
     private void OnTravelProgress(TravelProgressEvent eventData)
     {
@@ -168,7 +168,7 @@ public class TravelProgressBar : MonoBehaviour
     }
 
     /// <summary>
-    /// Met a jour l'affichage du progrès
+    /// Met a jour l'affichage du progres
     /// </summary>
     private void UpdateProgressDisplay()
     {
@@ -185,7 +185,7 @@ public class TravelProgressBar : MonoBehaviour
     }
 
     /// <summary>
-    /// Met a jour les valeurs de progrès et anime si necessaire
+    /// Met a jour les valeurs de progres et anime si necessaire
     /// </summary>
     private void UpdateProgressValues(int currentSteps, int requiredSteps)
     {

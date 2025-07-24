@@ -28,7 +28,7 @@ public abstract class EventBusEvent
     protected EventBusEvent()
     {
         Timestamp = DateTime.Now;
-        EventId = Guid.NewGuid().ToString("N")[..8]; // 8 premiers caractères pour plus de lisibilite
+        EventId = Guid.NewGuid().ToString("N")[..8]; // 8 premiers caracteres pour plus de lisibilite
     }
 
     /// <summary>
@@ -41,8 +41,8 @@ public abstract class EventBusEvent
 }
 
 /// <summary>
-/// Interface optionnelle pour les evenements qui peuvent être annules
-/// Utile pour des evenements comme "BeforeLocationChange" où on veut pouvoir empêcher l'action
+/// Interface optionnelle pour les evenements qui peuvent etre annules
+/// Utile pour des evenements comme "BeforeLocationChange" où on veut pouvoir empecher l'action
 /// </summary>
 public interface ICancellableEvent
 {

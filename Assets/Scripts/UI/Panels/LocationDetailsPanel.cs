@@ -11,7 +11,7 @@ public class LocationDetailsPanel : MonoBehaviour
 {
     #region Variables Serialized
 
-    [Header("Interface - En-tête")]
+    [Header("Interface - En-tete")]
     [SerializeField] private Image locationImage;
 
     [Header("Interface - Contenu")]
@@ -28,15 +28,15 @@ public class LocationDetailsPanel : MonoBehaviour
     [SerializeField] private GameObject heroCard; // La carte principale avec le contenu
     [SerializeField] private Image heroCardBackground; // L'image de fond de la HeroCard
 
-    [Header("Paramètres")]
+    [Header("Parametres")]
     [SerializeField] private Color defaultImageColor = Color.gray;
 
-    [Header("Paramètres Animation")]
+    [Header("Parametres Animation")]
     [SerializeField] private float animationDuration = 0.2f; // Duree de l'animation en secondes
     [SerializeField] private AnimationCurve animationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1); // Courbe d'animation
     [SerializeField] private float slidePixels = 50f; // Distance en pixels pour l'animation slide
 
-    [Header("Paramètres Ombre")]
+    [Header("Parametres Ombre")]
     [SerializeField] private bool enableShadow = true; // Activer/desactiver l'ombre
     [SerializeField] private Vector2 shadowOffset = new Vector2(5, -5); // Decalage de l'ombre
     [SerializeField] private Color shadowColor = new Color(0, 0, 0, 0.3f); // Couleur de l'ombre
@@ -123,7 +123,7 @@ public class LocationDetailsPanel : MonoBehaviour
     #region Initialisation
 
     /// <summary>
-    /// Recupère les references vers les managers principaux
+    /// Recupere les references vers les managers principaux
     /// </summary>
     private void InitializeReferences()
     {
@@ -420,7 +420,7 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Met a jour l'en-tête (nom et image)
+    /// Met a jour l'en-tete (nom et image)
     /// </summary>
     private void UpdateHeaderSection()
     {
@@ -497,7 +497,7 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Gère la selection d'une activite depuis le ActivitiesSectionPanel
+    /// Gere la selection d'une activite depuis le ActivitiesSectionPanel
     /// </summary>
     private void OnActivitySelected(ActivityDefinition activityDefinition)
     {
@@ -586,7 +586,7 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Corrige les problèmes de layout du ScrollRect
+    /// Corrige les problemes de layout du ScrollRect
     /// </summary>
     private void FixScrollRect()
     {

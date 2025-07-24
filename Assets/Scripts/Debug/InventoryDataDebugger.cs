@@ -70,7 +70,7 @@ public class InventoryDataDebugger : EditorWindow
         {
             Debug.LogWarning("Lance le jeu en mode Play pour analyser l'inventaire !");
             EditorUtility.DisplayDialog("Mode Play requis",
-                "Tu dois être en mode Play pour analyser l'inventaire.", "OK");
+                "Tu dois etre en mode Play pour analyser l'inventaire.", "OK");
             return;
         }
 
@@ -148,7 +148,7 @@ public class InventoryDataDebugger : EditorWindow
         {
             Debug.LogWarning("Lance le jeu en mode Play !");
             EditorUtility.DisplayDialog("Mode Play requis",
-                "Tu dois être en mode Play pour nettoyer l'inventaire.", "OK");
+                "Tu dois etre en mode Play pour nettoyer l'inventaire.", "OK");
             return;
         }
 
@@ -208,7 +208,7 @@ public class InventoryDataDebugger : EditorWindow
         {
             Debug.LogWarning("Lance le jeu en mode Play !");
             EditorUtility.DisplayDialog("Mode Play requis",
-                "Tu dois être en mode Play pour migrer les IDs.", "OK");
+                "Tu dois etre en mode Play pour migrer les IDs.", "OK");
             return;
         }
 
@@ -284,7 +284,7 @@ public class InventoryDataDebugger : EditorWindow
         {
             Debug.LogWarning("Lance le jeu en mode Play !");
             EditorUtility.DisplayDialog("Mode Play requis",
-                "Tu dois être en mode Play pour reset l'inventaire.", "OK");
+                "Tu dois etre en mode Play pour reset l'inventaire.", "OK");
             return;
         }
 
@@ -314,9 +314,9 @@ public class InventoryDataDebugger : EditorWindow
         // Forcer la sauvegarde
         inventoryManager.ForceSave();
 
-        Debug.Log("✅ Inventaire complètement vide !");
+        Debug.Log("✅ Inventaire completement vide !");
         EditorUtility.DisplayDialog("Reset termine",
-            "L'inventaire a ete complètement vide.", "OK");
+            "L'inventaire a ete completement vide.", "OK");
     }
 
     private void DisplayInventoryDebugInfo()

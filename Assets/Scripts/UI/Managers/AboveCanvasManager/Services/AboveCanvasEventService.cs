@@ -95,7 +95,7 @@ public class AboveCanvasEventService
     {
         Logger.LogInfo($"AboveCanvasManager: Travel started to {eventData.DestinationLocationId} from {eventData.CurrentLocation?.DisplayName}", Logger.LogCategory.General);
 
-        // Forcer une mise a jour complète de l'affichage pour recuperer les nouvelles icônes
+        // Forcer une mise a jour complete de l'affichage pour recuperer les nouvelles icônes
         displayService.RefreshDisplay();
     }
     private void OnActivityProgress(ActivityProgressEvent eventData)

@@ -17,7 +17,7 @@ public class MapToggleButton : MonoBehaviour
         if (panelManager == null)
             panelManager = PanelManager.Instance;
 
-        // S'abonner aux evenements du PanelManager pour être notifie des changements d'etat
+        // S'abonner aux evenements du PanelManager pour etre notifie des changements d'etat
         if (panelManager != null)
         {
             panelManager.OnMapStateChanged.AddListener(OnMapStateChanged);

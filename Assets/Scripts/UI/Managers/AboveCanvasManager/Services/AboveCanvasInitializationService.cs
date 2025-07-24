@@ -34,11 +34,11 @@ public class AboveCanvasInitializationService
         // Abonner aux evenements immediatement (comme avant)
         eventService?.SubscribeToEvents();
 
-        // Première mise a jour de l'affichage
+        // Premiere mise a jour de l'affichage
         manager.RefreshDisplay();
 
         // RESTAURATION: Verification retardee pour s'assurer que l'affichage est correct
-        // (C'etait dans l'ancien code et ça resolvait les problèmes d'ordre d'initialisation)
+        // (C'etait dans l'ancien code et ça resolvait les problemes d'ordre d'initialisation)
         manager.StartCoroutine(DelayedDisplayRefresh());
 
         isInitialized = true;
@@ -47,7 +47,7 @@ public class AboveCanvasInitializationService
 
     private System.Collections.IEnumerator DelayedDisplayRefresh()
     {
-        // Attendre quelques frames pour que tous les managers soient complètement initialises
+        // Attendre quelques frames pour que tous les managers soient completement initialises
         yield return new WaitForSeconds(1f);
 
         // Forcer une mise a jour de l'affichage
@@ -61,7 +61,7 @@ public class AboveCanvasInitializationService
 
     private System.Collections.IEnumerator WaitForCriticalManagers()
     {
-        // Version optimisee : WaitUntil() arrête immediatement quand la condition est remplie
+        // Version optimisee : WaitUntil() arrete immediatement quand la condition est remplie
         // → evite de boucler toutes les 0.1s ; tu gagnes quelques ms au lancement
         yield return new WaitUntil(() => DataManager.Instance != null && MapManager.Instance != null);
 
@@ -174,7 +174,7 @@ public class AboveCanvasInitializationService
             // Utiliser ErrorPanel pour afficher le message
             if (ErrorPanel.Instance != null)
             {
-                ErrorPanel.Instance.ShowError($"Vous êtes en voyage vers {destinationName}. Attendez d'arriver a destination.");
+                ErrorPanel.Instance.ShowError($"Vous etes en voyage vers {destinationName}. Attendez d'arriver a destination.");
             }
 
             Logger.LogInfo("AboveCanvasManager: LocationButton clicked during travel - access blocked", Logger.LogCategory.General);

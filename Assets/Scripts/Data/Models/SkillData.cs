@@ -17,7 +17,7 @@ public class SkillData
         Experience = 0;
     }
 
-    // Constructeur avec paramètres
+    // Constructeur avec parametres
     public SkillData(string skillId, int level = 1, int experience = 0)
     {
         SkillId = skillId;

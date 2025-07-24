@@ -400,16 +400,16 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// CORRIGe : Cree un nouveau POI dans la scène avec collider adapte a la taille
+    /// CORRIGe : Cree un nouveau POI dans la scene avec collider adapte a la taille
     /// </summary>
     private void CreateNewPOI(string poiName, string locationID)
     {
         try
         {
-            // Validation des paramètres
+            // Validation des parametres
             if (string.IsNullOrEmpty(poiName) || string.IsNullOrEmpty(locationID))
             {
-                EditorUtility.DisplayDialog("Erreur", "Le nom du POI et l'ID de location ne peuvent pas être vides.", "OK");
+                EditorUtility.DisplayDialog("Erreur", "Le nom du POI et l'ID de location ne peuvent pas etre vides.", "OK");
                 return;
             }
 
@@ -423,7 +423,7 @@ public class ActivityManagerWindow : EditorWindow
             GameObject worldMapObject = FindOrCreateWorldMap();
             if (worldMapObject == null)
             {
-                EditorUtility.DisplayDialog("Erreur", "Impossible de trouver ou creer le GameObject 'WorldMap' dans la scène.", "OK");
+                EditorUtility.DisplayDialog("Erreur", "Impossible de trouver ou creer le GameObject 'WorldMap' dans la scene.", "OK");
                 return;
             }
 
@@ -508,7 +508,7 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// BONUS : Methode utilitaire pour ajuster le collider a un sprite après coup
+    /// BONUS : Methode utilitaire pour ajuster le collider a un sprite apres coup
     /// </summary>
     private void FitColliderToSprite(POI poi)
     {
@@ -542,7 +542,7 @@ public class ActivityManagerWindow : EditorWindow
             return worldMapCenter;
         }
 
-        // PRIORITe 2 : Chercher WorldMap dans la scène
+        // PRIORITe 2 : Chercher WorldMap dans la scene
         GameObject worldMap = GameObject.Find("WorldMap");
         if (worldMap != null)
         {
@@ -551,7 +551,7 @@ public class ActivityManagerWindow : EditorWindow
             return worldMapCenter;
         }
 
-        // PRIORITe 3 : Essayer de positionner près de la camera de la SceneView
+        // PRIORITe 3 : Essayer de positionner pres de la camera de la SceneView
         SceneView sceneView = SceneView.lastActiveSceneView;
         if (sceneView != null && sceneView.camera != null)
         {
@@ -575,14 +575,14 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// NOUVEAU : Gère la creation de location de manière securisee
+    /// NOUVEAU : Gere la creation de location de maniere securisee
     /// </summary>
     private void HandleLocationCreation(string locationID)
     {
         if (locationRegistry != null && !locationLookup.ContainsKey(locationID))
         {
             // Note l'ID pour la creation ulterieure mais ne montre pas le dialog maintenant
-            // (pour eviter les problèmes de GUI Layout)
+            // (pour eviter les problemes de GUI Layout)
             EditorApplication.delayCall += () =>
             {
                 bool createLocation = EditorUtility.DisplayDialog(
@@ -598,7 +598,7 @@ public class ActivityManagerWindow : EditorWindow
                     newLocationDescription = "";
                     showCreateLocationDialog = true;
 
-                    // Forcer un repaint de la fenêtre
+                    // Forcer un repaint de la fenetre
                     Repaint();
                 }
             };
@@ -626,7 +626,7 @@ public class ActivityManagerWindow : EditorWindow
     /// </summary>
     private GameObject FindOrCreateWorldMap()
     {
-        // Chercher d'abord dans la scène
+        // Chercher d'abord dans la scene
         GameObject worldMapObject = GameObject.Find("WorldMap");
 
         if (worldMapObject != null)
@@ -638,7 +638,7 @@ public class ActivityManagerWindow : EditorWindow
         // Si pas trouve, proposer de le creer
         bool createWorldMap = EditorUtility.DisplayDialog(
             "WorldMap Non Trouve",
-            "Le GameObject 'WorldMap' n'existe pas dans la scène.\n\nLe creer maintenant ?",
+            "Le GameObject 'WorldMap' n'existe pas dans la scene.\n\nLe creer maintenant ?",
             "Creer", "Annuler");
 
         if (createWorldMap)
@@ -652,11 +652,11 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// NOUVEAU : Genère le nom du POI au format POI_name_number
+    /// NOUVEAU : Genere le nom du POI au format POI_name_number
     /// </summary>
     private string GeneratePOIName(string baseName, GameObject worldMapParent)
     {
-        // Compter les POIs existants avec le même nom de base
+        // Compter les POIs existants avec le meme nom de base
         POI[] existingPOIs = worldMapParent.GetComponentsInChildren<POI>();
         int count = 1;
 
@@ -687,7 +687,7 @@ public class ActivityManagerWindow : EditorWindow
         GameObject travelStartPoint = new GameObject("TravelStartPoint");
         travelStartPoint.transform.SetParent(poiParent.transform, false);
 
-        // Position legèrement decalee du POI pour être visible
+        // Position legerement decalee du POI pour etre visible
         travelStartPoint.transform.localPosition = new Vector3(0.5f, 0.5f, 0f);
 
         // Ajouter un petit gizmo visuel pour l'identifier dans l'editeur
@@ -1437,7 +1437,7 @@ public class ActivityManagerWindow : EditorWindow
 
         locationActivity.ActivityVariants.Add(variant);
 
-        // NOUVEAU : Synchroniser avec toutes les autres LocationActivity qui utilisent la même ActivityDefinition
+        // NOUVEAU : Synchroniser avec toutes les autres LocationActivity qui utilisent la meme ActivityDefinition
         SynchronizeVariantAcrossAllLocations(locationActivity.ActivityReference, variant, true);
 
         MarkLocationDirty(FindLocationContaining(locationActivity));
@@ -1543,7 +1543,7 @@ public class ActivityManagerWindow : EditorWindow
 
         locationActivity.ActivityVariants.Add(variant);
 
-        // NOUVEAU : Synchroniser avec toutes les autres LocationActivity qui utilisent la même ActivityDefinition
+        // NOUVEAU : Synchroniser avec toutes les autres LocationActivity qui utilisent la meme ActivityDefinition
         SynchronizeVariantAcrossAllLocations(locationActivity.ActivityReference, variant, true);
 
         EditorUtility.SetDirty(activityRegistry);
@@ -1584,7 +1584,7 @@ public class ActivityManagerWindow : EditorWindow
     }
 
     /// <summary>
-    /// Synchronise l'ajout/suppression d'un variant a travers toutes les LocationActivity qui utilisent la même ActivityDefinition
+    /// Synchronise l'ajout/suppression d'un variant a travers toutes les LocationActivity qui utilisent la meme ActivityDefinition
     /// </summary>
     private void SynchronizeVariantAcrossAllLocations(ActivityDefinition activityDef, ActivityVariant variant, bool add)
     {

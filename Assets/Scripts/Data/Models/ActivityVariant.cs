@@ -206,7 +206,7 @@ public class ActivityVariant : ScriptableObject
             if (!added)
             {
                 Logger.LogError($"ActivityVariant: Failed to refund {RequiredQuantities[i]} {RequiredMaterials[i].GetDisplayName()}", Logger.LogCategory.General);
-                // On continue quand même pour essayer de rendre les autres materiaux
+                // On continue quand meme pour essayer de rendre les autres materiaux
             }
         }
 

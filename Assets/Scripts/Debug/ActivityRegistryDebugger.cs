@@ -104,7 +104,7 @@ public class ActivityRegistryDebugger : EditorWindow
 
                     if (parentId != expectedId)
                     {
-                        Debug.LogError($"  ❌ PROBLÈME : Le variant '{variant.VariantName}' a un ParentActivityID '{parentId}' " +
+                        Debug.LogError($"  ❌ PROBLeME : Le variant '{variant.VariantName}' a un ParentActivityID '{parentId}' " +
                                      $"mais il est associe a l'activite '{expectedId}' !");
                     }
 

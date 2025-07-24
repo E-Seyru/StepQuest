@@ -181,7 +181,7 @@ public class ActivityVariantEditor : EditorWindow
         // Informations de base
         EditorGUILayout.BeginVertical();
 
-        // Première ligne : Nom + Type + Level Required
+        // Premiere ligne : Nom + Type + Level Required
         EditorGUILayout.BeginHorizontal();
         EditorGUILayout.LabelField($"{variant.ParentActivityID} / {variant.VariantName}", EditorStyles.boldLabel, GUILayout.Width(200));
 
@@ -253,7 +253,7 @@ public class ActivityVariantEditor : EditorWindow
 
         EditorGUILayout.EndHorizontal();
 
-        // Deuxième ligne : XP Settings - Automatiques
+        // Deuxieme ligne : XP Settings - Automatiques
         EditorGUILayout.BeginHorizontal();
 
         GUILayout.Label("XP:", GUILayout.Width(25));
@@ -280,7 +280,7 @@ public class ActivityVariantEditor : EditorWindow
             EditorUtility.SetDirty(variant);
         }
 
-        // Indicateur de problème
+        // Indicateur de probleme
         if (variant.MainSkillXPPerTick == 0)
         {
             GUILayout.Label("⚠️ No XP", GUILayout.Width(50));
@@ -288,7 +288,7 @@ public class ActivityVariantEditor : EditorWindow
 
         EditorGUILayout.EndHorizontal();
 
-        // Troisième ligne : Informations supplementaires
+        // Troisieme ligne : Informations supplementaires
         EditorGUILayout.BeginHorizontal();
         if (variant.PrimaryResource != null)
         {

@@ -181,10 +181,10 @@ public enum EquipmentType
 {
     None,        // Pas un equipement
     Weapon,      // Arme principale
-    Tool,        // Outils (pioche, hache, canne a pêche)
+    Tool,        // Outils (pioche, hache, canne a peche)
     Helmet,      // Casque
     Armor,       // Armure de corps
-    Legs,        // Jambières
+    Legs,        // Jambieres
     Boots,       // Bottes
     Gloves,      // Gants
     Backpack,    // Sac a dos (augmente l'inventaire)

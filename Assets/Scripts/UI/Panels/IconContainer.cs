@@ -13,7 +13,7 @@ public class IconContainer : MonoBehaviour
     [SerializeField] private Button iconButton;
 
     [Header("Panel References")]
-    [SerializeField] private VariantContainer variantContainer; // Référence directe
+    [SerializeField] private VariantContainer variantContainer; // Reference directe
 
     [Header("Settings")]
     [SerializeField] private bool autoRefresh = true;
@@ -38,12 +38,12 @@ public class IconContainer : MonoBehaviour
 
     void Start()
     {
-        // Attendre que XpManager soit prêt avant l'initialisation
+        // Attendre que XpManager soit pret avant l'initialisation
         StartCoroutine(DelayedInitialization());
     }
 
     /// <summary>
-    /// Initialisation retardée pour s'assurer que XpManager est prêt
+    /// Initialisation retardee pour s'assurer que XpManager est pret
     /// </summary>
     private System.Collections.IEnumerator DelayedInitialization()
     {
@@ -89,7 +89,7 @@ public class IconContainer : MonoBehaviour
             // Configuration visuelle initiale
             SetupVisualElements();
 
-            // Première mise à jour
+            // Premiere mise a jour
             RefreshDisplay();
         }
     }
@@ -102,13 +102,13 @@ public class IconContainer : MonoBehaviour
         if (string.IsNullOrEmpty(mainSkillId) || XpManager.Instance == null)
             return;
 
-        // Obtenir les données de compétence actuelles
+        // Obtenir les donnees de competence actuelles
         var skillData = XpManager.Instance.GetPlayerSkill(mainSkillId);
 
-        // Mettre à jour le niveau
+        // Mettre a jour le niveau
         UpdateLevelDisplay(skillData);
 
-        // Mettre à jour la progression
+        // Mettre a jour la progression
         UpdateProgressRing(skillData);
 
         // Sauvegarder les valeurs en cache
@@ -118,7 +118,7 @@ public class IconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Obtenir l'ID de l'activité associée
+    /// Obtenir l'ID de l'activite associee
     /// </summary>
     public string GetActivityId()
     {
@@ -126,7 +126,7 @@ public class IconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Obtenir les données de compétence actuelles
+    /// Obtenir les donnees de competence actuelles
     /// </summary>
     public SkillData GetCurrentSkillData()
     {
@@ -139,7 +139,7 @@ public class IconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Configurer la référence au VariantContainer (appelé par ActivityXpContainer)
+    /// Configurer la reference au VariantContainer (appele par ActivityXpContainer)
     /// </summary>
     public void SetVariantContainer(VariantContainer container)
     {
@@ -178,13 +178,13 @@ public class IconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Gestion du clic sur l'icône d'activité
+    /// Gestion du clic sur l'icône d'activite
     /// </summary>
     private void OnIconClicked()
     {
         if (activityDefinition != null && variantContainer != null)
         {
-            // Ouvrir le panel des variants pour cette activité
+            // Ouvrir le panel des variants pour cette activite
             variantContainer.ShowVariantsForActivity(activityDefinition);
         }
         else if (variantContainer == null)
@@ -194,7 +194,7 @@ public class IconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Configuration des éléments visuels de base
+    /// Configuration des elements visuels de base
     /// </summary>
     private void SetupVisualElements()
     {
@@ -203,7 +203,7 @@ public class IconContainer : MonoBehaviour
         // Configurer l'icône principale
         if (skillIcon != null)
         {
-            // Obtenir l'icône de l'activité ou utiliser l'icône par défaut
+            // Obtenir l'icône de l'activite ou utiliser l'icône par defaut
             var iconSprite = GetActivityIcon();
             skillIcon.sprite = iconSprite ?? defaultIcon;
         }
@@ -216,7 +216,7 @@ public class IconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Mettre à jour l'affichage du niveau
+    /// Mettre a jour l'affichage du niveau
     /// </summary>
     private void UpdateLevelDisplay(SkillData skillData)
     {
@@ -225,14 +225,14 @@ public class IconContainer : MonoBehaviour
         levelText.text = $"Lvl. {skillData.Level}";
 
         // Changer la couleur si niveau maximum
-        if (skillData.Level >= 100) // Utiliser une valeur fixe ou créer une propriété publique
+        if (skillData.Level >= 100) // Utiliser une valeur fixe ou creer une propriete publique
         {
             levelText.color = maxLevelColor;
         }
     }
 
     /// <summary>
-    /// Mettre à jour l'anneau de progression
+    /// Mettre a jour l'anneau de progression
     /// </summary>
     private void UpdateProgressRing(SkillData skillData)
     {
@@ -241,15 +241,15 @@ public class IconContainer : MonoBehaviour
         // Calculer la progression vers le niveau suivant
         float progress = GetProgressToNextLevel(skillData);
 
-        // Animer la progression si elle a changé
+        // Animer la progression si elle a change
         if (!Mathf.Approximately(progress, progressRing.fillAmount))
         {
-            // Animation simple (vous pouvez améliorer avec DOTween si disponible)
+            // Animation simple (vous pouvez ameliorer avec DOTween si disponible)
             progressRing.fillAmount = progress;
         }
 
         // Changer la couleur selon le niveau
-        if (skillData.Level >= 100) // Utiliser une valeur fixe ou créer une propriété publique
+        if (skillData.Level >= 100) // Utiliser une valeur fixe ou creer une propriete publique
         {
             progressRing.color = maxLevelColor;
             progressRing.fillAmount = 1f; // Complet au niveau max
@@ -258,7 +258,7 @@ public class IconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Calculer la progression vers le niveau suivant (0.0 à 1.0)
+    /// Calculer la progression vers le niveau suivant (0.0 a 1.0)
     /// </summary>
     private float GetProgressToNextLevel(SkillData skillData)
     {
@@ -268,18 +268,18 @@ public class IconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Obtenir la compétence principale associée à cette activité
-    /// Simple : l'ID de l'activité = l'ID de la compétence principale
+    /// Obtenir la competence principale associee a cette activite
+    /// Simple : l'ID de l'activite = l'ID de la competence principale
     /// </summary>
     private string GetMainSkillForActivity(string activityId)
     {
-        // Dans votre système, les activités primaires ont directement leur XP/niveau
-        // dans PlayerData.Skills avec l'ID de l'activité comme clé
+        // Dans votre systeme, les activites primaires ont directement leur XP/niveau
+        // dans PlayerData.Skills avec l'ID de l'activite comme cle
         return activityId;
     }
 
     /// <summary>
-    /// Obtenir l'icône de l'activité
+    /// Obtenir l'icône de l'activite
     /// </summary>
     private Sprite GetActivityIcon()
     {
@@ -289,12 +289,12 @@ public class IconContainer : MonoBehaviour
             return activityDefinition.ActivityIcon;
         }
 
-        // Sinon, essayer de charger une icône basée sur l'ID
+        // Sinon, essayer de charger une icône basee sur l'ID
         return LoadIconByActivityId(activityId);
     }
 
     /// <summary>
-    /// Charger une icône basée sur l'ID d'activité
+    /// Charger une icône basee sur l'ID d'activite
     /// </summary>
     private Sprite LoadIconByActivityId(string activityId)
     {

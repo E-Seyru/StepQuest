@@ -80,7 +80,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Masque ou affiche la section entière
+    /// Masque ou affiche la section entiere
     /// </summary>
     public void SetSectionVisible(bool visible)
     {
@@ -247,7 +247,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Gère le clic sur une carte d'activite
+    /// Gere le clic sur une carte d'activite
     /// </summary>
     private void OnActivityCardClicked(ActivityDefinition activity)
     {
@@ -285,7 +285,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Recupère une carte d'activite du pool ou en cree une nouvelle
+    /// Recupere une carte d'activite du pool ou en cree une nouvelle
     /// </summary>
     private GameObject GetPooledActivityCard()
     {

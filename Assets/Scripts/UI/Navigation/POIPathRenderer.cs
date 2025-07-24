@@ -32,7 +32,7 @@ public class POIPathRenderer : MonoBehaviour
     }
 
     /// <summary>
-    /// Genère automatiquement toutes les lignes entre POIs connectes
+    /// Genere automatiquement toutes les lignes entre POIs connectes
     /// </summary>
     public void GenerateAllPaths()
     {
@@ -141,7 +141,7 @@ public class POIPathRenderer : MonoBehaviour
             float segmentStart = i * segmentLength;
             float segmentEnd = segmentStart + dashLength;
 
-            // Arrêter si on depasse la distance totale
+            // Arreter si on depasse la distance totale
             if (segmentStart >= totalDistance) break;
 
             // Calculer les positions du tiret
@@ -168,7 +168,7 @@ public class POIPathRenderer : MonoBehaviour
         foreach (POI poi in allPOIs)
         {
             Vector3 poiPosition = poi.transform.position;
-            poiPosition.z = segmentStart.z; // Même Z pour la comparaison
+            poiPosition.z = segmentStart.z; // Meme Z pour la comparaison
 
             // Calculer la distance du POI a la ligne
             float distanceToLine = DistancePointToLineSegment(poiPosition, segmentStart, segmentEnd);
