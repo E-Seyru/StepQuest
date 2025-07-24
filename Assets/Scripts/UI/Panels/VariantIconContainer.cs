@@ -19,6 +19,7 @@ public class VariantIconContainer : MonoBehaviour
     [Header("Visual Settings")]
     [SerializeField] private Color maxLevelColor = Color.yellow;
     [SerializeField] private Sprite defaultIcon;
+    [SerializeField] private Sprite unknownVariantIcon; // NOUVEAU : Icône "?" pour variants non découverts
 
     // Data
     private ActivityVariant activityVariant;
@@ -102,6 +103,9 @@ public class VariantIconContainer : MonoBehaviour
 
         // Obtenir les donnees de sous-competence actuelles (variants utilisent SubSkills)
         var subSkillData = XpManager.Instance.GetPlayerSubSkill(variantId);
+
+        // NOUVEAU : Mettre à jour l'icône en cas de découverte
+        UpdateIconDisplay();
 
         // Optimisation : seulement mettre a jour si les donnees ont change
         bool hasLevelChanged = subSkillData.Level != lastLevel;
@@ -254,10 +258,10 @@ public class VariantIconContainer : MonoBehaviour
     {
         if (activityVariant == null) return;
 
-        // Configurer l'icône du variant (optimise)
+        // Configurer l'icône du variant (modifié)
         if (variantIcon != null)
         {
-            var iconSprite = GetVariantIconOptimized();
+            var iconSprite = GetDisplayIcon(); // MODIFIÉ : Utiliser la nouvelle méthode
             variantIcon.sprite = iconSprite ?? defaultIcon;
         }
 
@@ -308,6 +312,49 @@ public class VariantIconContainer : MonoBehaviour
         {
             progressRing.color = maxLevelColor;
             progressRing.fillAmount = 1f; // Complet au niveau max
+        }
+    }
+
+    /// <summary>
+    /// Obtenir l'icône à afficher (normale ou "?" si pas découvert)
+    /// </summary>
+    private Sprite GetDisplayIcon()
+    {
+        // Vérifier si le variant a été découvert
+        if (!IsVariantDiscovered())
+        {
+            return unknownVariantIcon; // Afficher le "?"
+        }
+
+        // Variant découvert : afficher l'icône normale
+        return GetVariantIconOptimized();
+    }
+
+    /// <summary>
+    /// Vérifier si un variant a été découvert (pratiqué au moins une fois)
+    /// </summary>
+    private bool IsVariantDiscovered()
+    {
+        if (string.IsNullOrEmpty(variantId) || DataManager.Instance?.PlayerData == null)
+        {
+            return false; // Pas découvert si pas d'ID ou pas de données
+        }
+
+        // Vérifier si le variant existe dans les SubSkills ET a de l'XP > 0
+        var playerData = DataManager.Instance.PlayerData;
+        return playerData.SubSkills.ContainsKey(variantId) &&
+               playerData.GetSubSkillXP(variantId) > 0;
+    }
+
+    /// <summary>
+    /// Mettre à jour l'icône affichée selon l'état de découverte
+    /// </summary>
+    private void UpdateIconDisplay()
+    {
+        if (variantIcon != null)
+        {
+            var iconSprite = GetDisplayIcon();
+            variantIcon.sprite = iconSprite ?? defaultIcon;
         }
     }
 

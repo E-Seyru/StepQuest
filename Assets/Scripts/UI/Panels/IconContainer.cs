@@ -20,9 +20,9 @@ public class IconContainer : MonoBehaviour
     [SerializeField] private float refreshInterval = 1f;
 
     [Header("Visual Settings")]
-
     [SerializeField] private Color maxLevelColor = Color.yellow;
     [SerializeField] private Sprite defaultIcon;
+    [SerializeField] private Sprite unknownActivityIcon; // NOUVEAU : Icône "?" pour activités non découvertes
 
     // Data
     private ActivityDefinition activityDefinition;
@@ -104,6 +104,9 @@ public class IconContainer : MonoBehaviour
 
         // Obtenir les donnees de competence actuelles
         var skillData = XpManager.Instance.GetPlayerSkill(mainSkillId);
+
+        // NOUVEAU : Mettre à jour l'icône en cas de découverte
+        UpdateIconDisplay();
 
         // Mettre a jour le niveau
         UpdateLevelDisplay(skillData);
@@ -203,8 +206,8 @@ public class IconContainer : MonoBehaviour
         // Configurer l'icône principale
         if (skillIcon != null)
         {
-            // Obtenir l'icône de l'activite ou utiliser l'icône par defaut
-            var iconSprite = GetActivityIcon();
+            // MODIFIÉ : Vérifier si l'activité a été découverte
+            var iconSprite = GetDisplayIcon();
             skillIcon.sprite = iconSprite ?? defaultIcon;
         }
 
@@ -216,7 +219,7 @@ public class IconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Mettre a jour l'affichage du niveau
+    /// Mettre à jour l'affichage du niveau
     /// </summary>
     private void UpdateLevelDisplay(SkillData skillData)
     {
@@ -255,6 +258,49 @@ public class IconContainer : MonoBehaviour
             progressRing.fillAmount = 1f; // Complet au niveau max
         }
 
+    }
+
+    /// <summary>
+    /// Obtenir l'icône à afficher (normale ou "?" si pas découverte)
+    /// </summary>
+    private Sprite GetDisplayIcon()
+    {
+        // Vérifier si l'activité a été découverte
+        if (!IsActivityDiscovered())
+        {
+            return unknownActivityIcon; // Afficher le "?"
+        }
+
+        // Activité découverte : afficher l'icône normale
+        return GetActivityIcon();
+    }
+
+    /// <summary>
+    /// Vérifier si une activité a été découverte (pratiquée au moins une fois)
+    /// </summary>
+    private bool IsActivityDiscovered()
+    {
+        if (string.IsNullOrEmpty(mainSkillId) || DataManager.Instance?.PlayerData == null)
+        {
+            return false; // Pas découverte si pas d'ID ou pas de données
+        }
+
+        // Vérifier si l'activité existe dans les Skills ET a de l'XP > 0
+        var playerData = DataManager.Instance.PlayerData;
+        return playerData.Skills.ContainsKey(mainSkillId) &&
+               playerData.GetSkillXP(mainSkillId) > 0;
+    }
+
+    /// <summary>
+    /// Mettre à jour l'icône affichée selon l'état de découverte
+    /// </summary>
+    private void UpdateIconDisplay()
+    {
+        if (skillIcon != null)
+        {
+            var iconSprite = GetDisplayIcon();
+            skillIcon.sprite = iconSprite ?? defaultIcon;
+        }
     }
 
     /// <summary>
