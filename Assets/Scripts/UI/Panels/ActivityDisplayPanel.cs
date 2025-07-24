@@ -243,8 +243,7 @@ public class ActivityDisplayPanel : MonoBehaviour
         // Si aucune activite n’etait active, on ferme quand meme l’UI
         if (!success)
             HidePanel();                 // <── AJOUT
-        else
-            stopActivityButton.interactable = false; // Desactive le bouton en attendant l’evenement (optionnel)
+
     }
 
     /// <summary>
