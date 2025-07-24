@@ -13,6 +13,9 @@ public class ActivityXpContainer : MonoBehaviour
     [Header("Panel References")]
     [SerializeField] private VariantContainer variantContainer; // Référence au panel des variants
 
+    [Header("Activity Registry")]
+    [SerializeField] private ActivityRegistry activityRegistry; // Référence au registry des activités
+
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
     [SerializeField] private bool autoRefreshOnStart = true;
@@ -25,6 +28,12 @@ public class ActivityXpContainer : MonoBehaviour
 
     void Start()
     {
+        // Vérifier les références essentielles
+        if (!ValidateReferences())
+        {
+            return;
+        }
+
         if (autoRefreshOnStart)
         {
             RefreshActivityIcons();
@@ -34,7 +43,10 @@ public class ActivityXpContainer : MonoBehaviour
     void OnEnable()
     {
         // S'abonner aux événements de changement d'XP si nécessaire
-        RefreshActivityIcons();
+        if (ValidateReferences())
+        {
+            RefreshActivityIcons();
+        }
     }
 
     #endregion
@@ -47,21 +59,8 @@ public class ActivityXpContainer : MonoBehaviour
     [ContextMenu("Refresh Activity Icons")]
     public void RefreshActivityIcons()
     {
-        if (iconsContainer == null)
+        if (!ValidateReferences())
         {
-            if (enableDebugLogs)
-            {
-                Logger.LogError("ActivityXpContainer: iconsContainer is null!", Logger.LogCategory.General);
-            }
-            return;
-        }
-
-        if (iconContainerPrefab == null)
-        {
-            if (enableDebugLogs)
-            {
-                Logger.LogError("ActivityXpContainer: iconContainerPrefab is null!", Logger.LogCategory.General);
-            }
             return;
         }
 
@@ -97,28 +96,106 @@ public class ActivityXpContainer : MonoBehaviour
         return displayedActivities.Count;
     }
 
+    /// <summary>
+    /// Définir le registry d'activités (peut être appelé depuis l'inspecteur ou le code)
+    /// </summary>
+    public void SetActivityRegistry(ActivityRegistry registry)
+    {
+        activityRegistry = registry;
+        if (enableDebugLogs)
+        {
+            Logger.LogInfo($"ActivityXpContainer: Activity registry set to {(registry != null ? registry.name : "null")}", Logger.LogCategory.General);
+        }
+    }
+
     #endregion
 
     #region Private Methods
 
     /// <summary>
-    /// Obtenir toutes les activités principales du jeu
+    /// Valider que toutes les références nécessaires sont présentes
+    /// </summary>
+    private bool ValidateReferences()
+    {
+        if (iconsContainer == null)
+        {
+            if (enableDebugLogs)
+            {
+                Logger.LogError("ActivityXpContainer: iconsContainer is null! Assign it in the inspector.", Logger.LogCategory.General);
+            }
+            return false;
+        }
+
+        if (iconContainerPrefab == null)
+        {
+            if (enableDebugLogs)
+            {
+                Logger.LogError("ActivityXpContainer: iconContainerPrefab is null! Assign it in the inspector.", Logger.LogCategory.General);
+            }
+            return false;
+        }
+
+        if (activityRegistry == null)
+        {
+            // Tenter de trouver le registry automatiquement
+            activityRegistry = FindObjectOfType<ActivityRegistry>();
+
+            // Si toujours pas trouvé, chercher dans les Resources
+            if (activityRegistry == null)
+            {
+                activityRegistry = Resources.Load<ActivityRegistry>("ActivityRegistry");
+            }
+
+            if (activityRegistry == null)
+            {
+                if (enableDebugLogs)
+                {
+                    Logger.LogError("ActivityXpContainer: ActivityRegistry not found! Please assign it in the inspector or place it in Resources folder.", Logger.LogCategory.General);
+                }
+                return false;
+            }
+            else
+            {
+                if (enableDebugLogs)
+                {
+                    Logger.LogInfo($"ActivityXpContainer: Auto-found ActivityRegistry: {activityRegistry.name}", Logger.LogCategory.General);
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Obtenir toutes les activités principales du jeu via le registry
     /// </summary>
     private List<ActivityDefinition> GetAllMainActivities()
     {
         var allActivities = new List<ActivityDefinition>();
 
-        // Rechercher tous les ActivityDefinition dans le projet
-        var activityGuids = UnityEditor.AssetDatabase.FindAssets("t:ActivityDefinition");
-
-        foreach (string guid in activityGuids)
+        if (activityRegistry == null || activityRegistry.AllActivities == null)
         {
-            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
-            var activity = UnityEditor.AssetDatabase.LoadAssetAtPath<ActivityDefinition>(path);
-
-            if (activity != null && IsMainActivity(activity))
+            if (enableDebugLogs)
             {
-                allActivities.Add(activity);
+                Logger.LogWarning("ActivityXpContainer: ActivityRegistry or AllActivities is null", Logger.LogCategory.General);
+            }
+            return allActivities;
+        }
+
+        // Parcourir toutes les LocationActivity du registry
+        foreach (var locationActivity in activityRegistry.AllActivities)
+        {
+            if (locationActivity == null || locationActivity.ActivityReference == null)
+                continue;
+
+            // Récupérer l'ActivityDefinition de la LocationActivity
+            var activityDefinition = locationActivity.ActivityReference;
+
+            // Vérifier si c'est une activité principale et qu'on ne l'a pas déjà ajoutée
+            if (IsMainActivity(activityDefinition) &&
+                !allActivities.Any(a => a.ActivityID == activityDefinition.ActivityID))
+            {
+                allActivities.Add(activityDefinition);
             }
         }
 
@@ -141,24 +218,41 @@ public class ActivityXpContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Vérifier si une activité a des variantes
+    /// Vérifier si une activité a des variantes via le registry
     /// </summary>
     private bool HasActivityVariants(string activityId)
     {
-        var variantGuids = UnityEditor.AssetDatabase.FindAssets("t:ActivityVariant");
-
-        foreach (string guid in variantGuids)
+        if (activityRegistry == null || activityRegistry.AllActivities == null)
         {
-            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
-            var variant = UnityEditor.AssetDatabase.LoadAssetAtPath<ActivityVariant>(path);
+            return false;
+        }
 
-            if (variant != null && variant.ParentActivityID == activityId)
+        // Chercher dans les LocationActivity du registry
+        foreach (var locationActivity in activityRegistry.AllActivities)
+        {
+            if (locationActivity?.ActivityReference == null)
+                continue;
+
+            // Si c'est l'activité qu'on cherche
+            if (locationActivity.ActivityReference.ActivityID == activityId)
             {
-                return true;
+                // Vérifier si elle a des variantes dans la LocationActivity
+                if (locationActivity.ActivityVariants != null && locationActivity.ActivityVariants.Count > 0)
+                {
+                    return true;
+                }
+
+                // Ou vérifier dans l'ActivityDefinition elle-même
+                var variants = locationActivity.ActivityReference.GetAllVariants();
+                if (variants != null && variants.Count > 0)
+                {
+                    return true;
+                }
             }
         }
 
-        return false;
+        // Si pas de variants trouvés, considérer comme activité principale quand même
+        return !string.IsNullOrEmpty(activityId);
     }
 
     /// <summary>
@@ -205,7 +299,18 @@ public class ActivityXpContainer : MonoBehaviour
                 if (iconContainer != null)
                 {
                     displayedActivities.Remove(iconContainer.GetActivityId());
-                    DestroyImmediate(iconContainer.gameObject);
+
+                    // Utiliser Destroy au lieu de DestroyImmediate en runtime
+                    if (Application.isPlaying)
+                    {
+                        Destroy(iconContainer.gameObject);
+                    }
+                    else
+                    {
+#if UNITY_EDITOR
+                        DestroyImmediate(iconContainer.gameObject);
+#endif
+                    }
                 }
 
                 iconContainers.RemoveAt(i);
@@ -218,6 +323,16 @@ public class ActivityXpContainer : MonoBehaviour
     /// </summary>
     private void CreateIconForActivity(ActivityDefinition activity)
     {
+        // Vérifier que le prefab et le container sont valides
+        if (iconContainerPrefab == null || iconsContainer == null)
+        {
+            if (enableDebugLogs)
+            {
+                Logger.LogError($"ActivityXpContainer: Cannot create icon for {activity.GetDisplayName()} - missing prefab or container", Logger.LogCategory.General);
+            }
+            return;
+        }
+
         // Instancier le prefab d'icône
         GameObject iconObject = Instantiate(iconContainerPrefab, iconsContainer);
         iconObject.name = $"Icon_{activity.ActivityID}";
@@ -236,11 +351,11 @@ public class ActivityXpContainer : MonoBehaviour
         iconContainer.RefreshDisplay();
 
         // Configurer la référence au panel des variants
-        iconContainer.SetVariantContainer(variantContainer);
-
-        // Configurer la référence au panel principal pour la gestion d'affichage
         if (variantContainer != null)
         {
+            iconContainer.SetVariantContainer(variantContainer);
+
+            // Configurer la référence au panel principal pour la gestion d'affichage
             variantContainer.SetActivityXpContainer(gameObject);
         }
 
@@ -255,4 +370,28 @@ public class ActivityXpContainer : MonoBehaviour
     }
 
     #endregion
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// Méthode d'assistance pour l'éditeur - auto-assignment du registry
+    /// </summary>
+    void OnValidate()
+    {
+        if (activityRegistry == null)
+        {
+            // Chercher le ActivityRegistry dans le projet
+            string[] guids = UnityEditor.AssetDatabase.FindAssets("t:ActivityRegistry");
+            if (guids.Length > 0)
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
+                activityRegistry = UnityEditor.AssetDatabase.LoadAssetAtPath<ActivityRegistry>(path);
+
+                if (activityRegistry != null)
+                {
+                    Logger.LogInfo($"ActivityXpContainer: Auto-assigned ActivityRegistry: {activityRegistry.name}", Logger.LogCategory.General);
+                }
+            }
+        }
+    }
+#endif
 }

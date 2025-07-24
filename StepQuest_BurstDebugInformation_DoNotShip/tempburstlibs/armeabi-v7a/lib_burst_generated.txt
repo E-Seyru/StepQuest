@@ -9,7 +9,6 @@ Library: C:\Users\wilhe\Desktop\Projets Unity\StepQuest\Temp\BurstOutput\tempbur
 --target-framework=NetFramework
 --generate-link-xml=Temp\burst.link.xml
 --temp-folder=C:\Users\wilhe\Desktop\Projets Unity\StepQuest\Temp\Burst
---debug=Full
 --key-folder=C:/Program Files/Unity/Hub/Editor/2022.3.49f1/Editor/Data/PlaybackEngines/AndroidPlayer
 --decode-folder=C:\Users\wilhe\Desktop\Projets Unity\StepQuest\Library\Burst
 --output=C:\Users\wilhe\Desktop\Projets Unity\StepQuest\Temp\BurstOutput\tempburstlibs\armeabi-v7a\lib_burst_generated

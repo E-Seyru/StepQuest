@@ -20,9 +20,6 @@ public class VariantIconContainer : MonoBehaviour
     [SerializeField] private Color maxLevelColor = Color.yellow;
     [SerializeField] private Sprite defaultIcon;
 
-    [Header("Debug")]
-    [SerializeField] private bool enableDebugLogs = true;
-
     // Data
     private ActivityVariant activityVariant;
     private string variantId;
@@ -31,34 +28,18 @@ public class VariantIconContainer : MonoBehaviour
     private SkillData cachedSubSkillData;
     private float lastProgressValue = -1f;
     private int lastLevel = -1;
+    private bool isInitialized = false;
+
+    // Cache statique pour éviter les recalculs d'ID - avec méthode de nettoyage
+    private static readonly System.Collections.Generic.Dictionary<ActivityVariant, string> variantIdCache =
+        new System.Collections.Generic.Dictionary<ActivityVariant, string>();
 
     #region Unity Lifecycle
 
     void Start()
     {
-        // Attendre que XpManager soit prêt avant l'initialisation
-        StartCoroutine(DelayedInitialization());
-    }
-
-    /// <summary>
-    /// Initialisation retardée pour s'assurer que XpManager est prêt
-    /// </summary>
-    private System.Collections.IEnumerator DelayedInitialization()
-    {
-        // Attendre que XpManager soit disponible
-        while (XpManager.Instance == null)
-        {
-            yield return new WaitForEndOfFrame();
-        }
-
-        // Maintenant on peut faire l'initialisation
-        SetupProgressRing();
-        RefreshDisplay();
-
-        if (autoRefresh)
-        {
-            InvokeRepeating(nameof(RefreshDisplay), refreshInterval, refreshInterval);
-        }
+        // Initialisation simplifiée - pas de coroutine coûteuse
+        InitializeOptimized();
     }
 
     void OnDestroy()
@@ -67,12 +48,18 @@ public class VariantIconContainer : MonoBehaviour
         CancelInvoke();
     }
 
+    void OnDisable()
+    {
+        // Arrêter le timer dès que l'icône est masquée
+        CancelInvoke();
+    }
+
     #endregion
 
     #region Public Methods
 
     /// <summary>
-    /// Initialiser l'icône avec un ActivityVariant
+    /// Initialiser l'icône avec un ActivityVariant - VERSION OPTIMISÉE
     /// </summary>
     public void Initialize(ActivityVariant variant)
     {
@@ -80,24 +67,33 @@ public class VariantIconContainer : MonoBehaviour
 
         if (variant != null)
         {
-            // CORRECTION : Utiliser une méthode standardisée pour générer l'ID
-            variantId = GenerateStandardizedVariantId(variant);
+            // Utiliser le cache pour éviter de recalculer l'ID
+            variantId = GetCachedVariantId(variant);
 
-            if (enableDebugLogs)
+            // Configuration visuelle initiale (seulement si pas encore fait)
+            if (!isInitialized)
             {
-                Debug.Log($"VariantIconContainer: Initialized with ID '{variantId}' for variant '{variant.VariantName}'");
+                SetupVisualElements();
+                SetupProgressRing();
+                isInitialized = true;
             }
 
-            // Configuration visuelle initiale
-            SetupVisualElements();
+            // Première mise à jour seulement si XpManager est disponible
+            if (XpManager.Instance != null)
+            {
+                RefreshDisplay();
 
-            // Première mise à jour
-            RefreshDisplay();
+                // Démarrer l'auto-refresh seulement maintenant ET vérifier si pas déjà en cours
+                if (autoRefresh && !IsInvoking(nameof(RefreshDisplay)))
+                {
+                    InvokeRepeating(nameof(RefreshDisplay), refreshInterval, refreshInterval);
+                }
+            }
         }
     }
 
     /// <summary>
-    /// Actualiser l'affichage (niveau, progression, icône)
+    /// Actualiser l'affichage (niveau, progression, icône) - VERSION OPTIMISÉE
     /// </summary>
     public void RefreshDisplay()
     {
@@ -107,21 +103,31 @@ public class VariantIconContainer : MonoBehaviour
         // Obtenir les données de sous-compétence actuelles (variants utilisent SubSkills)
         var subSkillData = XpManager.Instance.GetPlayerSubSkill(variantId);
 
-        if (enableDebugLogs && (subSkillData.Level != lastLevel || Mathf.Abs(GetProgressToNextLevel(subSkillData) - lastProgressValue) > 0.01f))
+        // Optimisation : seulement mettre à jour si les données ont changé
+        bool hasLevelChanged = subSkillData.Level != lastLevel;
+        float currentProgress = GetProgressToNextLevel(subSkillData);
+        bool hasProgressChanged = Mathf.Abs(currentProgress - lastProgressValue) > 0.01f;
+
+        if (!hasLevelChanged && !hasProgressChanged)
         {
-            Debug.Log($"VariantIconContainer: Refreshing display for '{variantId}' - Level: {subSkillData.Level}, XP: {subSkillData.Experience}");
+            return; // Rien à mettre à jour
         }
 
-        // Mettre à jour le niveau
-        UpdateLevelDisplay(subSkillData);
+        // Mettre à jour seulement ce qui a changé
+        if (hasLevelChanged)
+        {
+            UpdateLevelDisplay(subSkillData);
+            lastLevel = subSkillData.Level;
+        }
 
-        // Mettre à jour la progression
-        UpdateProgressRing(subSkillData);
+        if (hasProgressChanged)
+        {
+            UpdateProgressRing(subSkillData);
+            lastProgressValue = currentProgress;
+        }
 
         // Sauvegarder les valeurs en cache
         cachedSubSkillData = subSkillData;
-        lastLevel = subSkillData.Level;
-        lastProgressValue = GetProgressToNextLevel(subSkillData);
     }
 
     /// <summary>
@@ -145,13 +151,51 @@ public class VariantIconContainer : MonoBehaviour
         return XpManager.Instance?.GetPlayerSubSkill(variantId) ?? new SkillData(variantId, 1, 0);
     }
 
+    /// <summary>
+    /// Méthode statique pour nettoyer le cache (à appeler si les variants changent)
+    /// </summary>
+    public static void ClearVariantIdCache()
+    {
+        variantIdCache.Clear();
+    }
+
     #endregion
 
     #region Private Methods
 
     /// <summary>
-    /// NOUVELLE MÉTHODE : Générer un ID standardisé pour le variant
-    /// Cette méthode assure la cohérence avec XpManager et XpReward
+    /// Initialisation optimisée sans coroutine
+    /// </summary>
+    private void InitializeOptimized()
+    {
+        // Pas besoin d'attendre XpManager dans une coroutine coûteuse
+        // L'initialisation se fera quand Initialize() sera appelé
+
+        // Setup de base qui ne dépend pas de XpManager
+        if (!isInitialized)
+        {
+            SetupProgressRing();
+        }
+    }
+
+    /// <summary>
+    /// Obtenir l'ID du variant depuis le cache ou le calculer
+    /// </summary>
+    private string GetCachedVariantId(ActivityVariant variant)
+    {
+        if (variantIdCache.TryGetValue(variant, out string cachedId))
+        {
+            return cachedId;
+        }
+
+        // Calculer et mettre en cache
+        string newId = GenerateStandardizedVariantId(variant);
+        variantIdCache[variant] = newId;
+        return newId;
+    }
+
+    /// <summary>
+    /// Générer un ID standardisé pour le variant - VERSION OPTIMISÉE
     /// </summary>
     private string GenerateStandardizedVariantId(ActivityVariant variant)
     {
@@ -162,7 +206,6 @@ public class VariantIconContainer : MonoBehaviour
 
         if (!string.IsNullOrEmpty(skillId))
         {
-            // Appliquer la même logique de validation que XpReward
             return ValidateAndNormalizeSkillId(skillId);
         }
 
@@ -177,8 +220,7 @@ public class VariantIconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// NOUVELLE MÉTHODE : Valider et normaliser un ID de compétence
-    /// Utilise la même logique que XpReward.ValidateSkillId()
+    /// Valider et normaliser un ID de compétence - VERSION OPTIMISÉE
     /// </summary>
     private string ValidateAndNormalizeSkillId(string skillId)
     {
@@ -186,11 +228,6 @@ public class VariantIconContainer : MonoBehaviour
 
         // Nettoyer l'ID : supprimer les espaces de début/fin, convertir espaces internes en underscores
         string normalizedId = skillId.Trim().Replace(" ", "_");
-
-        if (enableDebugLogs)
-        {
-            Debug.Log($"VariantIconContainer: Normalized '{skillId}' to '{normalizedId}'");
-        }
 
         return normalizedId;
     }
@@ -211,16 +248,16 @@ public class VariantIconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Configuration des éléments visuels de base
+    /// Configuration des éléments visuels de base - VERSION OPTIMISÉE
     /// </summary>
     private void SetupVisualElements()
     {
         if (activityVariant == null) return;
 
-        // Configurer l'icône du variant
+        // Configurer l'icône du variant (optimisé)
         if (variantIcon != null)
         {
-            var iconSprite = GetVariantIcon();
+            var iconSprite = GetVariantIconOptimized();
             variantIcon.sprite = iconSprite ?? defaultIcon;
         }
 
@@ -263,11 +300,8 @@ public class VariantIconContainer : MonoBehaviour
         // Calculer la progression vers le niveau suivant
         float progress = GetProgressToNextLevel(subSkillData);
 
-        // Animer la progression si elle a changé
-        if (!Mathf.Approximately(progress, progressRing.fillAmount))
-        {
-            progressRing.fillAmount = progress;
-        }
+        // Mettre à jour la progression
+        progressRing.fillAmount = progress;
 
         // Changer la couleur selon le niveau
         if (subSkillData.Level >= XpManager.Instance.MaxLevel)
@@ -288,30 +322,18 @@ public class VariantIconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Obtenir l'icône du variant
+    /// Obtenir l'icône du variant - VERSION OPTIMISÉE
     /// </summary>
-    private Sprite GetVariantIcon()
+    private Sprite GetVariantIconOptimized()
     {
-        // Si le variant a sa propre icône, l'utiliser
+        // Si le variant a sa propre icône, l'utiliser (pas de Resources.Load)
         if (activityVariant != null && activityVariant.VariantIcon != null)
         {
             return activityVariant.VariantIcon;
         }
 
-        // Sinon, essayer de charger une icône basée sur le nom du variant
-        return LoadIconByVariantName(activityVariant?.VariantName);
-    }
-
-    /// <summary>
-    /// Charger une icône basée sur le nom du variant
-    /// </summary>
-    private Sprite LoadIconByVariantName(string variantName)
-    {
-        if (string.IsNullOrEmpty(variantName)) return null;
-
-        // Chercher dans un dossier d'icônes de variants
-        string iconPath = $"UI/Icons/Variants/{variantName.Replace(" ", "_")}";
-        return Resources.Load<Sprite>(iconPath);
+        // Pas de Resources.Load coûteux - utiliser l'icône par défaut
+        return defaultIcon;
     }
 
     #endregion
