@@ -473,6 +473,8 @@ public class InventoryContainerService
         }
     }
 
+
+
     // CORRECTION: Transaction atomique avec rollback verifie
     public bool TransferItem(string fromId, string toId, string itemId, int quantity, ItemRegistry registry)
     {

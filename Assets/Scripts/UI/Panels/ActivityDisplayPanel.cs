@@ -1,4 +1,4 @@
-// Purpose: UI Panel to display current activity progress and info
+﻿// Purpose: UI Panel to display current activity progress and info
 // Filepath: Assets/Scripts/UI/Panels/ActivityDisplayPanel.cs
 using ActivityEvents; // NOUVEAU: Import pour EventBus
 using TMPro;
@@ -12,7 +12,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     [SerializeField] private TextMeshProUGUI progressText;
     [SerializeField] private TextMeshProUGUI rewardText;
     [SerializeField] private Button closeButton;
-    [SerializeField] private Button stopActivityButton; // Optionnel pour arr�ter l'activite
+    [SerializeField] private Button stopActivityButton; // Optionnel pour arrêter l'activite
 
     [Header("Custom Progress Bar")]
     [SerializeField] private Image progressBarBackground; // Image de fond de la barre
@@ -66,6 +66,8 @@ public class ActivityDisplayPanel : MonoBehaviour
         // EVENTBUS - S'abonner aux evenements
         // =====================================
         SubscribeToActivityEvents();
+
+        CheckAndShowIfActivityActive();
     }
 
     /// <summary>
@@ -139,7 +141,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Appele quand une activite s'arr�te
+    /// Appele quand une activite s'arrête
     /// </summary>
     private void OnActivityStopped(ActivityStoppedEvent eventData)
     {
@@ -167,7 +169,7 @@ public class ActivityDisplayPanel : MonoBehaviour
                 Logger.LogWarning($"ActivityDisplayPanel: Failed to refund some or all materials for {eventData.Variant.GetDisplayName()}", Logger.LogCategory.General);
             }
         }
-
+        stopActivityButton.interactable = true;  // <── AJOUT
         HidePanel();
     }
 
@@ -178,6 +180,10 @@ public class ActivityDisplayPanel : MonoBehaviour
     {
         currentActivity = eventData.Activity;
         currentVariant = eventData.Variant;
+
+        if (!isDisplaying)        // NEW
+            ShowPanel();          // NEW
+
         UpdateDisplay();
     }
 
@@ -188,6 +194,9 @@ public class ActivityDisplayPanel : MonoBehaviour
     {
         currentActivity = eventData.Activity;
         currentVariant = eventData.Variant;
+
+        if (!isDisplaying)        // NEW
+            ShowPanel();          // NEW
         UpdateDisplay();
 
         // Optionnel : effet visuel pour les recompenses
@@ -211,7 +220,7 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Cacher le panel (n'arr�te PAS l'activite)
+    /// Cacher le panel (n'arrête PAS l'activite)
     /// </summary>
     public void HidePanel()
     {
@@ -223,14 +232,19 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Arr�ter l'activite en cours via l'ActivityManager
+    /// Arrêter l'activite en cours via l'ActivityManager
     /// </summary>
     private void StopCurrentActivity()
     {
-        if (ActivityManager.Instance != null)
-        {
-            bool success = ActivityManager.Instance.StopActivity();
-        }
+        if (ActivityManager.Instance == null) return;
+
+        bool success = ActivityManager.Instance.StopActivity();
+
+        // Si aucune activité n’était active, on ferme quand même l’UI
+        if (!success)
+            HidePanel();                 // <── AJOUT
+        else
+            stopActivityButton.interactable = false; // Désactive le bouton en attendant l’événement (optionnel)
     }
 
     /// <summary>
@@ -260,7 +274,7 @@ public class ActivityDisplayPanel : MonoBehaviour
             UpdateStepBasedActivityDisplay();
         }
 
-        // Ic�ne de l'activite (identique pour les deux types)
+        // Icône de l'activite (identique pour les deux types)
         if (activityIcon != null)
         {
             Sprite icon = currentVariant.GetIcon();
@@ -368,13 +382,13 @@ public class ActivityDisplayPanel : MonoBehaviour
     {
         // Ici vous pourriez ajouter des effets visuels :
         // - Animation de la barre de progression
-        // - Texte qui appara�t pour montrer les recompenses
+        // - Texte qui apparaît pour montrer les recompenses
         // - Son ou vibration
 
         // Exemple simple : effet visuel sur la barre custom
         if (progressBarFill != null)
         {
-            // L'UpdateDisplay() va �tre appele apr�s, donc la barre se remplira automatiquement
+            // L'UpdateDisplay() va être appele après, donc la barre se remplira automatiquement
             // Ici on pourrait ajouter un effet de "flash" ou d'animation
         }
     }

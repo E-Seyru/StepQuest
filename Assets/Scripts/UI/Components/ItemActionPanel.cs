@@ -431,21 +431,37 @@ public class ItemActionPanel : MonoBehaviour
 
     private void OnDiscardClicked()
     {
-        if (itemSlot == null || inventoryManager == null) return;
+        if (itemSlot == null || inventoryManager == null || sourceSlot == null) return;
 
-        // Confirmation pour les items de valeur
-        if (itemDefinition.BasePrice > 100)
+        // Obtenir le container et supprimer directement du slot
+        var container = inventoryManager.GetContainer(sourceContainerId);
+        if (container != null && sourceSlot.SlotIndex < container.Slots.Count)
         {
-            // TODO: Show confirmation dialog
-            Logger.LogInfo($"ItemActionPanel: Would show confirmation for discarding valuable item {itemDefinition.GetDisplayName()}", Logger.LogCategory.InventoryLog);
+            var targetSlot = container.Slots[sourceSlot.SlotIndex];
+
+            // Vérifier que c'est bien le bon slot
+            if (targetSlot.HasItem(itemSlot.ItemID))
+            {
+                // Supprimer la quantité complète du slot spécifique
+                int quantityToRemove = targetSlot.Quantity;
+                targetSlot.Clear();
+
+                // Déclencher les événements appropriés
+                inventoryManager.TriggerContainerChanged(sourceContainerId);
+
+                // Sauvegarder les changements
+                inventoryManager.ForceSave();
+
+                Logger.LogInfo($"ItemActionPanel: Discarded {quantityToRemove}x {itemDefinition.GetDisplayName()} from slot {sourceSlot.SlotIndex} in {sourceContainerId}", Logger.LogCategory.InventoryLog);
+            }
+            else
+            {
+                Logger.LogError($"ItemActionPanel: Slot mismatch - expected {itemSlot.ItemID} but found {targetSlot.ItemID}", Logger.LogCategory.InventoryLog);
+            }
         }
-
-        // Remove from source container
-        bool success = inventoryManager.RemoveItem(sourceContainerId, itemSlot.ItemID, itemSlot.Quantity);
-
-        if (success)
+        else
         {
-            Logger.LogInfo($"ItemActionPanel: Discarded {itemSlot.Quantity}x {itemDefinition.GetDisplayName()} from {sourceContainerId}", Logger.LogCategory.InventoryLog);
+            Logger.LogError($"ItemActionPanel: Could not access container {sourceContainerId} or slot {sourceSlot.SlotIndex}", Logger.LogCategory.InventoryLog);
         }
 
         HidePanel();

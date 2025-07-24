@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class VariantContainer : MonoBehaviour
 {
@@ -12,6 +13,7 @@ public class VariantContainer : MonoBehaviour
     [SerializeField] private Transform variantsContainer; // Container pour les icônes de variants
     [SerializeField] private GameObject variantIconPrefab; // Prefab pour chaque variant
     [SerializeField] private TextMeshProUGUI titleText; // Titre du panel (ex: "Mining Variants")
+    [SerializeField] private Image activityHeaderIcon;
 
     [Header("Activity Registry")]
     [SerializeField] private ActivityRegistry activityRegistry; // Référence au registry des activités
@@ -71,6 +73,12 @@ public class VariantContainer : MonoBehaviour
         }
 
         currentActivity = activity;
+
+        if (activityHeaderIcon != null)
+        {
+            // Mettre à jour l'icône de l'activité
+            activityHeaderIcon.sprite = activity.GetActivityIcon();
+        }
 
         // Mettre à jour le titre
         if (titleText != null)
