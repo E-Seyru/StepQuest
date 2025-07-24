@@ -17,9 +17,11 @@ public class VariantIconContainer : MonoBehaviour
     [SerializeField] private float refreshInterval = 1f;
 
     [Header("Visual Settings")]
-
     [SerializeField] private Color maxLevelColor = Color.yellow;
     [SerializeField] private Sprite defaultIcon;
+
+    [Header("Debug")]
+    [SerializeField] private bool enableDebugLogs = true;
 
     // Data
     private ActivityVariant activityVariant;
@@ -78,7 +80,13 @@ public class VariantIconContainer : MonoBehaviour
 
         if (variant != null)
         {
-            variantId = GetVariantId(variant);
+            // CORRECTION : Utiliser une méthode standardisée pour générer l'ID
+            variantId = GenerateStandardizedVariantId(variant);
+
+            if (enableDebugLogs)
+            {
+                Debug.Log($"VariantIconContainer: Initialized with ID '{variantId}' for variant '{variant.VariantName}'");
+            }
 
             // Configuration visuelle initiale
             SetupVisualElements();
@@ -99,14 +107,9 @@ public class VariantIconContainer : MonoBehaviour
         // Obtenir les données de sous-compétence actuelles (variants utilisent SubSkills)
         var subSkillData = XpManager.Instance.GetPlayerSubSkill(variantId);
 
-        // Forcer la mise à jour si c'est la première fois ou si les données ont changé
-        bool forceUpdate = lastLevel == -1 || lastProgressValue < 0f;
-        bool hasChanged = subSkillData.Level != lastLevel ||
-                         !Mathf.Approximately(GetProgressToNextLevel(subSkillData), lastProgressValue);
-
-        if (!forceUpdate && !hasChanged)
+        if (enableDebugLogs && (subSkillData.Level != lastLevel || Mathf.Abs(GetProgressToNextLevel(subSkillData) - lastProgressValue) > 0.01f))
         {
-            return; // Pas de changement, pas besoin de mettre à jour
+            Debug.Log($"VariantIconContainer: Refreshing display for '{variantId}' - Level: {subSkillData.Level}, XP: {subSkillData.Experience}");
         }
 
         // Mettre à jour le niveau
@@ -139,12 +142,58 @@ public class VariantIconContainer : MonoBehaviour
             return cachedSubSkillData;
         }
 
-        return XpManager.Instance?.GetPlayerSubSkill(variantId) ?? default;
+        return XpManager.Instance?.GetPlayerSubSkill(variantId) ?? new SkillData(variantId, 1, 0);
     }
 
     #endregion
 
     #region Private Methods
+
+    /// <summary>
+    /// NOUVELLE MÉTHODE : Générer un ID standardisé pour le variant
+    /// Cette méthode assure la cohérence avec XpManager et XpReward
+    /// </summary>
+    private string GenerateStandardizedVariantId(ActivityVariant variant)
+    {
+        if (variant == null) return "";
+
+        // Priorité 1 : Utiliser la méthode GetSubSkillId() du variant si elle existe
+        string skillId = variant.GetSubSkillId();
+
+        if (!string.IsNullOrEmpty(skillId))
+        {
+            // Appliquer la même logique de validation que XpReward
+            return ValidateAndNormalizeSkillId(skillId);
+        }
+
+        // Priorité 2 : Générer à partir du nom du variant
+        if (!string.IsNullOrEmpty(variant.VariantName))
+        {
+            return ValidateAndNormalizeSkillId(variant.VariantName);
+        }
+
+        // Priorité 3 : Fallback avec ParentActivityID + nom
+        return ValidateAndNormalizeSkillId($"{variant.ParentActivityID}_{variant.name}");
+    }
+
+    /// <summary>
+    /// NOUVELLE MÉTHODE : Valider et normaliser un ID de compétence
+    /// Utilise la même logique que XpReward.ValidateSkillId()
+    /// </summary>
+    private string ValidateAndNormalizeSkillId(string skillId)
+    {
+        if (string.IsNullOrWhiteSpace(skillId)) return "";
+
+        // Nettoyer l'ID : supprimer les espaces de début/fin, convertir espaces internes en underscores
+        string normalizedId = skillId.Trim().Replace(" ", "_");
+
+        if (enableDebugLogs)
+        {
+            Debug.Log($"VariantIconContainer: Normalized '{skillId}' to '{normalizedId}'");
+        }
+
+        return normalizedId;
+    }
 
     /// <summary>
     /// Configuration initiale de l'anneau de progression
@@ -158,7 +207,6 @@ public class VariantIconContainer : MonoBehaviour
             progressRing.fillOrigin = (int)Image.Origin360.Top;
             progressRing.fillClockwise = true;
             progressRing.fillAmount = 0f;
-
         }
     }
 
@@ -199,7 +247,7 @@ public class VariantIconContainer : MonoBehaviour
         levelText.text = $"Lvl. {subSkillData.Level}";
 
         // Changer la couleur si niveau maximum
-        if (subSkillData.Level >= 100) // Utiliser une valeur fixe
+        if (subSkillData.Level >= XpManager.Instance.MaxLevel)
         {
             levelText.color = maxLevelColor;
         }
@@ -222,12 +270,11 @@ public class VariantIconContainer : MonoBehaviour
         }
 
         // Changer la couleur selon le niveau
-        if (subSkillData.Level >= 100) // Utiliser une valeur fixe
+        if (subSkillData.Level >= XpManager.Instance.MaxLevel)
         {
             progressRing.color = maxLevelColor;
             progressRing.fillAmount = 1f; // Complet au niveau max
         }
-
     }
 
     /// <summary>
@@ -238,21 +285,6 @@ public class VariantIconContainer : MonoBehaviour
         if (XpManager.Instance == null) return 0f;
 
         return XpManager.Instance.GetProgressToNextLevel(subSkillData);
-    }
-
-    /// <summary>
-    /// Obtenir l'ID unique pour ce variant (utilisé pour les SubSkills)
-    /// </summary>
-    private string GetVariantId(ActivityVariant variant)
-    {
-        // Créer un ID unique pour ce variant
-        // Vous pouvez ajuster cette logique selon votre système
-        if (!string.IsNullOrEmpty(variant.VariantName))
-        {
-            return variant.VariantName.Replace(" ", "_");
-        }
-
-        return $"{variant.ParentActivityID}_{variant.name}";
     }
 
     /// <summary>

@@ -209,6 +209,16 @@ public class XPReward
         return summary;
     }
 
+    /// <summary>
+    /// Obtenir l'ID normalise d'une variante d'activite
+    /// Cette methode assure la coherence entre le systeme d'XP, l'UI et les sauvegardes
+    /// </summary>
+    public string GetVariantId(ActivityVariant variant)
+    {
+        if (variant == null) return "";
+        return ValidateSkillId(variant.GetSubSkillId());
+    }
+
     #endregion
 
     #region Static Methods
@@ -235,6 +245,16 @@ public class XPReward
     }
 
     /// <summary>
+    /// Creer une recompense pour une variante d'activite specifique
+    /// Utilise l'ID normalise de la variante pour assurer la coherence
+    /// </summary>
+    public static XPReward ForVariant(ActivityVariant variant, int xp, string sourceActivity = "")
+    {
+        if (variant == null) return Empty;
+        return new XPReward("", ValidateSkillId(variant.GetSubSkillId()), 0, xp, sourceActivity);
+    }
+
+    /// <summary>
     /// Combiner plusieurs recompenses en une seule
     /// </summary>
     public static XPReward Combine(params XPReward[] rewards)
@@ -251,19 +271,29 @@ public class XPReward
         return result;
     }
 
-    #endregion
-
-    #region Validation
-
     /// <summary>
-    /// Valider et nettoyer un ID de competence
+    /// NOUVELLE MÉTHODE PUBLIQUE : Valider et nettoyer un ID de competence
+    /// Convertit les espaces en underscores et assure la coherence du format
+    /// Cette méthode peut être utilisée par d'autres classes pour standardiser les IDs
     /// </summary>
-    private string ValidateSkillId(string skillId)
+    public static string ValidateSkillId(string skillId)
     {
         if (string.IsNullOrWhiteSpace(skillId)) return "";
 
-        // Nettoyer l'ID : supprimer les espaces, convertir en format standard
+        // Nettoyer l'ID : supprimer les espaces de debut/fin, convertir espaces internes en underscores
         return skillId.Trim().Replace(" ", "_");
+    }
+
+    #endregion
+
+    #region Validation (Méthode privée conservée pour compatibilité)
+
+    /// <summary>
+    /// Méthode privée qui utilise la méthode statique publique
+    /// </summary>
+    private string ValidateSkillId_Private(string skillId)
+    {
+        return ValidateSkillId(skillId);  // Délègue à la méthode statique publique
     }
 
     #endregion

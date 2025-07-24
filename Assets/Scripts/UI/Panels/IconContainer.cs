@@ -105,16 +105,6 @@ public class IconContainer : MonoBehaviour
         // Obtenir les données de compétence actuelles
         var skillData = XpManager.Instance.GetPlayerSkill(mainSkillId);
 
-        // Forcer la mise à jour si c'est la première fois ou si les données ont changé
-        bool forceUpdate = lastLevel == -1 || lastProgressValue < 0f;
-        bool hasChanged = skillData.Level != lastLevel ||
-                         !Mathf.Approximately(GetProgressToNextLevel(skillData), lastProgressValue);
-
-        if (!forceUpdate && !hasChanged)
-        {
-            return; // Pas de changement, pas besoin de mettre à jour
-        }
-
         // Mettre à jour le niveau
         UpdateLevelDisplay(skillData);
 

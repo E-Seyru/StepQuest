@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 public class VariantContainer : MonoBehaviour
 {
     [Header("UI References")]
@@ -12,8 +11,7 @@ public class VariantContainer : MonoBehaviour
     [SerializeField] private Transform variantsContainer; // Container pour les icônes de variants
     [SerializeField] private GameObject variantIconPrefab; // Prefab pour chaque variant
     [SerializeField] private TextMeshProUGUI titleText; // Titre du panel (ex: "Mining Variants")
-    [SerializeField] private Button closeButton; // Bouton pour fermer le panel
-    [SerializeField] private GameObject backgroundClickArea; // Zone de clic pour fermer (optionnel)
+
 
     [Header("Panel Management")]
     [SerializeField] private GameObject activityXpContainer; // Référence au panel des activités principales
@@ -29,24 +27,7 @@ public class VariantContainer : MonoBehaviour
 
     void Start()
     {
-        // Configuration initiale
-        if (closeButton != null)
-        {
-            closeButton.onClick.AddListener(HidePanel);
-        }
 
-        // Configuration du background cliquable (si présent)
-        if (backgroundClickArea != null)
-        {
-            var backgroundButton = backgroundClickArea.GetComponent<Button>();
-            if (backgroundButton == null)
-            {
-                backgroundButton = backgroundClickArea.AddComponent<Button>();
-            }
-            backgroundButton.onClick.AddListener(HidePanel);
-        }
-
-        // Masquer le panel au démarrage
         HidePanel();
     }
 

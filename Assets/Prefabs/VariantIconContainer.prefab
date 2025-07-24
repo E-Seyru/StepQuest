@@ -420,7 +420,6 @@ MonoBehaviour:
   variantNameText: {fileID: 0}
   autoRefresh: 1
   refreshInterval: 1
-  progressColor: {r: 0, g: 0, b: 1, a: 1}
   maxLevelColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   defaultIcon: {fileID: 0}
 --- !u!1 &5525534050132298635
