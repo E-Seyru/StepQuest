@@ -186,20 +186,41 @@ public class VariantContainer : MonoBehaviour
 
     #region Private Methods
 
-    /// <summary>
-    /// NOUVELLE MÉTHODE : Vérifier si une activité a été découverte
+    // <summary>
+    /// MÉTHODE CORRIGÉE : Vérifier si une activité a été découverte
     /// </summary>
     private bool IsActivityDiscovered(string activityId)
     {
         if (string.IsNullOrEmpty(activityId) || DataManager.Instance?.PlayerData == null)
         {
-            return false; // Pas découverte si pas d'ID ou pas de données
+            return false;
+        }
+
+        // AJOUT : Normaliser l'ID comme dans IconContainer
+        string normalizedActivityId = activityId.Trim().Replace(" ", "_");
+
+        if (enableDebugLogs)
+        {
+            Debug.Log($"VariantContainer: Checking discovery for '{activityId}' (normalized: '{normalizedActivityId}')");
         }
 
         // Vérifier si l'activité existe dans les Skills ET a de l'XP > 0
         var playerData = DataManager.Instance.PlayerData;
-        return playerData.Skills.ContainsKey(activityId) &&
-               playerData.GetSkillXP(activityId) > 0;
+        bool hasSkill = playerData.Skills.ContainsKey(normalizedActivityId);
+        int xp = hasSkill ? playerData.GetSkillXP(normalizedActivityId) : 0;
+        bool isDiscovered = hasSkill && xp > 0;
+
+        if (enableDebugLogs)
+        {
+            Debug.Log($"VariantContainer: Activity '{activityId}' - HasSkill: {hasSkill}, XP: {xp}, Discovered: {isDiscovered}");
+
+            if (!hasSkill)
+            {
+                Debug.Log($"Available skills: [{string.Join(", ", playerData.Skills.Keys)}]");
+            }
+        }
+
+        return isDiscovered;
     }
 
     // Cache pour eviter de recalculer les variants a chaque fois

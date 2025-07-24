@@ -315,13 +315,17 @@ public class IconContainer : MonoBehaviour
 
     /// <summary>
     /// Obtenir la competence principale associee a cette activite
-    /// Simple : l'ID de l'activite = l'ID de la competence principale
+    /// MODIFIÉ : Normaliser l'ID pour éviter les problèmes avec les espaces
     /// </summary>
     private string GetMainSkillForActivity(string activityId)
     {
-        // Dans votre systeme, les activites primaires ont directement leur XP/niveau
-        // dans PlayerData.Skills avec l'ID de l'activite comme cle
-        return activityId;
+        if (string.IsNullOrEmpty(activityId))
+            return "";
+
+        // Normaliser l'ID comme dans VariantIconContainer
+        string normalizedId = activityId.Trim().Replace(" ", "_");
+
+        return normalizedId;
     }
 
     /// <summary>
