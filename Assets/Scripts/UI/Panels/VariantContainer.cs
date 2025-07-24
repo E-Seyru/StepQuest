@@ -21,6 +21,10 @@ public class VariantContainer : MonoBehaviour
     [Header("Panel Management")]
     [SerializeField] private GameObject activityXpContainer; // Reference au panel des activites principales
 
+    [Header("Unknown Activity Settings")] // NOUVEAU
+    [SerializeField] private Sprite unknownActivityIcon; // Icône "?" pour activité non découverte
+    [SerializeField] private string unknownActivityTitle = "Inconnu"; // Titre pour activité non découverte
+
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
 
@@ -74,16 +78,33 @@ public class VariantContainer : MonoBehaviour
 
         currentActivity = activity;
 
+        // NOUVEAU : Gérer l'affichage selon si l'activité est découverte ou non
+        bool isActivityDiscovered = IsActivityDiscovered(activity.ActivityID);
+
         if (activityHeaderIcon != null)
         {
             // Mettre a jour l'icône de l'activite
-            activityHeaderIcon.sprite = activity.GetActivityIcon();
+            if (isActivityDiscovered)
+            {
+                activityHeaderIcon.sprite = activity.GetActivityIcon();
+            }
+            else
+            {
+                activityHeaderIcon.sprite = unknownActivityIcon; // Afficher le "?"
+            }
         }
 
         // Mettre a jour le titre
         if (titleText != null)
         {
-            titleText.text = $"{activity.GetDisplayName()} Variants";
+            if (isActivityDiscovered)
+            {
+                titleText.text = $"{activity.GetDisplayName()} Variants";
+            }
+            else
+            {
+                titleText.text = $"{unknownActivityTitle} Variants"; // Afficher "Inconnu Variants"
+            }
         }
 
         // Obtenir tous les variants pour cette activite
@@ -91,7 +112,7 @@ public class VariantContainer : MonoBehaviour
 
         if (enableDebugLogs)
         {
-            Debug.Log($"VariantContainer: Found {variants.Count} variants for {activity.GetDisplayName()}");
+            Debug.Log($"VariantContainer: Found {variants.Count} variants for {activity.GetDisplayName()} (Discovered: {isActivityDiscovered})");
         }
 
         // Creer les icônes de variants
@@ -164,6 +185,22 @@ public class VariantContainer : MonoBehaviour
     #endregion
 
     #region Private Methods
+
+    /// <summary>
+    /// NOUVELLE MÉTHODE : Vérifier si une activité a été découverte
+    /// </summary>
+    private bool IsActivityDiscovered(string activityId)
+    {
+        if (string.IsNullOrEmpty(activityId) || DataManager.Instance?.PlayerData == null)
+        {
+            return false; // Pas découverte si pas d'ID ou pas de données
+        }
+
+        // Vérifier si l'activité existe dans les Skills ET a de l'XP > 0
+        var playerData = DataManager.Instance.PlayerData;
+        return playerData.Skills.ContainsKey(activityId) &&
+               playerData.GetSkillXP(activityId) > 0;
+    }
 
     // Cache pour eviter de recalculer les variants a chaque fois
     private Dictionary<string, List<ActivityVariant>> variantsCache = new Dictionary<string, List<ActivityVariant>>();
