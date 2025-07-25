@@ -82,7 +82,7 @@ public class VariantContainer : MonoBehaviour
 
         if (titleText != null)
         {
-            titleText.text = isActivityDiscovered ? $"{activity.GetDisplayName()} Variants" : $"{unknownActivityTitle} Variants";
+            titleText.text = isActivityDiscovered ? $"{activity.GetDisplayName()}" : $"{unknownActivityTitle}";
         }
 
         var variants = GetVariantsForActivity(activity);
