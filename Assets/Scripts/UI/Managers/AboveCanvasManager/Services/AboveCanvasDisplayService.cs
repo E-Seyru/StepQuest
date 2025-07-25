@@ -37,11 +37,6 @@ public class AboveCanvasDisplayService
 
     public void UpdateLocationDisplay()
     {
-        if (manager.CurrentLocationText == null)
-        {
-            Logger.LogWarning("AboveCanvasManager: CurrentLocationText is null", Logger.LogCategory.General);
-            return;
-        }
 
         var mapManager = MapManager.Instance;
         var dataManager = DataManager.Instance;
@@ -68,7 +63,7 @@ public class AboveCanvasDisplayService
         // Texte "En voyage vers X"
         var destinationLocation = MapManager.Instance?.LocationRegistry?.GetLocationById(destinationId);
         string destinationName = destinationLocation?.DisplayName ?? destinationId;
-        manager.CurrentLocationText.text = $"En voyage vers {destinationName}";
+
 
         // Icône de voyage
         UpdateLocationButtonForTravel();
@@ -78,8 +73,7 @@ public class AboveCanvasDisplayService
     // ⭐ NOUVEAU : Affiche l'etat "location actuelle"
     private void ShowCurrentLocationState(MapLocationDefinition location)
     {
-        // Texte normal
-        manager.CurrentLocationText.text = location.DisplayName;
+
 
         // Icône normale de la location
         UpdateLocationButtonForLocation(location);

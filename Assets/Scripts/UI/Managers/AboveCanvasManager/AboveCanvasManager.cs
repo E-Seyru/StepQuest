@@ -15,7 +15,7 @@ public class AboveCanvasManager : MonoBehaviour
     // === SAME PUBLIC API - ZERO BREAKING CHANGES ===
     [Header("UI References - Header")]
     [SerializeField] private GameObject headerContainer;
-    [SerializeField] private TextMeshProUGUI currentLocationText;
+
     [SerializeField] private Button mapButton;
     [SerializeField] private Button locationButton;
     [SerializeField] private Image locationButtonIcon; // NOUVEAU : Image du POI dans le LocationButton
@@ -152,7 +152,7 @@ public class AboveCanvasManager : MonoBehaviour
 
     // === INTERNAL ACCESSORS FOR SERVICES ===
     public GameObject HeaderContainer => headerContainer;
-    public TextMeshProUGUI CurrentLocationText => currentLocationText;
+
     public Button MapButton => mapButton;
     public Button LocationButton => locationButton;
     public Image LocationButtonIcon => locationButtonIcon; // NOUVEAU : Accessor pour l'icône du LocationButton

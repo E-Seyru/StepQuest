@@ -11,6 +11,12 @@ public class MapToggleButton : MonoBehaviour
     public Image buttonImage; // l'image du bouton (drag depuis l'editeur)
     public PanelManager panelManager; // reference a ton PanelManager
 
+    [Header("Double Click Protection")]
+    [SerializeField] private float clickCooldown = 0.5f; // Temps d'attente entre les clics (en secondes)
+
+    private float lastClickTime = 0f; // Temps du dernier clic
+    private bool isProcessingClick = false; // Pour eviter les clics pendant le traitement
+
     private void Start()
     {
         // S'assurer qu'on a la reference au PanelManager
@@ -41,23 +47,75 @@ public class MapToggleButton : MonoBehaviour
     /// </summary>
     public void OnClick()
     {
+        // Verification 1: Le PanelManager existe-t-il ?
         if (panelManager == null)
         {
             Debug.LogWarning("MapToggleButton: PanelManager reference is null!");
             return;
         }
 
-        // Utiliser la nouvelle logique centralisee du PanelManager
-        if (panelManager.IsMapVisible)
+        // Verification 2: Sommes-nous deja en train de traiter un clic ?
+        if (isProcessingClick)
         {
-            // La carte est visible, on revient au panel precedent
-            panelManager.HideMapAndReturnToPrevious();
+            Debug.Log("MapToggleButton: Clic ignore - traitement en cours");
+            return;
         }
-        else
+
+        // Verification 3: Le cooldown est-il respecte ?
+        float currentTime = Time.time;
+        if (currentTime - lastClickTime < clickCooldown)
         {
-            // La carte est cachee, on l'affiche
-            panelManager.ShowMap();
+            Debug.Log($"MapToggleButton: Clic ignore - cooldown actif ({clickCooldown}s)");
+            return;
         }
+
+        // Tous les checks sont passes, on peut traiter le clic
+        ProcessClick(currentTime);
+    }
+
+    /// <summary>
+    /// Traite le clic de maniere securisee
+    /// </summary>
+    /// <param name="clickTime">Le temps auquel le clic a eu lieu</param>
+    private void ProcessClick(float clickTime)
+    {
+        // Marquer qu'on est en train de traiter le clic
+        isProcessingClick = true;
+        lastClickTime = clickTime;
+
+        try
+        {
+            // Utiliser la nouvelle logique centralisee du PanelManager
+            if (panelManager.IsMapVisible)
+            {
+                // La carte est visible, on revient au panel precedent
+                Debug.Log("MapToggleButton: Masquage de la carte");
+                panelManager.HideMapAndReturnToPrevious();
+            }
+            else
+            {
+                // La carte est cachee, on l'affiche
+                Debug.Log("MapToggleButton: Affichage de la carte");
+                panelManager.ShowMap();
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"MapToggleButton: Erreur lors du traitement du clic - {e.Message}");
+        }
+        finally
+        {
+            // Remettre le flag a false apres un court delai pour etre sur que l'operation est terminee
+            Invoke(nameof(ResetClickFlag), 0.1f);
+        }
+    }
+
+    /// <summary>
+    /// Remet le flag de traitement a false
+    /// </summary>
+    private void ResetClickFlag()
+    {
+        isProcessingClick = false;
     }
 
     /// <summary>
