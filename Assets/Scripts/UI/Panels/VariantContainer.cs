@@ -107,8 +107,8 @@ public class VariantContainer : MonoBehaviour
             }
         }
 
-        // Obtenir tous les variants pour cette activite
-        var variants = GetVariantsForActivity(activity.ActivityID);
+        // MODIFIÉ : Utiliser directement GetAllVariants() de l'ActivityDefinition !
+        var variants = GetVariantsForActivity(activity);
 
         if (enableDebugLogs)
         {
@@ -223,91 +223,36 @@ public class VariantContainer : MonoBehaviour
         return isDiscovered;
     }
 
-    // Cache pour eviter de recalculer les variants a chaque fois
-    private Dictionary<string, List<ActivityVariant>> variantsCache = new Dictionary<string, List<ActivityVariant>>();
-
     /// <summary>
-    /// Obtenir tous les variants d'une activite via le registry - VERSION OPTIMISeE
+    /// MÉTHODE SIMPLIFIÉE : Obtenir tous les variants d'une activité - UTILISE GetAllVariants() !
     /// </summary>
-    private List<ActivityVariant> GetVariantsForActivity(string activityId)
+    private List<ActivityVariant> GetVariantsForActivity(ActivityDefinition activity)
     {
-        // Verifier le cache d'abord
-        if (variantsCache.ContainsKey(activityId))
+        if (activity == null)
         {
             if (enableDebugLogs)
             {
-                Debug.Log($"VariantContainer: Using cached variants for {activityId}");
+                Debug.LogWarning("VariantContainer: Cannot get variants for null activity");
             }
-            return variantsCache[activityId];
+            return new List<ActivityVariant>();
         }
 
-        var variants = new List<ActivityVariant>();
+        // SUPER SIMPLE ! On utilise directement la méthode de l'ActivityDefinition
+        var variants = activity.GetAllVariants();
 
-        if (activityRegistry == null)
-        {
-            if (enableDebugLogs)
-            {
-                Debug.LogWarning("VariantContainer: ActivityRegistry is null! Cannot load variants.");
-            }
-            return variants;
-        }
-
-        if (activityRegistry.AllActivities == null)
-        {
-            if (enableDebugLogs)
-            {
-                Debug.LogWarning("VariantContainer: ActivityRegistry.AllActivities is null!");
-            }
-            return variants;
-        }
-
-        // Chercher dans les LocationActivity du registry
-        foreach (var locationActivity in activityRegistry.AllActivities)
-        {
-            if (locationActivity?.ActivityReference == null)
-                continue;
-
-            // Si c'est l'activite qu'on cherche
-            if (locationActivity.ActivityReference.ActivityID == activityId)
-            {
-                // Recuperer les variants de cette LocationActivity (plus rapide)
-                if (locationActivity.ActivityVariants != null)
-                {
-                    foreach (var variant in locationActivity.ActivityVariants)
-                    {
-                        if (variant != null) // Enlever IsValidVariant() qui peut etre lent
-                        {
-                            variants.Add(variant);
-                        }
-                    }
-                }
-
-                // On a trouve l'activite, pas besoin de continuer
-                break;
-            }
-        }
-
-        // Mettre en cache pour les prochaines fois - MODIFIÉ pour trier par UnlockRequirement
-        variantsCache[activityId] = variants.OrderBy(v => v.UnlockRequirement).ThenBy(v => v.VariantName).ToList();
+        // Trier par UnlockRequirement puis par nom pour un affichage cohérent
+        var sortedVariants = variants
+            .Where(v => v != null) // Enlever les nulls
+            .OrderBy(v => v.UnlockRequirement)
+            .ThenBy(v => v.VariantName)
+            .ToList();
 
         if (enableDebugLogs)
         {
-            Debug.Log($"VariantContainer: Cached {variants.Count} variants for activity {activityId}");
+            Debug.Log($"VariantContainer: Activity '{activity.ActivityID}' has {sortedVariants.Count} variants (from GetAllVariants())");
         }
 
-        return variantsCache[activityId];
-    }
-
-    /// <summary>
-    /// Vider le cache des variants (a appeler si les donnees changent)
-    /// </summary>
-    public void ClearVariantsCache()
-    {
-        variantsCache.Clear();
-        if (enableDebugLogs)
-        {
-            Debug.Log("VariantContainer: Variants cache cleared");
-        }
+        return sortedVariants;
     }
 
     /// <summary>
