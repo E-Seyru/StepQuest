@@ -1,4 +1,4 @@
-// Purpose: Manages the variant display panel for a selected main activity
+ï»¿// Purpose: Manages the variant display panel for a selected main activity
 // Filepath: Assets/Scripts/UI/VariantContainer.cs
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +10,7 @@ public class VariantContainer : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private GameObject panel; // Le panel qui contient tout
-    [SerializeField] private Transform variantsContainer; // Container pour les icônes de variants
+    [SerializeField] private Transform variantsContainer; // Container pour les icÃ´nes de variants
     [SerializeField] private GameObject variantIconPrefab; // Prefab pour chaque variant
     [SerializeField] private TextMeshProUGUI titleText; // Titre du panel (ex: "Mining Variants")
     [SerializeField] private Image activityHeaderIcon;
@@ -22,8 +22,8 @@ public class VariantContainer : MonoBehaviour
     [SerializeField] private GameObject activityXpContainer; // Reference au panel des activites principales
 
     [Header("Unknown Activity Settings")] // NOUVEAU
-    [SerializeField] private Sprite unknownActivityIcon; // Icône "?" pour activité non découverte
-    [SerializeField] private string unknownActivityTitle = "Inconnu"; // Titre pour activité non découverte
+    [SerializeField] private Sprite unknownActivityIcon; // IcÃ´ne "?" pour activite non decouverte
+    [SerializeField] private string unknownActivityTitle = "Inconnu"; // Titre pour activite non decouverte
 
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
@@ -78,12 +78,12 @@ public class VariantContainer : MonoBehaviour
 
         currentActivity = activity;
 
-        // NOUVEAU : Gérer l'affichage selon si l'activité est découverte ou non
+        // NOUVEAU : Gerer l'affichage selon si l'activite est decouverte ou non
         bool isActivityDiscovered = IsActivityDiscovered(activity.ActivityID);
 
         if (activityHeaderIcon != null)
         {
-            // Mettre a jour l'icône de l'activite
+            // Mettre a jour l'icÃ´ne de l'activite
             if (isActivityDiscovered)
             {
                 activityHeaderIcon.sprite = activity.GetActivityIcon();
@@ -107,7 +107,7 @@ public class VariantContainer : MonoBehaviour
             }
         }
 
-        // MODIFIÉ : Utiliser directement GetAllVariants() de l'ActivityDefinition !
+        // MODIFIe : Utiliser directement GetAllVariants() de l'ActivityDefinition !
         var variants = GetVariantsForActivity(activity);
 
         if (enableDebugLogs)
@@ -115,7 +115,7 @@ public class VariantContainer : MonoBehaviour
             Debug.Log($"VariantContainer: Found {variants.Count} variants for {activity.GetDisplayName()} (Discovered: {isActivityDiscovered})");
         }
 
-        // Creer les icônes de variants
+        // Creer les icÃ´nes de variants
         CreateVariantIcons(variants);
 
         // Masquer le panel des activites principales et afficher celui des variants
@@ -187,7 +187,7 @@ public class VariantContainer : MonoBehaviour
     #region Private Methods
 
     /// <summary>
-    /// MÉTHODE CORRIGÉE : Vérifier si une activité a été découverte
+    /// MeTHODE CORRIGeE : Verifier si une activite a ete decouverte
     /// </summary>
     private bool IsActivityDiscovered(string activityId)
     {
@@ -204,7 +204,7 @@ public class VariantContainer : MonoBehaviour
             Debug.Log($"VariantContainer: Checking discovery for '{activityId}' (normalized: '{normalizedActivityId}')");
         }
 
-        // Vérifier si l'activité existe dans les Skills ET a de l'XP > 0
+        // Verifier si l'activite existe dans les Skills ET a de l'XP > 0
         var playerData = DataManager.Instance.PlayerData;
         bool hasSkill = playerData.Skills.ContainsKey(normalizedActivityId);
         int xp = hasSkill ? playerData.GetSkillXP(normalizedActivityId) : 0;
@@ -224,7 +224,7 @@ public class VariantContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// MÉTHODE SIMPLIFIÉE : Obtenir tous les variants d'une activité - UTILISE GetAllVariants() !
+    /// MeTHODE SIMPLIFIeE : Obtenir tous les variants d'une activite - UTILISE GetAllVariants() !
     /// </summary>
     private List<ActivityVariant> GetVariantsForActivity(ActivityDefinition activity)
     {
@@ -237,10 +237,10 @@ public class VariantContainer : MonoBehaviour
             return new List<ActivityVariant>();
         }
 
-        // SUPER SIMPLE ! On utilise directement la méthode de l'ActivityDefinition
+        // SUPER SIMPLE ! On utilise directement la methode de l'ActivityDefinition
         var variants = activity.GetAllVariants();
 
-        // Trier par UnlockRequirement puis par nom pour un affichage cohérent
+        // Trier par UnlockRequirement puis par nom pour un affichage coherent
         var sortedVariants = variants
             .Where(v => v != null) // Enlever les nulls
             .OrderBy(v => v.UnlockRequirement)
@@ -256,11 +256,11 @@ public class VariantContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Creer les icônes pour tous les variants - VERSION OPTIMISeE
+    /// Creer les icÃ´nes pour tous les variants - VERSION OPTIMISeE
     /// </summary>
     private void CreateVariantIcons(List<ActivityVariant> variants)
     {
-        // Nettoyer les icônes existants de maniere optimisee
+        // Nettoyer les icÃ´nes existants de maniere optimisee
         ClearVariantIconsOptimized();
 
         if (variants.Count == 0)
@@ -275,7 +275,7 @@ public class VariantContainer : MonoBehaviour
         // Pre-allouer la liste pour eviter les reallocations
         variantIcons.Capacity = variants.Count;
 
-        // Creer un icône pour chaque variant
+        // Creer un icÃ´ne pour chaque variant
         foreach (var variant in variants)
         {
             CreateVariantIconOptimized(variant);
@@ -283,7 +283,7 @@ public class VariantContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Creer un icône pour un variant specifique - VERSION OPTIMISeE
+    /// Creer un icÃ´ne pour un variant specifique - VERSION OPTIMISeE
     /// </summary>
     private void CreateVariantIconOptimized(ActivityVariant variant)
     {
@@ -321,7 +321,7 @@ public class VariantContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Nettoyer tous les icônes de variants existants - VERSION OPTIMISeE
+    /// Nettoyer tous les icÃ´nes de variants existants - VERSION OPTIMISeE
     /// </summary>
     private void ClearVariantIconsOptimized()
     {
@@ -358,35 +358,38 @@ public class VariantContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Detecter les clics en dehors du panel pour le fermer
+    /// Detecter les touches en dehors du panel pour le fermer
     /// </summary>
     private void DetectClickOutside()
     {
-        // Verifier s'il y a un clic de souris ou un touch
-        if (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
+        // Verifier s'il y a un touch (priorite sur mobile)
+        if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
         {
-            Vector2 clickPosition;
+            Vector2 touchPosition = Input.GetTouch(0).position;
 
-            // Obtenir la position du clic/touch
-            if (Input.touchCount > 0)
-            {
-                clickPosition = Input.GetTouch(0).position;
-            }
-            else
-            {
-                clickPosition = Input.mousePosition;
-            }
-
-            // Verifier si le clic est en dehors du panel
-            if (!IsClickInsidePanel(clickPosition))
+            // Verifier si le touch est en dehors du panel
+            if (!IsClickInsidePanel(touchPosition))
             {
                 HidePanel();
             }
         }
+        // Fallback pour les tests en editeur (souris)
+#if UNITY_EDITOR
+        else if (Input.GetMouseButtonDown(0))
+        {
+            Vector2 mousePosition = Input.mousePosition;
+
+            // Verifier si le clic est en dehors du panel
+            if (!IsClickInsidePanel(mousePosition))
+            {
+                HidePanel();
+            }
+        }
+#endif
     }
 
     /// <summary>
-    /// Verifier si le clic est a l'interieur du panel
+    /// Verifier si le touch est a l'interieur du panel
     /// </summary>
     private bool IsClickInsidePanel(Vector2 screenPosition)
     {

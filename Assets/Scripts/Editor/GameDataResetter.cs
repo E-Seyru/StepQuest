@@ -1,4 +1,4 @@
-﻿// Purpose: Outil éditeur pour réinitialiser complètement toutes les données de jeu
+﻿// Purpose: Outil editeur pour reinitialiser completement toutes les donnees de jeu
 // Filepath: Assets/Scripts/Debug/GameDataResetter.cs
 #if UNITY_EDITOR
 using System;
@@ -21,7 +21,7 @@ public class GameDataResetter : EditorWindow
     private bool showAdvancedOptions = false;
     private bool confirmReset = false;
 
-    // Options de reset sélectives
+    // Options de reset selectives
     private bool resetPlayerData = true;
     private bool resetInventory = true;
     private bool resetStepData = true;
@@ -35,8 +35,8 @@ public class GameDataResetter : EditorWindow
         GUILayout.Label(" Game Data Resetter", EditorStyles.largeLabel);
         EditorGUILayout.Space();
 
-        EditorGUILayout.HelpBox(" ATTENTION : Cet outil va SUPPRIMER toutes tes données de jeu !\n" +
-                               "Assure-toi d'avoir une sauvegarde si nécessaire.", MessageType.Warning);
+        EditorGUILayout.HelpBox(" ATTENTION : Cet outil va SUPPRIMER toutes tes donnees de jeu !\n" +
+                               "Assure-toi d'avoir une sauvegarde si necessaire.", MessageType.Warning);
 
         EditorGUILayout.Space();
 
@@ -60,18 +60,18 @@ public class GameDataResetter : EditorWindow
 
     private void DrawGameStatus()
     {
-        EditorGUILayout.LabelField(" État actuel du jeu:", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField(" etat actuel du jeu:", EditorStyles.boldLabel);
 
         if (!Application.isPlaying)
         {
-            EditorGUILayout.HelpBox(" Le jeu n'est pas en mode Play. Lance le jeu pour voir les données actuelles.", MessageType.Info);
+            EditorGUILayout.HelpBox(" Le jeu n'est pas en mode Play. Lance le jeu pour voir les donnees actuelles.", MessageType.Info);
             return;
         }
 
         var dataManager = DataManager.Instance;
         if (dataManager?.PlayerData == null)
         {
-            EditorGUILayout.HelpBox(" DataManager non trouvé ! Assure-toi que le jeu fonctionne correctement.", MessageType.Error);
+            EditorGUILayout.HelpBox(" DataManager non trouve ! Assure-toi que le jeu fonctionne correctement.", MessageType.Error);
             return;
         }
 
@@ -79,46 +79,46 @@ public class GameDataResetter : EditorWindow
 
         EditorGUILayout.BeginVertical(GUI.skin.box);
 
-        // Données de pas
+        // Donnees de pas
         EditorGUILayout.LabelField($" Pas totaux: {playerData.TotalSteps:N0}");
         EditorGUILayout.LabelField($" Pas journaliers: {playerData.DailySteps:N0}");
 
-        // État de voyage
+        // etat de voyage
         if (playerData.IsCurrentlyTraveling())
         {
             long progress = playerData.GetTravelProgress(playerData.TotalSteps);
             EditorGUILayout.LabelField($" Voyage vers: {playerData.TravelDestinationId}");
-            EditorGUILayout.LabelField($" Progrès: {progress}/{playerData.TravelRequiredSteps} pas");
+            EditorGUILayout.LabelField($" Progres: {progress}/{playerData.TravelRequiredSteps} pas");
         }
         else
         {
             EditorGUILayout.LabelField(" Actuellement: Pas de voyage en cours");
         }
 
-        // État d'activité
+        // etat d'activite
         if (playerData.HasActiveActivity())
         {
             var activity = playerData.CurrentActivity;
-            EditorGUILayout.LabelField($" Activité: {activity.ActivityId}/{activity.VariantId}");
-            EditorGUILayout.LabelField($" Pas accumulés: {activity.AccumulatedSteps}");
+            EditorGUILayout.LabelField($" Activite: {activity.ActivityId}/{activity.VariantId}");
+            EditorGUILayout.LabelField($" Pas accumules: {activity.AccumulatedSteps}");
         }
         else
         {
-            EditorGUILayout.LabelField(" Activité: Aucune");
+            EditorGUILayout.LabelField(" Activite: Aucune");
         }
 
         // Localisation
-        EditorGUILayout.LabelField($" Localisation: {(string.IsNullOrEmpty(playerData.CurrentLocationId) ? "Non définie" : playerData.CurrentLocationId)}");
+        EditorGUILayout.LabelField($" Localisation: {(string.IsNullOrEmpty(playerData.CurrentLocationId) ? "Non definie" : playerData.CurrentLocationId)}");
 
-        // Compétences (aperçu)
+        // Competences (aperçu)
         var skills = playerData.Skills;
         if (skills.Count > 0)
         {
-            EditorGUILayout.LabelField($" Compétences: {skills.Count} compétences actives");
+            EditorGUILayout.LabelField($" Competences: {skills.Count} competences actives");
         }
         else
         {
-            EditorGUILayout.LabelField(" Compétences: Aucune");
+            EditorGUILayout.LabelField(" Competences: Aucune");
         }
 
         // Inventaire (aperçu)
@@ -135,18 +135,18 @@ public class GameDataResetter : EditorWindow
     {
         EditorGUILayout.LabelField(" Options de reset:", EditorStyles.boldLabel);
 
-        showAdvancedOptions = EditorGUILayout.Foldout(showAdvancedOptions, "Options avancées (reset sélectif)");
+        showAdvancedOptions = EditorGUILayout.Foldout(showAdvancedOptions, "Options avancees (reset selectif)");
 
         if (showAdvancedOptions)
         {
             EditorGUILayout.BeginVertical(GUI.skin.box);
-            EditorGUILayout.HelpBox("Tu peux choisir quelles données réinitialiser. Par défaut, tout est sélectionné.", MessageType.Info);
+            EditorGUILayout.HelpBox("Tu peux choisir quelles donnees reinitialiser. Par defaut, tout est selectionne.", MessageType.Info);
 
-            resetPlayerData = EditorGUILayout.ToggleLeft(" Données joueur de base (ID, timestamps)", resetPlayerData);
-            resetStepData = EditorGUILayout.ToggleLeft(" Données de pas (compteurs, historique)", resetStepData);
-            resetTravelData = EditorGUILayout.ToggleLeft(" Données de voyage (destination, progrès)", resetTravelData);
-            resetActivityData = EditorGUILayout.ToggleLeft(" Données d'activité (activité courante)", resetActivityData);
-            resetSkillsData = EditorGUILayout.ToggleLeft(" Compétences et XP", resetSkillsData);
+            resetPlayerData = EditorGUILayout.ToggleLeft(" Donnees joueur de base (ID, timestamps)", resetPlayerData);
+            resetStepData = EditorGUILayout.ToggleLeft(" Donnees de pas (compteurs, historique)", resetStepData);
+            resetTravelData = EditorGUILayout.ToggleLeft(" Donnees de voyage (destination, progres)", resetTravelData);
+            resetActivityData = EditorGUILayout.ToggleLeft(" Donnees d'activite (activite courante)", resetActivityData);
+            resetSkillsData = EditorGUILayout.ToggleLeft(" Competences et XP", resetSkillsData);
             resetLocationData = EditorGUILayout.ToggleLeft(" Localisation actuelle", resetLocationData);
             resetInventory = EditorGUILayout.ToggleLeft(" Inventaire complet", resetInventory);
 
@@ -154,8 +154,8 @@ public class GameDataResetter : EditorWindow
         }
         else
         {
-            EditorGUILayout.HelpBox("Mode rapide : Tout sera réinitialisé", MessageType.Info);
-            // En mode rapide, tout est sélectionné
+            EditorGUILayout.HelpBox("Mode rapide : Tout sera reinitialise", MessageType.Info);
+            // En mode rapide, tout est selectionne
             resetPlayerData = resetInventory = resetStepData = resetTravelData =
             resetActivityData = resetSkillsData = resetLocationData = true;
         }
@@ -172,7 +172,7 @@ public class GameDataResetter : EditorWindow
         }
 
         // Checkbox de confirmation
-        confirmReset = EditorGUILayout.ToggleLeft(" Je confirme vouloir réinitialiser les données sélectionnées", confirmReset);
+        confirmReset = EditorGUILayout.ToggleLeft(" Je confirme vouloir reinitialiser les donnees selectionnees", confirmReset);
 
         GUI.enabled = confirmReset && Application.isPlaying;
 
@@ -180,11 +180,11 @@ public class GameDataResetter : EditorWindow
 
         // Bouton principal de reset
         GUI.backgroundColor = Color.red;
-        if (GUILayout.Button(" RÉINITIALISER MAINTENANT", GUILayout.Height(40)))
+        if (GUILayout.Button(" ReINITIALISER MAINTENANT", GUILayout.Height(40)))
         {
             if (EditorUtility.DisplayDialog("Confirmation finale",
-                "Es-tu ABSOLUMENT SÛR de vouloir réinitialiser les données sélectionnées ?\n\n" +
-                "Cette action est IRRÉVERSIBLE !",
+                "Es-tu ABSOLUMENT SÛR de vouloir reinitialiser les donnees selectionnees ?\n\n" +
+                "Cette action est IRReVERSIBLE !",
                 "OUI, RESET !", "Annuler"))
             {
                 PerformGameReset();
@@ -205,7 +205,7 @@ public class GameDataResetter : EditorWindow
             StopCurrentTravelOnly();
         }
 
-        if (GUILayout.Button(" Arrêter activité en cours uniquement"))
+        if (GUILayout.Button(" Arrêter activite en cours uniquement"))
         {
             StopCurrentActivityOnly();
         }
@@ -216,7 +216,7 @@ public class GameDataResetter : EditorWindow
 
     private void PerformGameReset()
     {
-        Debug.Log(" === DÉBUT DU RESET COMPLET DU JEU ===");
+        Debug.Log(" === DeBUT DU RESET COMPLET DU JEU ===");
 
         try
         {
@@ -230,10 +230,10 @@ public class GameDataResetter : EditorWindow
 
             var playerData = dataManager.PlayerData;
 
-            // 1. Reset des données de pas
+            // 1. Reset des donnees de pas
             if (resetStepData)
             {
-                Debug.Log(" Reset des données de pas...");
+                Debug.Log(" Reset des donnees de pas...");
                 playerData.TotalPlayerSteps = 0;
                 playerData.DailySteps = 0;
                 playerData.LastSyncEpochMs = 0;
@@ -244,10 +244,10 @@ public class GameDataResetter : EditorWindow
                 playerData.LastDailyResetDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
             }
 
-            // 2. Reset des données de voyage
+            // 2. Reset des donnees de voyage
             if (resetTravelData)
             {
-                Debug.Log(" Reset des données de voyage...");
+                Debug.Log(" Reset des donnees de voyage...");
                 playerData.TravelDestinationId = null;
                 playerData.TravelStartSteps = 0;
                 playerData.TravelRequiredSteps = 0;
@@ -255,17 +255,17 @@ public class GameDataResetter : EditorWindow
                 playerData.TravelOriginLocationId = null;
             }
 
-            // 3. Reset des données d'activité
+            // 3. Reset des donnees d'activite
             if (resetActivityData)
             {
-                Debug.Log(" Reset des données d'activité...");
+                Debug.Log(" Reset des donnees d'activite...");
                 playerData.StopActivity();
             }
 
-            // 4. Reset des compétences
+            // 4. Reset des competences
             if (resetSkillsData)
             {
-                Debug.Log(" Reset des compétences...");
+                Debug.Log(" Reset des competences...");
                 playerData.Skills = new Dictionary<string, SkillData>();
                 playerData.SubSkills = new Dictionary<string, SkillData>();
             }
@@ -276,11 +276,11 @@ public class GameDataResetter : EditorWindow
                 Debug.Log(" Reset de la localisation...");
                 playerData.CurrentLocationId = "";
 
-                // Remettre le joueur au village de départ si possible
+                // Remettre le joueur au village de depart si possible
                 var mapManager = MapManager.Instance;
                 if (mapManager != null)
                 {
-                    // Essayer de remettre au village de départ
+                    // Essayer de remettre au village de depart
                     playerData.CurrentLocationId = "Village_01"; // Ajuste selon ton jeu
                 }
             }
@@ -304,27 +304,27 @@ public class GameDataResetter : EditorWindow
                 }
             }
 
-            // 7. Reset des données de base du joueur
+            // 7. Reset des donnees de base du joueur
             if (resetPlayerData)
             {
-                Debug.Log(" Reset des données de base...");
-                playerData.Id = 1; // Garder l'ID à 1
+                Debug.Log(" Reset des donnees de base...");
+                playerData.Id = 1; // Garder l'ID a 1
             }
 
             // 8. Sauvegarder toutes les modifications
             Debug.Log(" Sauvegarde des modifications...");
             dataManager.SaveGame();
 
-            // 9. Notifier les autres managers du reset si nécessaire
+            // 9. Notifier les autres managers du reset si necessaire
             NotifyManagersOfReset();
 
-            Debug.Log(" === RESET COMPLET TERMINÉ ===");
+            Debug.Log(" === RESET COMPLET TERMINe ===");
 
-            EditorUtility.DisplayDialog("Reset terminé !",
-                " Toutes les données sélectionnées ont été réinitialisées avec succès !\n\n" +
-                "Le jeu a été remis à l'état initial.", "Super !");
+            EditorUtility.DisplayDialog("Reset termine !",
+                " Toutes les donnees selectionnees ont ete reinitialisees avec succes !\n\n" +
+                "Le jeu a ete remis a l'etat initial.", "Super !");
 
-            // Réinitialiser la confirmation
+            // Reinitialiser la confirmation
             confirmReset = false;
         }
         catch (Exception ex)
@@ -350,8 +350,8 @@ public class GameDataResetter : EditorWindow
 
         if (!playerData.IsCurrentlyTraveling())
         {
-            Debug.Log(" Aucun voyage en cours à arrêter.");
-            EditorUtility.DisplayDialog("Info", "Aucun voyage en cours à arrêter.", "OK");
+            Debug.Log(" Aucun voyage en cours a arrêter.");
+            EditorUtility.DisplayDialog("Info", "Aucun voyage en cours a arrêter.", "OK");
             return;
         }
 
@@ -364,13 +364,13 @@ public class GameDataResetter : EditorWindow
 
         dataManager.SaveGame();
 
-        Debug.Log(" Voyage arrêté avec succès !");
-        EditorUtility.DisplayDialog("Voyage arrêté", "Le voyage en cours a été annulé.", "OK");
+        Debug.Log(" Voyage arrête avec succes !");
+        EditorUtility.DisplayDialog("Voyage arrête", "Le voyage en cours a ete annule.", "OK");
     }
 
     private void StopCurrentActivityOnly()
     {
-        Debug.Log(" Arrêt de l'activité en cours uniquement...");
+        Debug.Log(" Arrêt de l'activite en cours uniquement...");
 
         var dataManager = DataManager.Instance;
         if (dataManager?.PlayerData == null)
@@ -383,36 +383,36 @@ public class GameDataResetter : EditorWindow
 
         if (!playerData.HasActiveActivity())
         {
-            Debug.Log(" Aucune activité en cours à arrêter.");
-            EditorUtility.DisplayDialog("Info", "Aucune activité en cours à arrêter.", "OK");
+            Debug.Log(" Aucune activite en cours a arrêter.");
+            EditorUtility.DisplayDialog("Info", "Aucune activite en cours a arrêter.", "OK");
             return;
         }
 
-        // Arrêter l'activité
+        // Arrêter l'activite
         playerData.StopActivity();
         dataManager.SaveGame();
 
-        Debug.Log(" Activité arrêtée avec succès !");
-        EditorUtility.DisplayDialog("Activité arrêtée", "L'activité en cours a été arrêtée.", "OK");
+        Debug.Log(" Activite arrêtee avec succes !");
+        EditorUtility.DisplayDialog("Activite arrêtee", "L'activite en cours a ete arrêtee.", "OK");
     }
 
     private void NotifyManagersOfReset()
     {
-        // Notifier les autres managers si nécessaire
-        // Par exemple, forcer une mise à jour de l'UI, etc.
+        // Notifier les autres managers si necessaire
+        // Par exemple, forcer une mise a jour de l'UI, etc.
 
         var mapManager = MapManager.Instance;
         if (mapManager != null)
         {
-            // Le MapManager pourrait avoir besoin de se réinitialiser
+            // Le MapManager pourrait avoir besoin de se reinitialiser
             Debug.Log(" Notification du reset au MapManager...");
         }
 
         var activityManager = ActivityManager.Instance;
         if (activityManager != null)
         {
-            // L'ActivityManager pourrait avoir besoin de se réinitialiser
-            Debug.Log(" Notification du reset à l'ActivityManager...");
+            // L'ActivityManager pourrait avoir besoin de se reinitialiser
+            Debug.Log(" Notification du reset a l'ActivityManager...");
         }
 
         // Potentiellement notifier d'autres managers selon ton architecture

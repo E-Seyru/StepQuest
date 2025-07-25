@@ -22,7 +22,7 @@ public class IconContainer : MonoBehaviour
     [Header("Visual Settings")]
     [SerializeField] private Color maxLevelColor = Color.yellow;
     [SerializeField] private Sprite defaultIcon;
-    [SerializeField] private Sprite unknownActivityIcon; // NOUVEAU : Icône "?" pour activités non découvertes
+    [SerializeField] private Sprite unknownActivityIcon; // NOUVEAU : Icône "?" pour activites non decouvertes
 
     // Data
     private ActivityDefinition activityDefinition;
@@ -105,7 +105,7 @@ public class IconContainer : MonoBehaviour
         // Obtenir les donnees de competence actuelles
         var skillData = XpManager.Instance.GetPlayerSkill(mainSkillId);
 
-        // NOUVEAU : Mettre à jour l'icône en cas de découverte
+        // NOUVEAU : Mettre a jour l'icône en cas de decouverte
         UpdateIconDisplay();
 
         // Mettre a jour le niveau
@@ -206,7 +206,7 @@ public class IconContainer : MonoBehaviour
         // Configurer l'icône principale
         if (skillIcon != null)
         {
-            // MODIFIÉ : Vérifier si l'activité a été découverte
+            // MODIFIe : Verifier si l'activite a ete decouverte
             var iconSprite = GetDisplayIcon();
             skillIcon.sprite = iconSprite ?? defaultIcon;
         }
@@ -219,7 +219,7 @@ public class IconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Mettre à jour l'affichage du niveau
+    /// Mettre a jour l'affichage du niveau
     /// </summary>
     private void UpdateLevelDisplay(SkillData skillData)
     {
@@ -261,38 +261,38 @@ public class IconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Obtenir l'icône à afficher (normale ou "?" si pas découverte)
+    /// Obtenir l'icône a afficher (normale ou "?" si pas decouverte)
     /// </summary>
     private Sprite GetDisplayIcon()
     {
-        // Vérifier si l'activité a été découverte
+        // Verifier si l'activite a ete decouverte
         if (!IsActivityDiscovered())
         {
             return unknownActivityIcon; // Afficher le "?"
         }
 
-        // Activité découverte : afficher l'icône normale
+        // Activite decouverte : afficher l'icône normale
         return GetActivityIcon();
     }
 
     /// <summary>
-    /// Vérifier si une activité a été découverte (pratiquée au moins une fois)
+    /// Verifier si une activite a ete decouverte (pratiquee au moins une fois)
     /// </summary>
     private bool IsActivityDiscovered()
     {
         if (string.IsNullOrEmpty(mainSkillId) || DataManager.Instance?.PlayerData == null)
         {
-            return false; // Pas découverte si pas d'ID ou pas de données
+            return false; // Pas decouverte si pas d'ID ou pas de donnees
         }
 
-        // Vérifier si l'activité existe dans les Skills ET a de l'XP > 0
+        // Verifier si l'activite existe dans les Skills ET a de l'XP > 0
         var playerData = DataManager.Instance.PlayerData;
         return playerData.Skills.ContainsKey(mainSkillId) &&
                playerData.GetSkillXP(mainSkillId) > 0;
     }
 
     /// <summary>
-    /// Mettre à jour l'icône affichée selon l'état de découverte
+    /// Mettre a jour l'icône affichee selon l'etat de decouverte
     /// </summary>
     private void UpdateIconDisplay()
     {
@@ -315,7 +315,7 @@ public class IconContainer : MonoBehaviour
 
     /// <summary>
     /// Obtenir la competence principale associee a cette activite
-    /// MODIFIÉ : Normaliser l'ID pour éviter les problèmes avec les espaces
+    /// MODIFIe : Normaliser l'ID pour eviter les problemes avec les espaces
     /// </summary>
     private string GetMainSkillForActivity(string activityId)
     {
