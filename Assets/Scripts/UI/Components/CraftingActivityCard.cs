@@ -1,4 +1,4 @@
-// Purpose: UI Card for Crafting Activities (Time-based activities) with red overlay and shake
+// Purpose: UI Card for Crafting Activities (Time-based activities) with red overlay and gray overlay
 // Filepath: Assets/Scripts/UI/Components/CraftingActivityCard.cs
 using System.Collections;
 using System.Collections.Generic;
@@ -17,7 +17,15 @@ public class CraftingActivityCard : MonoBehaviour
     [SerializeField] private Button cardButton;
 
     [Header("Red Overlay")]
-    [SerializeField] private GameObject redOverlay; // Voile rouge par-dessus la carte
+    [SerializeField] private GameObject redOverlay; // Voile rouge pour ressources manquantes
+
+    [Header("Gray Overlay")]
+    [SerializeField] private GameObject grayOverlay; // Voile gris pour niveau insuffisant
+
+    [Header("Level Background Colors")]
+    [SerializeField] private Image levelBackground; // Background du texte de niveau
+    [SerializeField] private Color normalLevelBackgroundColor = Color.white;
+    [SerializeField] private Color insufficientLevelBackgroundColor = Color.red;
 
     [Header("Shake Animation")]
     [SerializeField] private float shakeDuration = 0.5f;
@@ -30,6 +38,7 @@ public class CraftingActivityCard : MonoBehaviour
     private ActivityVariant activityVariant;
     private List<GameObject> instantiatedIngredients = new List<GameObject>();
     private bool hasEnoughIngredients = true;
+    private bool hasRequiredLevel = true;
 
     // Events
     public System.Action<ActivityVariant> OnCardClicked;
@@ -65,6 +74,7 @@ public class CraftingActivityCard : MonoBehaviour
         SetupRequirements();
         SetupIngredients();
         CheckIngredientsAvailability();
+        CheckLevelRequirement();
 
         Debug.Log($"CraftingActivityCard: Setup completed for {variant.VariantName}");
     }
@@ -101,21 +111,65 @@ public class CraftingActivityCard : MonoBehaviour
         }
 
         UpdateVisualState();
+        UpdateLevelTextColor(); // Mettre à jour la couleur du texte de niveau
+        UpdateIngredientsTextColors(); // Mettre à jour les couleurs des ingrédients
     }
 
     /// <summary>
-    /// Mettre a jour l'etat visuel de la carte (voile rouge)
+    /// Verifier le niveau requis
+    /// </summary>
+    private void CheckLevelRequirement()
+    {
+        hasRequiredLevel = true;
+
+        if (activityVariant != null && activityVariant.UnlockRequirement > 0)
+        {
+            // Obtenir le niveau de la compétence principale
+            string mainSkillId = activityVariant.GetMainSkillId();
+
+            if (!string.IsNullOrEmpty(mainSkillId) && XpManager.Instance != null)
+            {
+                int playerLevel = XpManager.Instance.GetPlayerSkill(mainSkillId).Level;
+                hasRequiredLevel = playerLevel >= activityVariant.UnlockRequirement;
+
+                if (!hasRequiredLevel)
+                {
+                    Debug.Log($"CraftingActivityCard: Level insufficient for {activityVariant.VariantName}. Required: {activityVariant.UnlockRequirement}, Player: {playerLevel}");
+                }
+            }
+        }
+
+        UpdateVisualState();
+    }
+
+    /// <summary>
+    /// Mettre a jour l'etat visuel de la carte (overlays)
     /// </summary>
     private void UpdateVisualState()
     {
+        // Priorité : Niveau > Ressources
+        // Si pas le bon niveau -> overlay gris seulement
+        // Sinon si pas assez de ressources -> overlay rouge seulement
+        // Sinon aucun overlay
+
+        if (grayOverlay != null)
+        {
+            grayOverlay.SetActive(!hasRequiredLevel);
+        }
+
         if (redOverlay != null)
         {
-            redOverlay.SetActive(!hasEnoughIngredients);
+            // Seulement afficher le rouge si on a le niveau requis mais pas les ressources
+            redOverlay.SetActive(hasRequiredLevel && !hasEnoughIngredients);
         }
+
+        // Mettre à jour les couleurs des textes
+        UpdateLevelTextColor();
+        UpdateIngredientsTextColors();
     }
 
     /// <summary>
-    /// Animation de shake quand on clique sans avoir les ingredients
+    /// Animation de shake quand on clique sans avoir les ressources
     /// </summary>
     private IEnumerator ShakeAnimation()
     {
@@ -164,8 +218,7 @@ public class CraftingActivityCard : MonoBehaviour
         // Level requirement (using UnlockRequirement for now)
         if (levelRequiredText != null)
         {
-            int level = activityVariant.UnlockRequirement > 0 ?
-                activityVariant.UnlockRequirement : 1;
+            int level = activityVariant.UnlockRequirement > 0 ? activityVariant.UnlockRequirement : 1;
             levelRequiredText.text = $"Lvl : {level}";
         }
 
@@ -241,6 +294,16 @@ public class CraftingActivityCard : MonoBehaviour
         if (quantityText != null)
         {
             quantityText.text = $"x{quantity}";
+
+            // Stocker la référence au material pour la vérification des couleurs
+            var ingredientData = ingredientSlot.GetComponent<IngredientSlotData>();
+            if (ingredientData == null)
+            {
+                ingredientData = ingredientSlot.AddComponent<IngredientSlotData>();
+            }
+            ingredientData.Material = material;
+            ingredientData.RequiredQuantity = quantity;
+            ingredientData.QuantityText = quantityText;
         }
 
         Debug.Log($"CraftingActivityCard: Created ingredient slot for {material.GetDisplayName()} x{quantity}");
@@ -268,7 +331,14 @@ public class CraftingActivityCard : MonoBehaviour
     {
         if (activityVariant != null)
         {
-            // Si on n'a pas assez d'ingredients, faire l'animation de shake
+            // Vérifier d'abord le niveau - PAS d'animation si niveau insuffisant
+            if (!hasRequiredLevel)
+            {
+                Debug.Log($"CraftingActivityCard: Level requirement not met for {activityVariant.VariantName}");
+                return; // Pas d'animation, juste ignorer le clic
+            }
+
+            // Puis vérifier les ressources - Animation seulement pour les ressources manquantes
             if (!hasEnoughIngredients)
             {
                 Debug.Log($"CraftingActivityCard: Not enough ingredients for {activityVariant.VariantName}, shaking card");
@@ -297,8 +367,79 @@ public class CraftingActivityCard : MonoBehaviour
         CheckIngredientsAvailability();
     }
 
+    /// <summary>
+    /// Mettre a jour manuellement l'etat du niveau (a appeler quand le niveau change)
+    /// </summary>
+    public void RefreshLevelState()
+    {
+        CheckLevelRequirement();
+    }
+
+    /// <summary>
+    /// Mettre a jour tous les etats (niveau et ingredients)
+    /// </summary>
+    public void RefreshAllStates()
+    {
+        CheckLevelRequirement();
+        CheckIngredientsAvailability();
+    }
+
+    /// <summary>
+    /// Mettre à jour la couleur du texte de niveau
+    /// </summary>
+    private void UpdateLevelTextColor()
+    {
+        if (levelRequiredText != null)
+        {
+            levelRequiredText.color = hasRequiredLevel ? Color.white : Color.red;
+        }
+
+        // Mettre à jour la couleur du background du niveau
+        if (levelBackground != null)
+        {
+            levelBackground.color = hasRequiredLevel ? normalLevelBackgroundColor : insufficientLevelBackgroundColor;
+        }
+    }
+
+    /// <summary>
+    /// Mettre à jour les couleurs des textes d'ingrédients
+    /// </summary>
+    private void UpdateIngredientsTextColors()
+    {
+        if (activityVariant == null) return;
+
+        var inventoryManager = InventoryManager.Instance;
+        if (inventoryManager == null) return;
+
+        foreach (var ingredientSlot in instantiatedIngredients)
+        {
+            if (ingredientSlot == null) continue;
+
+            var ingredientData = ingredientSlot.GetComponent<IngredientSlotData>();
+            if (ingredientData == null || ingredientData.Material == null || ingredientData.QuantityText == null) continue;
+
+            // Vérifier si on a assez de cette ressource
+            var container = inventoryManager.GetContainer("player");
+            int availableQuantity = container?.GetItemQuantity(ingredientData.Material.ItemID) ?? 0;
+            bool hasEnoughOfThisIngredient = availableQuantity >= ingredientData.RequiredQuantity;
+
+            // Mettre à jour la couleur
+            ingredientData.QuantityText.color = hasEnoughOfThisIngredient ? Color.white : Color.red;
+        }
+    }
+
     void OnDestroy()
     {
         ClearIngredients();
     }
+}
+
+/// <summary>
+/// Composant helper pour stocker les données d'un slot d'ingrédient
+/// </summary>
+public class IngredientSlotData : MonoBehaviour
+{
+    public ItemDefinition Material;
+    public int RequiredQuantity;
+    public TextMeshProUGUI QuantityText;
 }
