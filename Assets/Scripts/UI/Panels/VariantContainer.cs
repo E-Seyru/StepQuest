@@ -9,34 +9,35 @@ using UnityEngine.UI;
 public class VariantContainer : MonoBehaviour
 {
     [Header("UI References")]
-    [SerializeField] private GameObject panel; // Le panel qui contient tout
-    [SerializeField] private Transform variantsContainer; // Container pour les icônes de variants
-    [SerializeField] private GameObject variantIconPrefab; // Prefab pour chaque variant
-    [SerializeField] private TextMeshProUGUI titleText; // Titre du panel (ex: "Mining Variants")
+    [SerializeField] private GameObject panel;
+    [SerializeField] private Transform variantsContainer;
+    [SerializeField] private GameObject variantIconPrefab;
+    [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private Image activityHeaderIcon;
 
     [Header("Activity Registry")]
-    [SerializeField] private ActivityRegistry activityRegistry; // Reference au registry des activites
+    [SerializeField] private ActivityRegistry activityRegistry;
 
     [Header("Panel Management")]
-    [SerializeField] private GameObject activityXpContainer; // Reference au panel des activites principales
+    [SerializeField] private GameObject activityXpContainer;
 
-    [Header("Unknown Activity Settings")] // NOUVEAU
-    [SerializeField] private Sprite unknownActivityIcon; // Icône "?" pour activite non decouverte
-    [SerializeField] private string unknownActivityTitle = "Inconnu"; // Titre pour activite non decouverte
+    [Header("Unknown Activity Settings")]
+    [SerializeField] private Sprite unknownActivityIcon;
+    [SerializeField] private string unknownActivityTitle = "Inconnu";
 
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
 
     // Data
     private ActivityDefinition currentActivity;
-    private List<VariantIconContainer> variantIcons = new List<VariantIconContainer>();
+
+    // MODIFICATION : La liste devient notre pool d'objets.
+    private List<VariantIconContainer> variantIconPool = new List<VariantIconContainer>();
 
     #region Unity Lifecycle
 
     void Start()
     {
-        // Essayer de trouver l'ActivityRegistry automatiquement s'il n'est pas assigne
         if (activityRegistry == null)
         {
             activityRegistry = FindObjectOfType<ActivityRegistry>();
@@ -45,13 +46,11 @@ public class VariantContainer : MonoBehaviour
                 activityRegistry = Resources.Load<ActivityRegistry>("ActivityRegistry");
             }
         }
-
         HidePanel();
     }
 
     void Update()
     {
-        // Detecter les clics en dehors du panel quand il est ouvert
         if (panel != null && panel.activeInHierarchy)
         {
             DetectClickOutside();
@@ -62,9 +61,6 @@ public class VariantContainer : MonoBehaviour
 
     #region Public Methods
 
-    /// <summary>
-    /// Afficher les variants pour une activite donnee
-    /// </summary>
     public void ShowVariantsForActivity(ActivityDefinition activity)
     {
         if (activity == null)
@@ -77,69 +73,41 @@ public class VariantContainer : MonoBehaviour
         }
 
         currentActivity = activity;
-
-        // NOUVEAU : Gerer l'affichage selon si l'activite est decouverte ou non
         bool isActivityDiscovered = IsActivityDiscovered(activity.ActivityID);
 
         if (activityHeaderIcon != null)
         {
-            // Mettre a jour l'icône de l'activite
-            if (isActivityDiscovered)
-            {
-                activityHeaderIcon.sprite = activity.GetActivityIcon();
-            }
-            else
-            {
-                activityHeaderIcon.sprite = unknownActivityIcon; // Afficher le "?"
-            }
+            activityHeaderIcon.sprite = isActivityDiscovered ? activity.GetActivityIcon() : unknownActivityIcon;
         }
 
-        // Mettre a jour le titre
         if (titleText != null)
         {
-            if (isActivityDiscovered)
-            {
-                titleText.text = $"{activity.GetDisplayName()} Variants";
-            }
-            else
-            {
-                titleText.text = $"{unknownActivityTitle} Variants"; // Afficher "Inconnu Variants"
-            }
+            titleText.text = isActivityDiscovered ? $"{activity.GetDisplayName()} Variants" : $"{unknownActivityTitle} Variants";
         }
 
-        // MODIFIe : Utiliser directement GetAllVariants() de l'ActivityDefinition !
         var variants = GetVariantsForActivity(activity);
 
         if (enableDebugLogs)
         {
-            Debug.Log($"VariantContainer: Found {variants.Count} variants for {activity.GetDisplayName()} (Discovered: {isActivityDiscovered})");
+            Debug.Log($"VariantContainer: Found {variants.Count} variants for {activity.GetDisplayName()}");
         }
 
-        // Creer les icônes de variants
-        CreateVariantIcons(variants);
+        // MODIFICATION : On appelle notre nouvelle méthode de gestion du pool.
+        PopulateVariantIcons(variants);
 
-        // Masquer le panel des activites principales et afficher celui des variants
         HideActivityXpContainer();
         ShowPanel();
     }
 
-    /// <summary>
-    /// Masquer le panel des variants
-    /// </summary>
     public void HidePanel()
     {
         if (panel != null)
         {
             panel.SetActive(false);
         }
-
-        // Reafficher le panel des activites principales
         ShowActivityXpContainer();
     }
 
-    /// <summary>
-    /// Afficher le panel des variants
-    /// </summary>
     public void ShowPanel()
     {
         if (panel != null)
@@ -148,21 +116,91 @@ public class VariantContainer : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Definir le registry d'activites
-    /// </summary>
-    public void SetActivityRegistry(ActivityRegistry registry)
+    public void SetActivityXpContainer(GameObject container)
     {
-        activityRegistry = registry;
-        if (enableDebugLogs)
+        activityXpContainer = container;
+    }
+
+    #endregion
+
+    #region Private Methods
+
+    /// <summary>
+    /// NOUVELLE MÉTHODE : Peuple le conteneur avec des icônes depuis le pool.
+    /// </summary>
+    private void PopulateVariantIcons(List<ActivityVariant> variants)
+    {
+        // 1. Désactiver tous les icônes actuellement visibles dans le pool.
+        foreach (var icon in variantIconPool)
         {
-            Debug.Log($"VariantContainer: Activity registry set to {(registry != null ? registry.name : "null")}");
+            if (icon.gameObject.activeSelf)
+            {
+                icon.gameObject.SetActive(false);
+            }
+        }
+
+        // 2. Parcourir les variants et activer/configurer les icônes nécessaires.
+        for (int i = 0; i < variants.Count; i++)
+        {
+            // Si on a besoin de plus d'icônes que ce que le pool contient, on en crée de nouveaux.
+            if (i >= variantIconPool.Count)
+            {
+                CreateAndPoolNewIcon();
+            }
+
+            // On récupère l'icône depuis le pool, on le configure et on l'active.
+            VariantIconContainer pooledIcon = variantIconPool[i];
+            pooledIcon.Initialize(variants[i]);
+            pooledIcon.gameObject.SetActive(true);
         }
     }
 
     /// <summary>
-    /// Masquer le panel des activites principales
+    /// NOUVELLE MÉTHODE : Crée un icône, l'ajoute au pool et le prépare.
     /// </summary>
+    private void CreateAndPoolNewIcon()
+    {
+        if (variantIconPrefab == null || variantsContainer == null)
+        {
+            Debug.LogError("VariantContainer: variantIconPrefab or variantsContainer is null!");
+            return;
+        }
+
+        GameObject iconObject = Instantiate(variantIconPrefab, variantsContainer);
+        iconObject.name = $"VariantIcon_Pooled_{variantIconPool.Count}";
+
+        var newIcon = iconObject.GetComponent<VariantIconContainer>();
+        variantIconPool.Add(newIcon);
+        newIcon.gameObject.SetActive(false); // On le désactive en attendant son utilisation.
+    }
+
+    private bool IsActivityDiscovered(string activityId)
+    {
+        if (string.IsNullOrEmpty(activityId) || DataManager.Instance?.PlayerData == null)
+        {
+            return false;
+        }
+
+        string normalizedActivityId = activityId.Trim().Replace(" ", "_");
+
+        var playerData = DataManager.Instance.PlayerData;
+        return playerData.Skills.ContainsKey(normalizedActivityId) && playerData.GetSkillXP(normalizedActivityId) > 0;
+    }
+
+    private List<ActivityVariant> GetVariantsForActivity(ActivityDefinition activity)
+    {
+        if (activity == null)
+        {
+            return new List<ActivityVariant>();
+        }
+
+        return activity.GetAllVariants()
+            .Where(v => v != null)
+            .OrderBy(v => v.UnlockRequirement)
+            .ThenBy(v => v.VariantName)
+            .ToList();
+    }
+
     private void HideActivityXpContainer()
     {
         if (activityXpContainer != null)
@@ -171,9 +209,6 @@ public class VariantContainer : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Afficher le panel des activites principales
-    /// </summary>
     private void ShowActivityXpContainer()
     {
         if (activityXpContainer != null)
@@ -182,255 +217,45 @@ public class VariantContainer : MonoBehaviour
         }
     }
 
-    #endregion
-
-    #region Private Methods
-
-    /// <summary>
-    /// MeTHODE CORRIGeE : Verifier si une activite a ete decouverte
-    /// </summary>
-    private bool IsActivityDiscovered(string activityId)
-    {
-        if (string.IsNullOrEmpty(activityId) || DataManager.Instance?.PlayerData == null)
-        {
-            return false;
-        }
-
-        // AJOUT : Normaliser l'ID comme dans IconContainer
-        string normalizedActivityId = activityId.Trim().Replace(" ", "_");
-
-        if (enableDebugLogs)
-        {
-            Debug.Log($"VariantContainer: Checking discovery for '{activityId}' (normalized: '{normalizedActivityId}')");
-        }
-
-        // Verifier si l'activite existe dans les Skills ET a de l'XP > 0
-        var playerData = DataManager.Instance.PlayerData;
-        bool hasSkill = playerData.Skills.ContainsKey(normalizedActivityId);
-        int xp = hasSkill ? playerData.GetSkillXP(normalizedActivityId) : 0;
-        bool isDiscovered = hasSkill && xp > 0;
-
-        if (enableDebugLogs)
-        {
-            Debug.Log($"VariantContainer: Activity '{activityId}' - HasSkill: {hasSkill}, XP: {xp}, Discovered: {isDiscovered}");
-
-            if (!hasSkill)
-            {
-                Debug.Log($"Available skills: [{string.Join(", ", playerData.Skills.Keys)}]");
-            }
-        }
-
-        return isDiscovered;
-    }
-
-    /// <summary>
-    /// MeTHODE SIMPLIFIeE : Obtenir tous les variants d'une activite - UTILISE GetAllVariants() !
-    /// </summary>
-    private List<ActivityVariant> GetVariantsForActivity(ActivityDefinition activity)
-    {
-        if (activity == null)
-        {
-            if (enableDebugLogs)
-            {
-                Debug.LogWarning("VariantContainer: Cannot get variants for null activity");
-            }
-            return new List<ActivityVariant>();
-        }
-
-        // SUPER SIMPLE ! On utilise directement la methode de l'ActivityDefinition
-        var variants = activity.GetAllVariants();
-
-        // Trier par UnlockRequirement puis par nom pour un affichage coherent
-        var sortedVariants = variants
-            .Where(v => v != null) // Enlever les nulls
-            .OrderBy(v => v.UnlockRequirement)
-            .ThenBy(v => v.VariantName)
-            .ToList();
-
-        if (enableDebugLogs)
-        {
-            Debug.Log($"VariantContainer: Activity '{activity.ActivityID}' has {sortedVariants.Count} variants (from GetAllVariants())");
-        }
-
-        return sortedVariants;
-    }
-
-    /// <summary>
-    /// Creer les icônes pour tous les variants - VERSION OPTIMISeE
-    /// </summary>
-    private void CreateVariantIcons(List<ActivityVariant> variants)
-    {
-        // Nettoyer les icônes existants de maniere optimisee
-        ClearVariantIconsOptimized();
-
-        if (variants.Count == 0)
-        {
-            if (enableDebugLogs)
-            {
-                Debug.Log("VariantContainer: No variants to display");
-            }
-            return;
-        }
-
-        // Pre-allouer la liste pour eviter les reallocations
-        variantIcons.Capacity = variants.Count;
-
-        // Creer un icône pour chaque variant
-        foreach (var variant in variants)
-        {
-            CreateVariantIconOptimized(variant);
-        }
-    }
-
-    /// <summary>
-    /// Creer un icône pour un variant specifique - VERSION OPTIMISeE
-    /// </summary>
-    private void CreateVariantIconOptimized(ActivityVariant variant)
-    {
-        if (variantIconPrefab == null || variantsContainer == null)
-        {
-            if (enableDebugLogs)
-            {
-                Debug.LogError("VariantContainer: variantIconPrefab or variantsContainer is null!");
-            }
-            return;
-        }
-
-        // Instancier le prefab
-        GameObject iconObject = Instantiate(variantIconPrefab, variantsContainer);
-        iconObject.name = $"VariantIcon_{variant.VariantName}";
-
-        // Configurer le composant VariantIconContainer
-        var variantIcon = iconObject.GetComponent<VariantIconContainer>();
-        if (variantIcon == null)
-        {
-            variantIcon = iconObject.AddComponent<VariantIconContainer>();
-        }
-
-        // Initialiser avec les donnees du variant
-        variantIcon.Initialize(variant);
-
-        // Ajouter a la liste
-        variantIcons.Add(variantIcon);
-
-        // Logs reduits pour eviter le spam
-        if (enableDebugLogs && variantIcons.Count == 1)
-        {
-            Debug.Log($"VariantContainer: Creating {variantIcons.Capacity} variant icons...");
-        }
-    }
-
-    /// <summary>
-    /// Nettoyer tous les icônes de variants existants - VERSION OPTIMISeE
-    /// </summary>
-    private void ClearVariantIconsOptimized()
-    {
-        // Batch destroy pour etre plus efficace
-        for (int i = variantIcons.Count - 1; i >= 0; i--)
-        {
-            var variantIcon = variantIcons[i];
-            if (variantIcon != null)
-            {
-                // Utiliser Destroy au lieu de DestroyImmediate en runtime
-                if (Application.isPlaying)
-                {
-                    Destroy(variantIcon.gameObject);
-                }
-                else
-                {
-#if UNITY_EDITOR
-                    DestroyImmediate(variantIcon.gameObject);
-#endif
-                }
-            }
-        }
-
-        // Vider la liste en une fois
-        variantIcons.Clear();
-    }
-
-    /// <summary>
-    /// Configurer la reference au ActivityXpContainer (appele par ActivityXpContainer)
-    /// </summary>
-    public void SetActivityXpContainer(GameObject container)
-    {
-        activityXpContainer = container;
-    }
-
-    /// <summary>
-    /// Detecter les touches en dehors du panel pour le fermer
-    /// </summary>
     private void DetectClickOutside()
     {
-        // Verifier s'il y a un touch (priorite sur mobile)
+        bool clickDetected = false;
+        Vector2 clickPosition = Vector2.zero;
+
         if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
         {
-            Vector2 touchPosition = Input.GetTouch(0).position;
-
-            // Verifier si le touch est en dehors du panel
-            if (!IsClickInsidePanel(touchPosition))
-            {
-                HidePanel();
-            }
+            clickDetected = true;
+            clickPosition = Input.GetTouch(0).position;
         }
-        // Fallback pour les tests en editeur (souris)
-#if UNITY_EDITOR
         else if (Input.GetMouseButtonDown(0))
         {
-            Vector2 mousePosition = Input.mousePosition;
+            clickDetected = true;
+            clickPosition = Input.mousePosition;
+        }
 
-            // Verifier si le clic est en dehors du panel
-            if (!IsClickInsidePanel(mousePosition))
+        if (clickDetected)
+        {
+            if (!IsClickInsidePanel(clickPosition))
             {
                 HidePanel();
             }
         }
-#endif
     }
 
-    /// <summary>
-    /// Verifier si le touch est a l'interieur du panel
-    /// </summary>
     private bool IsClickInsidePanel(Vector2 screenPosition)
     {
         if (panel == null) return false;
 
-        // Convertir la position d'ecran en position Canvas
         RectTransform panelRect = panel.GetComponent<RectTransform>();
         if (panelRect == null) return false;
 
-        // Utiliser RectTransformUtility pour verifier si le point est dans le rectangle
         Canvas canvas = panel.GetComponentInParent<Canvas>();
         if (canvas == null) return false;
 
-        Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+        Camera cam = (canvas.renderMode == RenderMode.ScreenSpaceOverlay) ? null : canvas.worldCamera;
 
         return RectTransformUtility.RectangleContainsScreenPoint(panelRect, screenPosition, cam);
     }
-
-#if UNITY_EDITOR
-    /// <summary>
-    /// Methode d'assistance pour l'editeur - auto-assignment du registry
-    /// </summary>
-    void OnValidate()
-    {
-        if (activityRegistry == null)
-        {
-            // Chercher le ActivityRegistry dans le projet
-            string[] guids = UnityEditor.AssetDatabase.FindAssets("t:ActivityRegistry");
-            if (guids.Length > 0)
-            {
-                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
-                activityRegistry = UnityEditor.AssetDatabase.LoadAssetAtPath<ActivityRegistry>(path);
-
-                if (activityRegistry != null && enableDebugLogs)
-                {
-                    Debug.Log($"VariantContainer: Auto-assigned ActivityRegistry: {activityRegistry.name}");
-                }
-            }
-        }
-    }
-#endif
 
     #endregion
 }
