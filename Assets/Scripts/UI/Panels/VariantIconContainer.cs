@@ -11,15 +11,19 @@ public class VariantIconContainer : MonoBehaviour
     [SerializeField] private Image progressRing;
     [SerializeField] private TextMeshProUGUI levelText;
     [SerializeField] private TextMeshProUGUI variantNameText; // Nom du variant
+    [SerializeField] private Image lockIcon; // NOUVEAU : Icône cadenas
+    [SerializeField] private TextMeshProUGUI requiredLevelText; // NOUVEAU : "Req. Lvl X" - toujours affiché
 
     [Header("Settings")]
     [SerializeField] private bool autoRefresh = true;
     [SerializeField] private float refreshInterval = 1f;
+    [SerializeField] private bool enableDebugLogs = false;
 
     [Header("Visual Settings")]
     [SerializeField] private Color maxLevelColor = Color.yellow;
     [SerializeField] private Sprite defaultIcon;
-    [SerializeField] private Sprite unknownVariantIcon; // NOUVEAU : Icône "?" pour variants non découverts
+    [SerializeField] private Sprite unknownVariantIcon; // Icône "?" pour variants non découverts
+    [SerializeField] private Sprite lockIconSprite; // NOUVEAU : Sprite du cadenas
 
     // Data
     private ActivityVariant activityVariant;
@@ -104,8 +108,9 @@ public class VariantIconContainer : MonoBehaviour
         // Obtenir les donnees de sous-competence actuelles (variants utilisent SubSkills)
         var subSkillData = XpManager.Instance.GetPlayerSubSkill(variantId);
 
-        // NOUVEAU : Mettre à jour l'icône en cas de découverte
+        // Mettre à jour l'icône et le cadenas
         UpdateIconDisplay();
+        UpdateLockDisplay(); // NOUVEAU
 
         // Optimisation : seulement mettre a jour si les donnees ont change
         bool hasLevelChanged = subSkillData.Level != lastLevel;
@@ -258,10 +263,10 @@ public class VariantIconContainer : MonoBehaviour
     {
         if (activityVariant == null) return;
 
-        // Configurer l'icône du variant (modifié)
+        // Configurer l'icône du variant
         if (variantIcon != null)
         {
-            var iconSprite = GetDisplayIcon(); // MODIFIÉ : Utiliser la nouvelle méthode
+            var iconSprite = GetDisplayIcon();
             variantIcon.sprite = iconSprite ?? defaultIcon;
         }
 
@@ -276,6 +281,9 @@ public class VariantIconContainer : MonoBehaviour
         {
             levelText.text = "Lvl. 1";
         }
+
+        // Configurer le cadenas et le texte de requirement
+        UpdateLockDisplay();
     }
 
     /// <summary>
@@ -316,7 +324,7 @@ public class VariantIconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Obtenir l'icône à afficher (normale ou "?" si pas découvert)
+    /// NOUVELLE MÉTHODE : Obtenir l'icône à afficher
     /// </summary>
     private Sprite GetDisplayIcon()
     {
@@ -335,6 +343,12 @@ public class VariantIconContainer : MonoBehaviour
     /// </summary>
     private bool IsVariantDiscovered()
     {
+        // Si le variant est verrouillé par niveau, il ne peut pas être découvert
+        if (IsVariantLockedByLevel())
+        {
+            return false;
+        }
+
         if (string.IsNullOrEmpty(variantId) || DataManager.Instance?.PlayerData == null)
         {
             return false; // Pas découvert si pas d'ID ou pas de données
@@ -344,6 +358,106 @@ public class VariantIconContainer : MonoBehaviour
         var playerData = DataManager.Instance.PlayerData;
         return playerData.SubSkills.ContainsKey(variantId) &&
                playerData.GetSubSkillXP(variantId) > 0;
+    }
+
+    /// <summary>
+    /// NOUVELLE MÉTHODE : Vérifier si le variant est verrouillé par niveau
+    /// </summary>
+    private bool IsVariantLockedByLevel()
+    {
+        if (activityVariant == null || string.IsNullOrEmpty(activityVariant.ParentActivityID))
+            return false;
+
+        // Obtenir le niveau requis pour ce variant
+        int requiredLevel = GetRequiredLevelForVariant();
+        if (requiredLevel <= 1) // Pas de niveau requis
+            return false;
+
+        // Obtenir le niveau actuel de l'activité principale
+        int mainActivityLevel = GetMainActivityLevel();
+
+        bool isLocked = mainActivityLevel < requiredLevel;
+
+        if (enableDebugLogs && isLocked)
+        {
+            Debug.Log($"Variant '{activityVariant.VariantName}' locked - Required: {requiredLevel}, Current: {mainActivityLevel}");
+        }
+
+        return isLocked;
+    }
+
+    /// <summary>
+    /// NOUVELLE MÉTHODE : Obtenir le niveau requis pour ce variant
+    /// </summary>
+    private int GetRequiredLevelForVariant()
+    {
+        // Utiliser la propriété UnlockRequirement
+        if (activityVariant.UnlockRequirement > 0)
+        {
+            return activityVariant.UnlockRequirement;
+        }
+
+        // Fallback : Système basé sur le nom (exemple)
+        return GetRequiredLevelByName(activityVariant.VariantName);
+    }
+
+    /// <summary>
+    /// NOUVELLE MÉTHODE : Obtenir le niveau requis basé sur le nom (exemple)
+    /// </summary>
+    private int GetRequiredLevelByName(string variantName)
+    {
+        // Exemple de logique - adaptez selon vos besoins
+        if (variantName.Contains("Advanced") || variantName.Contains("Avancé"))
+            return 10;
+        if (variantName.Contains("Expert") || variantName.Contains("Maître"))
+            return 25;
+        if (variantName.Contains("Master") || variantName.Contains("Légendaire"))
+            return 50;
+
+        // Variants de base : pas de niveau requis
+        return 1;
+    }
+
+    /// <summary>
+    /// NOUVELLE MÉTHODE : Obtenir le niveau actuel de l'activité principale
+    /// </summary>
+    private int GetMainActivityLevel()
+    {
+        if (string.IsNullOrEmpty(activityVariant.ParentActivityID) || XpManager.Instance == null)
+            return 1;
+
+        // Normaliser l'ID de l'activité principale
+        string normalizedMainActivityId = activityVariant.ParentActivityID.Trim().Replace(" ", "_");
+
+        // Obtenir les données de l'activité principale
+        var mainSkillData = XpManager.Instance.GetPlayerSkill(normalizedMainActivityId);
+        return mainSkillData.Level;
+    }
+
+    /// <summary>
+    /// NOUVELLE MÉTHODE : Mettre à jour l'icône de cadenas et le texte de requirement
+    /// </summary>
+    private void UpdateLockDisplay()
+    {
+        bool isLocked = IsVariantLockedByLevel();
+        int requiredLevel = GetRequiredLevelForVariant();
+
+        // Activer/désactiver l'icône de cadenas
+        if (lockIcon != null)
+        {
+            lockIcon.gameObject.SetActive(isLocked);
+
+            if (isLocked && lockIconSprite != null)
+            {
+                lockIcon.sprite = lockIconSprite;
+            }
+        }
+
+        // Afficher le niveau requis (toujours affiché)
+        if (requiredLevelText != null)
+        {
+            requiredLevelText.text = $"Req. Lvl {requiredLevel}";
+        }
     }
 
     /// <summary>

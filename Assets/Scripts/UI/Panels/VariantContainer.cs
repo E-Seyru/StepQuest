@@ -186,7 +186,7 @@ public class VariantContainer : MonoBehaviour
 
     #region Private Methods
 
-    // <summary>
+    /// <summary>
     /// MÉTHODE CORRIGÉE : Vérifier si une activité a été découverte
     /// </summary>
     private bool IsActivityDiscovered(string activityId)
@@ -287,8 +287,8 @@ public class VariantContainer : MonoBehaviour
             }
         }
 
-        // Mettre en cache pour les prochaines fois
-        variantsCache[activityId] = variants.OrderBy(v => v.VariantName).ToList();
+        // Mettre en cache pour les prochaines fois - MODIFIÉ pour trier par UnlockRequirement
+        variantsCache[activityId] = variants.OrderBy(v => v.UnlockRequirement).ThenBy(v => v.VariantName).ToList();
 
         if (enableDebugLogs)
         {
