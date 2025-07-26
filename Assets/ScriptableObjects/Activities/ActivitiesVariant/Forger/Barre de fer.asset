@@ -21,12 +21,15 @@ MonoBehaviour:
   SecondaryResources: []
   ActionCost: 10
   SuccessRate: 100
-  CraftingTimeMs: 10000
+  MainSkillXPPerTick: 10
+  SubSkillXPPerTick: 5
+  MainSkillId: 
+  CraftingTimeMs: 15000
   RequiredMaterials:
   - {fileID: 11400000, guid: 3430a706d4894e44a88308dea6134369, type: 2}
   RequiredQuantities: 05000000
   IsAvailable: 1
   Requirements: 
-  UnlockRequirement: 0
+  UnlockRequirement: 3
   VariantIcon: {fileID: 21300000, guid: 598a5d377f2bf2644b82d81fd1ae0c27, type: 3}
   VariantColor: {r: 1, g: 1, b: 1, a: 1}

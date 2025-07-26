@@ -24,6 +24,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 91fe5f15f5e232645b3a9f9d2cacb9bc, type: 2}
   - {fileID: 11400000, guid: 7b116284b7357db4fa88394e7c1dd5c3, type: 2}
   - {fileID: 11400000, guid: 8e99212fc1cc6bb4b90c41ed119f6ad9, type: 2}
+  - {fileID: 11400000, guid: d70726c29431c4041b4bf1188d60ab67, type: 2}
+  - {fileID: 11400000, guid: 794177f5402ca404b9f35114263f9e52, type: 2}
+  - {fileID: 11400000, guid: 97e52de7206047a49a31ba2d07498c6a, type: 2}
+  - {fileID: 11400000, guid: 316fb29bd36e50347970fd74248a62ba, type: 2}
   enableFallbackSearch: 1
   logMissingItems: 0
-  ValidationStatus: "\u2705 Registry is valid! (10 items)"
+  ValidationStatus: "\u2705 Registry is valid! (11 items)"

@@ -29,6 +29,6 @@ MonoBehaviour:
   RequiredQuantities: 
   IsAvailable: 1
   Requirements: 
-  UnlockRequirement: 3
+  UnlockRequirement: 0
   VariantIcon: {fileID: 21300000, guid: a7665c1a3e849254f90ee6718c4efb0e, type: 3}
   VariantColor: {r: 1, g: 1, b: 1, a: 1}

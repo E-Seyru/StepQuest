@@ -16,12 +16,19 @@ MonoBehaviour:
   VariantDescription: Vous minez du fer
   ParentActivityID: Miner
   AutoDetectParent: 1
+  IsTimeBased: 0
   PrimaryResource: {fileID: 11400000, guid: 3430a706d4894e44a88308dea6134369, type: 2}
   SecondaryResources: []
-  IsAvailable: 1
-  Requirements: 
-  UnlockRequirement: 0
-  VariantIcon: {fileID: 21300000, guid: 6b1817b93706aad4b9d0be361a3f2033, type: 3}
-  VariantColor: {r: 1, g: 1, b: 1, a: 1}
   ActionCost: 10
   SuccessRate: 100
+  MainSkillXPPerTick: 10
+  SubSkillXPPerTick: 5
+  MainSkillId: 
+  CraftingTimeMs: 30000
+  RequiredMaterials: []
+  RequiredQuantities: 
+  IsAvailable: 1
+  Requirements: 
+  UnlockRequirement: 3
+  VariantIcon: {fileID: 21300000, guid: 6b1817b93706aad4b9d0be361a3f2033, type: 3}
+  VariantColor: {r: 1, g: 1, b: 1, a: 1}
