@@ -897,7 +897,7 @@ public class MapLocationService
         if (string.IsNullOrEmpty(currentLocationId))
         {
             Logger.LogWarning("MapManager: No current location set in PlayerData. Defaulting to first location.", Logger.LogCategory.MapLog);
-            currentLocationId = "Foret_01"; // Default starting location
+            currentLocationId = GameConstants.DefaultStartingLocationId; // Default starting location
             dataManager.PlayerData.CurrentLocationId = currentLocationId;
             dataManager.SaveGame();
         }
@@ -943,7 +943,7 @@ public class MapSaveService
 
     private long lastSavedTotalSteps = -1;
     private float timeSinceLastTravelSave = 0f;
-    private const float TRAVEL_SAVE_INTERVAL_DURING_TRAVEL = 20f;
+    private const float TRAVEL_SAVE_INTERVAL_DURING_TRAVEL = GameConstants.TravelSaveIntervalSeconds;
 
     public MapSaveService(MapManager manager, float travelSaveInterval, int minStepsProgressToSave)
     {

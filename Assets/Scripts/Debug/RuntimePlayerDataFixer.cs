@@ -27,8 +27,8 @@ public class RuntimePlayerDataFixer : MonoBehaviour
     // Touch detection for Android
     private float lastTapTime = 0f;
     private int tapCount = 0;
-    private const float MULTI_TAP_TIME = 0.5f;
-    private const int REQUIRED_TAPS = 5;
+    private const float MULTI_TAP_TIME = GameConstants.DebugMultiTapTimeSeconds;
+    private const int REQUIRED_TAPS = GameConstants.DebugRequiredTaps;
 
     // References
     private DataManager dataManager;

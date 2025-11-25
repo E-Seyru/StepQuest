@@ -33,18 +33,18 @@ public class StepManager : MonoBehaviour
     private long lastRecordedSensorValue = -1;
     
     // Parametres de debounce et filtrage
-    private const int SENSOR_SPIKE_THRESHOLD = 50;
-    private const int SENSOR_DEBOUNCE_SECONDS = 3;
+    private const int SENSOR_SPIKE_THRESHOLD = (int)GameConstants.SensorSpikeThreshold;
+    private const int SENSOR_DEBOUNCE_SECONDS = GameConstants.SensorDebounceSeconds;
     private float lastLargeUpdateTime = 0f;
-    private const long MAX_STEPS_PER_UPDATE = 100000;
+    private const long MAX_STEPS_PER_UPDATE = GameConstants.MaxStepsPerUpdate;
     
     // Periode de grâce apres le retour au premier plan
-    private const float SENSOR_GRACE_PERIOD = 5.0f;
+    private const float SENSOR_GRACE_PERIOD = GameConstants.SensorGracePeriodSeconds;
     private float sensorGraceTimer = 0f;
     private bool inSensorGracePeriod = false;
-    
+
     // Parametre pour contrôler la frequence des sauvegardes DB
-    private const float DB_SAVE_INTERVAL = 3.0f;
+    private const float DB_SAVE_INTERVAL = GameConstants.DatabaseSaveIntervalSeconds;
     private float lastDBSaveTime = 0f;
     
     // Timestamp dedie au dernier catch-up API
@@ -54,8 +54,8 @@ public class StepManager : MonoBehaviour
     private bool wasProbablyCrash = false;
     
     // Constantes pour eviter le chevauchement a minuit
-    private const long MIDNIGHT_SAFETY_MS = 500;
-    private const long SENSOR_API_PADDING_MS = 1500;
+    private const long MIDNIGHT_SAFETY_MS = GameConstants.MidnightSafetyMs;
+    private const long SENSOR_API_PADDING_MS = GameConstants.SensorApiPaddingMs;
     
     // Variable pour verifier et eviter les dedoublements
     private string lastMidnightSplitKey = "";
@@ -112,16 +112,33 @@ public class StepManager : MonoBehaviour
 
     IEnumerator WaitForServices()
     {
+        const float SERVICE_TIMEOUT_SECONDS = GameConstants.ServiceTimeoutSeconds;
+        float waitTime = 0f;
+
+        // Wait for DataManager with timeout
         while (DataManager.Instance == null)
         {
             yield return new WaitForSeconds(0.5f);
+            waitTime += 0.5f;
+            if (waitTime >= SERVICE_TIMEOUT_SECONDS)
+            {
+                Logger.LogError($"StepManager: Timeout waiting for DataManager after {SERVICE_TIMEOUT_SECONDS}s!", Logger.LogCategory.StepLog);
+                yield break;
+            }
         }
         dataManager = DataManager.Instance;
 
 #if !UNITY_EDITOR
+        // Wait for device-specific services with timeout
         while (RecordingAPIStepCounter.Instance == null || UIManager.Instance == null)
         {
             yield return new WaitForSeconds(0.5f);
+            waitTime += 0.5f;
+            if (waitTime >= SERVICE_TIMEOUT_SECONDS)
+            {
+                Logger.LogError($"StepManager: Timeout waiting for RecordingAPIStepCounter/UIManager after {SERVICE_TIMEOUT_SECONDS}s!", Logger.LogCategory.StepLog);
+                yield break;
+            }
         }
         apiCounter = RecordingAPIStepCounter.Instance;
         uiManager = UIManager.Instance;

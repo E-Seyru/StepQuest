@@ -12,10 +12,10 @@ public class RecordingAPIStepCounter : MonoBehaviour
     private bool isSubscribedToApi = false;
     private bool lastPermissionResult = false;
     private int permissionCheckCounter = 0;
-    private const int LOG_FREQUENCY = 60;
+    private const int LOG_FREQUENCY = GameConstants.ApiLogFrequency;
 
-    private const int MAX_API_READ_ATTEMPTS = 5;
-    private const float BASE_API_WAIT_TIME = 0.5f;
+    private const int MAX_API_READ_ATTEMPTS = GameConstants.MaxApiReadAttempts;
+    private const float BASE_API_WAIT_TIME = GameConstants.BaseApiWaitTimeSeconds;
 
     public static RecordingAPIStepCounter Instance { get; private set; }
 

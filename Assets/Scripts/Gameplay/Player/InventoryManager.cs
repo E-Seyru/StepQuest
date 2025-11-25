@@ -14,38 +14,7 @@ using UnityEngine;
 
 public class InventoryManager : MonoBehaviour
 {
-    private static InventoryManager instance;
-    private static readonly object instanceLock = new object();
-
-    public static InventoryManager Instance
-    {
-        get
-        {
-            // Double-checked locking pour thread safety
-            if (instance == null)
-            {
-                lock (instanceLock)
-                {
-                    if (instance == null)
-                    {
-                        var existing = FindObjectOfType<InventoryManager>();
-                        if (existing != null)
-                        {
-                            instance = existing;
-                        }
-                        else
-                        {
-                            Logger.LogWarning("InventoryManager: Instance accessed before Awake! Creating emergency instance.", Logger.LogCategory.InventoryLog);
-                            var go = new GameObject("InventoryManager");
-                            instance = go.AddComponent<InventoryManager>();
-                            DontDestroyOnLoad(go);
-                        }
-                    }
-                }
-            }
-            return instance;
-        }
-    }
+    public static InventoryManager Instance { get; private set; }
 
     [Header("Settings")]
     [SerializeField] private int defaultPlayerSlots = 20;
@@ -73,20 +42,15 @@ public class InventoryManager : MonoBehaviour
 
     void Awake()
     {
-        lock (instanceLock)
+        if (Instance == null)
         {
-            if (instance == null)
-            {
-                instance = this;
-
-                InitializeServices();
-            }
-            else if (instance != this)
-            {
-                Logger.LogWarning("InventoryManager: Multiple instances detected! Destroying duplicate.", Logger.LogCategory.InventoryLog);
-                Destroy(gameObject);
-                return;
-            }
+            Instance = this;
+            InitializeServices();
+        }
+        else
+        {
+            Logger.LogWarning("InventoryManager: Multiple instances detected! Destroying duplicate.", Logger.LogCategory.InventoryLog);
+            Destroy(gameObject);
         }
     }
 
