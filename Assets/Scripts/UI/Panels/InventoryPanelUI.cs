@@ -21,7 +21,7 @@ public class InventoryPanelUI : MonoBehaviour
     private InventoryManager inventoryManager;
     private List<UniversalSlotUI> slotUIs = new List<UniversalSlotUI>();
     private UniversalSlotUI selectedSlot;
-    private string currentContainerId = "player";
+    private string currentContainerId = GameConstants.ContainerIdPlayer;
 
     // Auto-deselection
     private bool isPointerOverInventory = false;

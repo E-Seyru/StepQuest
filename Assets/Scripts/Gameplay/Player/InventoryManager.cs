@@ -478,8 +478,8 @@ public class InventoryContainerService
                     // CRITIQUE: Perte d'items detectee !
                     Logger.LogError($"InventoryContainerService: CRITICAL - Rollback failed! {quantity} of '{itemId}' may be lost!", Logger.LogCategory.InventoryLog);
 
-                    // TODO: Ajouter un systeme de recuperation d'urgence
-                    // Par exemple, log dans un fichier special pour recuperation manuelle
+                    // Log de recuperation d'urgence - permet de restaurer manuellement
+                    LogItemRecovery(fromId, itemId, quantity, "TRANSFER_ROLLBACK_FAILED");
                 }
 
                 return false;
@@ -534,6 +534,32 @@ public class InventoryContainerService
                 container.Resize(newCapacity);
                 OnContainerChanged?.Invoke(containerId);
             }
+        }
+    }
+
+    /// <summary>
+    /// Log de recuperation d'urgence pour les items potentiellement perdus.
+    /// Ecrit dans un fichier persistant pour permettre une restauration manuelle.
+    /// </summary>
+    private void LogItemRecovery(string containerId, string itemId, int quantity, string reason)
+    {
+        try
+        {
+            string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            string logEntry = $"[{timestamp}] LOST_ITEM: container={containerId}, item={itemId}, qty={quantity}, reason={reason}";
+
+            // Log dans la console Unity (sera visible dans logcat sur Android)
+            Logger.LogError($"ITEM_RECOVERY_LOG: {logEntry}", Logger.LogCategory.InventoryLog);
+
+            // Ecrire dans un fichier persistant
+            string recoveryPath = System.IO.Path.Combine(UnityEngine.Application.persistentDataPath, "item_recovery.log");
+            System.IO.File.AppendAllText(recoveryPath, logEntry + "\n");
+
+            Logger.LogInfo($"InventoryContainerService: Recovery log written to {recoveryPath}", Logger.LogCategory.InventoryLog);
+        }
+        catch (System.Exception ex)
+        {
+            Logger.LogError($"InventoryContainerService: Failed to write recovery log: {ex.Message}", Logger.LogCategory.InventoryLog);
         }
     }
 }

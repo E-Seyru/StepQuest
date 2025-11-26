@@ -112,7 +112,7 @@ public static class EventBus
         {
             if (!eventSubscriptions.ContainsKey(eventType))
             {
-                LogWarning($"No subscriptions found for {eventType.Name}");
+                // Silencieux - situation normale au shutdown quand les subscribers sont deja partis
                 return;
             }
 
@@ -129,10 +129,7 @@ public static class EventBus
                     LogInfo($"Removed empty subscription list for {eventType.Name}");
                 }
             }
-            else
-            {
-                LogWarning($"Callback not found for {eventType.Name}");
-            }
+            // Silencieux si callback non trouve - situation normale au shutdown
         }
     }
 

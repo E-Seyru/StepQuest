@@ -120,7 +120,7 @@ public class ActivityVariant : ScriptableObject
     /// <summary>
     /// NOUVEAU: Verifie si on peut crafter (pour les activites temporelles)
     /// </summary>
-    public bool CanCraft(InventoryManager inventoryManager, string playerId = "player")
+    public bool CanCraft(InventoryManager inventoryManager, string playerId = GameConstants.ContainerIdPlayer)
     {
         if (!IsTimeBased) return false;
         if (RequiredMaterials == null || RequiredQuantities == null) return false;
@@ -147,7 +147,7 @@ public class ActivityVariant : ScriptableObject
     /// <summary>
     /// NOUVEAU: Consomme les materiaux necessaires pour le crafting
     /// </summary>
-    public bool ConsumeCraftingMaterials(InventoryManager inventoryManager, string playerId = "player")
+    public bool ConsumeCraftingMaterials(InventoryManager inventoryManager, string playerId = GameConstants.ContainerIdPlayer)
     {
         if (!CanCraft(inventoryManager, playerId)) return false;
 
@@ -191,7 +191,7 @@ public class ActivityVariant : ScriptableObject
     /// <summary>
     /// NOUVEAU: Rend les materiaux consommes pour le crafting (quand on annule)
     /// </summary>
-    public bool RefundCraftingMaterials(InventoryManager inventoryManager, string playerId = "player")
+    public bool RefundCraftingMaterials(InventoryManager inventoryManager, string playerId = GameConstants.ContainerIdPlayer)
     {
         if (!IsTimeBased) return false;
         if (RequiredMaterials == null || RequiredQuantities == null) return false;

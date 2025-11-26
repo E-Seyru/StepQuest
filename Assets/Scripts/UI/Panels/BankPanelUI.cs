@@ -26,7 +26,7 @@ public class BankPanelUI : MonoBehaviour
     private InventoryManager inventoryManager;
     private List<UniversalSlotUI> slotUIs = new List<UniversalSlotUI>();
     private UniversalSlotUI selectedSlot;
-    private string currentContainerId = "bank";
+    private string currentContainerId = GameConstants.ContainerIdBank;
 
     // Auto-deselection
     private bool isPointerOverBank = false;

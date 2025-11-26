@@ -308,7 +308,7 @@ public class LocalDatabase
             // Creer conteneur joueur par defaut
             var playerContainer = new InventoryContainerData
             {
-                ContainerID = "player",
+                ContainerID = GameConstants.ContainerIdPlayer,
                 ContainerType = "Player",
                 MaxSlots = 20,
                 SlotsData = CreateEmptySlots(20),
@@ -318,7 +318,7 @@ public class LocalDatabase
             // Creer conteneur banque par defaut
             var bankContainer = new InventoryContainerData
             {
-                ContainerID = "bank",
+                ContainerID = GameConstants.ContainerIdBank,
                 ContainerType = "Bank",
                 MaxSlots = 50,
                 SlotsData = CreateEmptySlots(50),
@@ -386,10 +386,9 @@ public class LocalDatabase
 
     public void SavePlayerData(PlayerData data)
     {
-        // AJOUT: Protection contre les appels apres fermeture
+        // Protection contre les appels apres fermeture (silencieux au shutdown)
         if (_connection == null)
         {
-            Logger.LogWarning("LocalDatabase: SavePlayerData called but connection is null (probably shutting down)");
             return;
         }
 

@@ -350,15 +350,14 @@ public class MapTravelService
     {
         int stepCost = manager.LocationRegistry.GetTravelCost(manager.CurrentLocation.LocationID, destinationLocationId);
         long currentSteps = dataManager.PlayerData.TotalSteps;
+        string originLocationId = manager.CurrentLocation.LocationID;
 
-        // Configurer les donnees de voyage
-        dataManager.PlayerData.TravelDestinationId = destinationLocationId;
-        dataManager.PlayerData.TravelStartSteps = currentSteps;
-        dataManager.PlayerData.TravelRequiredSteps = stepCost;
-
-        // ⭐ NOUVEAU : Pour voyage direct, destination finale = null, sauvegarder origine
-        dataManager.PlayerData.TravelFinalDestinationId = null; // Pas de voyage multi-segment
-        dataManager.PlayerData.TravelOriginLocationId = manager.CurrentLocation.LocationID;
+        // Configurer les donnees de voyage (thread-safe avec validation)
+        if (!dataManager.StartTravel(destinationLocationId, stepCost, currentSteps, null, originLocationId))
+        {
+            Logger.LogWarning($"MapManager: StartDirectTravel blocked - player has active activity!", Logger.LogCategory.MapLog);
+            return;
+        }
 
         // Reinitialiser l'etat multi-segment
         ResetMultiSegmentState();
@@ -370,10 +369,10 @@ public class MapTravelService
         dataManager.SaveGame();
         saveService.ResetSaveTracking(currentSteps);
 
-        Logger.LogInfo($"MapManager: Started DIRECT travel from {dataManager.PlayerData.TravelOriginLocationId} to {destinationLocationId} ({stepCost} steps). CurrentLocation cleared.", Logger.LogCategory.MapLog);
+        Logger.LogInfo($"MapManager: Started DIRECT travel from {originLocationId} to {destinationLocationId} ({stepCost} steps). CurrentLocation cleared.", Logger.LogCategory.MapLog);
 
         // Declencher l'evenement
-        var startLocation = manager.LocationRegistry.GetLocationById(dataManager.PlayerData.TravelOriginLocationId);
+        var startLocation = manager.LocationRegistry.GetLocationById(originLocationId);
         eventService.TriggerTravelStarted(destinationLocationId, startLocation, stepCost);
     }
 
@@ -391,20 +390,26 @@ public class MapTravelService
             return;
         }
 
+        // Validation: Cannot travel while doing activity
+        if (dataManager.PlayerData.HasActiveActivity())
+        {
+            Logger.LogWarning($"MapManager: StartPathfindingTravel blocked - player has active activity!", Logger.LogCategory.MapLog);
+            return;
+        }
+
         // Demarrer le voyage multi-segment
         isMultiSegmentTravel = true;
         currentSegmentIndex = 0;
 
-        // ⭐ NOUVEAU : Sauvegarder les informations de voyage multi-segment
-        dataManager.PlayerData.TravelFinalDestinationId = destinationLocationId;
-        dataManager.PlayerData.TravelOriginLocationId = manager.CurrentLocation.LocationID;
+        // ⭐ NOUVEAU : Persister le flag multi-segment pour restauration apres crash
+        dataManager.PlayerData.IsMultiSegmentTravel = true;
 
         // ⭐ NOUVEAU : Sauvegarder la location de depart avant de la clear
         var startLocation = manager.CurrentLocation;
 
-        // Demarrer le premier segment
+        // Demarrer le premier segment (qui configure les donnees de voyage)
         var firstSegment = currentPathDetails.Segments[0];
-        StartSegmentTravel(firstSegment, dataManager);
+        StartSegmentTravel(firstSegment, dataManager, destinationLocationId, startLocation.LocationID);
 
         Logger.LogInfo($"MapManager: Started PATHFINDING travel from {startLocation.LocationID} to {destinationLocationId} " +
                       $"({currentPathDetails.TotalCost} total steps, {currentPathDetails.Segments.Count} segments). Multi-segment data saved.", Logger.LogCategory.MapLog);
@@ -417,22 +422,25 @@ public class MapTravelService
     /// Demarre un segment individuel du voyage (multi-segment)
     /// </summary>
     private void StartSegmentTravel(MapPathfindingService.PathSegment segment,
-                                    DataManager dataManager)
+                                    DataManager dataManager,
+                                    string finalDestinationId = null,
+                                    string originalOriginId = null)
     {
         long currentSteps = dataManager.PlayerData.TotalSteps;
 
-        // ➜ NOUVEAU : l’origine de CE segment devient le From du path-segment
-        dataManager.PlayerData.TravelOriginLocationId = segment.FromLocationId;
-
-        // Configurer les donnees de voyage pour ce segment
-        dataManager.PlayerData.TravelDestinationId = segment.ToLocationId;
-        dataManager.PlayerData.TravelStartSteps = currentSteps;
-        dataManager.PlayerData.TravelRequiredSteps = segment.StepCost;
+        // Configurer les donnees de voyage pour ce segment (thread-safe)
+        dataManager.StartTravel(
+            segment.ToLocationId,
+            segment.StepCost,
+            currentSteps,
+            finalDestinationId,  // null pour segments suivants, garde la valeur existante
+            segment.FromLocationId
+        );
 
         var originLocationObj = manager.LocationRegistry.GetLocationById(segment.FromLocationId);
         eventService.TriggerTravelStarted(segment.ToLocationId, originLocationObj, segment.StepCost);
 
-        // On n’est « nulle part » pendant le deplacement
+        // On n'est « nulle part » pendant le deplacement
         if (manager.CurrentLocation != null)
             manager.SetCurrentLocation(null);
 
@@ -692,13 +700,20 @@ public class MapTravelService
     }
 
     /// <summary>
-    /// NOUVEAU : Reinitialise l'etat multi-segment
+    /// NOUVEAU : Reinitialise l'etat multi-segment (local ET persiste)
     /// </summary>
     private void ResetMultiSegmentState()
     {
         isMultiSegmentTravel = false;
         currentSegmentIndex = 0;
         currentPathDetails = null;
+
+        // ⭐ NOUVEAU : Aussi nettoyer le flag persiste
+        var dataManager = DataManager.Instance;
+        if (dataManager?.PlayerData != null)
+        {
+            dataManager.PlayerData.IsMultiSegmentTravel = false;
+        }
     }
 
     public void ClearTravelState()
@@ -782,14 +797,22 @@ public class MapTravelService
             return;
         }
 
+        // ⭐ NOUVEAU : Verifier d'abord le flag persiste
+        if (!dataManager.PlayerData.IsMultiSegmentTravel)
+        {
+            Logger.LogInfo("MapManager: Restoring direct travel (IsMultiSegmentTravel=false)", Logger.LogCategory.MapLog);
+            return;
+        }
+
         // ⭐ NOUVEAU : Utiliser les champs sauvegardes
         string finalDestination = dataManager.PlayerData.TravelFinalDestinationId;
         string originLocation = dataManager.PlayerData.TravelOriginLocationId;
 
         if (string.IsNullOrEmpty(finalDestination))
         {
-            // Pas un voyage multi-segment
-            Logger.LogInfo("MapManager: Restoring direct travel (not multi-segment)", Logger.LogCategory.MapLog);
+            // Donnees incoherentes - flag true mais pas de destination finale
+            Logger.LogWarning("MapManager: IsMultiSegmentTravel=true but no FinalDestinationId - clearing flag", Logger.LogCategory.MapLog);
+            dataManager.PlayerData.IsMultiSegmentTravel = false;
             return;
         }
 
@@ -798,6 +821,7 @@ public class MapTravelService
             Logger.LogWarning("MapManager: Cannot restore multi-segment - missing origin location", Logger.LogCategory.MapLog);
             // Nettoyer l'etat corrompu
             dataManager.PlayerData.TravelFinalDestinationId = null;
+            dataManager.PlayerData.IsMultiSegmentTravel = false;
             return;
         }
 
@@ -811,6 +835,7 @@ public class MapTravelService
             // Nettoyer l'etat corrompu
             dataManager.PlayerData.TravelFinalDestinationId = null;
             dataManager.PlayerData.TravelOriginLocationId = null;
+            dataManager.PlayerData.IsMultiSegmentTravel = false;
             return;
         }
 
@@ -830,6 +855,7 @@ public class MapTravelService
             Logger.LogWarning($"MapManager: Cannot find current segment for destination {currentDestination}", Logger.LogCategory.MapLog);
             dataManager.PlayerData.TravelFinalDestinationId = null;
             dataManager.PlayerData.TravelOriginLocationId = null;
+            dataManager.PlayerData.IsMultiSegmentTravel = false;
             return;
         }
 

@@ -17,6 +17,9 @@ public class DataManager : MonoBehaviour
     public PlayerData PlayerData { get; private set; }
     public LocalDatabase LocalDatabase => databaseService?.LocalDatabase;
 
+    // === THREAD SAFETY ===
+    private static readonly object playerDataLock = new object();
+
     // === INTERNAL SERVICES (NOUVEAU) ===
     private DataManagerDatabaseService databaseService;
     private DataManagerPlayerDataService playerDataService;
@@ -113,6 +116,152 @@ public class DataManager : MonoBehaviour
     public string GetTravelStateDebugInfo()
     {
         return playerDataService.GetTravelStateDebugInfo(PlayerData);
+    }
+
+    // === THREAD-SAFE PLAYERDATA MODIFICATION METHODS ===
+
+    /// <summary>
+    /// Thread-safe method to update step counts.
+    /// Use this instead of directly modifying PlayerData.TotalSteps/DailySteps.
+    /// </summary>
+    public void UpdateSteps(long totalSteps, long dailySteps, long lastStepsDelta = 0)
+    {
+        lock (playerDataLock)
+        {
+            PlayerData.TotalSteps = totalSteps;
+            PlayerData.DailySteps = dailySteps;
+            if (lastStepsDelta != 0)
+            {
+                PlayerData.LastStepsDelta = lastStepsDelta;
+                PlayerData.LastStepsChangeEpochMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Thread-safe method to start a travel.
+    /// Returns false if player is doing an activity (invalid state).
+    /// </summary>
+    public bool StartTravel(string destinationId, int requiredSteps, long currentSteps,
+                            string finalDestinationId = null, string originLocationId = null)
+    {
+        lock (playerDataLock)
+        {
+            // Validation: Cannot travel while doing activity
+            if (PlayerData.HasActiveActivity())
+            {
+                Logger.LogWarning("DataManager: Cannot start travel - player has active activity!", Logger.LogCategory.General);
+                return false;
+            }
+
+            PlayerData.TravelDestinationId = destinationId;
+            PlayerData.TravelStartSteps = currentSteps;
+            PlayerData.TravelRequiredSteps = requiredSteps;
+            PlayerData.TravelFinalDestinationId = finalDestinationId;
+            PlayerData.TravelOriginLocationId = originLocationId;
+
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Thread-safe method to complete current travel segment.
+    /// </summary>
+    public void CompleteTravel()
+    {
+        lock (playerDataLock)
+        {
+            PlayerData.CompleteTravel();
+        }
+    }
+
+    /// <summary>
+    /// Thread-safe method to cancel travel.
+    /// </summary>
+    public void CancelTravel()
+    {
+        lock (playerDataLock)
+        {
+            PlayerData.CancelTravel();
+        }
+    }
+
+    /// <summary>
+    /// Thread-safe method to start an activity.
+    /// Returns false if player is traveling (invalid state).
+    /// </summary>
+    public bool StartActivity(ActivityData activityData)
+    {
+        lock (playerDataLock)
+        {
+            // Validation: Cannot do activity while traveling
+            if (PlayerData.IsCurrentlyTraveling())
+            {
+                Logger.LogWarning("DataManager: Cannot start activity - player is traveling!", Logger.LogCategory.General);
+                return false;
+            }
+
+            PlayerData.CurrentActivity = activityData;
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Thread-safe method to update activity progress.
+    /// </summary>
+    public void UpdateActivity(ActivityData activityData)
+    {
+        lock (playerDataLock)
+        {
+            PlayerData.CurrentActivity = activityData;
+        }
+    }
+
+    /// <summary>
+    /// Thread-safe method to stop current activity.
+    /// </summary>
+    public void StopActivity()
+    {
+        lock (playerDataLock)
+        {
+            PlayerData.StopActivity();
+        }
+    }
+
+    /// <summary>
+    /// Thread-safe read of current state for checks.
+    /// </summary>
+    public (bool isTraveling, bool hasActivity, long totalSteps) GetCurrentState()
+    {
+        lock (playerDataLock)
+        {
+            return (PlayerData.IsCurrentlyTraveling(),
+                    PlayerData.HasActiveActivity(),
+                    PlayerData.TotalSteps);
+        }
+    }
+
+    /// <summary>
+    /// Thread-safe method to reset daily steps (called at midnight).
+    /// </summary>
+    public void ResetDailySteps(string newDateStr)
+    {
+        lock (playerDataLock)
+        {
+            PlayerData.DailySteps = 0;
+            PlayerData.LastDailyResetDate = newDateStr;
+        }
+    }
+
+    /// <summary>
+    /// Thread-safe method to update location after travel completion.
+    /// </summary>
+    public void SetCurrentLocation(string locationId)
+    {
+        lock (playerDataLock)
+        {
+            PlayerData.CurrentLocationId = locationId;
+        }
     }
 
     void OnApplicationQuit()

@@ -83,6 +83,16 @@ public static class GameConstants
     public const string DefaultStartingLocationId = "Foret_01";
 
     // ============================================
+    // INVENTORY CONTAINERS
+    // ============================================
+
+    /// <summary>Player's main inventory container ID</summary>
+    public const string ContainerIdPlayer = "player";
+
+    /// <summary>Bank storage container ID</summary>
+    public const string ContainerIdBank = "bank";
+
+    // ============================================
     // DEBUG
     // ============================================
 

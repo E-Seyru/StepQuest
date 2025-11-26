@@ -309,8 +309,8 @@ public class ActivityTimeService
         }
         else
         {
-            // Mettre a jour les donnees
-            dataManager.PlayerData.CurrentActivity = currentActivityCache;
+            // Mettre a jour les donnees (thread-safe)
+            dataManager.UpdateActivity(currentActivityCache);
 
             // Marquer comme dirty pour persistence
             ActivityManager.Instance.PersistenceService.MarkDirty();
@@ -385,8 +385,8 @@ public class ActivityTimeService
             StopTimedActivity(activityCache, variantCache);
         }
 
-        // Sauvegarder l'etat
-        DataManager.Instance.PlayerData.CurrentActivity = activityCache;
+        // Sauvegarder l'etat (thread-safe)
+        DataManager.Instance.UpdateActivity(activityCache);
         ActivityManager.Instance.PersistenceService.MarkDirty();
     }
 
@@ -396,7 +396,7 @@ public class ActivityTimeService
     private void StopTimedActivity(ActivityData activityCache, ActivityVariant variantCache)
     {
         activityCache.Clear();
-        DataManager.Instance.PlayerData.CurrentActivity = null;
+        DataManager.Instance.StopActivity();
         ActivityManager.Instance.PersistenceService.MarkDirty();
 
         // =====================================
@@ -450,9 +450,9 @@ public class ActivityTimeService
                 }
                 else
                 {
-                    // Plus de materiaux, arreter
+                    // Plus de materiaux, arreter (thread-safe)
                     currentActivityCache.Clear();
-                    DataManager.Instance.PlayerData.CurrentActivity = null;
+                    DataManager.Instance.StopActivity();
                     break;
                 }
             }
@@ -464,9 +464,9 @@ public class ActivityTimeService
             }
         }
 
-        // Mettre a jour le timestamp
+        // Mettre a jour le timestamp (thread-safe)
         currentActivityCache.LastProcessedTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-        DataManager.Instance.PlayerData.CurrentActivity = currentActivityCache;
+        DataManager.Instance.UpdateActivity(currentActivityCache);
         ActivityManager.Instance.PersistenceService.MarkDirty();
 
         if (completedCrafts > 0)
@@ -553,8 +553,12 @@ public class ActivityExecutionService
     // NOUVEAU: Methode interne pour demarrer avec ActivityData directe
     internal bool StartActivity(ActivityData activityData, ActivityVariant variant)
     {
-        // Save to player data
-        DataManager.Instance.PlayerData.CurrentActivity = activityData;
+        // Save to player data (thread-safe with validation)
+        if (!DataManager.Instance.StartActivity(activityData))
+        {
+            Logger.LogWarning("ActivityManager: Cannot start activity - player is traveling!", Logger.LogCategory.General);
+            return false;
+        }
 
         // Mark for saving
         ActivityManager.Instance.PersistenceService.MarkDirty();
@@ -581,8 +585,8 @@ public class ActivityExecutionService
             return false;
         }
 
-        // Clear the activity
-        DataManager.Instance.PlayerData.CurrentActivity = null;
+        // Clear the activity (thread-safe)
+        DataManager.Instance.StopActivity();
 
         // Mark for saving
         ActivityManager.Instance.PersistenceService.MarkDirty();
@@ -686,8 +690,8 @@ public class ActivityProgressService
             ProcessActivityTicks(completedTicks, currentActivityCache, currentVariantCache);
         }
 
-        // Update progress
-        dataManager.PlayerData.CurrentActivity = currentActivityCache;
+        // Update progress (thread-safe)
+        dataManager.UpdateActivity(currentActivityCache);
 
         // Mark as dirty for persistence
         ActivityManager.Instance.PersistenceService.MarkDirty();
@@ -728,9 +732,9 @@ public class ActivityProgressService
             Logger.LogWarning($"ActivityManager: Failed to add {totalRewards} {resourceId} to inventory - inventory full?", Logger.LogCategory.General);
         }
 
-        // Update activity progress
+        // Update activity progress (thread-safe)
         currentActivityCache.ProcessTicks(currentVariantCache, ticksCompleted);
-        DataManager.Instance.PlayerData.CurrentActivity = currentActivityCache;
+        DataManager.Instance.UpdateActivity(currentActivityCache);
 
         // Mark as dirty for persistence
         ActivityManager.Instance.PersistenceService.MarkDirty();

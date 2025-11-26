@@ -141,6 +141,15 @@ public class PlayerData
         set { _travelOriginLocationId = value; }
     }
 
+    // NOUVEAU : Flag pour voyage multi-segment (persisté pour restauration après crash)
+    private bool _isMultiSegmentTravel;
+    [Column("IsMultiSegmentTravel")]
+    public bool IsMultiSegmentTravel
+    {
+        get { return _isMultiSegmentTravel; }
+        set { _isMultiSegmentTravel = value; }
+    }
+
     // === SYSTeME D'ACTIVITe ===
 
     // Activite en cours (JSON serialise)
@@ -299,6 +308,7 @@ public class PlayerData
         _travelRequiredSteps = 0;
         _travelFinalDestinationId = null;
         _travelOriginLocationId = null;
+        _isMultiSegmentTravel = false;
 
         // Activite
         _currentActivityJson = null;
@@ -359,6 +369,7 @@ public class PlayerData
         // Clear multi-segment data too
         _travelFinalDestinationId = null;
         _travelOriginLocationId = null;
+        _isMultiSegmentTravel = false;
     }
 
     /// <summary>

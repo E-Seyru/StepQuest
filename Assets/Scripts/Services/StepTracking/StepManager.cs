@@ -166,8 +166,7 @@ public class StepManager : MonoBehaviour
         {
             Logger.LogInfo($"StepManager: [EDITOR] Day change detected. Resetting daily steps from {DailySteps} to 0", Logger.LogCategory.StepLog);
             DailySteps = 0;
-            dataManager.PlayerData.DailySteps = 0;
-            dataManager.PlayerData.LastDailyResetDate = currentDateStr;
+            dataManager.ResetDailySteps(currentDateStr);
             dataManager.SaveGame();
         }
 
@@ -236,10 +235,9 @@ public class StepManager : MonoBehaviour
         {
             Logger.LogInfo($"StepManager: **** DAY CHANGE DETECTED **** Last reset date: {lastResetDateStr}, Current date: {currentDateStr}", Logger.LogCategory.StepLog);
 
-            // Reinitialiser clairement les pas quotidiens
+            // Reinitialiser clairement les pas quotidiens (thread-safe)
             DailySteps = 0;
-            dataManager.PlayerData.DailySteps = 0;
-            dataManager.PlayerData.LastDailyResetDate = currentDateStr;
+            dataManager.ResetDailySteps(currentDateStr);
 
             // Sauvegarder immediatement
             dataManager.SaveGame();
@@ -519,10 +517,9 @@ public class StepManager : MonoBehaviour
             string currentDateStr = GetLocalDateString();
             Logger.LogInfo($"StepManager: **CRITICAL** Multi-day absence detected, forcing DailySteps reset. Setting LastDailyResetDate to {currentDateStr}", Logger.LogCategory.StepLog);
 
-            // Reinitialisation explicite
+            // Reinitialisation explicite (thread-safe)
             DailySteps = 0;
-            dataManager.PlayerData.DailySteps = 0;
-            dataManager.PlayerData.LastDailyResetDate = currentDateStr;
+            dataManager.ResetDailySteps(currentDateStr);
 
             // 1. Calculer le debut du jour courant (00:00 aujourd'hui)
             DateTime nowLocal = DateTime.Now;
@@ -606,10 +603,9 @@ public class StepManager : MonoBehaviour
             string currentDateStr = GetLocalDateString();
             Logger.LogInfo($"StepManager: **CRITICAL** Midnight boundary detected, forcing DailySteps reset. Setting LastDailyResetDate to {currentDateStr}", Logger.LogCategory.StepLog);
 
-            // Reinitialisation explicite
+            // Reinitialisation explicite (thread-safe)
             DailySteps = 0;
-            dataManager.PlayerData.DailySteps = 0;
-            dataManager.PlayerData.LastDailyResetDate = currentDateStr;
+            dataManager.ResetDailySteps(currentDateStr);
 
             // 1. Trouver le timestamp de minuit entre les deux timestamps
             long midnightMs = FindMidnightTimestamp(startTimeMs, endTimeMs);
@@ -684,9 +680,8 @@ public class StepManager : MonoBehaviour
                           $"Gap: {MIDNIGHT_SAFETY_MS * 2}ms", Logger.LogCategory.StepLog);
         }
 
-        // Sauvegarder les donnees mises a jour
-        dataManager.PlayerData.TotalSteps = TotalSteps;
-        dataManager.PlayerData.DailySteps = DailySteps;
+        // Sauvegarder les donnees mises a jour (thread-safe)
+        dataManager.UpdateSteps(TotalSteps, DailySteps);
     }
 
     // Verifier si l'intervalle chevauche minuit
@@ -848,8 +843,7 @@ public class StepManager : MonoBehaviour
                         {
                             Logger.LogInfo($"StepManager: Day change detected during step update. Resetting daily steps to 0 and updating LastDailyResetDate.", Logger.LogCategory.StepLog);
                             DailySteps = 0;
-                            dataManager.PlayerData.DailySteps = 0;
-                            dataManager.PlayerData.LastDailyResetDate = currentDateStr;
+                            dataManager.ResetDailySteps(currentDateStr);
                         }
 
                         sensorDeltaThisSession += newIndividualSensorSteps;
@@ -857,9 +851,8 @@ public class StepManager : MonoBehaviour
                         DailySteps += newIndividualSensorSteps;
                         Logger.LogInfo($"StepManager: New steps: {newIndividualSensorSteps}, TotalSteps: {TotalSteps}, DailySteps: {DailySteps}", Logger.LogCategory.StepLog);
 
-                        // Sauvegarde periodique au lieu de sauvegarde a chaque mise a jour
-                        dataManager.PlayerData.TotalSteps = TotalSteps;
-                        dataManager.PlayerData.DailySteps = DailySteps;
+                        // Sauvegarde periodique au lieu de sauvegarde a chaque mise a jour (thread-safe)
+                        dataManager.UpdateSteps(TotalSteps, DailySteps);
 
                         // Mettre a jour les timestamps de derniere synchronisation et pause
                         UpdateLastDirectSensorTimestamp();
@@ -917,9 +910,8 @@ public class StepManager : MonoBehaviour
         Logger.LogInfo($"StepManager: Updated LastApiCatchUpEpochMs to {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)} when going to background", Logger.LogCategory.StepLog);
 #endif
 
-        // Force une sauvegarde a chaque pause/fermeture pour s'assurer que les donnees sont persistees
-        dataManager.PlayerData.TotalSteps = TotalSteps;
-        dataManager.PlayerData.DailySteps = DailySteps;
+        // Force une sauvegarde a chaque pause/fermeture pour s'assurer que les donnees sont persistees (thread-safe)
+        dataManager.UpdateSteps(TotalSteps, DailySteps);
         Logger.LogInfo($"StepManager: Saving steps. Final TotalSteps: {TotalSteps}, DailySteps: {DailySteps}, " +
                        $"LastPauseEpochMs: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}", Logger.LogCategory.StepLog);
         dataManager.SaveGame();
