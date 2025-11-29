@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec7b6067a12eeaf4fb7f25558267c484, type: 3}
+  m_Name: Burn
+  m_EditorClassIdentifier: 
+  EffectID: burn
+  EffectName: Burn
+  Description: Fire damage over time. Reapplying refreshes duration.
+  EffectIcon: {fileID: 349381597, guid: d09adb82776022945b3e772641a9ea4b, type: 3}
+  EffectColor: {r: 1, g: 0.4, b: 0, a: 1}
+  EffectType: 1
+  Behavior: 0
+  Stacking: 1
+  Duration: 6
+  TickInterval: 2
+  BaseValue: 3
+  ScalesWithStacks: 0
+  MaxStacks: 1
+  PreventsActions: 0
+  RemovedOnDamage: 0
+  DeveloperNotes: 

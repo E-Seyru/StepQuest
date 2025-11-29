@@ -17,7 +17,7 @@ MonoBehaviour:
   Description: A fierce predator with sharp fangs.
   EnemySprite: {fileID: 0}
   EnemyColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  MaxHealth: 70
+  MaxHealth: 500
   Abilities:
   - {fileID: 11400000, guid: 7dab9f0a43187ea469e19dd415281480, type: 2}
   - {fileID: 11400000, guid: 7dab9f0a43187ea469e19dd415281480, type: 2}

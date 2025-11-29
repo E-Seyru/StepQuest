@@ -222,7 +222,7 @@ GameObject:
   - component: {fileID: 8224305972043345368}
   - component: {fileID: -1794253967170025226}
   m_Layer: 5
-  m_Name: PoisonPrefab
+  m_Name: PoisonPrefab 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

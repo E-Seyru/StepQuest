@@ -47,6 +47,8 @@ public class CombatPanelUI : MonoBehaviour
     [SerializeField] private GameObject healPopupPrefab;
     [SerializeField] private GameObject poisonPopupPrefab;
     [SerializeField] private GameObject shieldPopupPrefab;
+    [SerializeField] private GameObject burnPopupPrefab;
+    [SerializeField] private GameObject regenPopupPrefab;
 
     [Header("Combat Log")]
     [SerializeField] private TextMeshProUGUI combatLogText;
@@ -78,6 +80,7 @@ public class CombatPanelUI : MonoBehaviour
         EventBus.Subscribe<CombatHealthChangedEvent>(OnHealthChanged);
         EventBus.Subscribe<CombatAbilityUsedEvent>(OnAbilityUsed);
         EventBus.Subscribe<CombatPoisonTickEvent>(OnPoisonTick);
+        EventBus.Subscribe<StatusEffectTickEvent>(OnStatusEffectTick);
 
         // Setup flee button
         if (fleeButton != null)
@@ -112,6 +115,7 @@ public class CombatPanelUI : MonoBehaviour
         EventBus.Unsubscribe<CombatHealthChangedEvent>(OnHealthChanged);
         EventBus.Unsubscribe<CombatAbilityUsedEvent>(OnAbilityUsed);
         EventBus.Unsubscribe<CombatPoisonTickEvent>(OnPoisonTick);
+        EventBus.Unsubscribe<StatusEffectTickEvent>(OnStatusEffectTick);
 
         if (fleeButton != null)
         {
@@ -280,6 +284,43 @@ public class CombatPanelUI : MonoBehaviour
         // Update poison stacks display
         var targetStatus = eventData.IsPlayer ? playerStatusEffects : enemyStatusEffects;
         if (targetStatus != null) targetStatus.UpdateEffect(StatusEffectType.Poison, eventData.RemainingStacks);
+    }
+
+    private void OnStatusEffectTick(StatusEffectTickEvent eventData)
+    {
+        if (eventData.Effect == null) return;
+
+        // Skip poison - handled by legacy OnPoisonTick for backwards compatibility
+        if (eventData.Effect.EffectType == StatusEffectType.Poison) return;
+
+        RectTransform targetImage = eventData.IsTargetPlayer ? playerImageTransform : enemyImageTransform;
+        string targetName = eventData.IsTargetPlayer ? "Vous" : (currentEnemy?.GetDisplayName() ?? "Ennemi");
+
+        // Handle different effect types
+        if (eventData.Effect.IsDamageOverTime)
+        {
+            // Burn, Bleed, etc.
+            string effectName = eventData.Effect.GetDisplayName();
+            string colorHex = ColorUtility.ToHtmlStringRGB(eventData.Effect.EffectColor);
+            AddToCombatLog($"{targetName} {(eventData.IsTargetPlayer ? "subissez" : "subit")} <color=#{colorHex}>{eventData.Value:F0}</color> degats de {effectName} !");
+
+            // Use burn popup if available, otherwise damage popup
+            GameObject popup = eventData.Effect.EffectType == StatusEffectType.Burn && burnPopupPrefab != null
+                ? burnPopupPrefab
+                : damagePopupPrefab;
+            SpawnPopup(popup, eventData.Value, targetImage);
+        }
+        else if (eventData.Effect.IsHealOverTime)
+        {
+            // Regeneration, etc.
+            string effectName = eventData.Effect.GetDisplayName();
+            string colorHex = ColorUtility.ToHtmlStringRGB(eventData.Effect.EffectColor);
+            AddToCombatLog($"{targetName} {(eventData.IsTargetPlayer ? "recuperez" : "recupere")} <color=#{colorHex}>{eventData.Value:F0}</color> PV ({effectName}) !");
+
+            // Use regen popup if available, otherwise heal popup
+            GameObject popup = regenPopupPrefab != null ? regenPopupPrefab : healPopupPrefab;
+            SpawnPopup(popup, eventData.Value, targetImage);
+        }
     }
 
     // === UI UPDATE METHODS ===
@@ -501,18 +542,7 @@ public class CombatPanelUI : MonoBehaviour
     }
 }
 
-/// <summary>
-/// Types of status effects that can be displayed
-/// </summary>
-public enum StatusEffectType
-{
-    Poison,
-    Shield,
-    Burn,
-    Stun,
-    Bleed
-    // Add more as needed
-}
+// StatusEffectType enum moved to StatusEffectDefinition.cs
 
 /// <summary>
 /// Maps a status effect type to its UI prefab

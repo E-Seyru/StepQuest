@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec7b6067a12eeaf4fb7f25558267c484, type: 3}
+  m_Name: Poison
+  m_EditorClassIdentifier: 
+  EffectID: poison
+  EffectName: Poison
+  Description: Deals damage over time. Stacks increase damage per tick.
+  EffectIcon: {fileID: -216302732, guid: d09adb82776022945b3e772641a9ea4b, type: 3}
+  EffectColor: {r: 0.5, g: 0, b: 0.5, a: 1}
+  EffectType: 0
+  Behavior: 0
+  Stacking: 0
+  Duration: 10
+  TickInterval: 1
+  BaseValue: 1
+  ScalesWithStacks: 1
+  MaxStacks: 10
+  PreventsActions: 0
+  RemovedOnDamage: 0
+  DeveloperNotes: 

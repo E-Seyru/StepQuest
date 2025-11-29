@@ -434,4 +434,128 @@ namespace CombatEvents
             return $"{base.ToString()} - {source}'s {Ability?.GetDisplayName() ?? "Unknown"} cooldown started ({CooldownDuration}s)";
         }
     }
+
+    // === NEW STATUS EFFECT EVENTS (Generic System) ===
+
+    /// <summary>
+    /// Publie quand un effet de statut est applique a un combattant
+    /// </summary>
+    public class StatusEffectAppliedEvent : EventBusEvent
+    {
+        public bool IsTargetPlayer { get; }
+        public StatusEffectDefinition Effect { get; }
+        public int Stacks { get; }
+        public int TotalStacks { get; }
+        public bool WasAppliedByPlayer { get; }
+
+        public StatusEffectAppliedEvent(bool isTargetPlayer, StatusEffectDefinition effect, int stacks, int totalStacks, bool wasAppliedByPlayer)
+        {
+            IsTargetPlayer = isTargetPlayer;
+            Effect = effect;
+            Stacks = stacks;
+            TotalStacks = totalStacks;
+            WasAppliedByPlayer = wasAppliedByPlayer;
+        }
+
+        public override string ToString()
+        {
+            var target = IsTargetPlayer ? "Player" : "Enemy";
+            var source = WasAppliedByPlayer ? "Player" : "Enemy";
+            return $"{base.ToString()} - {source} applied {Effect?.GetDisplayName() ?? "Unknown"} ({Stacks} stacks) to {target}";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand un effet de statut fait un tick (degats/soin periodique)
+    /// Remplace CombatPoisonTickEvent pour un systeme generique
+    /// </summary>
+    public class StatusEffectTickEvent : EventBusEvent
+    {
+        public bool IsTargetPlayer { get; }
+        public StatusEffectDefinition Effect { get; }
+        public float Value { get; }
+        public int RemainingStacks { get; }
+        public float RemainingDuration { get; }
+        public bool IsDamage { get; }
+
+        public StatusEffectTickEvent(bool isTargetPlayer, StatusEffectDefinition effect, float value, int remainingStacks, float remainingDuration)
+        {
+            IsTargetPlayer = isTargetPlayer;
+            Effect = effect;
+            Value = value;
+            RemainingStacks = remainingStacks;
+            RemainingDuration = remainingDuration;
+            IsDamage = effect?.IsDamageOverTime ?? false;
+        }
+
+        public override string ToString()
+        {
+            var target = IsTargetPlayer ? "Player" : "Enemy";
+            var effectType = IsDamage ? "damage" : "healing";
+            return $"{base.ToString()} - {target} {effectType} from {Effect?.GetDisplayName() ?? "Unknown"}: {Value} ({RemainingStacks} stacks, {RemainingDuration:F1}s left)";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand un effet de statut est retire d'un combattant
+    /// </summary>
+    public class StatusEffectRemovedEvent : EventBusEvent
+    {
+        public bool IsTargetPlayer { get; }
+        public StatusEffectDefinition Effect { get; }
+        public string RemovalReason { get; } // "expired", "cleansed", "combat_ended"
+
+        public StatusEffectRemovedEvent(bool isTargetPlayer, StatusEffectDefinition effect, string removalReason = "expired")
+        {
+            IsTargetPlayer = isTargetPlayer;
+            Effect = effect;
+            RemovalReason = removalReason;
+        }
+
+        public override string ToString()
+        {
+            var target = IsTargetPlayer ? "Player" : "Enemy";
+            return $"{base.ToString()} - {Effect?.GetDisplayName() ?? "Unknown"} removed from {target} ({RemovalReason})";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand un combattant est etourdi (stun applique)
+    /// </summary>
+    public class CombatStunAppliedEvent : EventBusEvent
+    {
+        public bool IsTargetPlayer { get; }
+        public float Duration { get; }
+
+        public CombatStunAppliedEvent(bool isTargetPlayer, float duration)
+        {
+            IsTargetPlayer = isTargetPlayer;
+            Duration = duration;
+        }
+
+        public override string ToString()
+        {
+            var target = IsTargetPlayer ? "Player" : "Enemy";
+            return $"{base.ToString()} - {target} stunned for {Duration}s";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand un stun se termine
+    /// </summary>
+    public class CombatStunEndedEvent : EventBusEvent
+    {
+        public bool IsTargetPlayer { get; }
+
+        public CombatStunEndedEvent(bool isTargetPlayer)
+        {
+            IsTargetPlayer = isTargetPlayer;
+        }
+
+        public override string ToString()
+        {
+            var target = IsTargetPlayer ? "Player" : "Enemy";
+            return $"{base.ToString()} - {target} stun ended";
+        }
+    }
 }

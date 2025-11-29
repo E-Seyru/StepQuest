@@ -10,7 +10,7 @@ using UnityEngine;
 /// <summary>
 /// Manages auto-battler combat with cooldown-based abilities.
 /// Combat runs automatically - abilities trigger when their cooldown is ready.
-/// Designed to continue running in background.
+/// Uses service-based architecture for maintainability.
 /// </summary>
 public class CombatManager : MonoBehaviour
 {
@@ -18,35 +18,50 @@ public class CombatManager : MonoBehaviour
 
     [Header("Settings")]
     [SerializeField] private bool enableDebugLogs = false;
-    [SerializeField] private float poisonTickInterval = 1f;
 
     [Header("Player Stats (Temporary - will come from equipment later)")]
     [SerializeField] private float playerMaxHealth = 100f;
     [SerializeField] private List<AbilityDefinition> playerAbilities = new List<AbilityDefinition>();
 
+    [Header("Registries")]
+    [SerializeField] private StatusEffectRegistry statusEffectRegistry;
+
+    // === SERVICES ===
+    private CombatEventService _eventService;
+    private CombatStatusEffectService _statusEffectService;
+    private CombatAbilityService _abilityService;
+    private CombatExecutionService _executionService;
+
     // === RUNTIME STATE ===
-    private CombatData currentCombat;
-    private EnemyDefinition currentEnemy;
-    private bool isCombatActive = false;
+    private Combatant _player;
+    private Combatant _enemy;
+    private EnemyDefinition _currentEnemyDef;
+    private CombatData _legacyCombatData; // For backwards compatibility with existing UI
+    private bool _isCombatActive = false;
+    private long _combatStartTimeMs;
 
     // Coroutine references for cleanup
-    private List<Coroutine> abilityCoroutines = new List<Coroutine>();
-    private Coroutine playerPoisonCoroutine;
-    private Coroutine enemyPoisonCoroutine;
+    private List<Coroutine> _abilityCoroutines = new List<Coroutine>();
+    private Coroutine _statusEffectCoroutine;
 
     // Instance counting for duplicate abilities
-    private Dictionary<AbilityDefinition, int> abilityInstanceCounts = new Dictionary<AbilityDefinition, int>();
+    private Dictionary<AbilityDefinition, int> _abilityInstanceCounts = new Dictionary<AbilityDefinition, int>();
 
     // === PUBLIC ACCESSORS ===
-    public bool IsCombatActive => isCombatActive;
-    public CombatData CurrentCombat => currentCombat;
-    public EnemyDefinition CurrentEnemy => currentEnemy;
+    public bool IsCombatActive => _isCombatActive;
+    public CombatData CurrentCombat => _legacyCombatData; // Legacy accessor
+    public EnemyDefinition CurrentEnemy => _currentEnemyDef;
+    public ICombatant Player => _player;
+    public ICombatant Enemy => _enemy;
+
+    // === UNITY LIFECYCLE ===
 
     void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
+            InitializeServices();
             Logger.LogInfo("CombatManager: Initialized", Logger.LogCategory.General);
         }
         else
@@ -56,14 +71,30 @@ public class CombatManager : MonoBehaviour
         }
     }
 
+    void Start()
+    {
+        // Initialize status effect registry
+        if (statusEffectRegistry != null)
+        {
+            statusEffectRegistry.Initialize();
+        }
+    }
+
     void OnDestroy()
     {
-        // Cleanup when destroyed
-        if (isCombatActive)
+        if (_isCombatActive)
         {
             StopAllCoroutines();
-            isCombatActive = false;
+            _isCombatActive = false;
         }
+    }
+
+    private void InitializeServices()
+    {
+        _eventService = new CombatEventService(enableDebugLogs);
+        _statusEffectService = new CombatStatusEffectService(_eventService, enableDebugLogs);
+        _abilityService = new CombatAbilityService(_eventService, _statusEffectService, enableDebugLogs);
+        _executionService = new CombatExecutionService(_eventService, _statusEffectService, enableDebugLogs);
     }
 
     // === PUBLIC API ===
@@ -79,52 +110,48 @@ public class CombatManager : MonoBehaviour
             return false;
         }
 
-        if (isCombatActive)
+        if (!_executionService.CanStartCombat(_isCombatActive))
         {
-            Logger.LogWarning("CombatManager: Combat already active!", Logger.LogCategory.General);
+            Logger.LogWarning("CombatManager: Cannot start combat in current state", Logger.LogCategory.General);
             return false;
         }
 
-        // Check game state
-        var gameState = GameManager.Instance?.CurrentState;
-        if (gameState == GameState.Traveling)
+        if (!_executionService.ValidateEnemy(enemy))
         {
-            Logger.LogWarning("CombatManager: Cannot start combat while traveling", Logger.LogCategory.General);
+            Logger.LogError("CombatManager: Invalid enemy definition", Logger.LogCategory.General);
             return false;
         }
 
-        if (gameState == GameState.DoingActivity)
-        {
-            // Stop current activity before combat
-            ActivityManager.Instance?.StopActivity();
-        }
+        // Stop current activity if any
+        _executionService.StopCurrentActivity();
 
-        // Initialize combat
-        currentEnemy = enemy;
-        string locationId = DataManager.Instance?.PlayerData?.CurrentLocationId ?? "unknown";
+        // Create combatants
+        var combatants = _executionService.CreateCombatants(enemy, playerMaxHealth, playerAbilities);
+        _player = combatants.player;
+        _enemy = combatants.enemy;
+        _currentEnemyDef = enemy;
 
-        currentCombat = new CombatData(
-            enemy.EnemyID,
-            locationId,
-            playerMaxHealth,
-            enemy.MaxHealth
-        );
+        // Create legacy CombatData for backwards compatibility
+        string locationId = _executionService.GetCurrentLocationId();
+        _legacyCombatData = _executionService.CreateCombatData(enemy, locationId, playerMaxHealth);
 
-        isCombatActive = true;
+        _isCombatActive = true;
+        _combatStartTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
-        // Clear ability instance counts
-        abilityInstanceCounts.Clear();
+        // Clear instance counts
+        _abilityInstanceCounts.Clear();
 
         // Publish combat started event
-        EventBus.Publish(new CombatStartedEvent(currentCombat, currentEnemy));
+        _executionService.PublishCombatStarted(_legacyCombatData, enemy);
 
         if (enableDebugLogs)
         {
             Logger.LogInfo($"CombatManager: Combat started vs {enemy.GetDisplayName()}", Logger.LogCategory.General);
         }
 
-        // Start ability cycles
+        // Start ability cycles and status effect processing
         StartAbilityCycles();
+        StartStatusEffectProcessing();
 
         return true;
     }
@@ -134,7 +161,7 @@ public class CombatManager : MonoBehaviour
     /// </summary>
     public void FleeCombat()
     {
-        if (!isCombatActive)
+        if (!_isCombatActive)
         {
             Logger.LogWarning("CombatManager: No active combat to flee from", Logger.LogCategory.General);
             return;
@@ -142,13 +169,9 @@ public class CombatManager : MonoBehaviour
 
         if (enableDebugLogs)
         {
-            Logger.LogInfo($"CombatManager: Player fled from combat vs {currentEnemy?.GetDisplayName()}", Logger.LogCategory.General);
+            Logger.LogInfo($"CombatManager: Player fled from combat vs {_currentEnemyDef?.GetDisplayName()}", Logger.LogCategory.General);
         }
 
-        // Publish fled event
-        EventBus.Publish(new CombatFledEvent(currentEnemy));
-
-        // End combat with no rewards
         EndCombat(false, "fled");
     }
 
@@ -157,13 +180,7 @@ public class CombatManager : MonoBehaviour
     /// </summary>
     public bool CanStartCombat()
     {
-        if (isCombatActive) return false;
-
-        var gameState = GameManager.Instance?.CurrentState;
-        if (gameState == GameState.Traveling) return false;
-        if (gameState == GameState.InCombat) return false;
-
-        return true;
+        return _executionService.CanStartCombat(_isCombatActive);
     }
 
     /// <summary>
@@ -171,15 +188,10 @@ public class CombatManager : MonoBehaviour
     /// </summary>
     public string GetDebugInfo()
     {
-        if (!isCombatActive || currentCombat == null)
+        if (!_isCombatActive || _player == null || _enemy == null)
             return "No active combat";
 
-        return $"Combat vs {currentEnemy?.GetDisplayName() ?? "Unknown"}\n" +
-               $"Player: {currentCombat.PlayerCurrentHealth:F0}/{currentCombat.PlayerMaxHealth:F0} HP " +
-               $"(Shield: {currentCombat.PlayerCurrentShield:F0}, Poison: {currentCombat.PlayerPoisonStacks:F0})\n" +
-               $"Enemy: {currentCombat.EnemyCurrentHealth:F0}/{currentCombat.EnemyMaxHealth:F0} HP " +
-               $"(Shield: {currentCombat.EnemyCurrentShield:F0}, Poison: {currentCombat.EnemyPoisonStacks:F0})\n" +
-               $"Duration: {TimeSpan.FromMilliseconds(currentCombat.GetElapsedTimeMs()).TotalSeconds:F1}s";
+        return _executionService.GetDebugInfo(_player, _enemy, _currentEnemyDef, _combatStartTimeMs);
     }
 
     // === TEMPORARY: Player ability management (will be replaced by AbilityManager later) ===
@@ -212,8 +224,8 @@ public class CombatManager : MonoBehaviour
 
     private void StartAbilityCycles()
     {
-        abilityCoroutines.Clear();
-        abilityInstanceCounts.Clear();
+        _abilityCoroutines.Clear();
+        _abilityInstanceCounts.Clear();
 
         // Start player ability cycles
         foreach (var ability in playerAbilities)
@@ -221,38 +233,43 @@ public class CombatManager : MonoBehaviour
             if (ability == null) continue;
             int instanceIndex = GetAndIncrementInstanceCount(ability);
             var coroutine = StartCoroutine(ProcessAbilityCycle(ability, true, instanceIndex));
-            abilityCoroutines.Add(coroutine);
+            _abilityCoroutines.Add(coroutine);
         }
 
         // Reset instance counts for enemy abilities
-        abilityInstanceCounts.Clear();
+        _abilityInstanceCounts.Clear();
 
         // Start enemy ability cycles
-        if (currentEnemy?.Abilities != null)
+        if (_currentEnemyDef?.Abilities != null)
         {
-            foreach (var ability in currentEnemy.Abilities)
+            foreach (var ability in _currentEnemyDef.Abilities)
             {
                 if (ability == null) continue;
                 int instanceIndex = GetAndIncrementInstanceCount(ability);
                 var coroutine = StartCoroutine(ProcessAbilityCycle(ability, false, instanceIndex));
-                abilityCoroutines.Add(coroutine);
+                _abilityCoroutines.Add(coroutine);
             }
         }
 
         if (enableDebugLogs)
         {
-            Logger.LogInfo($"CombatManager: Started {playerAbilities.Count} player abilities and {currentEnemy?.Abilities?.Count ?? 0} enemy abilities", Logger.LogCategory.General);
+            Logger.LogInfo($"CombatManager: Started {playerAbilities.Count} player abilities and {_currentEnemyDef?.Abilities?.Count ?? 0} enemy abilities", Logger.LogCategory.General);
         }
+    }
+
+    private void StartStatusEffectProcessing()
+    {
+        _statusEffectCoroutine = StartCoroutine(ProcessStatusEffects());
     }
 
     private int GetAndIncrementInstanceCount(AbilityDefinition ability)
     {
-        if (!abilityInstanceCounts.ContainsKey(ability))
+        if (!_abilityInstanceCounts.ContainsKey(ability))
         {
-            abilityInstanceCounts[ability] = 0;
+            _abilityInstanceCounts[ability] = 0;
         }
-        int currentCount = abilityInstanceCounts[ability];
-        abilityInstanceCounts[ability]++;
+        int currentCount = _abilityInstanceCounts[ability];
+        _abilityInstanceCounts[ability]++;
         return currentCount;
     }
 
@@ -260,180 +277,85 @@ public class CombatManager : MonoBehaviour
     {
         if (ability == null) yield break;
 
+        ICombatant source = isPlayerAbility ? _player : _enemy;
+        ICombatant target = isPlayerAbility ? _enemy : _player;
+
         if (enableDebugLogs)
         {
-            string source = isPlayerAbility ? "Player" : "Enemy";
-            Logger.LogInfo($"CombatManager: Starting ability cycle for {source}'s {ability.GetDisplayName()} (instance {instanceIndex})", Logger.LogCategory.General);
+            Logger.LogInfo($"CombatManager: Starting ability cycle for {source.DisplayName}'s {ability.GetDisplayName()} (instance {instanceIndex})", Logger.LogCategory.General);
         }
 
-        while (isCombatActive && !currentCombat.IsCombatOver())
+        while (_isCombatActive && !_executionService.IsCombatOver(_player, _enemy))
         {
-            // Publish cooldown started event
-            EventBus.Publish(new CombatAbilityCooldownStartedEvent(isPlayerAbility, ability, instanceIndex, ability.Cooldown));
+            // Calculate cooldown with speed modifier
+            var stats = source.GetModifiedStats();
+            float adjustedCooldown = _abilityService.GetAdjustedCooldown(ability.Cooldown, stats);
 
-            // Wait for cooldown
-            yield return new WaitForSeconds(ability.Cooldown);
+            // Publish cooldown started event
+            _eventService.PublishAbilityCooldownStarted(isPlayerAbility, ability, instanceIndex, adjustedCooldown);
+
+            // Wait for cooldown, checking for stun
+            float elapsedTime = 0f;
+            while (elapsedTime < adjustedCooldown)
+            {
+                if (!_isCombatActive || _executionService.IsCombatOver(_player, _enemy))
+                    yield break;
+
+                // If stunned, pause cooldown
+                if (source.IsStunned)
+                {
+                    yield return null;
+                    continue;
+                }
+
+                yield return null;
+                elapsedTime += Time.deltaTime;
+            }
 
             // Check if combat is still active
-            if (!isCombatActive || currentCombat.IsCombatOver()) yield break;
-
-            // Process ability effect
-            ProcessAbilityEffect(ability, isPlayerAbility, instanceIndex);
-
-            // Check for combat end
-            CheckCombatEnd();
-        }
-    }
-
-    private void ProcessAbilityEffect(AbilityDefinition ability, bool isPlayerAbility, int instanceIndex)
-    {
-        if (ability == null || currentCombat == null) return;
-
-        float damageDealt = 0;
-        float healingDone = 0;
-        float shieldAdded = 0;
-        float poisonApplied = 0;
-
-        // Process Damage
-        if (ability.HasEffect(AbilityEffectType.Damage) && ability.DamageAmount > 0)
-        {
-            if (isPlayerAbility)
-            {
-                damageDealt = currentCombat.DamageEnemy(ability.DamageAmount);
-                PublishHealthChanged(false);
-            }
-            else
-            {
-                damageDealt = currentCombat.DamagePlayer(ability.DamageAmount);
-                PublishHealthChanged(true);
-            }
-        }
-
-        // Process Heal
-        if (ability.HasEffect(AbilityEffectType.Heal) && ability.HealAmount > 0)
-        {
-            if (isPlayerAbility)
-            {
-                healingDone = currentCombat.HealPlayer(ability.HealAmount);
-                PublishHealthChanged(true);
-            }
-            else
-            {
-                healingDone = currentCombat.HealEnemy(ability.HealAmount);
-                PublishHealthChanged(false);
-            }
-        }
-
-        // Process Poison
-        if (ability.HasEffect(AbilityEffectType.Poison) && ability.PoisonAmount > 0)
-        {
-            poisonApplied = ability.PoisonAmount;
-            if (isPlayerAbility)
-            {
-                currentCombat.EnemyPoisonStacks += poisonApplied;
-                StartEnemyPoisonIfNeeded();
-            }
-            else
-            {
-                currentCombat.PlayerPoisonStacks += poisonApplied;
-                StartPlayerPoisonIfNeeded();
-            }
-        }
-
-        // Process Shield
-        if (ability.HasEffect(AbilityEffectType.Shield) && ability.ShieldAmount > 0)
-        {
-            shieldAdded = ability.ShieldAmount;
-            if (isPlayerAbility)
-            {
-                currentCombat.PlayerCurrentShield += shieldAdded;
-                PublishHealthChanged(true);
-            }
-            else
-            {
-                currentCombat.EnemyCurrentShield += shieldAdded;
-                PublishHealthChanged(false);
-            }
-        }
-
-        // Publish ability used event
-        EventBus.Publish(new CombatAbilityUsedEvent(
-            isPlayerAbility, ability, instanceIndex,
-            damageDealt, healingDone, shieldAdded, poisonApplied
-        ));
-
-        if (enableDebugLogs)
-        {
-            string source = isPlayerAbility ? "Player" : "Enemy";
-            Logger.LogInfo($"CombatManager: {source} used {ability.GetDisplayName()} - Damage: {damageDealt}, Heal: {healingDone}, Shield: {shieldAdded}, Poison: {poisonApplied}", Logger.LogCategory.General);
-        }
-    }
-
-    // === POISON SYSTEM ===
-
-    private void StartPlayerPoisonIfNeeded()
-    {
-        if (playerPoisonCoroutine == null && currentCombat.PlayerPoisonStacks > 0)
-        {
-            playerPoisonCoroutine = StartCoroutine(ProcessPoisonTick(true));
-        }
-    }
-
-    private void StartEnemyPoisonIfNeeded()
-    {
-        if (enemyPoisonCoroutine == null && currentCombat.EnemyPoisonStacks > 0)
-        {
-            enemyPoisonCoroutine = StartCoroutine(ProcessPoisonTick(false));
-        }
-    }
-
-    private IEnumerator ProcessPoisonTick(bool isPlayer)
-    {
-        while (isCombatActive && !currentCombat.IsCombatOver())
-        {
-            float poisonStacks = isPlayer ? currentCombat.PlayerPoisonStacks : currentCombat.EnemyPoisonStacks;
-
-            if (poisonStacks <= 0)
-            {
-                // Poison ended
-                if (isPlayer)
-                    playerPoisonCoroutine = null;
-                else
-                    enemyPoisonCoroutine = null;
+            if (!_isCombatActive || _executionService.IsCombatOver(_player, _enemy))
                 yield break;
-            }
 
-            yield return new WaitForSeconds(poisonTickInterval);
+            // Check if stunned (can't use ability while stunned)
+            if (source.IsStunned)
+                continue;
 
-            if (!isCombatActive || currentCombat.IsCombatOver()) yield break;
+            // Execute ability
+            _abilityService.ExecuteAbility(ability, source, target, instanceIndex);
 
-            // Re-read stacks after wait (may have changed if more poison was added)
-            poisonStacks = isPlayer ? currentCombat.PlayerPoisonStacks : currentCombat.EnemyPoisonStacks;
-
-            // Apply poison damage
-            float poisonDamage = poisonStacks;
-            if (isPlayer)
-            {
-                currentCombat.DamagePlayer(poisonDamage);
-                PublishHealthChanged(true);
-            }
-            else
-            {
-                currentCombat.DamageEnemy(poisonDamage);
-                PublishHealthChanged(false);
-            }
-
-            // Publish poison tick event
-            EventBus.Publish(new CombatPoisonTickEvent(isPlayer, poisonDamage, poisonStacks));
-
-            if (enableDebugLogs)
-            {
-                string target = isPlayer ? "Player" : "Enemy";
-                Logger.LogInfo($"CombatManager: {target} took {poisonDamage} poison damage", Logger.LogCategory.General);
-            }
+            // Update legacy combat data for backwards compatibility
+            SyncLegacyCombatData();
 
             // Check for combat end
             CheckCombatEnd();
+        }
+    }
+
+    private IEnumerator ProcessStatusEffects()
+    {
+        while (_isCombatActive && !_executionService.IsCombatOver(_player, _enemy))
+        {
+            float deltaTime = Time.deltaTime;
+
+            // Process player status effects
+            if (_player != null)
+            {
+                _statusEffectService.ProcessTicks(_player, deltaTime);
+            }
+
+            // Process enemy status effects
+            if (_enemy != null)
+            {
+                _statusEffectService.ProcessTicks(_enemy, deltaTime);
+            }
+
+            // Sync legacy data
+            SyncLegacyCombatData();
+
+            // Check for combat end
+            CheckCombatEnd();
+
+            yield return null;
         }
     }
 
@@ -441,121 +363,94 @@ public class CombatManager : MonoBehaviour
 
     private void CheckCombatEnd()
     {
-        if (!isCombatActive || currentCombat == null) return;
+        if (!_isCombatActive) return;
 
-        if (currentCombat.IsCombatOver())
+        if (_executionService.IsCombatOver(_player, _enemy))
         {
-            bool playerWon = currentCombat.DidPlayerWin();
+            bool playerWon = _executionService.DidPlayerWin(_player, _enemy);
             EndCombat(playerWon, playerWon ? "victory" : "defeat");
         }
     }
 
     private void EndCombat(bool playerWon, string reason)
     {
-        if (!isCombatActive) return;
+        if (!_isCombatActive) return;
 
-        isCombatActive = false;
+        _isCombatActive = false;
 
         // Stop all coroutines
         StopAllCoroutines();
-        abilityCoroutines.Clear();
-        playerPoisonCoroutine = null;
-        enemyPoisonCoroutine = null;
+        _abilityCoroutines.Clear();
+        _statusEffectCoroutine = null;
 
-        // Calculate rewards
-        int experienceGained = 0;
-        Dictionary<ItemDefinition, int> lootDropped = new Dictionary<ItemDefinition, int>();
-
-        if (playerWon && currentEnemy != null)
-        {
-            experienceGained = currentEnemy.ExperienceReward;
-            lootDropped = currentEnemy.GenerateLoot();
-
-            // Add loot to inventory
-            var inventoryManager = InventoryManager.Instance;
-            if (inventoryManager != null)
-            {
-                foreach (var loot in lootDropped)
-                {
-                    if (loot.Key != null && loot.Value > 0)
-                    {
-                        inventoryManager.AddItem("player", loot.Key.ItemID, loot.Value);
-                    }
-                }
-            }
-
-            // TODO: Add experience to combat skill when skill system is integrated
-        }
-
-        // Publish combat ended event
-        EventBus.Publish(new CombatEndedEvent(playerWon, currentEnemy, experienceGained, lootDropped, reason));
+        // End combat through service (handles rewards and events)
+        _executionService.EndCombat(playerWon, reason, _currentEnemyDef, _player, _enemy);
 
         if (enableDebugLogs)
         {
             string result = playerWon ? "Victory" : (reason == "fled" ? "Fled" : "Defeat");
-            Logger.LogInfo($"CombatManager: Combat ended - {result} vs {currentEnemy?.GetDisplayName()}", Logger.LogCategory.General);
+            Logger.LogInfo($"CombatManager: Combat ended - {result} vs {_currentEnemyDef?.GetDisplayName()}", Logger.LogCategory.General);
         }
 
         // Clear combat state
-        currentCombat = null;
-        currentEnemy = null;
+        _legacyCombatData = null;
+        _currentEnemyDef = null;
+        _player = null;
+        _enemy = null;
     }
 
-    // === HELPER METHODS ===
+    // === LEGACY COMPATIBILITY ===
 
-    private void PublishHealthChanged(bool isPlayer)
+    /// <summary>
+    /// Sync new combatant data to legacy CombatData for backwards compatibility
+    /// </summary>
+    private void SyncLegacyCombatData()
     {
-        if (currentCombat == null) return;
+        if (_legacyCombatData == null || _player == null || _enemy == null) return;
 
-        if (isPlayer)
+        // Sync player state
+        _legacyCombatData.PlayerCurrentHealth = _player.CurrentHealth;
+        _legacyCombatData.PlayerCurrentShield = _player.CurrentShield;
+
+        // Sync poison stacks (for legacy UI)
+        float playerPoisonStacks = 0;
+        foreach (var effect in _player.ActiveEffects)
         {
-            EventBus.Publish(new CombatHealthChangedEvent(
-                true,
-                currentCombat.PlayerCurrentHealth,
-                currentCombat.PlayerMaxHealth,
-                currentCombat.PlayerCurrentShield
-            ));
+            if (effect != null && effect.EffectType == StatusEffectType.Poison)
+            {
+                playerPoisonStacks += effect.CurrentStacks;
+            }
         }
-        else
+        _legacyCombatData.PlayerPoisonStacks = playerPoisonStacks;
+
+        // Sync enemy state
+        _legacyCombatData.EnemyCurrentHealth = _enemy.CurrentHealth;
+        _legacyCombatData.EnemyCurrentShield = _enemy.CurrentShield;
+
+        // Sync enemy poison stacks
+        float enemyPoisonStacks = 0;
+        foreach (var effect in _enemy.ActiveEffects)
         {
-            EventBus.Publish(new CombatHealthChangedEvent(
-                false,
-                currentCombat.EnemyCurrentHealth,
-                currentCombat.EnemyMaxHealth,
-                currentCombat.EnemyCurrentShield
-            ));
+            if (effect != null && effect.EffectType == StatusEffectType.Poison)
+            {
+                enemyPoisonStacks += effect.CurrentStacks;
+            }
         }
+        _legacyCombatData.EnemyPoisonStacks = enemyPoisonStacks;
+
+        // Update processed time
+        _legacyCombatData.MarkProcessed();
     }
 
     // === APPLICATION LIFECYCLE ===
 
     void OnApplicationPause(bool pauseStatus)
     {
-        if (!pauseStatus && isCombatActive)
+        if (!pauseStatus && _isCombatActive)
         {
-            // App resumed - process any time that passed while backgrounded
-            ProcessBackgroundCombat();
+            // App resumed - for now just mark as processed
+            // Future: implement background combat simulation
+            _legacyCombatData?.MarkProcessed();
         }
-    }
-
-    private void ProcessBackgroundCombat()
-    {
-        if (!isCombatActive || currentCombat == null) return;
-
-        long unprocessedTimeMs = currentCombat.GetUnprocessedTimeMs();
-        if (unprocessedTimeMs <= 0) return;
-
-        if (enableDebugLogs)
-        {
-            Logger.LogInfo($"CombatManager: Processing {unprocessedTimeMs}ms of background combat", Logger.LogCategory.General);
-        }
-
-        // For now, we just mark as processed
-        // In the future, we could simulate the combat that happened
-        // But this is complex because abilities have different cooldowns
-        currentCombat.MarkProcessed();
-
-        // Check if combat ended during background
-        CheckCombatEnd();
     }
 }

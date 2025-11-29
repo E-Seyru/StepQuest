@@ -1,0 +1,292 @@
+fileFormatVersion: 2
+guid: d09adb82776022945b3e772641a9ea4b
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 3
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Attack_Up
+      rect:
+        serializedVersion: 2
+        x: 88
+        y: 210
+        width: 129
+        height: 131
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 18ef7cf20b761af4abd2ee4e51abe5b9
+      internalID: -1664827950
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Burn
+      rect:
+        serializedVersion: 2
+        x: 274
+        y: 211
+        width: 129
+        height: 131
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 85341ed956b6d104da7fe95299e89874
+      internalID: 349381597
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Defense Down
+      rect:
+        serializedVersion: 2
+        x: 458
+        y: 212
+        width: 130
+        height: 130
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: eb30f88ed604a384abe83593139a863e
+      internalID: 1825511232
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Poison
+      rect:
+        serializedVersion: 2
+        x: 88
+        y: 43
+        width: 130
+        height: 131
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 66722a5b9aa29834eacfb08e5840d521
+      internalID: -216302732
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Regeneration
+      rect:
+        serializedVersion: 2
+        x: 274
+        y: 43
+        width: 131
+        height: 131
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a46eb6b9ce6999642898f181a63586a0
+      internalID: -333989970
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Stun
+      rect:
+        serializedVersion: 2
+        x: 460
+        y: 42
+        width: 129
+        height: 132
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9f87c985eb101c44f81e1e9c04c09c79
+      internalID: 20714704
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    nameFileIdTable:
+      Attack_Up: -1664827950
+      Burn: 349381597
+      Defense Down: 1825511232
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_0: 2056620366
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_1: 644057760
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_10: 530549563
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_11: -1808700286
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_12: -890157410
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_13: -1262869553
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_14: -2101080244
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_15: -252376813
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_16: 1953552210
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_17: -1458447741
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_18: 1199964605
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_19: 73120571
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_2: -429023536
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_20: 2096979468
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_22: -1811739867
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_25: 637396698
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_26: -578691008
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_27: 461528689
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_28: -309452116
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_29: 221095813
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_30: -218909063
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_31: -204725595
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_32: 683243673
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_33: -927112318
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_34: 670776525
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_35: 1630846941
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_36: 556723827
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_37: 1268963799
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_38: 778553061
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_6: 653596811
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_7: 2096934634
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_8: 2095384538
+      Generated_Image_November_29__2025_-_7_30PM-removebg-preview_9: -2054502136
+      Poison: -216302732
+      Regeneration: -333989970
+      Stun: 20714704
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

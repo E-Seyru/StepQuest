@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf62d70581263824984332b62ae10a75, type: 3}
+  m_Name: StatusEffectRegistry
+  m_EditorClassIdentifier: 
+  AllEffects:
+  - {fileID: 11400000, guid: 1a61e01ae292e0d49ad05af08b61139a, type: 2}
+  - {fileID: 11400000, guid: 7a31afedfc419364cb19af112b4d63ea, type: 2}
+  - {fileID: 11400000, guid: 6a4cde8056e9fe4448d7335bbbe34e4f, type: 2}
+  - {fileID: 11400000, guid: b7ba65c07c636ed45a4aff5192fc7aed, type: 2}
+  - {fileID: 11400000, guid: 230919b9f405f474b97ec94d367a153b, type: 2}
+  - {fileID: 11400000, guid: 0c62b1d4550d21248af19548aafaeeac, type: 2}
+  enableFallbackSearch: 1
+  logMissingEffects: 0
+  ValidationStatus: '! Issues found:
+
+    - Effect ''attack_up'' missing icon
+
+    -
+    Effect ''burn'' missing icon
+
+    - Effect ''defense_down'' missing icon
+
+    -
+    Effect ''poison'' missing icon
+
+    - Effect ''regeneration'' missing icon
+
+    -
+    Effect ''stun'' missing icon'
