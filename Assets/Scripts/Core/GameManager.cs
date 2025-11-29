@@ -1,5 +1,6 @@
 // Filepath: Assets/Scripts/Core/GameManager.cs
 using ActivityEvents;
+using CombatEvents;
 using GameEvents;
 using MapEvents;
 using UnityEngine;
@@ -89,10 +90,17 @@ public class GameManager : MonoBehaviour
         EventBus.Subscribe<TravelCompletedEvent>(OnTravelCompleted);
 
         // =====================================
-        // EVENTBUS - evenements d'activite  
+        // EVENTBUS - evenements d'activite
         // =====================================
         EventBus.Subscribe<ActivityStartedEvent>(OnActivityStarted);
         EventBus.Subscribe<ActivityStoppedEvent>(OnActivityStopped);
+
+        // =====================================
+        // EVENTBUS - evenements de combat
+        // =====================================
+        EventBus.Subscribe<CombatStartedEvent>(OnCombatStarted);
+        EventBus.Subscribe<CombatEndedEvent>(OnCombatEnded);
+        EventBus.Subscribe<CombatFledEvent>(OnCombatFled);
 
         Logger.LogInfo("GameManager: Subscribed to EventBus events", Logger.LogCategory.General);
     }
@@ -106,7 +114,11 @@ public class GameManager : MonoBehaviour
         }
 
         // Verifier l'etat actuel du joueur
-        if (dataManager.PlayerData.IsCurrentlyTraveling())
+        if (CombatManager.Instance != null && CombatManager.Instance.IsCombatActive)
+        {
+            ChangeState(GameState.InCombat);
+        }
+        else if (dataManager.PlayerData.IsCurrentlyTraveling())
         {
             ChangeState(GameState.Traveling);
         }
@@ -181,6 +193,31 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // === GESTIONNAIRES D'EVENEMENTS COMBAT ===
+
+    private void OnCombatStarted(CombatStartedEvent eventData)
+    {
+        Logger.LogInfo($"GameManager: Combat started vs {eventData.Enemy?.GetDisplayName()}", Logger.LogCategory.General);
+        ChangeState(GameState.InCombat);
+    }
+
+    private void OnCombatEnded(CombatEndedEvent eventData)
+    {
+        string result = eventData.PlayerWon ? "Victory" : "Defeat";
+        Logger.LogInfo($"GameManager: Combat ended - {result} vs {eventData.Enemy?.GetDisplayName()} (+{eventData.ExperienceGained} XP)", Logger.LogCategory.General);
+
+        // Retour a l'etat Idle apres le combat
+        ChangeState(GameState.Idle);
+    }
+
+    private void OnCombatFled(CombatFledEvent eventData)
+    {
+        Logger.LogInfo($"GameManager: Player fled from combat vs {eventData.Enemy?.GetDisplayName()}", Logger.LogCategory.General);
+
+        // Retour a l'etat Idle apres avoir fui
+        ChangeState(GameState.Idle);
+    }
+
     // === MeTHODES PUBLIQUES POUR FORCER UN CHANGEMENT D'eTAT ===
 
     public void SetGamePaused(bool isPaused)
@@ -229,6 +266,9 @@ public class GameManager : MonoBehaviour
         EventBus.Unsubscribe<TravelCompletedEvent>(OnTravelCompleted);
         EventBus.Unsubscribe<ActivityStartedEvent>(OnActivityStarted);
         EventBus.Unsubscribe<ActivityStoppedEvent>(OnActivityStopped);
+        EventBus.Unsubscribe<CombatStartedEvent>(OnCombatStarted);
+        EventBus.Unsubscribe<CombatEndedEvent>(OnCombatEnded);
+        EventBus.Unsubscribe<CombatFledEvent>(OnCombatFled);
     }
 
     // === MeTHODES DE DEBUG ===

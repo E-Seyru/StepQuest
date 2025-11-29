@@ -91,6 +91,50 @@ Managers delegate to internal service classes for separation of concerns:
 - **On Device**: Uses Android Health Connect Recording API + direct sensor
 - **In Editor**: Simplified mode using `EditorStepSimulator` to manually add steps
 
+### Combat System (NEW - Added Nov 2024)
+Auto-battler combat system where abilities trigger automatically on cooldown.
+
+**Core Components:**
+- **CombatManager** (`Assets/Scripts/Gameplay/Combat/CombatManager.cs`) - Singleton managing combat with coroutine-based ability cycling
+- **AbilityDefinition** (`Assets/Scripts/Data/ScriptableObjects/AbilityDefinition.cs`) - ScriptableObject defining abilities (Damage, Heal, Poison, Shield effects)
+- **EnemyDefinition** (`Assets/Scripts/Data/ScriptableObjects/EnemyDefinition.cs`) - ScriptableObject defining enemies with stats, abilities, and loot
+- **CombatData** (`Assets/Scripts/Data/Models/CombatData.cs`) - Runtime combat state
+
+**Combat Events** (in `GameEvents.cs` under `CombatEvents` namespace):
+- `CombatStartedEvent`, `CombatEndedEvent`, `CombatFledEvent`
+- `CombatHealthChangedEvent`, `CombatAbilityUsedEvent`, `CombatPoisonTickEvent`
+
+**UI Components** (`Assets/Scripts/UI/Combat/`):
+- `CombatPanelUI.cs` - Main combat display
+- `EnemySelectionUI.cs` - Enemy selection at locations
+- `CombatAbilityUI.cs` - Ability display with cooldown
+
+**Location Integration:**
+- `MapLocationDefinition` has `AvailableEnemies` list
+- `LocationEnemy` class wraps enemy references per location
+
+**Test Content:**
+- Abilities: `Assets/ScriptableObjects/Abilities/` (BasicAttack, Heal, PoisonStrike, ShieldBash, Bite)
+- Enemies: `Assets/ScriptableObjects/Enemies/` (Slime, Goblin, Wolf)
+
+**Editor Tools:**
+- `WalkAndRPG > Combat Content Creator` - Create test abilities/enemies
+- `WalkAndRPG > Combat Tester` - Test combat in Play Mode
+
+#### SETUP TODO (Resume Point):
+1. Create empty GameObject "CombatManager" → Add `CombatManager` component
+2. In Inspector, drag to "Player Abilities" list:
+   - `Assets/ScriptableObjects/Abilities/BasicAttack.asset`
+   - `Assets/ScriptableObjects/Abilities/Heal.asset`
+3. Enter Play Mode
+4. Menu: `WalkAndRPG > Combat Tester`
+5. Drag `Assets/ScriptableObjects/Enemies/Slime.asset` → Click "Start Combat!"
+
+#### NEXT STEPS:
+- Build CombatPanel UI prefab in scene
+- Create Abilities Inventory & Equipment system (weight-based slots)
+- Equipment granting stats + auto-equipping abilities
+
 ## Development Notes
 
 ### Editor vs Device Behavior

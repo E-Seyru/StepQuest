@@ -257,3 +257,181 @@ namespace ActivityEvents
         }
     }
 }
+
+/// <summary>
+/// Evenements lies au combat
+/// </summary>
+namespace CombatEvents
+{
+    /// <summary>
+    /// Publie quand un combat commence
+    /// </summary>
+    public class CombatStartedEvent : EventBusEvent
+    {
+        public CombatData Combat { get; }
+        public EnemyDefinition Enemy { get; }
+
+        public CombatStartedEvent(CombatData combat, EnemyDefinition enemy)
+        {
+            Combat = combat;
+            Enemy = enemy;
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} - Combat started vs {Enemy?.GetDisplayName() ?? "Unknown"}";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand la sante change (joueur ou ennemi)
+    /// </summary>
+    public class CombatHealthChangedEvent : EventBusEvent
+    {
+        public bool IsPlayer { get; }
+        public float CurrentHealth { get; }
+        public float MaxHealth { get; }
+        public float CurrentShield { get; }
+        public float HealthPercentage => MaxHealth > 0 ? CurrentHealth / MaxHealth : 0f;
+
+        public CombatHealthChangedEvent(bool isPlayer, float currentHealth, float maxHealth, float currentShield)
+        {
+            IsPlayer = isPlayer;
+            CurrentHealth = currentHealth;
+            MaxHealth = maxHealth;
+            CurrentShield = currentShield;
+        }
+
+        public override string ToString()
+        {
+            var target = IsPlayer ? "Player" : "Enemy";
+            return $"{base.ToString()} - {target} health: {CurrentHealth}/{MaxHealth} (Shield: {CurrentShield})";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand une capacite est utilisee
+    /// </summary>
+    public class CombatAbilityUsedEvent : EventBusEvent
+    {
+        public bool IsPlayerAbility { get; }
+        public AbilityDefinition Ability { get; }
+        public int InstanceIndex { get; }
+        public float DamageDealt { get; }
+        public float HealingDone { get; }
+        public float ShieldAdded { get; }
+        public float PoisonApplied { get; }
+
+        public CombatAbilityUsedEvent(bool isPlayerAbility, AbilityDefinition ability, int instanceIndex,
+            float damageDealt = 0, float healingDone = 0, float shieldAdded = 0, float poisonApplied = 0)
+        {
+            IsPlayerAbility = isPlayerAbility;
+            Ability = ability;
+            InstanceIndex = instanceIndex;
+            DamageDealt = damageDealt;
+            HealingDone = healingDone;
+            ShieldAdded = shieldAdded;
+            PoisonApplied = poisonApplied;
+        }
+
+        public override string ToString()
+        {
+            var source = IsPlayerAbility ? "Player" : "Enemy";
+            return $"{base.ToString()} - {source} used {Ability?.GetDisplayName() ?? "Unknown"}";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand le poison fait des degats (tick)
+    /// </summary>
+    public class CombatPoisonTickEvent : EventBusEvent
+    {
+        public bool IsPlayer { get; }
+        public float PoisonDamage { get; }
+        public float RemainingStacks { get; }
+
+        public CombatPoisonTickEvent(bool isPlayer, float poisonDamage, float remainingStacks)
+        {
+            IsPlayer = isPlayer;
+            PoisonDamage = poisonDamage;
+            RemainingStacks = remainingStacks;
+        }
+
+        public override string ToString()
+        {
+            var target = IsPlayer ? "Player" : "Enemy";
+            return $"{base.ToString()} - {target} took {PoisonDamage} poison damage (stacks: {RemainingStacks})";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand un combat se termine
+    /// </summary>
+    public class CombatEndedEvent : EventBusEvent
+    {
+        public bool PlayerWon { get; }
+        public EnemyDefinition Enemy { get; }
+        public int ExperienceGained { get; }
+        public System.Collections.Generic.Dictionary<ItemDefinition, int> LootDropped { get; }
+        public string EndReason { get; } // "victory", "defeat", "fled"
+
+        public CombatEndedEvent(bool playerWon, EnemyDefinition enemy, int experienceGained,
+            System.Collections.Generic.Dictionary<ItemDefinition, int> lootDropped, string endReason = "")
+        {
+            PlayerWon = playerWon;
+            Enemy = enemy;
+            ExperienceGained = experienceGained;
+            LootDropped = lootDropped ?? new System.Collections.Generic.Dictionary<ItemDefinition, int>();
+            EndReason = string.IsNullOrEmpty(endReason) ? (playerWon ? "victory" : "defeat") : endReason;
+        }
+
+        public override string ToString()
+        {
+            var result = PlayerWon ? "Victory" : "Defeat";
+            return $"{base.ToString()} - {result} vs {Enemy?.GetDisplayName() ?? "Unknown"} (+{ExperienceGained} XP)";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand le joueur quitte le combat volontairement
+    /// </summary>
+    public class CombatFledEvent : EventBusEvent
+    {
+        public EnemyDefinition Enemy { get; }
+
+        public CombatFledEvent(EnemyDefinition enemy)
+        {
+            Enemy = enemy;
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} - Fled from {Enemy?.GetDisplayName() ?? "Unknown"}";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand le cooldown d'une capacite commence
+    /// </summary>
+    public class CombatAbilityCooldownStartedEvent : EventBusEvent
+    {
+        public bool IsPlayerAbility { get; }
+        public AbilityDefinition Ability { get; }
+        public int InstanceIndex { get; }
+        public float CooldownDuration { get; }
+
+        public CombatAbilityCooldownStartedEvent(bool isPlayerAbility, AbilityDefinition ability, int instanceIndex, float cooldownDuration)
+        {
+            IsPlayerAbility = isPlayerAbility;
+            Ability = ability;
+            InstanceIndex = instanceIndex;
+            CooldownDuration = cooldownDuration;
+        }
+
+        public override string ToString()
+        {
+            var source = IsPlayerAbility ? "Player" : "Enemy";
+            return $"{base.ToString()} - {source}'s {Ability?.GetDisplayName() ?? "Unknown"} cooldown started ({CooldownDuration}s)";
+        }
+    }
+}

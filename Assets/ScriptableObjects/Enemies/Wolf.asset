@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50f2ce207dbd20f4e99b5540da993746, type: 3}
+  m_Name: Wolf
+  m_EditorClassIdentifier: 
+  EnemyID: wolf
+  EnemyName: Wolf
+  Description: A fierce predator with sharp fangs.
+  EnemySprite: {fileID: 0}
+  EnemyColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  MaxHealth: 70
+  Abilities:
+  - {fileID: 11400000, guid: 7dab9f0a43187ea469e19dd415281480, type: 2}
+  - {fileID: 11400000, guid: 7dab9f0a43187ea469e19dd415281480, type: 2}
+  ExperienceReward: 20
+  LootTable: []
+  VictoryTitle: Wolf Defeated!
+  VictoryDescription: The wolf retreats into the forest.
+  DeveloperNotes: 

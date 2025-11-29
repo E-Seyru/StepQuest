@@ -37,6 +37,10 @@ public class MapLocationDefinition : ScriptableObject
     [Tooltip("Activities available at this location")]
     public List<LocationActivity> AvailableActivities = new List<LocationActivity>();
 
+    [Header("Combat")]
+    [Tooltip("Enemies that can be fought at this location")]
+    public List<LocationEnemy> AvailableEnemies = new List<LocationEnemy>();
+
     [Header("Visual")]
     [Tooltip("Icon for POI representation on map")]
     public Sprite LocationIcon;
@@ -111,6 +115,65 @@ public class MapLocationDefinition : ScriptableObject
             return $"1 activite: {validActivities[0].GetDisplayName()}";
 
         return $"{validActivities.Count} activites disponibles";
+    }
+
+    // === COMBAT METHODS ===
+
+    /// <summary>
+    /// Get all valid enemies available at this location
+    /// </summary>
+    public List<LocationEnemy> GetAvailableEnemies()
+    {
+        if (AvailableEnemies == null)
+            return new List<LocationEnemy>();
+
+        return AvailableEnemies.Where(enemy => enemy != null && enemy.IsValid()).ToList();
+    }
+
+    /// <summary>
+    /// Get enemy by ID
+    /// </summary>
+    public LocationEnemy GetEnemyById(string enemyId)
+    {
+        if (AvailableEnemies == null || string.IsNullOrEmpty(enemyId))
+            return null;
+
+        return AvailableEnemies.FirstOrDefault(enemy =>
+            enemy != null &&
+            enemy.EnemyReference != null &&
+            enemy.EnemyReference.EnemyID == enemyId);
+    }
+
+    /// <summary>
+    /// Check if combat is available at this location
+    /// </summary>
+    public bool HasCombat()
+    {
+        return GetAvailableEnemies().Count > 0;
+    }
+
+    /// <summary>
+    /// Get count of available enemies
+    /// </summary>
+    public int GetEnemyCount()
+    {
+        return GetAvailableEnemies().Count;
+    }
+
+    /// <summary>
+    /// Get display text for combat (for UI summary)
+    /// </summary>
+    public string GetCombatSummary()
+    {
+        var validEnemies = GetAvailableEnemies();
+
+        if (validEnemies.Count == 0)
+            return "Pas de combat disponible";
+
+        if (validEnemies.Count == 1)
+            return $"1 ennemi: {validEnemies[0].GetDisplayName()}";
+
+        return $"{validEnemies.Count} ennemis disponibles";
     }
 
     /// <summary>
@@ -191,19 +254,19 @@ public class MapLocationDefinition : ScriptableObject
     /// </summary>
     public Sprite GetIcon()
     {
-        // Retourne l'icône specifique de la location (verification Unity-safe)
+        // Retourne l'icï¿½ne specifique de la location (verification Unity-safe)
         if (LocationIcon != null) return LocationIcon;
 
-        // Fallback possible : icône par defaut selon le type de location
+        // Fallback possible : icï¿½ne par defaut selon le type de location
         // if (Type == LocationType.Village && defaultVillageIcon != null) return defaultVillageIcon;
         // if (Type == LocationType.Forest && defaultForestIcon != null) return defaultForestIcon;
 
-        // Fallback final : aucune icône
+        // Fallback final : aucune icï¿½ne
         return null;
     }
 
     /// <summary>
-    /// Version alternative avec icône par defaut
+    /// Version alternative avec icï¿½ne par defaut
     /// </summary>
     public Sprite GetIconWithFallback(Sprite defaultIcon = null)
     {
@@ -255,4 +318,50 @@ public class LocationConnection
 
     [Tooltip("Special requirements to use this connection")]
     public string Requirements;
+}
+
+/// <summary>
+/// Represents an enemy available at a location for combat
+/// </summary>
+[System.Serializable]
+public class LocationEnemy
+{
+    [Tooltip("Reference to the enemy definition")]
+    public EnemyDefinition EnemyReference;
+
+    [Tooltip("Is this enemy currently available to fight?")]
+    public bool IsAvailable = true;
+
+    [Tooltip("Minimum player level/requirement to see this enemy")]
+    public int MinimumRequirement = 0;
+
+    [Tooltip("Special requirements or description")]
+    [TextArea(1, 2)]
+    public string Requirements;
+
+    /// <summary>
+    /// Get display name for this enemy
+    /// </summary>
+    public string GetDisplayName()
+    {
+        return EnemyReference?.GetDisplayName() ?? "Unknown Enemy";
+    }
+
+    /// <summary>
+    /// Check if this enemy entry is valid
+    /// </summary>
+    public bool IsValid()
+    {
+        return EnemyReference != null && IsAvailable;
+    }
+
+    /// <summary>
+    /// Check if player can fight this enemy (based on requirements)
+    /// </summary>
+    public bool CanFight()
+    {
+        if (!IsValid()) return false;
+        // TODO: Check player level/requirements when progression system is added
+        return true;
+    }
 }
