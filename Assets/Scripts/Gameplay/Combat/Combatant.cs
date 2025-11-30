@@ -141,6 +141,11 @@ public class Combatant : ICombatant
         return _data.GetStatusEffect(effectId);
     }
 
+    public ActiveStatusEffect GetStatusEffectIncludingExpired(string effectId)
+    {
+        return _data.GetStatusEffectIncludingExpired(effectId);
+    }
+
     public bool IsStunned => _data.IsStunned;
 
     // === ICombatant ABILITIES ===

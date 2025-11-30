@@ -39,17 +39,29 @@ public enum StatusEffectType
 /// </summary>
 public enum StackingBehavior
 {
-    /// <summary>Stacks add up (e.g., 3 + 2 = 5 stacks)</summary>
-    Additive,
+    /// <summary>Stacks accumulate, each batch has its own decay timer</summary>
+    Stacking,
 
-    /// <summary>Only refreshes duration, no stack increase</summary>
-    RefreshDuration,
+    /// <summary>No stacking - only one instance at a time, reapplying refreshes it</summary>
+    NoStacking
+}
 
-    /// <summary>Stacks add up to a maximum, then refreshes duration</summary>
-    MaxStacks,
+/// <summary>
+/// How stacks are removed over time
+/// </summary>
+public enum DecayBehavior
+{
+    /// <summary>No decay - stacks last until combat ends or effect is cleansed</summary>
+    None,
 
-    /// <summary>New application replaces old one entirely</summary>
-    Replace
+    /// <summary>Each batch of stacks expires after its duration</summary>
+    Time,
+
+    /// <summary>Lose one stack each time the effect ticks (DoT/HoT)</summary>
+    OnTick,
+
+    /// <summary>Lose one stack each time the target takes damage</summary>
+    OnHit
 }
 
 /// <summary>
@@ -102,15 +114,24 @@ public class StatusEffectDefinition : ScriptableObject
     [Tooltip("What happens when this effect is active")]
     public EffectBehavior Behavior;
 
-    [Tooltip("How this effect stacks when reapplied")]
-    public StackingBehavior Stacking = StackingBehavior.Additive;
+    [Header("Stacking Configuration")]
+    [Tooltip("Whether this effect can stack or only have one instance")]
+    public StackingBehavior Stacking = StackingBehavior.Stacking;
 
-    [Header("Duration & Ticking")]
-    [Tooltip("Duration in seconds. 0 = permanent until removed or combat ends")]
+    [Tooltip("Maximum number of stacks. 0 = unlimited stacking")]
+    [Min(0)]
+    public int MaxStacks = 99;
+
+    [Header("Decay Configuration")]
+    [Tooltip("How stacks are removed")]
+    public DecayBehavior Decay = DecayBehavior.Time;
+
+    [Tooltip("Duration in seconds for time-based decay. Only used when Decay = Time")]
     [Min(0)]
     public float Duration = 5f;
 
-    [Tooltip("How often the effect ticks (for DoT/HoT). 0 = no ticking (instant or stat modifier)")]
+    [Header("Tick Configuration")]
+    [Tooltip("How often the effect ticks (for DoT/HoT). 0 = no ticking (stat modifier or control effect)")]
     [Min(0)]
     public float TickInterval = 1f;
 
@@ -120,11 +141,6 @@ public class StatusEffectDefinition : ScriptableObject
 
     [Tooltip("If true, tick value = BaseValue * CurrentStacks. If false, value is flat BaseValue.")]
     public bool ScalesWithStacks = true;
-
-    [Header("Stacking Rules")]
-    [Tooltip("Maximum number of stacks this effect can have")]
-    [Min(1)]
-    public int MaxStacks = 99;
 
     [Header("Control Flags")]
     [Tooltip("If true, this effect pauses ability cooldowns (for Stun)")]
@@ -196,17 +212,34 @@ public class StatusEffectDefinition : ScriptableObject
                             EffectType == StatusEffectType.Stun;
 
     /// <summary>
+    /// Check if this effect has unlimited stacking
+    /// </summary>
+    public bool HasUnlimitedStacks => MaxStacks == 0;
+
+    /// <summary>
+    /// Get the effective max stacks (returns int.MaxValue for unlimited)
+    /// </summary>
+    public int EffectiveMaxStacks => MaxStacks == 0 ? int.MaxValue : MaxStacks;
+
+    /// <summary>
+    /// Check if this effect has no decay (permanent until cleansed)
+    /// </summary>
+    public bool HasNoDecay => Decay == DecayBehavior.None;
+
+    /// <summary>
     /// Validate this status effect definition
     /// </summary>
     public bool IsValid()
     {
         if (string.IsNullOrEmpty(EffectID)) return false;
         if (string.IsNullOrEmpty(EffectName)) return false;
-        if (MaxStacks < 1) return false;
 
         // DoT/HoT should have tick interval
         if ((Behavior == EffectBehavior.DamageOverTime || Behavior == EffectBehavior.HealOverTime)
             && TickInterval <= 0) return false;
+
+        // Time-based decay needs a duration
+        if (Decay == DecayBehavior.Time && Duration <= 0) return false;
 
         return true;
     }

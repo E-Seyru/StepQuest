@@ -76,10 +76,11 @@ public class StatusEffectUI : MonoBehaviour
 
     private void OnStatusEffectTick(StatusEffectTickEvent evt)
     {
-        if (evt.IsTargetPlayer != isForPlayer) return;
-        if (evt.Effect == null) return;
+        // Tick events don't change stack counts - they only deal damage/healing
+        // Stack count is only updated by StatusEffectAppliedEvent
+        // Removing this update fixes the UI jumping between old and new values
 
-        UpdateEffectStacks(evt.Effect.EffectID, evt.RemainingStacks);
+        // We could optionally update a duration indicator here if we add one
     }
 
     private void OnStatusEffectRemoved(StatusEffectRemovedEvent evt)

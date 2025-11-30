@@ -19,12 +19,13 @@ MonoBehaviour:
   EffectColor: {r: 1, g: 0.4, b: 0, a: 1}
   EffectType: 1
   Behavior: 0
-  Stacking: 1
+  Stacking: 0
+  MaxStacks: 5
+  Decay: 2
   Duration: 6
   TickInterval: 2
   BaseValue: 3
   ScalesWithStacks: 0
-  MaxStacks: 1
   PreventsActions: 0
   RemovedOnDamage: 0
   DeveloperNotes: 

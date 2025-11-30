@@ -401,42 +401,63 @@ public class CombatManager : MonoBehaviour
 
     // === LEGACY COMPATIBILITY ===
 
+    // Cache for dirty checking to avoid unnecessary iterations
+    private float _lastPlayerHealth;
+    private float _lastPlayerShield;
+    private float _lastEnemyHealth;
+    private float _lastEnemyShield;
+    private int _lastPlayerEffectCount;
+    private int _lastEnemyEffectCount;
+
     /// <summary>
-    /// Sync new combatant data to legacy CombatData for backwards compatibility
+    /// Sync new combatant data to legacy CombatData for backwards compatibility.
+    /// Optimized to only iterate effects when something changed.
     /// </summary>
     private void SyncLegacyCombatData()
     {
         if (_legacyCombatData == null || _player == null || _enemy == null) return;
 
-        // Sync player state
+        // Quick sync for health/shield (no iteration needed)
         _legacyCombatData.PlayerCurrentHealth = _player.CurrentHealth;
         _legacyCombatData.PlayerCurrentShield = _player.CurrentShield;
-
-        // Sync poison stacks (for legacy UI)
-        float playerPoisonStacks = 0;
-        foreach (var effect in _player.ActiveEffects)
-        {
-            if (effect != null && effect.EffectType == StatusEffectType.Poison)
-            {
-                playerPoisonStacks += effect.CurrentStacks;
-            }
-        }
-        _legacyCombatData.PlayerPoisonStacks = playerPoisonStacks;
-
-        // Sync enemy state
         _legacyCombatData.EnemyCurrentHealth = _enemy.CurrentHealth;
         _legacyCombatData.EnemyCurrentShield = _enemy.CurrentShield;
 
-        // Sync enemy poison stacks
-        float enemyPoisonStacks = 0;
-        foreach (var effect in _enemy.ActiveEffects)
+        // Only recalculate poison stacks if effect count changed
+        int playerEffectCount = _player.ActiveEffects.Count;
+        int enemyEffectCount = _enemy.ActiveEffects.Count;
+
+        if (playerEffectCount != _lastPlayerEffectCount)
         {
-            if (effect != null && effect.EffectType == StatusEffectType.Poison)
+            _lastPlayerEffectCount = playerEffectCount;
+            float playerPoisonStacks = 0;
+            var playerEffects = _player.ActiveEffects;
+            for (int i = 0; i < playerEffects.Count; i++)
             {
-                enemyPoisonStacks += effect.CurrentStacks;
+                var effect = playerEffects[i];
+                if (effect != null && effect.EffectType == StatusEffectType.Poison)
+                {
+                    playerPoisonStacks += effect.CurrentStacks;
+                }
             }
+            _legacyCombatData.PlayerPoisonStacks = playerPoisonStacks;
         }
-        _legacyCombatData.EnemyPoisonStacks = enemyPoisonStacks;
+
+        if (enemyEffectCount != _lastEnemyEffectCount)
+        {
+            _lastEnemyEffectCount = enemyEffectCount;
+            float enemyPoisonStacks = 0;
+            var enemyEffects = _enemy.ActiveEffects;
+            for (int i = 0; i < enemyEffects.Count; i++)
+            {
+                var effect = enemyEffects[i];
+                if (effect != null && effect.EffectType == StatusEffectType.Poison)
+                {
+                    enemyPoisonStacks += effect.CurrentStacks;
+                }
+            }
+            _legacyCombatData.EnemyPoisonStacks = enemyPoisonStacks;
+        }
 
         // Update processed time
         _legacyCombatData.MarkProcessed();

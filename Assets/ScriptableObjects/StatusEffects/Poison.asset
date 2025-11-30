@@ -20,11 +20,12 @@ MonoBehaviour:
   EffectType: 0
   Behavior: 0
   Stacking: 0
+  MaxStacks: 10
+  Decay: 0
   Duration: 10
   TickInterval: 1
   BaseValue: 1
   ScalesWithStacks: 1
-  MaxStacks: 10
   PreventsActions: 0
   RemovedOnDamage: 0
   DeveloperNotes: 

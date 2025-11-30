@@ -2,11 +2,30 @@
 // Filepath: Assets/Scripts/Data/Models/ActiveStatusEffect.cs
 
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+
+/// <summary>
+/// Represents a batch of stacks with their own expiration time.
+/// Each application of stacks creates a new batch that expires independently.
+/// </summary>
+[Serializable]
+public class StackBatch
+{
+    public int Stacks;
+    public float RemainingDuration;
+
+    public StackBatch(int stacks, float duration)
+    {
+        Stacks = stacks;
+        RemainingDuration = duration;
+    }
+}
 
 /// <summary>
 /// Runtime instance of an active status effect on a combatant.
 /// Serializable for persistence across app sessions.
+/// Now supports independent stack expiration - each batch of stacks expires on its own timer.
 /// </summary>
 [Serializable]
 public class ActiveStatusEffect
@@ -16,11 +35,11 @@ public class ActiveStatusEffect
     /// <summary>Reference to the StatusEffectDefinition by ID</summary>
     public string EffectId;
 
-    /// <summary>Current number of stacks</summary>
-    public int CurrentStacks;
-
-    /// <summary>Time remaining before this effect expires (seconds)</summary>
-    public float RemainingDuration;
+    /// <summary>
+    /// List of stack batches, each with their own expiration timer.
+    /// When stacks are added, a new batch is created (or existing refreshed based on stacking behavior).
+    /// </summary>
+    public List<StackBatch> StackBatches = new List<StackBatch>();
 
     /// <summary>Time since the last tick was processed (seconds)</summary>
     public float TimeSinceLastTick;
@@ -30,6 +49,62 @@ public class ActiveStatusEffect
     [NonSerialized]
     private StatusEffectDefinition _cachedDefinition;
 
+    // Stack cache to avoid recalculating every access
+    [NonSerialized]
+    private int _cachedStackCount = -1;
+    [NonSerialized]
+    private int _lastBatchCount = -1;
+
+    // === COMPUTED PROPERTIES ===
+
+    /// <summary>Current total number of stacks across all batches (cached)</summary>
+    public int CurrentStacks
+    {
+        get
+        {
+            // Invalidate cache if batch count changed
+            if (_lastBatchCount != StackBatches.Count)
+            {
+                _cachedStackCount = -1;
+                _lastBatchCount = StackBatches.Count;
+            }
+
+            // Recalculate if cache is invalid
+            if (_cachedStackCount < 0)
+            {
+                int total = 0;
+                for (int i = 0; i < StackBatches.Count; i++)
+                {
+                    total += StackBatches[i].Stacks;
+                }
+                _cachedStackCount = total;
+            }
+            return _cachedStackCount;
+        }
+    }
+
+    /// <summary>Invalidate the stack cache (call after modifying stacks)</summary>
+    private void InvalidateStackCache()
+    {
+        _cachedStackCount = -1;
+    }
+
+    /// <summary>Time remaining before the oldest batch expires (for UI display)</summary>
+    public float RemainingDuration
+    {
+        get
+        {
+            if (StackBatches.Count == 0) return 0;
+            float min = float.MaxValue;
+            for (int i = 0; i < StackBatches.Count; i++)
+            {
+                float dur = StackBatches[i].RemainingDuration;
+                if (dur < min) min = dur;
+            }
+            return min == float.MaxValue ? 0 : min;
+        }
+    }
+
     // === CONSTRUCTORS ===
 
     /// <summary>
@@ -38,8 +113,7 @@ public class ActiveStatusEffect
     public ActiveStatusEffect()
     {
         EffectId = string.Empty;
-        CurrentStacks = 0;
-        RemainingDuration = 0;
+        StackBatches = new List<StackBatch>();
         TimeSinceLastTick = 0;
     }
 
@@ -48,18 +122,22 @@ public class ActiveStatusEffect
     /// </summary>
     public ActiveStatusEffect(StatusEffectDefinition definition, int initialStacks = 1)
     {
+        StackBatches = new List<StackBatch>();
+
         if (definition == null)
         {
             EffectId = string.Empty;
-            CurrentStacks = 0;
-            RemainingDuration = 0;
             TimeSinceLastTick = 0;
             return;
         }
 
         EffectId = definition.EffectID;
-        CurrentStacks = Mathf.Clamp(initialStacks, 1, definition.MaxStacks);
-        RemainingDuration = definition.Duration;
+        int clampedStacks = Mathf.Clamp(initialStacks, 1, definition.EffectiveMaxStacks);
+
+        // Duration only matters for time-based decay
+        float batchDuration = definition.Decay == DecayBehavior.Time ? definition.Duration : float.MaxValue;
+        StackBatches.Add(new StackBatch(clampedStacks, batchDuration));
+
         TimeSinceLastTick = 0;
         _cachedDefinition = definition;
     }
@@ -67,7 +145,7 @@ public class ActiveStatusEffect
     // === PROPERTIES ===
 
     /// <summary>
-    /// Check if this effect has expired (duration ended)
+    /// Check if this effect has completely expired (no stacks remaining)
     /// Effects with Duration = 0 are permanent and never expire naturally
     /// </summary>
     public bool IsExpired
@@ -77,14 +155,14 @@ public class ActiveStatusEffect
             var def = GetDefinition();
             if (def == null) return true;
             if (def.Duration <= 0) return false; // Permanent effect
-            return RemainingDuration <= 0;
+            return StackBatches.Count == 0 || CurrentStacks <= 0;
         }
     }
 
     /// <summary>
-    /// Check if this effect is currently active (not expired and has stacks)
+    /// Check if this effect is currently active (has stacks)
     /// </summary>
-    public bool IsActive => !IsExpired && CurrentStacks > 0;
+    public bool IsActive => CurrentStacks > 0;
 
     /// <summary>
     /// Get the effect type from definition
@@ -131,74 +209,129 @@ public class ActiveStatusEffect
     }
 
     /// <summary>
-    /// Add stacks to this effect based on its stacking behavior
+    /// Add stacks to this effect based on its stacking and decay behavior.
     /// </summary>
     public void AddStacks(int amount, StatusEffectDefinition definition = null)
     {
         var def = definition ?? GetDefinition();
         if (def == null || amount <= 0) return;
 
+        int currentTotal = CurrentStacks;
+        int maxStacks = def.EffectiveMaxStacks; // Handles unlimited (0 -> int.MaxValue)
+
         switch (def.Stacking)
         {
-            case StackingBehavior.Additive:
-                // Just add stacks, capped at max
-                CurrentStacks = Mathf.Min(CurrentStacks + amount, def.MaxStacks);
+            case StackingBehavior.Stacking:
+                // Add new batch, capped at max total stacks
+                int stacksToAdd = Mathf.Min(amount, maxStacks - currentTotal);
+                if (stacksToAdd > 0)
+                {
+                    // Duration only matters for time-based decay
+                    float batchDuration = def.Decay == DecayBehavior.Time ? def.Duration : float.MaxValue;
+                    StackBatches.Add(new StackBatch(stacksToAdd, batchDuration));
+                }
                 break;
 
-            case StackingBehavior.RefreshDuration:
-                // Don't add stacks, just refresh duration
-                RemainingDuration = def.Duration;
-                break;
-
-            case StackingBehavior.MaxStacks:
-                // Add stacks up to max, and refresh duration
-                CurrentStacks = Mathf.Min(CurrentStacks + amount, def.MaxStacks);
-                RemainingDuration = def.Duration;
-                break;
-
-            case StackingBehavior.Replace:
-                // Replace entirely
-                CurrentStacks = Mathf.Min(amount, def.MaxStacks);
-                RemainingDuration = def.Duration;
+            case StackingBehavior.NoStacking:
+                // Clear all batches and create a single one with 1 stack
+                StackBatches.Clear();
+                float duration = def.Decay == DecayBehavior.Time ? def.Duration : float.MaxValue;
+                StackBatches.Add(new StackBatch(1, duration));
                 TimeSinceLastTick = 0;
                 break;
         }
     }
 
     /// <summary>
-    /// Remove stacks from this effect
+    /// Remove stacks from this effect (removes from oldest batches first)
     /// </summary>
     public void RemoveStacks(int amount)
     {
-        CurrentStacks = Mathf.Max(0, CurrentStacks - amount);
+        int remaining = amount;
+        for (int i = 0; i < StackBatches.Count && remaining > 0; i++)
+        {
+            if (StackBatches[i].Stacks <= remaining)
+            {
+                remaining -= StackBatches[i].Stacks;
+                StackBatches[i].Stacks = 0;
+            }
+            else
+            {
+                StackBatches[i].Stacks -= remaining;
+                remaining = 0;
+            }
+        }
+        // Remove empty batches
+        StackBatches.RemoveAll(b => b.Stacks <= 0);
+        InvalidateStackCache();
     }
 
     /// <summary>
-    /// Update timers (called each frame during combat)
-    /// Returns true if a tick should be processed
+    /// Update timers (called each frame during combat).
+    /// Handles time-based decay by decreasing duration on batches.
+    /// Returns true if a tick should be processed.
     /// </summary>
     public bool UpdateTimers(float deltaTime)
     {
         var def = GetDefinition();
         if (def == null) return false;
 
-        // Update duration (if not permanent)
-        if (def.Duration > 0)
+        // Only process time-based decay
+        if (def.Decay == DecayBehavior.Time)
         {
-            RemainingDuration -= deltaTime;
+            for (int i = 0; i < StackBatches.Count; i++)
+            {
+                StackBatches[i].RemainingDuration -= deltaTime;
+            }
+            // Remove expired batches
+            int removedCount = StackBatches.RemoveAll(b => b.RemainingDuration <= 0);
+            if (removedCount > 0) InvalidateStackCache();
         }
 
         // Update tick timer
         TimeSinceLastTick += deltaTime;
 
-        // Check if we should tick
-        if (def.TickInterval > 0 && TimeSinceLastTick >= def.TickInterval)
+        // Check if we should tick (only if we still have stacks)
+        if (CurrentStacks > 0 && def.TickInterval > 0 && TimeSinceLastTick >= def.TickInterval)
         {
             TimeSinceLastTick -= def.TickInterval;
             return true;
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Process on-tick decay - removes one stack when the effect ticks.
+    /// Call this after processing the tick damage/heal.
+    /// </summary>
+    public void ProcessOnTickDecay()
+    {
+        var def = GetDefinition();
+        if (def == null || def.Decay != DecayBehavior.OnTick) return;
+
+        RemoveStacks(1);
+    }
+
+    /// <summary>
+    /// Process on-hit decay - removes one stack when the target takes damage.
+    /// Call this from damage processing.
+    /// </summary>
+    public void ProcessOnHitDecay()
+    {
+        var def = GetDefinition();
+        if (def == null || def.Decay != DecayBehavior.OnHit) return;
+
+        RemoveStacks(1);
+    }
+
+    /// <summary>
+    /// Check if any stacks expired this frame (call after UpdateTimers)
+    /// Returns the number of stacks that expired
+    /// </summary>
+    public int GetExpiredStackCount(int previousStackCount)
+    {
+        return Mathf.Max(0, previousStackCount - CurrentStacks);
     }
 
     /// <summary>
@@ -217,10 +350,10 @@ public class ActiveStatusEffect
     public void Clear()
     {
         EffectId = string.Empty;
-        CurrentStacks = 0;
-        RemainingDuration = 0;
+        StackBatches.Clear();
         TimeSinceLastTick = 0;
         _cachedDefinition = null;
+        InvalidateStackCache();
     }
 
     /// <summary>
@@ -238,14 +371,20 @@ public class ActiveStatusEffect
     /// </summary>
     public ActiveStatusEffect Clone()
     {
-        return new ActiveStatusEffect
+        var clone = new ActiveStatusEffect
         {
             EffectId = this.EffectId,
-            CurrentStacks = this.CurrentStacks,
-            RemainingDuration = this.RemainingDuration,
             TimeSinceLastTick = this.TimeSinceLastTick,
             _cachedDefinition = this._cachedDefinition
         };
+
+        // Deep copy stack batches
+        foreach (var batch in this.StackBatches)
+        {
+            clone.StackBatches.Add(new StackBatch(batch.Stacks, batch.RemainingDuration));
+        }
+
+        return clone;
     }
 
     public override string ToString()
@@ -257,7 +396,7 @@ public class ActiveStatusEffect
             return $"[{name}: Inactive]";
 
         if (def?.Duration > 0)
-            return $"[{name}: {CurrentStacks} stacks, {RemainingDuration:F1}s remaining]";
+            return $"[{name}: {CurrentStacks} stacks in {StackBatches.Count} batches, oldest expires in {RemainingDuration:F1}s]";
         else
             return $"[{name}: {CurrentStacks} stacks]";
     }

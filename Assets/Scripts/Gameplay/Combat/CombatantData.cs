@@ -182,6 +182,7 @@ public class CombatantData
     /// <summary>
     /// Apply damage to this combatant.
     /// Shield absorbs damage first, then applies to health.
+    /// Also processes on-hit decay for status effects.
     /// </summary>
     /// <param name="rawDamage">Damage before defense modifier</param>
     /// <param name="ignoreShield">If true, bypasses shield</param>
@@ -212,7 +213,44 @@ public class CombatantData
         // Apply to health
         float previousHealth = _currentHealth;
         _currentHealth = Mathf.Max(0, _currentHealth - damage);
-        return previousHealth - _currentHealth;
+        float actualDamage = previousHealth - _currentHealth;
+
+        // Process on-hit decay for all status effects
+        if (actualDamage > 0)
+        {
+            ProcessOnHitDecay();
+        }
+
+        return actualDamage;
+    }
+
+    /// <summary>
+    /// Process on-hit decay for all active status effects.
+    /// Called when this combatant takes damage.
+    /// </summary>
+    private void ProcessOnHitDecay()
+    {
+        var effectsToRemove = new List<string>();
+
+        foreach (var effect in ActiveEffects)
+        {
+            if (effect == null || !effect.IsActive) continue;
+
+            int stacksBefore = effect.CurrentStacks;
+            effect.ProcessOnHitDecay();
+            int stacksAfter = effect.CurrentStacks;
+
+            if (stacksAfter <= 0)
+            {
+                effectsToRemove.Add(effect.EffectId);
+            }
+        }
+
+        // Remove depleted effects
+        foreach (var effectId in effectsToRemove)
+        {
+            RemoveStatusEffect(effectId);
+        }
     }
 
     /// <summary>
@@ -283,6 +321,14 @@ public class CombatantData
     public ActiveStatusEffect GetStatusEffect(string effectId)
     {
         return ActiveEffects.Find(e => e.EffectId == effectId && e.IsActive);
+    }
+
+    /// <summary>
+    /// Get effect by ID regardless of active status (needed for removal of expired effects)
+    /// </summary>
+    public ActiveStatusEffect GetStatusEffectIncludingExpired(string effectId)
+    {
+        return ActiveEffects.Find(e => e.EffectId == effectId);
     }
 
     /// <summary>

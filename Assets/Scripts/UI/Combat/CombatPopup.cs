@@ -23,8 +23,8 @@ public class CombatPopup : MonoBehaviour
 
     public void Setup(float popupAmount, RectTransform characterImage)
     {
-        // Set initial values
-        popupText.text = popupAmount.ToString();
+        // Set initial values - round to integer
+        popupText.text = Mathf.RoundToInt(popupAmount).ToString();
 
         // Generate random position within character image bounds
         float randomX = Random.Range(-characterImage.rect.width / 4, characterImage.rect.width / 4);

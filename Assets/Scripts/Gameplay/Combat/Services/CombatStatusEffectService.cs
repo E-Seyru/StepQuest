@@ -17,6 +17,9 @@ public class CombatStatusEffectService
     private bool _playerWasStunned;
     private bool _enemyWasStunned;
 
+    // Reusable list to avoid allocations each frame
+    private readonly List<string> _effectsToRemoveCache = new List<string>(8);
+
     public CombatStatusEffectService(CombatEventService eventService, bool enableDebugLogs = false)
     {
         _eventService = eventService;
@@ -89,7 +92,9 @@ public class CombatStatusEffectService
     {
         if (target == null || string.IsNullOrEmpty(effectId)) return;
 
-        var effect = target.GetStatusEffect(effectId);
+        // Use GetStatusEffectIncludingExpired because expired effects may need to be removed
+        // GetStatusEffect only returns active effects, which would skip expired ones
+        var effect = target.GetStatusEffectIncludingExpired(effectId);
         if (effect == null) return;
 
         var definition = effect.GetDefinition();
@@ -158,29 +163,59 @@ public class CombatStatusEffectService
     {
         if (target == null) return (0, 0);
 
+        var activeEffects = target.ActiveEffects;
+        if (activeEffects.Count == 0) return (0, 0);
+
         float totalDamage = 0;
         float totalHealing = 0;
-        var effectsToRemove = new List<string>();
+
+        // Reuse list to avoid allocations - clear instead of new
+        _effectsToRemoveCache.Clear();
 
         // Process each active effect
-        foreach (var effect in target.ActiveEffects)
+        for (int i = 0; i < activeEffects.Count; i++)
         {
-            if (effect == null || !effect.IsActive) continue;
+            var effect = activeEffects[i];
+            if (effect == null) continue;
 
             var definition = effect.GetDefinition();
             if (definition == null)
             {
-                effectsToRemove.Add(effect.EffectId);
+                _effectsToRemoveCache.Add(effect.EffectId);
                 continue;
             }
 
-            // Update timers
+            // Cache CurrentStacks to avoid recalculating
+            int stacksBefore = effect.CurrentStacks;
+
+            // Update timers (this may expire some stack batches)
             bool shouldTick = effect.UpdateTimers(deltaTime);
 
-            // Check if expired
-            if (effect.IsExpired)
+            // Check how many stacks expired (reuse cached value)
+            int stacksAfter = effect.CurrentStacks;
+            int expiredStacks = stacksBefore - stacksAfter;
+
+            // If some stacks expired but effect still active, notify UI of the change
+            if (expiredStacks > 0 && stacksAfter > 0)
             {
-                effectsToRemove.Add(effect.EffectId);
+                _eventService.PublishStatusEffectApplied(
+                    target.IsPlayer,
+                    definition,
+                    0, // No new stacks applied
+                    stacksAfter, // Current total
+                    false // Not from player action
+                );
+
+                if (_enableDebugLogs)
+                {
+                    Logger.LogInfo($"CombatStatusEffectService: {expiredStacks} stacks of {definition.GetDisplayName()} expired on {target.DisplayName}, {stacksAfter} remaining", Logger.LogCategory.General);
+                }
+            }
+
+            // Check if fully expired
+            if (effect.IsExpired || stacksAfter <= 0)
+            {
+                _effectsToRemoveCache.Add(effect.EffectId);
                 continue;
             }
 
@@ -200,14 +235,14 @@ public class CombatStatusEffectService
                         target.IsPlayer,
                         definition,
                         actualDamage,
-                        effect.CurrentStacks,
+                        stacksAfter, // Use cached value
                         effect.RemainingDuration
                     );
 
                     // Also publish legacy poison event for backwards compatibility
                     if (definition.EffectType == StatusEffectType.Poison)
                     {
-                        _eventService.PublishPoisonTick(target.IsPlayer, actualDamage, effect.CurrentStacks);
+                        _eventService.PublishPoisonTick(target.IsPlayer, actualDamage, stacksAfter);
                     }
 
                     // Publish health changed
@@ -229,7 +264,7 @@ public class CombatStatusEffectService
                         target.IsPlayer,
                         definition,
                         actualHeal,
-                        effect.CurrentStacks,
+                        stacksAfter, // Use cached value
                         effect.RemainingDuration
                     );
 
@@ -241,13 +276,34 @@ public class CombatStatusEffectService
                         Logger.LogInfo($"CombatStatusEffectService: {target.DisplayName} healed {actualHeal} from {definition.GetDisplayName()}", Logger.LogCategory.General);
                     }
                 }
+
+                // Process on-tick decay (if applicable)
+                int stacksBeforeDecay = stacksAfter; // Reuse cached value
+                effect.ProcessOnTickDecay();
+                int stacksAfterDecay = effect.CurrentStacks;
+
+                // Notify UI if stacks changed due to decay
+                if (stacksAfterDecay < stacksBeforeDecay && stacksAfterDecay > 0)
+                {
+                    _eventService.PublishStatusEffectApplied(
+                        target.IsPlayer,
+                        definition,
+                        0,
+                        stacksAfterDecay,
+                        false
+                    );
+                }
+                else if (stacksAfterDecay <= 0)
+                {
+                    _effectsToRemoveCache.Add(effect.EffectId);
+                }
             }
         }
 
-        // Remove expired effects
-        foreach (var effectId in effectsToRemove)
+        // Remove fully expired effects
+        for (int i = 0; i < _effectsToRemoveCache.Count; i++)
         {
-            RemoveEffect(target, effectId, "expired");
+            RemoveEffect(target, _effectsToRemoveCache[i], "expired");
         }
 
         // Check if stun ended

@@ -59,12 +59,13 @@ public class StatusEffectCreator : EditorWindow
         effect.Description = "Deals damage over time. Stacks increase damage per tick.";
         effect.EffectType = StatusEffectType.Poison;
         effect.Behavior = EffectBehavior.DamageOverTime;
-        effect.Stacking = StackingBehavior.Additive;
+        effect.Stacking = StackingBehavior.Stacking;
+        effect.MaxStacks = 10;
+        effect.Decay = DecayBehavior.Time;
         effect.Duration = 10f;
         effect.TickInterval = 1f;
         effect.BaseValue = 1f;
         effect.ScalesWithStacks = true;
-        effect.MaxStacks = 10;
         effect.PreventsActions = false;
         effect.EffectColor = new Color(0.5f, 0f, 0.5f, 1f); // Purple
 
@@ -76,15 +77,16 @@ public class StatusEffectCreator : EditorWindow
         var effect = ScriptableObject.CreateInstance<StatusEffectDefinition>();
         effect.EffectID = "burn";
         effect.EffectName = "Burn";
-        effect.Description = "Fire damage over time. Reapplying refreshes duration.";
+        effect.Description = "Fire damage over time.";
         effect.EffectType = StatusEffectType.Burn;
         effect.Behavior = EffectBehavior.DamageOverTime;
-        effect.Stacking = StackingBehavior.RefreshDuration;
+        effect.Stacking = StackingBehavior.Stacking;
+        effect.MaxStacks = 5;
+        effect.Decay = DecayBehavior.Time;
         effect.Duration = 6f;
         effect.TickInterval = 2f;
         effect.BaseValue = 3f;
         effect.ScalesWithStacks = false;
-        effect.MaxStacks = 1;
         effect.PreventsActions = false;
         effect.EffectColor = new Color(1f, 0.4f, 0f, 1f); // Orange
 
@@ -99,12 +101,13 @@ public class StatusEffectCreator : EditorWindow
         effect.Description = "Unable to use abilities. Cooldowns are paused.";
         effect.EffectType = StatusEffectType.Stun;
         effect.Behavior = EffectBehavior.ControlEffect;
-        effect.Stacking = StackingBehavior.Replace;
+        effect.Stacking = StackingBehavior.NoStacking;
+        effect.MaxStacks = 1;
+        effect.Decay = DecayBehavior.Time;
         effect.Duration = 2f;
         effect.TickInterval = 0f; // No ticking
         effect.BaseValue = 0f;
         effect.ScalesWithStacks = false;
-        effect.MaxStacks = 1;
         effect.PreventsActions = true;
         effect.EffectColor = new Color(1f, 1f, 0f, 1f); // Yellow
 
@@ -119,12 +122,13 @@ public class StatusEffectCreator : EditorWindow
         effect.Description = "Heals over time. Stacks for more healing per tick.";
         effect.EffectType = StatusEffectType.Regeneration;
         effect.Behavior = EffectBehavior.HealOverTime;
-        effect.Stacking = StackingBehavior.MaxStacks;
+        effect.Stacking = StackingBehavior.Stacking;
+        effect.MaxStacks = 3;
+        effect.Decay = DecayBehavior.Time;
         effect.Duration = 8f;
         effect.TickInterval = 1f;
         effect.BaseValue = 2f;
         effect.ScalesWithStacks = true;
-        effect.MaxStacks = 3;
         effect.PreventsActions = false;
         effect.EffectColor = new Color(0f, 1f, 0f, 1f); // Green
 
@@ -139,12 +143,13 @@ public class StatusEffectCreator : EditorWindow
         effect.Description = "Increases damage dealt by 25%.";
         effect.EffectType = StatusEffectType.AttackBuff;
         effect.Behavior = EffectBehavior.StatModifier;
-        effect.Stacking = StackingBehavior.RefreshDuration;
+        effect.Stacking = StackingBehavior.NoStacking;
+        effect.MaxStacks = 1;
+        effect.Decay = DecayBehavior.Time;
         effect.Duration = 10f;
         effect.TickInterval = 0f; // No ticking
         effect.BaseValue = 0.25f; // +25%
         effect.ScalesWithStacks = false;
-        effect.MaxStacks = 1;
         effect.PreventsActions = false;
         effect.EffectColor = new Color(1f, 0f, 0f, 1f); // Red
 
@@ -159,12 +164,13 @@ public class StatusEffectCreator : EditorWindow
         effect.Description = "Takes 10% more damage per stack.";
         effect.EffectType = StatusEffectType.DefenseDebuff;
         effect.Behavior = EffectBehavior.StatModifier;
-        effect.Stacking = StackingBehavior.Additive;
+        effect.Stacking = StackingBehavior.Stacking;
+        effect.MaxStacks = 3;
+        effect.Decay = DecayBehavior.Time;
         effect.Duration = 8f;
         effect.TickInterval = 0f; // No ticking
         effect.BaseValue = 0.10f; // +10% damage taken per stack (defense multiplier increases)
         effect.ScalesWithStacks = true;
-        effect.MaxStacks = 3;
         effect.PreventsActions = false;
         effect.EffectColor = new Color(0f, 0.5f, 1f, 1f); // Blue
 

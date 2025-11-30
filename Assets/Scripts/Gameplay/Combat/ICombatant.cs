@@ -141,6 +141,9 @@ public interface ICombatant
     /// <summary>Get active effect by ID (null if not present)</summary>
     ActiveStatusEffect GetStatusEffect(string effectId);
 
+    /// <summary>Get effect by ID including expired effects (needed for removal)</summary>
+    ActiveStatusEffect GetStatusEffectIncludingExpired(string effectId);
+
     /// <summary>True if any active effect has PreventsActions (is stunned)</summary>
     bool IsStunned { get; }
 

@@ -263,9 +263,8 @@ public class CombatPanelUI : MonoBehaviour
             else
                 AddToCombatLog($"{actorName} vous a empoisonne de <color=#9B6BFF>{eventData.PoisonApplied:F0}</color> avec {abilityName} !");
 
-            // Show poison on target's status bar
-            var targetStatus = eventData.IsPlayerAbility ? enemyStatusEffects : playerStatusEffects;
-            if (targetStatus != null) targetStatus.AddEffect(StatusEffectType.Poison, eventData.PoisonApplied);
+            // NOTE: Status effect display is now handled by StatusEffectUI via StatusEffectAppliedEvent
+            // Removed legacy AddEffect call that was causing double-apply bug
         }
 
         // Animate character images like original system
@@ -281,9 +280,8 @@ public class CombatPanelUI : MonoBehaviour
         RectTransform targetImage = eventData.IsPlayer ? playerImageTransform : enemyImageTransform;
         SpawnPopup(poisonPopupPrefab, eventData.PoisonDamage, targetImage);
 
-        // Update poison stacks display
-        var targetStatus = eventData.IsPlayer ? playerStatusEffects : enemyStatusEffects;
-        if (targetStatus != null) targetStatus.UpdateEffect(StatusEffectType.Poison, eventData.RemainingStacks);
+        // NOTE: Status effect stack display is now handled by StatusEffectUI via StatusEffectAppliedEvent
+        // Removed legacy UpdateEffect call - stacks don't change on tick, only on new applications
     }
 
     private void OnStatusEffectTick(StatusEffectTickEvent eventData)
