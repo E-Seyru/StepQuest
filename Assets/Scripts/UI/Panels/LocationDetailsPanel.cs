@@ -589,21 +589,23 @@ public class LocationDetailsPanel : MonoBehaviour
 
         Logger.LogInfo($"LocationDetailsPanel: Enemy selected - {enemyDefinition.GetDisplayName()}", Logger.LogCategory.General);
 
-        // Activer le panel de combat UI
+        // Show pre-combat screen via CombatPanelUI
         if (combatPanelUI != null)
         {
-            combatPanelUI.SetActive(true);
-        }
-
-        // Lancer le combat via CombatManager
-        if (CombatManager.Instance != null)
-        {
-            CombatManager.Instance.StartCombat(enemyDefinition);
-            Logger.LogInfo($"LocationDetailsPanel: Combat started against {enemyDefinition.GetDisplayName()}", Logger.LogCategory.General);
+            var combatPanel = combatPanelUI.GetComponent<CombatPanelUI>();
+            if (combatPanel != null)
+            {
+                combatPanel.ShowPreCombat(enemyDefinition);
+                Logger.LogInfo($"LocationDetailsPanel: Showing pre-combat for {enemyDefinition.GetDisplayName()}", Logger.LogCategory.General);
+            }
+            else
+            {
+                Logger.LogError("LocationDetailsPanel: CombatPanelUI component not found on combatPanelUI GameObject!", Logger.LogCategory.General);
+            }
         }
         else
         {
-            Logger.LogError("LocationDetailsPanel: CombatManager.Instance est null !", Logger.LogCategory.General);
+            Logger.LogError("LocationDetailsPanel: combatPanelUI reference is null!", Logger.LogCategory.General);
         }
     }
 

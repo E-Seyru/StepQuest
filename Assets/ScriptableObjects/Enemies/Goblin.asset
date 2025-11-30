@@ -17,12 +17,17 @@ MonoBehaviour:
   Description: A cunning little creature with poisoned daggers.
   EnemySprite: {fileID: 21300000, guid: 58777b6de49663b4880003ccafaa7d82, type: 3}
   EnemyColor: {r: 0.2, g: 0.6, b: 0.2, a: 1}
+  Level: 1
   MaxHealth: 50
   Abilities:
   - {fileID: 11400000, guid: 7104522b238f0fe4dbd8f4fa446cc3b5, type: 2}
   - {fileID: 11400000, guid: b7c28f128f678494d84bcc52ae74adda, type: 2}
   ExperienceReward: 15
-  LootTable: []
+  LootTable:
+  - Item: {fileID: 0}
+    MinQuantity: 0
+    MaxQuantity: 0
+    DropChance: 0
   VictoryTitle: Goblin Slain!
   VictoryDescription: The goblin falls with a screech.
   DeveloperNotes: 

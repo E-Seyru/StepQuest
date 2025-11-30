@@ -170,14 +170,16 @@ public class EnemySelectionUI : MonoBehaviour
     {
         if (enemy == null) return;
 
-        if (CombatManager.Instance != null && CombatManager.Instance.CanStartCombat())
+        // Find CombatPanelUI and show pre-combat screen
+        var combatPanelUI = FindObjectOfType<CombatPanelUI>();
+        if (combatPanelUI != null)
         {
-            CombatManager.Instance.StartCombat(enemy);
-            Logger.LogInfo($"EnemySelectionUI: Starting combat vs {enemy.GetDisplayName()}", Logger.LogCategory.General);
+            combatPanelUI.ShowPreCombat(enemy);
+            Logger.LogInfo($"EnemySelectionUI: Showing pre-combat for {enemy.GetDisplayName()}", Logger.LogCategory.General);
         }
         else
         {
-            Logger.LogWarning("EnemySelectionUI: Cannot start combat", Logger.LogCategory.General);
+            Logger.LogWarning("EnemySelectionUI: CombatPanelUI not found", Logger.LogCategory.General);
         }
     }
 

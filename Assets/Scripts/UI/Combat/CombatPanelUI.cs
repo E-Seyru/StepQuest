@@ -54,8 +54,16 @@ public class CombatPanelUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI combatLogText;
     [SerializeField] private ScrollRect combatLogScrollRect;
 
+    [Header("Rewards Display")]
+    [SerializeField] private GameObject rewardsSection;
+    [SerializeField] private TextMeshProUGUI rewardsText;
+    [SerializeField] private string xpColor = "#C8A2C8"; // Pale purple for XP
+    [SerializeField] private string lootLabelColor = "#8B7355"; // Brownish for loot label
+
     [Header("Buttons")]
     [SerializeField] private Button fleeButton;
+    [SerializeField] private Button leaveButton;
+    [SerializeField] private Button startCombatButton;
 
     [Header("Animation Settings")]
     [SerializeField] private float healthBarAnimDuration = 0.5f;
@@ -66,11 +74,14 @@ public class CombatPanelUI : MonoBehaviour
     // Runtime state
     private CombatData currentCombat;
     private EnemyDefinition currentEnemy;
+    private EnemyDefinition selectedEnemy; // Enemy selected but combat not yet started
     private Vector2 playerStartPosition;
     private Vector2 enemyStartPosition;
     private bool isPlayerScalingInProgress = false;
     private bool isEnemyScalingInProgress = false;
     private bool isInitialized = false;
+    private bool isCombatOver = false;
+    private bool isInPreCombat = false; // Panel open but combat not started
 
     void Awake()
     {
@@ -102,10 +113,18 @@ public class CombatPanelUI : MonoBehaviour
     {
         if (isInitialized) return;
 
-        // Setup flee button
+        // Setup buttons
         if (fleeButton != null)
         {
             fleeButton.onClick.AddListener(OnFleeButtonClicked);
+        }
+        if (leaveButton != null)
+        {
+            leaveButton.onClick.AddListener(OnLeaveButtonClicked);
+        }
+        if (startCombatButton != null)
+        {
+            startCombatButton.onClick.AddListener(OnStartCombatButtonClicked);
         }
 
         // Cache start positions for animations
@@ -146,6 +165,14 @@ public class CombatPanelUI : MonoBehaviour
         {
             fleeButton.onClick.RemoveListener(OnFleeButtonClicked);
         }
+        if (leaveButton != null)
+        {
+            leaveButton.onClick.RemoveListener(OnLeaveButtonClicked);
+        }
+        if (startCombatButton != null)
+        {
+            startCombatButton.onClick.RemoveListener(OnStartCombatButtonClicked);
+        }
     }
 
     // === EVENT HANDLERS ===
@@ -154,6 +181,7 @@ public class CombatPanelUI : MonoBehaviour
     {
         currentCombat = eventData.Combat;
         currentEnemy = eventData.Enemy;
+        isCombatOver = false;
 
         // Show panel
         if (combatPanel != null)
@@ -182,6 +210,15 @@ public class CombatPanelUI : MonoBehaviour
         if (playerStatusEffects != null) playerStatusEffects.ClearAll();
         if (enemyStatusEffects != null) enemyStatusEffects.ClearAll();
 
+        // Hide rewards section
+        HideRewardsSection();
+
+        // Show Flee button, hide Leave and Start Combat buttons during combat
+        if (fleeButton != null) fleeButton.gameObject.SetActive(true);
+        if (leaveButton != null) leaveButton.gameObject.SetActive(false);
+        if (startCombatButton != null) startCombatButton.gameObject.SetActive(false);
+        isInPreCombat = false;
+
         // Clear combat log
         ClearCombatLog();
         AddToCombatLog($"Combat contre {currentEnemy?.GetDisplayName()} !");
@@ -207,26 +244,61 @@ public class CombatPanelUI : MonoBehaviour
 
     private void OnCombatEnded(CombatEndedEvent eventData)
     {
+        isCombatOver = true;
         string result = eventData.PlayerWon ? "Victoire !" : "Defaite...";
         AddToCombatLog($"\n=== {result} ===");
 
-        if (eventData.PlayerWon && eventData.ExperienceGained > 0)
+        if (eventData.PlayerWon)
         {
-            AddToCombatLog($"+{eventData.ExperienceGained} XP");
+            // Build rewards for dedicated section
+            DisplayRewardsSection(eventData.ExperienceGained, eventData.LootDropped);
+
+            // Add rewards to combat log (bold + colored)
+            if (eventData.ExperienceGained > 0)
+            {
+                AddToCombatLog($"<b><color={xpColor}>+{eventData.ExperienceGained} XP</color></b>");
+            }
+
+            if (eventData.LootDropped != null && eventData.LootDropped.Count > 0)
+            {
+                AddToCombatLog($"<b><color={lootLabelColor}>Butin:</color></b>");
+                foreach (var loot in eventData.LootDropped)
+                {
+                    if (loot.Key != null && loot.Value > 0)
+                    {
+                        string itemColorHex = ColorUtility.ToHtmlStringRGB(loot.Key.GetRarityColor());
+                        string itemName = loot.Key.GetDisplayName();
+                        AddToCombatLog($"  <b><color=#{itemColorHex}>+{loot.Value} {itemName}</color></b>");
+                    }
+                }
+            }
+        }
+        else
+        {
+            // Hide rewards section on defeat
+            HideRewardsSection();
         }
 
         // Clear ability displays
         ClearAbilityDisplays();
 
-        // Hide panel after a short delay (to show result)
-        Invoke(nameof(HidePanel), 2f);
+        // Hide Flee button, show Leave and Start Combat buttons after combat
+        if (fleeButton != null) fleeButton.gameObject.SetActive(false);
+        if (leaveButton != null) leaveButton.gameObject.SetActive(true);
+        if (startCombatButton != null) startCombatButton.gameObject.SetActive(true);
     }
 
     private void OnCombatFled(CombatFledEvent eventData)
     {
+        isCombatOver = true;
         AddToCombatLog("\n=== Fuite ! ===");
         ClearAbilityDisplays();
-        HidePanel();
+        HideRewardsSection();
+
+        // Hide Flee button, show Leave and Start Combat buttons after fleeing
+        if (fleeButton != null) fleeButton.gameObject.SetActive(false);
+        if (leaveButton != null) leaveButton.gameObject.SetActive(true);
+        if (startCombatButton != null) startCombatButton.gameObject.SetActive(true);
     }
 
     private void OnHealthChanged(CombatHealthChangedEvent eventData)
@@ -496,7 +568,79 @@ public class CombatPanelUI : MonoBehaviour
         CombatManager.Instance?.FleeCombat();
     }
 
+    private void OnLeaveButtonClicked()
+    {
+        HidePanel();
+    }
+
+    private void OnStartCombatButtonClicked()
+    {
+        if (selectedEnemy == null)
+        {
+            Logger.LogWarning("CombatPanelUI: No enemy selected for combat", Logger.LogCategory.General);
+            return;
+        }
+
+        if (CombatManager.Instance != null && CombatManager.Instance.CanStartCombat())
+        {
+            isInPreCombat = false;
+            CombatManager.Instance.StartCombat(selectedEnemy);
+        }
+        else
+        {
+            Logger.LogWarning("CombatPanelUI: Cannot start combat - conditions not met", Logger.LogCategory.General);
+        }
+    }
+
     // === HELPER METHODS ===
+
+    private void DisplayRewardsSection(int experienceGained, Dictionary<ItemDefinition, int> lootDropped)
+    {
+        if (rewardsSection != null)
+        {
+            rewardsSection.SetActive(true);
+        }
+
+        if (rewardsText != null)
+        {
+            var sb = new System.Text.StringBuilder();
+
+            // XP line
+            if (experienceGained > 0)
+            {
+                sb.AppendLine($"<b><color={xpColor}>+{experienceGained} XP</color></b>");
+            }
+
+            // Loot lines
+            if (lootDropped != null && lootDropped.Count > 0)
+            {
+                foreach (var loot in lootDropped)
+                {
+                    if (loot.Key != null && loot.Value > 0)
+                    {
+                        string itemColorHex = ColorUtility.ToHtmlStringRGB(loot.Key.GetRarityColor());
+                        string itemName = loot.Key.GetDisplayName();
+                        sb.AppendLine($"<b><color=#{itemColorHex}>+{loot.Value} {itemName}</color></b>");
+                    }
+                }
+            }
+
+            rewardsText.text = sb.ToString().TrimEnd();
+        }
+    }
+
+    private void HideRewardsSection()
+    {
+        if (rewardsSection != null)
+        {
+            rewardsSection.SetActive(false);
+        }
+
+        if (rewardsText != null)
+        {
+            rewardsText.text = "";
+        }
+    }
 
     private void SpawnPopup(GameObject prefab, float amount, RectTransform characterImage)
     {
@@ -534,18 +678,52 @@ public class CombatPanelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Called from UI to start combat against a specific enemy
+    /// Called from EnemySelectionUI when an enemy is selected - shows panel in pre-combat state
     /// </summary>
-    public void StartCombat(EnemyDefinition enemy)
+    public void ShowPreCombat(EnemyDefinition enemy)
     {
-        if (CombatManager.Instance != null && CombatManager.Instance.CanStartCombat())
+        if (enemy == null) return;
+
+        selectedEnemy = enemy;
+        isInPreCombat = true;
+        isCombatOver = false;
+
+        // Show panel
+        if (combatPanel != null)
         {
-            CombatManager.Instance.StartCombat(enemy);
+            combatPanel.SetActive(true);
         }
-        else
-        {
-            Logger.LogWarning("CombatPanelUI: Cannot start combat - conditions not met", Logger.LogCategory.General);
-        }
+
+        // Setup enemy display
+        if (enemyNameText != null)
+            enemyNameText.text = enemy.GetDisplayName();
+
+        if (enemyImage != null && enemy.EnemySprite != null)
+            enemyImage.sprite = enemy.EnemySprite;
+
+        // Clear/hide combat-specific displays
+        ClearCombatLog();
+        ClearAbilityDisplays();
+        HideRewardsSection();
+
+        // Clear status effects
+        if (playerStatusEffects != null) playerStatusEffects.ClearAll();
+        if (enemyStatusEffects != null) enemyStatusEffects.ClearAll();
+
+        // Reset health bars to full (visual only, combat hasn't started)
+        if (playerHealthBarFill != null) playerHealthBarFill.fillAmount = 1f;
+        if (enemyHealthBarFill != null) enemyHealthBarFill.fillAmount = 1f;
+        if (playerShieldBarFill != null) playerShieldBarFill.fillAmount = 0f;
+        if (enemyShieldBarFill != null) enemyShieldBarFill.fillAmount = 0f;
+
+        // Show Start Combat and Leave buttons, hide Flee
+        if (startCombatButton != null) startCombatButton.gameObject.SetActive(true);
+        if (leaveButton != null) leaveButton.gameObject.SetActive(true);
+        if (fleeButton != null) fleeButton.gameObject.SetActive(false);
+
+        AddToCombatLog($"Pret a combattre {enemy.GetDisplayName()} ?");
+
+        Logger.LogInfo($"CombatPanelUI: Pre-combat shown for {enemy.GetDisplayName()}", Logger.LogCategory.General);
     }
 
     private Dictionary<StatusEffectType, GameObject> BuildStatusEffectPrefabDictionary()
