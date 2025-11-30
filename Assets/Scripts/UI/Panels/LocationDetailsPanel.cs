@@ -19,7 +19,11 @@ public class LocationDetailsPanel : MonoBehaviour
     [SerializeField] private ScrollRect descriptionScrollRect;
 
     [Header("Interface - Section Activites - DELEGUe")]
-    [SerializeField] private ActivitiesSectionPanel activitiesSectionPanel; // Reference vers le nouveau panel
+    [SerializeField] private ActivitiesSectionPanel activitiesSectionPanel; // Reference vers le panel activites
+
+    [Header("Interface - Section Combat - DELEGUe")]
+    [SerializeField] private CombatSectionPanel combatSectionPanel; // Reference vers le panel combat
+    [SerializeField] private GameObject combatPanelUI; // Reference vers le panel UI de combat a activer
 
     [Header("Interface - Section Infos")]
     [SerializeField] private TextMeshProUGUI locationInfoText;
@@ -178,6 +182,16 @@ public class LocationDetailsPanel : MonoBehaviour
         EventBus.Unsubscribe<TravelCompletedEvent>(OnTravelCompleted);
         EventBus.Unsubscribe<TravelStartedEvent>(OnTravelStarted);
         EventBus.Unsubscribe<TravelProgressEvent>(OnTravelProgress);
+
+        // Desabonnement des panels delegates
+        if (activitiesSectionPanel != null)
+        {
+            activitiesSectionPanel.OnActivitySelected -= OnActivitySelected;
+        }
+        if (combatSectionPanel != null)
+        {
+            combatSectionPanel.OnEnemySelected -= OnEnemySelected;
+        }
 
         Logger.LogInfo("LocationDetailsPanel: Unsubscribed from EventBus events", Logger.LogCategory.General);
     }
@@ -416,6 +430,7 @@ public class LocationDetailsPanel : MonoBehaviour
         UpdateHeaderSection();
         UpdateDescriptionSection();
         UpdateActivitiesSection(); // DeLeGUe au ActivitiesSectionPanel
+        UpdateCombatSection(); // DeLeGUe au CombatSectionPanel
         UpdateInfoSection();
     }
 
@@ -544,6 +559,52 @@ public class LocationDetailsPanel : MonoBehaviour
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Met a jour la section combat - DeLeGUe au CombatSectionPanel
+    /// </summary>
+    private void UpdateCombatSection()
+    {
+        if (combatSectionPanel == null || currentLocation == null) return;
+
+        // Afficher les ennemis disponibles a cette location
+        combatSectionPanel.DisplayEnemies(currentLocation);
+
+        // S'abonner a l'evenement de selection d'ennemi
+        combatSectionPanel.OnEnemySelected -= OnEnemySelected;
+        combatSectionPanel.OnEnemySelected += OnEnemySelected;
+    }
+
+    /// <summary>
+    /// Gere la selection d'un ennemi depuis le CombatSectionPanel
+    /// </summary>
+    private void OnEnemySelected(EnemyDefinition enemyDefinition)
+    {
+        if (enemyDefinition == null)
+        {
+            Logger.LogWarning("LocationDetailsPanel: Enemy selection avec null !", Logger.LogCategory.General);
+            return;
+        }
+
+        Logger.LogInfo($"LocationDetailsPanel: Enemy selected - {enemyDefinition.GetDisplayName()}", Logger.LogCategory.General);
+
+        // Activer le panel de combat UI
+        if (combatPanelUI != null)
+        {
+            combatPanelUI.SetActive(true);
+        }
+
+        // Lancer le combat via CombatManager
+        if (CombatManager.Instance != null)
+        {
+            CombatManager.Instance.StartCombat(enemyDefinition);
+            Logger.LogInfo($"LocationDetailsPanel: Combat started against {enemyDefinition.GetDisplayName()}", Logger.LogCategory.General);
+        }
+        else
+        {
+            Logger.LogError("LocationDetailsPanel: CombatManager.Instance est null !", Logger.LogCategory.General);
+        }
     }
 
     /// <summary>

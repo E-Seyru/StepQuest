@@ -59,6 +59,10 @@ public class EnemyDefinition : ScriptableObject
     public Color EnemyColor = Color.white;
 
     [Header("Combat Stats")]
+    [Tooltip("Enemy level - affects difficulty display")]
+    [Min(1)]
+    public int Level = 1;
+
     [Tooltip("Maximum health points")]
     [Min(1)]
     public float MaxHealth = 100f;

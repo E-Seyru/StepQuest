@@ -70,10 +70,11 @@ public class CombatPanelUI : MonoBehaviour
     private Vector2 enemyStartPosition;
     private bool isPlayerScalingInProgress = false;
     private bool isEnemyScalingInProgress = false;
+    private bool isInitialized = false;
 
-    void Start()
+    void Awake()
     {
-        // Subscribe to combat events
+        // Subscribe to combat events in Awake so it works even if GameObject starts disabled
         EventBus.Subscribe<CombatStartedEvent>(OnCombatStarted);
         EventBus.Subscribe<CombatEndedEvent>(OnCombatEnded);
         EventBus.Subscribe<CombatFledEvent>(OnCombatFled);
@@ -81,6 +82,25 @@ public class CombatPanelUI : MonoBehaviour
         EventBus.Subscribe<CombatAbilityUsedEvent>(OnAbilityUsed);
         EventBus.Subscribe<CombatPoisonTickEvent>(OnPoisonTick);
         EventBus.Subscribe<StatusEffectTickEvent>(OnStatusEffectTick);
+    }
+
+    void Start()
+    {
+        InitializeUI();
+    }
+
+    void OnEnable()
+    {
+        // Initialize UI if not already done (in case Start wasn't called yet)
+        if (!isInitialized)
+        {
+            InitializeUI();
+        }
+    }
+
+    private void InitializeUI()
+    {
+        if (isInitialized) return;
 
         // Setup flee button
         if (fleeButton != null)
@@ -99,11 +119,13 @@ public class CombatPanelUI : MonoBehaviour
         if (playerStatusEffects != null) playerStatusEffects.Initialize(prefabDict);
         if (enemyStatusEffects != null) enemyStatusEffects.Initialize(prefabDict);
 
-        // Initially hide combat panel
+        // Hide combat panel at start (the visual content, not this script's GameObject)
         if (combatPanel != null)
         {
             combatPanel.SetActive(false);
         }
+
+        isInitialized = true;
     }
 
     void OnDestroy()

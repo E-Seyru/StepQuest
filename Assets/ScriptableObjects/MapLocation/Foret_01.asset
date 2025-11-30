@@ -42,6 +42,11 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
+  AvailableEnemies:
+  - EnemyReference: {fileID: 11400000, guid: f2be85aa16265d3448b912357d492ecc, type: 2}
+    IsAvailable: 1
+    MinimumRequirement: 0
+    Requirements: 
   LocationIcon: {fileID: 21300000, guid: 32af71dbf20033647b2f01e9e722d654, type: 3}
   POIColor: {r: 1, g: 1, b: 1, a: 1}
   IsAccessible: 1

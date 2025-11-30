@@ -99,11 +99,10 @@ public class EnemyCard : MonoBehaviour
             enemyImage.preserveAspect = true;
         }
 
-        // Level/Difficulty indicator
+        // Level indicator
         if (levelText != null)
         {
-            // Show health as difficulty indicator for now
-            levelText.text = $"PV: {enemyDefinition.MaxHealth}";
+            levelText.text = $"Niv. {enemyDefinition.Level}";
         }
     }
 
