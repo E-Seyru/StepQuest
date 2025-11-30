@@ -120,40 +120,17 @@ public class ActivitiesSectionPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Configure le grid layout automatiquement - AMeLIORe comme ActivityVariantsPanel
+    /// Verifie que le grid layout est present (ne modifie pas les parametres configures dans l'Inspector)
     /// </summary>
     private void SetupGridLayout()
     {
         if (activitiesContainer == null) return;
 
-        // Ajouter GridLayoutGroup si pas present
-        GridLayoutGroup gridLayout = activitiesContainer.GetComponent<GridLayoutGroup>();
-        if (gridLayout == null)
+        // Verifier que GridLayoutGroup est present
+        if (activitiesContainer.GetComponent<GridLayoutGroup>() == null)
         {
-            gridLayout = activitiesContainer.gameObject.AddComponent<GridLayoutGroup>();
+            Debug.LogWarning("ActivitiesSectionPanel: GridLayoutGroup manquant sur ActivitiesContainer, ajoutez-le dans l'Inspector!");
         }
-
-        // Configurer le grid layout
-        gridLayout.childAlignment = TextAnchor.MiddleLeft;
-        gridLayout.constraint = GridLayoutGroup.Constraint.Flexible;
-        gridLayout.spacing = new Vector2(15f, 15f); // Espacement entre cartes
-        gridLayout.padding = new RectOffset(15, 15, 15, 15); // Padding autour du container
-
-        // Taille des cellules (ajustable selon votre design de cartes)
-        gridLayout.cellSize = new Vector2(210f, 290f);
-
-        // Ajouter ContentSizeFitter si pas present
-        ContentSizeFitter contentSizeFitter = activitiesContainer.GetComponent<ContentSizeFitter>();
-        if (contentSizeFitter == null)
-        {
-            contentSizeFitter = activitiesContainer.gameObject.AddComponent<ContentSizeFitter>();
-        }
-
-        // Configurer le ContentSizeFitter
-        contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-
-        Debug.Log("ActivitiesSectionPanel: Grid layout configure automatiquement");
     }
 
     #endregion

@@ -18,9 +18,6 @@ public class CombatSectionPanel : MonoBehaviour
     [SerializeField] private GameObject enemyCardPrefab;
     [SerializeField] private TextMeshProUGUI noEnemiesText;
 
-    [Header("Grid Settings")]
-    [SerializeField] private Vector2 cellSize = new Vector2(180f, 240f);
-    [SerializeField] private Vector2 spacing = new Vector2(15f, 15f);
 
     // Pool d'objets pour optimiser les performances
     private Queue<GameObject> enemyCardPool = new Queue<GameObject>();
@@ -156,31 +153,11 @@ public class CombatSectionPanel : MonoBehaviour
     {
         if (enemiesContainer == null) return;
 
-        // Ajouter GridLayoutGroup si pas present
-        GridLayoutGroup gridLayout = enemiesContainer.GetComponent<GridLayoutGroup>();
-        if (gridLayout == null)
+        // Verifier que GridLayoutGroup est present
+        if (enemiesContainer.GetComponent<GridLayoutGroup>() == null)
         {
-            gridLayout = enemiesContainer.gameObject.AddComponent<GridLayoutGroup>();
+            Debug.LogWarning("CombatSectionPanel: GridLayoutGroup manquant sur EnemiesContainer, ajoutez-le dans l'Inspector!");
         }
-
-        // Configurer le grid layout
-        gridLayout.childAlignment = TextAnchor.MiddleLeft;
-        gridLayout.constraint = GridLayoutGroup.Constraint.Flexible;
-        gridLayout.spacing = spacing;
-        gridLayout.padding = new RectOffset(15, 15, 15, 15);
-        gridLayout.cellSize = cellSize;
-
-        // Ajouter ContentSizeFitter si pas present
-        ContentSizeFitter contentSizeFitter = enemiesContainer.GetComponent<ContentSizeFitter>();
-        if (contentSizeFitter == null)
-        {
-            contentSizeFitter = enemiesContainer.gameObject.AddComponent<ContentSizeFitter>();
-        }
-
-        contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-
-        Debug.Log("CombatSectionPanel: Grid layout configure");
     }
 
     #endregion

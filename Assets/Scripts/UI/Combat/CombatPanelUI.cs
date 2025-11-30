@@ -130,6 +130,9 @@ public class CombatPanelUI : MonoBehaviour
 
     void OnDestroy()
     {
+        // Cancel any pending Invoke calls to prevent null reference exceptions
+        CancelInvoke(nameof(HidePanel));
+
         // Unsubscribe from events
         EventBus.Unsubscribe<CombatStartedEvent>(OnCombatStarted);
         EventBus.Unsubscribe<CombatEndedEvent>(OnCombatEnded);

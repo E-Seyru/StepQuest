@@ -31,6 +31,12 @@ public class POIPathRenderer : MonoBehaviour
         }
     }
 
+    void OnDestroy()
+    {
+        // Cancel any pending Invoke calls to prevent null reference exceptions
+        CancelInvoke(nameof(GenerateAllPaths));
+    }
+
     /// <summary>
     /// Genere automatiquement toutes les lignes entre POIs connectes
     /// </summary>
@@ -239,7 +245,7 @@ public class POIPathRenderer : MonoBehaviour
         lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         lineRenderer.receiveShadows = false;
 
-        // Configuration du tri pour apparaître au-dessus de la carte
+        // Configuration du tri pour apparaï¿½tre au-dessus de la carte
         lineRenderer.sortingLayerName = "Default";
         lineRenderer.sortingOrder = 1;
     }

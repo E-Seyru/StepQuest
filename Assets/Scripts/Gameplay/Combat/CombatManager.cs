@@ -82,10 +82,28 @@ public class CombatManager : MonoBehaviour
 
     void OnDestroy()
     {
-        if (_isCombatActive)
+        // Stop all tracked coroutines explicitly
+        foreach (var coroutine in _abilityCoroutines)
         {
-            StopAllCoroutines();
-            _isCombatActive = false;
+            if (coroutine != null)
+                StopCoroutine(coroutine);
+        }
+        _abilityCoroutines.Clear();
+
+        if (_statusEffectCoroutine != null)
+        {
+            StopCoroutine(_statusEffectCoroutine);
+            _statusEffectCoroutine = null;
+        }
+
+        // Stop any remaining coroutines
+        StopAllCoroutines();
+        _isCombatActive = false;
+
+        // Clear singleton reference if this is the active instance
+        if (Instance == this)
+        {
+            Instance = null;
         }
     }
 

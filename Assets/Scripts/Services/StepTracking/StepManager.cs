@@ -959,6 +959,23 @@ public class StepManager : MonoBehaviour
         Logger.LogInfo("StepManager: Application Quitting.", Logger.LogCategory.StepLog);
     }
 
+    void OnDestroy()
+    {
+#if UNITY_EDITOR
+        // Stop the editor update coroutine to prevent memory leaks
+        if (editorUpdateCoroutine != null)
+        {
+            StopCoroutine(editorUpdateCoroutine);
+            editorUpdateCoroutine = null;
+        }
+#endif
+        // Clear singleton reference if this is the active instance
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
     // Obtenir la date locale actuelle au format "yyyy-MM-dd"
     private string GetLocalDateString()
     {

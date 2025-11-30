@@ -240,7 +240,16 @@ public class ActivityManager : MonoBehaviour
 
     void OnDestroy()
     {
+        // Cancel any pending Invoke calls to prevent null reference exceptions
+        CancelInvoke(nameof(ProcessOfflineProgressInvoke));
+
         PersistenceService?.Cleanup();
+
+        // Clear singleton reference if this is the active instance
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 }
 

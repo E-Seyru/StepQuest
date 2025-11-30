@@ -35,6 +35,9 @@ public class MapToggleButton : MonoBehaviour
 
     private void OnDestroy()
     {
+        // Cancel any pending Invoke calls to prevent null reference exceptions
+        CancelInvoke(nameof(ResetClickFlag));
+
         // Se desabonner des evenements pour eviter les erreurs
         if (panelManager != null)
         {

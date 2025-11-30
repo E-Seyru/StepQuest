@@ -203,7 +203,7 @@ public class MapValidationService
             return false;
         }
 
-        if (ActivityManager.Instance.ShouldBlockTravel())
+        if (ActivityManager.Instance?.ShouldBlockTravel() ?? false)
         {
             Logger.LogInfo($"MapManager: Cannot travel - activity in progress blocks travel", Logger.LogCategory.MapLog);
             return false;
@@ -246,7 +246,7 @@ public class MapValidationService
         if (manager.CurrentLocation.LocationID == destinationLocationId)
             return $"already at '{destinationLocation.DisplayName}'.";
 
-        if (ActivityManager.Instance.ShouldBlockTravel())
+        if (ActivityManager.Instance?.ShouldBlockTravel() ?? false)
             return "activity in progress blocks travel.";
 
         // ENHANCED : Message plus detaille
