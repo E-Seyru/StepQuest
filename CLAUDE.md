@@ -121,19 +121,31 @@ Auto-battler combat system where abilities trigger automatically on cooldown.
 - `WalkAndRPG > Combat Content Creator` - Create test abilities/enemies
 - `WalkAndRPG > Combat Tester` - Test combat in Play Mode
 
-#### SETUP TODO (Resume Point):
-1. Create empty GameObject "CombatManager" → Add `CombatManager` component
-2. In Inspector, drag to "Player Abilities" list:
-   - `Assets/ScriptableObjects/Abilities/BasicAttack.asset`
-   - `Assets/ScriptableObjects/Abilities/Heal.asset`
-3. Enter Play Mode
-4. Menu: `WalkAndRPG > Combat Tester`
-5. Drag `Assets/ScriptableObjects/Enemies/Slime.asset` → Click "Start Combat!"
+#### Combat UI Flow:
+1. Click enemy in location → Opens CombatPanel in **pre-combat** state
+2. **Pre-combat**: Shows enemy info, "Start Combat" + "Leave" buttons visible
+3. Click "Start Combat" → Combat begins, "Flee" button replaces others
+4. **Combat ends** (victory/defeat/flee) → "Leave" + "Start Combat" buttons show
+
+#### Combat Panel Features:
+- **Rewards Section**: Dedicated UI area showing XP (pale purple) and loot (rarity-colored)
+- **Combat Log**: Shows battle actions + rewards with bold colored text
+- **Buttons**: Flee (during combat), Leave (close panel), Start Combat (begin fight)
+
+#### Loot System:
+- `EnemyDefinition.LootTable` - List of `LootDropEntry` (item, min/max quantity, drop chance 0-1)
+- `EnemyDefinition.GenerateLoot()` - Rolls loot on victory
+- Loot automatically added to inventory via `InventoryManager.AddItem()`
+- XP and loot displayed in both rewards section and combat log
 
 #### NEXT STEPS:
-- Build CombatPanel UI prefab in scene
-- Create Abilities Inventory & Equipment system (weight-based slots)
-- Equipment granting stats + auto-equipping abilities
+- [ ] Create test enemies with loot tables
+- [ ] Create test items for enemy loot drops
+- [ ] Test loot system end-to-end
+- [ ] Design abilities inventory system
+- [ ] Create ability equipment UI panel (shared component)
+- [ ] Add ability equipment panel to InventoryPanel
+- [ ] Add button in CombatPanel to open ability equipment panel
 
 ## Development Notes
 

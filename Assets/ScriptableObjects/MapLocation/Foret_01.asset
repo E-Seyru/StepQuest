@@ -43,7 +43,7 @@ MonoBehaviour:
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
   AvailableEnemies:
-  - EnemyReference: {fileID: 11400000, guid: f2be85aa16265d3448b912357d492ecc, type: 2}
+  - EnemyReference: {fileID: 11400000, guid: b97d4a4ce4c7a4640b9832cfa9f63bd6, type: 2}
     IsAvailable: 1
     MinimumRequirement: 0
     Requirements: 

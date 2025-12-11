@@ -15,12 +15,13 @@ MonoBehaviour:
   EnemyID: wolf
   EnemyName: Wolf
   Description: A fierce predator with sharp fangs.
-  EnemySprite: {fileID: 0}
-  EnemyColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  EnemySprite: {fileID: -117419959325037672, guid: 8983c5970126a144da0c4a051e2df50b, type: 3}
+  EnemyColor: {r: 1, g: 1, b: 1, a: 1}
+  Level: 1
   MaxHealth: 500
   Abilities:
-  - {fileID: 11400000, guid: 7dab9f0a43187ea469e19dd415281480, type: 2}
-  - {fileID: 11400000, guid: 7dab9f0a43187ea469e19dd415281480, type: 2}
+  - {fileID: 11400000, guid: a09602b08f09a1741944acddf79fcce3, type: 2}
+  - {fileID: 11400000, guid: f07eb8b98ef14d2478b8606a660c0839, type: 2}
   ExperienceReward: 20
   LootTable: []
   VictoryTitle: Wolf Defeated!

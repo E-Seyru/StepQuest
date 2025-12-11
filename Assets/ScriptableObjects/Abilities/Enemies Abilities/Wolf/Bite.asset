@@ -11,16 +11,22 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 641a3dc1ecc234641919c977f1ece986, type: 3}
   m_Name: Bite
-  m_EditorClassIdentifier: 
-  AbilityID: bite
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityDefinition
+  AbilityID: wolf_bite
   AbilityName: Bite
-  Description: A quick biting attack.
-  AbilityIcon: {fileID: 0}
-  AbilityColor: {r: 0.6, g: 0.3, b: 0.3, a: 1}
-  EffectTypes: 00000000
-  Cooldown: 1.5
+  Description: A wolf's bite, grr.
+  AbilityIcon: {fileID: -3743710206481698763, guid: e81d69008d85cca40acbdf3f58c42946, type: 3}
+  AbilityColor: {r: 1, g: 1, b: 1, a: 1}
+  Effects:
+  - Type: 0
+    Value: 5
+    StatusEffect: {fileID: 0}
+    StatusEffectStacks: 0
+    TargetsSelf: 0
+  Cooldown: 1
   Weight: 1
-  DamageAmount: 8
+  EffectTypes: 
+  DamageAmount: 0
   HealAmount: 0
   PoisonAmount: 0
   ShieldAmount: 0
