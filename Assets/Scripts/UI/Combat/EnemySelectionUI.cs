@@ -145,10 +145,18 @@ public class EnemySelectionUI : MonoBehaviour
 
     private void ClearEnemyButtons()
     {
-        foreach (var button in spawnedButtons)
+        foreach (var buttonObj in spawnedButtons)
         {
-            if (button != null)
-                Destroy(button);
+            if (buttonObj != null)
+            {
+                // Remove listeners before destroying to prevent memory leaks
+                var button = buttonObj.GetComponent<Button>();
+                if (button != null)
+                {
+                    button.onClick.RemoveAllListeners();
+                }
+                Destroy(buttonObj);
+            }
         }
         spawnedButtons.Clear();
     }

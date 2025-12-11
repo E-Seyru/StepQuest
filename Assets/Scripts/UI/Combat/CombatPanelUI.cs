@@ -53,6 +53,7 @@ public class CombatPanelUI : MonoBehaviour
     [Header("Combat Log")]
     [SerializeField] private TextMeshProUGUI combatLogText;
     [SerializeField] private ScrollRect combatLogScrollRect;
+    [SerializeField] private int maxCombatLogLines = 30;
 
     [Header("Rewards Display")]
     [SerializeField] private GameObject rewardsSection;
@@ -82,6 +83,7 @@ public class CombatPanelUI : MonoBehaviour
     private bool isInitialized = false;
     private bool isCombatOver = false;
     private bool isInPreCombat = false; // Panel open but combat not started
+    private List<string> combatLogLines = new List<string>(); // Buffer for combat log lines
 
     void Awake()
     {
@@ -467,7 +469,17 @@ public class CombatPanelUI : MonoBehaviour
     {
         if (combatLogText == null) return;
 
-        combatLogText.text += message + "\n";
+        // Add new line to buffer
+        combatLogLines.Add(message);
+
+        // Trim buffer if it exceeds max lines
+        while (combatLogLines.Count > maxCombatLogLines)
+        {
+            combatLogLines.RemoveAt(0);
+        }
+
+        // Rebuild text from buffer
+        combatLogText.text = string.Join("\n", combatLogLines);
 
         // Schedule scroll update for end of frame to avoid expensive Canvas updates during combat
         if (combatLogScrollRect != null && !_scrollUpdatePending)
@@ -505,6 +517,7 @@ public class CombatPanelUI : MonoBehaviour
 
     private void ClearCombatLog()
     {
+        combatLogLines.Clear();
         if (combatLogText != null)
         {
             combatLogText.text = "";

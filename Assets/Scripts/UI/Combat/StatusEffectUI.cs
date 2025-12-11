@@ -65,12 +65,9 @@ public class StatusEffectUI : MonoBehaviour
 
     private void OnStatusEffectApplied(StatusEffectAppliedEvent evt)
     {
-        Debug.Log($"StatusEffectUI: Received apply event for {evt.Effect?.EffectID}, IsTargetPlayer={evt.IsTargetPlayer}, isForPlayer={isForPlayer}");
-
         if (evt.IsTargetPlayer != isForPlayer) return;
         if (evt.Effect == null) return;
 
-        Debug.Log($"StatusEffectUI: Adding/updating effect {evt.Effect.EffectID} with {evt.TotalStacks} stacks");
         AddOrUpdateEffect(evt.Effect, evt.TotalStacks);
     }
 
@@ -85,12 +82,9 @@ public class StatusEffectUI : MonoBehaviour
 
     private void OnStatusEffectRemoved(StatusEffectRemovedEvent evt)
     {
-        Debug.Log($"StatusEffectUI: Received removal event for {evt.Effect?.EffectID}, IsTargetPlayer={evt.IsTargetPlayer}, isForPlayer={isForPlayer}");
-
         if (evt.IsTargetPlayer != isForPlayer) return;
         if (evt.Effect == null) return;
 
-        Debug.Log($"StatusEffectUI: Removing effect {evt.Effect.EffectID}, activeEffects contains: {string.Join(", ", _activeEffects.Keys)}");
         RemoveEffect(evt.Effect.EffectID);
     }
 
