@@ -3,7 +3,6 @@
 
 using CombatEvents;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -40,12 +39,31 @@ public class CombatManager : MonoBehaviour
     private bool _isCombatActive = false;
     private long _combatStartTimeMs;
 
-    // Coroutine references for cleanup
-    private List<Coroutine> _abilityCoroutines = new List<Coroutine>();
-    private Coroutine _statusEffectCoroutine;
-
     // Instance counting for duplicate abilities
     private Dictionary<AbilityDefinition, int> _abilityInstanceCounts = new Dictionary<AbilityDefinition, int>();
+
+    // === OPTIMIZED ABILITY TRACKING ===
+    // Instead of one coroutine per ability (9+ coroutines), we track all abilities in one Update loop
+    private class AbilityCooldownTracker
+    {
+        public AbilityDefinition Ability;
+        public bool IsPlayerAbility;
+        public int InstanceIndex;
+        public float CurrentCooldown;
+        public float ElapsedTime;
+        public ICombatant Source;
+        public ICombatant Target;
+        public bool CooldownStartEventSent;
+    }
+    private List<AbilityCooldownTracker> _abilityTrackers = new List<AbilityCooldownTracker>();
+
+    // Cached stats to avoid recalculating every frame
+    private CombatantStats _cachedPlayerStats;
+    private CombatantStats _cachedEnemyStats;
+    private int _lastPlayerEffectCountForStats;
+    private int _lastEnemyEffectCountForStats;
+    private bool _playerIsStunnedCached;
+    private bool _enemyIsStunnedCached;
 
     // === PUBLIC ACCESSORS ===
     public bool IsCombatActive => _isCombatActive;
@@ -82,28 +100,122 @@ public class CombatManager : MonoBehaviour
 
     void OnDestroy()
     {
-        // Stop all tracked coroutines explicitly
-        foreach (var coroutine in _abilityCoroutines)
-        {
-            if (coroutine != null)
-                StopCoroutine(coroutine);
-        }
-        _abilityCoroutines.Clear();
+        // Clear ability trackers
+        _abilityTrackers.Clear();
 
-        if (_statusEffectCoroutine != null)
-        {
-            StopCoroutine(_statusEffectCoroutine);
-            _statusEffectCoroutine = null;
-        }
-
-        // Stop any remaining coroutines
-        StopAllCoroutines();
         _isCombatActive = false;
 
         // Clear singleton reference if this is the active instance
         if (Instance == this)
         {
             Instance = null;
+        }
+    }
+
+    void Update()
+    {
+        if (!_isCombatActive || _player == null || _enemy == null)
+            return;
+
+        // Check if combat is over
+        if (_executionService.IsCombatOver(_player, _enemy))
+        {
+            bool playerWon = _executionService.DidPlayerWin(_player, _enemy);
+            EndCombat(playerWon, playerWon ? "victory" : "defeat");
+            return;
+        }
+
+        float deltaTime = Time.deltaTime;
+
+        // Update cached stats only when effects change
+        UpdateCachedStats();
+
+        // Process all abilities in one pass (replaces 9+ separate coroutines)
+        ProcessAllAbilities(deltaTime);
+
+        // Process status effects
+        ProcessStatusEffectsUpdate(deltaTime);
+
+        // Sync legacy data
+        SyncLegacyCombatData();
+    }
+
+    private void UpdateCachedStats()
+    {
+        // Only recalculate stats when effect count changes
+        int playerEffectCount = _player.ActiveEffects.Count;
+        int enemyEffectCount = _enemy.ActiveEffects.Count;
+
+        if (playerEffectCount != _lastPlayerEffectCountForStats)
+        {
+            _lastPlayerEffectCountForStats = playerEffectCount;
+            _cachedPlayerStats = _player.GetModifiedStats();
+            _playerIsStunnedCached = _player.IsStunned;
+        }
+
+        if (enemyEffectCount != _lastEnemyEffectCountForStats)
+        {
+            _lastEnemyEffectCountForStats = enemyEffectCount;
+            _cachedEnemyStats = _enemy.GetModifiedStats();
+            _enemyIsStunnedCached = _enemy.IsStunned;
+        }
+    }
+
+    private void ProcessAllAbilities(float deltaTime)
+    {
+        for (int i = 0; i < _abilityTrackers.Count; i++)
+        {
+            var tracker = _abilityTrackers[i];
+            if (tracker == null || tracker.Ability == null) continue;
+
+            bool isStunned = tracker.IsPlayerAbility ? _playerIsStunnedCached : _enemyIsStunnedCached;
+
+            // Send cooldown started event if not sent yet
+            if (!tracker.CooldownStartEventSent)
+            {
+                var stats = tracker.IsPlayerAbility ? _cachedPlayerStats : _cachedEnemyStats;
+                tracker.CurrentCooldown = _abilityService.GetAdjustedCooldown(tracker.Ability.Cooldown, stats);
+                _eventService.PublishAbilityCooldownStarted(tracker.IsPlayerAbility, tracker.Ability, tracker.InstanceIndex, tracker.CurrentCooldown);
+                tracker.CooldownStartEventSent = true;
+            }
+
+            // Skip if stunned (pause cooldown)
+            if (isStunned) continue;
+
+            // Update elapsed time
+            tracker.ElapsedTime += deltaTime;
+
+            // Check if cooldown is ready
+            if (tracker.ElapsedTime >= tracker.CurrentCooldown)
+            {
+                // Execute ability
+                _abilityService.ExecuteAbility(tracker.Ability, tracker.Source, tracker.Target, tracker.InstanceIndex);
+
+                // Reset for next cycle
+                tracker.ElapsedTime = 0f;
+                tracker.CooldownStartEventSent = false;
+
+                // Check if combat ended due to this ability
+                if (_executionService.IsCombatOver(_player, _enemy))
+                {
+                    return; // Exit early, Update will handle combat end
+                }
+            }
+        }
+    }
+
+    private void ProcessStatusEffectsUpdate(float deltaTime)
+    {
+        // Process player status effects
+        if (_player != null)
+        {
+            _statusEffectService.ProcessTicks(_player, deltaTime);
+        }
+
+        // Process enemy status effects
+        if (_enemy != null)
+        {
+            _statusEffectService.ProcessTicks(_enemy, deltaTime);
         }
     }
 
@@ -167,9 +279,13 @@ public class CombatManager : MonoBehaviour
             Logger.LogInfo($"CombatManager: Combat started vs {enemy.GetDisplayName()}", Logger.LogCategory.General);
         }
 
-        // Start ability cycles and status effect processing
-        StartAbilityCycles();
-        StartStatusEffectProcessing();
+        // Initialize ability trackers (replaces coroutines)
+        InitializeAbilityTrackers();
+
+        // Initialize cached stats
+        _lastPlayerEffectCountForStats = -1;
+        _lastEnemyEffectCountForStats = -1;
+        UpdateCachedStats();
 
         return true;
     }
@@ -240,44 +356,57 @@ public class CombatManager : MonoBehaviour
 
     // === COMBAT LOGIC ===
 
-    private void StartAbilityCycles()
+    private void InitializeAbilityTrackers()
     {
-        _abilityCoroutines.Clear();
+        _abilityTrackers.Clear();
         _abilityInstanceCounts.Clear();
 
-        // Start player ability cycles
+        // Create trackers for player abilities
         foreach (var ability in playerAbilities)
         {
             if (ability == null) continue;
             int instanceIndex = GetAndIncrementInstanceCount(ability);
-            var coroutine = StartCoroutine(ProcessAbilityCycle(ability, true, instanceIndex));
-            _abilityCoroutines.Add(coroutine);
+            _abilityTrackers.Add(new AbilityCooldownTracker
+            {
+                Ability = ability,
+                IsPlayerAbility = true,
+                InstanceIndex = instanceIndex,
+                CurrentCooldown = 0f,
+                ElapsedTime = 0f,
+                Source = _player,
+                Target = _enemy,
+                CooldownStartEventSent = false
+            });
         }
 
         // Reset instance counts for enemy abilities
         _abilityInstanceCounts.Clear();
 
-        // Start enemy ability cycles
+        // Create trackers for enemy abilities
         if (_currentEnemyDef?.Abilities != null)
         {
             foreach (var ability in _currentEnemyDef.Abilities)
             {
                 if (ability == null) continue;
                 int instanceIndex = GetAndIncrementInstanceCount(ability);
-                var coroutine = StartCoroutine(ProcessAbilityCycle(ability, false, instanceIndex));
-                _abilityCoroutines.Add(coroutine);
+                _abilityTrackers.Add(new AbilityCooldownTracker
+                {
+                    Ability = ability,
+                    IsPlayerAbility = false,
+                    InstanceIndex = instanceIndex,
+                    CurrentCooldown = 0f,
+                    ElapsedTime = 0f,
+                    Source = _enemy,
+                    Target = _player,
+                    CooldownStartEventSent = false
+                });
             }
         }
 
         if (enableDebugLogs)
         {
-            Logger.LogInfo($"CombatManager: Started {playerAbilities.Count} player abilities and {_currentEnemyDef?.Abilities?.Count ?? 0} enemy abilities", Logger.LogCategory.General);
+            Logger.LogInfo($"CombatManager: Initialized {_abilityTrackers.Count} ability trackers ({playerAbilities.Count} player, {_currentEnemyDef?.Abilities?.Count ?? 0} enemy)", Logger.LogCategory.General);
         }
-    }
-
-    private void StartStatusEffectProcessing()
-    {
-        _statusEffectCoroutine = StartCoroutine(ProcessStatusEffects());
     }
 
     private int GetAndIncrementInstanceCount(AbilityDefinition ability)
@@ -291,104 +420,7 @@ public class CombatManager : MonoBehaviour
         return currentCount;
     }
 
-    private IEnumerator ProcessAbilityCycle(AbilityDefinition ability, bool isPlayerAbility, int instanceIndex)
-    {
-        if (ability == null) yield break;
-
-        ICombatant source = isPlayerAbility ? _player : _enemy;
-        ICombatant target = isPlayerAbility ? _enemy : _player;
-
-        if (enableDebugLogs)
-        {
-            Logger.LogInfo($"CombatManager: Starting ability cycle for {source.DisplayName}'s {ability.GetDisplayName()} (instance {instanceIndex})", Logger.LogCategory.General);
-        }
-
-        while (_isCombatActive && !_executionService.IsCombatOver(_player, _enemy))
-        {
-            // Calculate cooldown with speed modifier
-            var stats = source.GetModifiedStats();
-            float adjustedCooldown = _abilityService.GetAdjustedCooldown(ability.Cooldown, stats);
-
-            // Publish cooldown started event
-            _eventService.PublishAbilityCooldownStarted(isPlayerAbility, ability, instanceIndex, adjustedCooldown);
-
-            // Wait for cooldown, checking for stun
-            float elapsedTime = 0f;
-            while (elapsedTime < adjustedCooldown)
-            {
-                if (!_isCombatActive || _executionService.IsCombatOver(_player, _enemy))
-                    yield break;
-
-                // If stunned, pause cooldown
-                if (source.IsStunned)
-                {
-                    yield return null;
-                    continue;
-                }
-
-                yield return null;
-                elapsedTime += Time.deltaTime;
-            }
-
-            // Check if combat is still active
-            if (!_isCombatActive || _executionService.IsCombatOver(_player, _enemy))
-                yield break;
-
-            // Check if stunned (can't use ability while stunned)
-            if (source.IsStunned)
-                continue;
-
-            // Execute ability
-            _abilityService.ExecuteAbility(ability, source, target, instanceIndex);
-
-            // Update legacy combat data for backwards compatibility
-            SyncLegacyCombatData();
-
-            // Check for combat end
-            CheckCombatEnd();
-        }
-    }
-
-    private IEnumerator ProcessStatusEffects()
-    {
-        while (_isCombatActive && !_executionService.IsCombatOver(_player, _enemy))
-        {
-            float deltaTime = Time.deltaTime;
-
-            // Process player status effects
-            if (_player != null)
-            {
-                _statusEffectService.ProcessTicks(_player, deltaTime);
-            }
-
-            // Process enemy status effects
-            if (_enemy != null)
-            {
-                _statusEffectService.ProcessTicks(_enemy, deltaTime);
-            }
-
-            // Sync legacy data
-            SyncLegacyCombatData();
-
-            // Check for combat end
-            CheckCombatEnd();
-
-            yield return null;
-        }
-    }
-
     // === COMBAT END ===
-
-    private void CheckCombatEnd()
-    {
-        if (!_isCombatActive) return;
-
-        if (_executionService.IsCombatOver(_player, _enemy))
-        {
-            bool playerWon = _executionService.DidPlayerWin(_player, _enemy);
-            EndCombat(playerWon, playerWon ? "victory" : "defeat");
-        }
-    }
 
     private void EndCombat(bool playerWon, string reason)
     {
@@ -396,10 +428,8 @@ public class CombatManager : MonoBehaviour
 
         _isCombatActive = false;
 
-        // Stop all coroutines
-        StopAllCoroutines();
-        _abilityCoroutines.Clear();
-        _statusEffectCoroutine = null;
+        // Clear ability trackers
+        _abilityTrackers.Clear();
 
         // End combat through service (handles rewards and events)
         _executionService.EndCombat(playerWon, reason, _currentEnemyDef, _player, _enemy);

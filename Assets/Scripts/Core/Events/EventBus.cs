@@ -198,8 +198,6 @@ public static class EventBus
         var eventType = typeof(T);
         TotalEventsPublished++;
 
-        LogInfo($"Publishing {eventData}");
-
         // THREAD-SAFE: Creer une liste locale pour chaque appel
         // Chaque thread aura sa propre copie, evitant les conflits
         var callbacksToExecute = new List<Delegate>();
@@ -245,8 +243,6 @@ public static class EventBus
                 // Continue avec les autres callbacks meme si un echoue
             }
         }
-
-        LogInfo($"Published {eventData} to {successCount} subscribers ({errorCount} errors)");
     }
 
     #endregion

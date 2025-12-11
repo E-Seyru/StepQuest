@@ -469,20 +469,38 @@ public class CombatPanelUI : MonoBehaviour
 
         combatLogText.text += message + "\n";
 
-        // Update rect height for scroll
-        RectTransform textRect = combatLogText.GetComponent<RectTransform>();
-        if (textRect != null)
+        // Schedule scroll update for end of frame to avoid expensive Canvas updates during combat
+        if (combatLogScrollRect != null && !_scrollUpdatePending)
         {
-            float preferredHeight = combatLogText.preferredHeight;
-            textRect.sizeDelta = new Vector2(textRect.sizeDelta.x, preferredHeight);
+            _scrollUpdatePending = true;
+            StartCoroutine(ScrollToBottomEndOfFrame());
+        }
+    }
+
+    private bool _scrollUpdatePending = false;
+
+    private System.Collections.IEnumerator ScrollToBottomEndOfFrame()
+    {
+        yield return new WaitForEndOfFrame();
+
+        if (combatLogText != null)
+        {
+            // Update rect height for scroll
+            RectTransform textRect = combatLogText.GetComponent<RectTransform>();
+            if (textRect != null)
+            {
+                float preferredHeight = combatLogText.preferredHeight;
+                textRect.sizeDelta = new Vector2(textRect.sizeDelta.x, preferredHeight);
+            }
         }
 
         // Auto-scroll to bottom
         if (combatLogScrollRect != null)
         {
-            Canvas.ForceUpdateCanvases();
             combatLogScrollRect.verticalNormalizedPosition = 0f;
         }
+
+        _scrollUpdatePending = false;
     }
 
     private void ClearCombatLog()
