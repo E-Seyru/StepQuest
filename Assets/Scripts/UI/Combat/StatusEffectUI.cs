@@ -9,7 +9,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Displays status effects for a combatant.
-/// Supports both event-driven updates (new system) and direct method calls (legacy).
+/// Uses event-driven updates via StatusEffectAppliedEvent and StatusEffectRemovedEvent.
 /// Instantiates status icons as children of this transform.
 /// </summary>
 public class StatusEffectUI : MonoBehaviour
@@ -19,8 +19,8 @@ public class StatusEffectUI : MonoBehaviour
     [SerializeField] private bool subscribeToEvents = true;
     [SerializeField] private GameObject defaultStatusEffectPrefab;
 
-    // Legacy prefab mapping
-    private Dictionary<StatusEffectType, GameObject> _legacyPrefabs;
+    // Prefab mapping by type (optional - for type-specific prefabs)
+    private Dictionary<StatusEffectType, GameObject> _typePrefabs;
 
     // Active effects tracking
     private Dictionary<string, ActiveEffect> _activeEffects = new Dictionary<string, ActiveEffect>();
@@ -42,7 +42,6 @@ public class StatusEffectUI : MonoBehaviour
         if (subscribeToEvents)
         {
             EventBus.Subscribe<StatusEffectAppliedEvent>(OnStatusEffectApplied);
-            EventBus.Subscribe<StatusEffectTickEvent>(OnStatusEffectTick);
             EventBus.Subscribe<StatusEffectRemovedEvent>(OnStatusEffectRemoved);
             EventBus.Subscribe<CombatStartedEvent>(OnCombatStarted);
             EventBus.Subscribe<CombatEndedEvent>(OnCombatEnded);
@@ -54,7 +53,6 @@ public class StatusEffectUI : MonoBehaviour
         if (subscribeToEvents)
         {
             EventBus.Unsubscribe<StatusEffectAppliedEvent>(OnStatusEffectApplied);
-            EventBus.Unsubscribe<StatusEffectTickEvent>(OnStatusEffectTick);
             EventBus.Unsubscribe<StatusEffectRemovedEvent>(OnStatusEffectRemoved);
             EventBus.Unsubscribe<CombatStartedEvent>(OnCombatStarted);
             EventBus.Unsubscribe<CombatEndedEvent>(OnCombatEnded);
@@ -69,15 +67,6 @@ public class StatusEffectUI : MonoBehaviour
         if (evt.Effect == null) return;
 
         AddOrUpdateEffect(evt.Effect, evt.TotalStacks);
-    }
-
-    private void OnStatusEffectTick(StatusEffectTickEvent evt)
-    {
-        // Tick events don't change stack counts - they only deal damage/healing
-        // Stack count is only updated by StatusEffectAppliedEvent
-        // Removing this update fixes the UI jumping between old and new values
-
-        // We could optionally update a duration indicator here if we add one
     }
 
     private void OnStatusEffectRemoved(StatusEffectRemovedEvent evt)
@@ -98,7 +87,15 @@ public class StatusEffectUI : MonoBehaviour
         ClearAll();
     }
 
-    // === PUBLIC API (New System) ===
+    // === PUBLIC API ===
+
+    /// <summary>
+    /// Initialize with optional type-specific prefabs
+    /// </summary>
+    public void Initialize(Dictionary<StatusEffectType, GameObject> statusPrefabs)
+    {
+        _typePrefabs = statusPrefabs;
+    }
 
     /// <summary>
     /// Add or update an effect using StatusEffectDefinition
@@ -172,115 +169,6 @@ public class StatusEffectUI : MonoBehaviour
         _activeEffects.Clear();
     }
 
-    // === LEGACY API (Backwards Compatibility) ===
-
-    /// <summary>
-    /// Initialize with prefabs from CombatPanelUI (legacy)
-    /// </summary>
-    public void Initialize(Dictionary<StatusEffectType, GameObject> statusPrefabs)
-    {
-        _legacyPrefabs = statusPrefabs;
-    }
-
-    /// <summary>
-    /// Add stacks to a status effect (legacy - by type)
-    /// </summary>
-    public void AddEffect(StatusEffectType type, float amount)
-    {
-        // Try to find effect in registry first
-        var registry = StatusEffectRegistry.Instance;
-        if (registry != null)
-        {
-            var effects = registry.GetEffectsByType(type);
-            if (effects.Count > 0)
-            {
-                var definition = effects[0];
-                int stacks = Mathf.CeilToInt(amount);
-
-                if (_activeEffects.TryGetValue(definition.EffectID, out var existing))
-                {
-                    existing.Stacks += stacks;
-                    UpdateStackText(existing);
-                }
-                else
-                {
-                    CreateEffect(definition, stacks);
-                }
-                return;
-            }
-        }
-
-        // Fallback to legacy prefab system
-        AddLegacyEffect(type, amount);
-    }
-
-    /// <summary>
-    /// Update stacks for a status effect (legacy - by type)
-    /// </summary>
-    public void UpdateEffect(StatusEffectType type, float stacks)
-    {
-        if (stacks <= 0)
-        {
-            RemoveEffect(type);
-            return;
-        }
-
-        // Try to find effect in registry first
-        var registry = StatusEffectRegistry.Instance;
-        if (registry != null)
-        {
-            var effects = registry.GetEffectsByType(type);
-            if (effects.Count > 0)
-            {
-                var definition = effects[0];
-                if (_activeEffects.TryGetValue(definition.EffectID, out var existing))
-                {
-                    existing.Stacks = Mathf.CeilToInt(stacks);
-                    UpdateStackText(existing);
-                    return;
-                }
-                else
-                {
-                    CreateEffect(definition, Mathf.CeilToInt(stacks));
-                    return;
-                }
-            }
-        }
-
-        // Fallback to legacy system
-        UpdateLegacyEffect(type, stacks);
-    }
-
-    /// <summary>
-    /// Remove a status effect (legacy - by type)
-    /// </summary>
-    public void RemoveEffect(StatusEffectType type)
-    {
-        // Find any effect with this type and remove it
-        string effectIdToRemove = null;
-        foreach (var kvp in _activeEffects)
-        {
-            if (kvp.Value.Definition != null && kvp.Value.Definition.EffectType == type)
-            {
-                effectIdToRemove = kvp.Key;
-                break;
-            }
-        }
-
-        if (effectIdToRemove != null)
-        {
-            RemoveEffect(effectIdToRemove);
-            return;
-        }
-
-        // Try legacy key
-        string legacyKey = $"legacy_{type}";
-        if (_activeEffects.ContainsKey(legacyKey))
-        {
-            RemoveEffect(legacyKey);
-        }
-    }
-
     // === PRIVATE METHODS ===
 
     private void CreateEffect(StatusEffectDefinition definition, int stacks)
@@ -289,10 +177,10 @@ public class StatusEffectUI : MonoBehaviour
 
         GameObject prefab = defaultStatusEffectPrefab;
 
-        // Try to get legacy prefab if available
-        if (_legacyPrefabs != null && _legacyPrefabs.TryGetValue(definition.EffectType, out var legacyPrefab))
+        // Try to get type-specific prefab if available
+        if (_typePrefabs != null && _typePrefabs.TryGetValue(definition.EffectType, out var typePrefab))
         {
-            prefab = legacyPrefab;
+            prefab = typePrefab;
         }
 
         if (prefab == null)
@@ -322,66 +210,6 @@ public class StatusEffectUI : MonoBehaviour
 
         UpdateStackText(effect);
         _activeEffects[definition.EffectID] = effect;
-    }
-
-    private void AddLegacyEffect(StatusEffectType type, float amount)
-    {
-        string legacyKey = $"legacy_{type}";
-
-        if (_activeEffects.TryGetValue(legacyKey, out var existing))
-        {
-            existing.Stacks += Mathf.CeilToInt(amount);
-            UpdateStackText(existing);
-        }
-        else
-        {
-            CreateLegacyEffect(type, Mathf.CeilToInt(amount));
-        }
-    }
-
-    private void UpdateLegacyEffect(StatusEffectType type, float stacks)
-    {
-        string legacyKey = $"legacy_{type}";
-
-        if (_activeEffects.TryGetValue(legacyKey, out var existing))
-        {
-            existing.Stacks = Mathf.CeilToInt(stacks);
-            UpdateStackText(existing);
-        }
-        else
-        {
-            CreateLegacyEffect(type, Mathf.CeilToInt(stacks));
-        }
-    }
-
-    private void CreateLegacyEffect(StatusEffectType type, int stacks)
-    {
-        if (_legacyPrefabs == null || !_legacyPrefabs.TryGetValue(type, out var prefab) || prefab == null)
-        {
-            // Try default prefab
-            prefab = defaultStatusEffectPrefab;
-            if (prefab == null)
-            {
-                Logger.LogWarning($"StatusEffectUI: No prefab for legacy {type}", Logger.LogCategory.General);
-                return;
-            }
-        }
-
-        var instance = Instantiate(prefab, transform);
-        string legacyKey = $"legacy_{type}";
-
-        var effect = new ActiveEffect
-        {
-            EffectId = legacyKey,
-            Definition = null,
-            Instance = instance,
-            StackText = instance.GetComponentInChildren<TextMeshProUGUI>(),
-            IconImage = instance.GetComponentInChildren<Image>(),
-            Stacks = stacks
-        };
-
-        UpdateStackText(effect);
-        _activeEffects[legacyKey] = effect;
     }
 
     private void UpdateStackText(ActiveEffect effect)

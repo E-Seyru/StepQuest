@@ -39,7 +39,7 @@ public class CombatTester : EditorWindow
         EventBus.Subscribe<CombatEndedEvent>(OnCombatEnded);
         EventBus.Subscribe<CombatFledEvent>(OnCombatFled);
         EventBus.Subscribe<CombatAbilityUsedEvent>(OnAbilityUsed);
-        EventBus.Subscribe<CombatPoisonTickEvent>(OnPoisonTick);
+        EventBus.Subscribe<StatusEffectTickEvent>(OnStatusEffectTick);
         EventBus.Subscribe<CombatHealthChangedEvent>(OnHealthChanged);
         isSubscribed = true;
     }
@@ -52,7 +52,7 @@ public class CombatTester : EditorWindow
         EventBus.Unsubscribe<CombatEndedEvent>(OnCombatEnded);
         EventBus.Unsubscribe<CombatFledEvent>(OnCombatFled);
         EventBus.Unsubscribe<CombatAbilityUsedEvent>(OnAbilityUsed);
-        EventBus.Unsubscribe<CombatPoisonTickEvent>(OnPoisonTick);
+        EventBus.Unsubscribe<StatusEffectTickEvent>(OnStatusEffectTick);
         EventBus.Unsubscribe<CombatHealthChangedEvent>(OnHealthChanged);
         isSubscribed = false;
     }
@@ -89,15 +89,15 @@ public class CombatTester : EditorWindow
         if (e.DamageDealt > 0) effects += $" -{e.DamageDealt:F0} dmg";
         if (e.HealingDone > 0) effects += $" +{e.HealingDone:F0} heal";
         if (e.ShieldAdded > 0) effects += $" +{e.ShieldAdded:F0} shield";
-        if (e.PoisonApplied > 0) effects += $" +{e.PoisonApplied:F0} poison";
 
         AddLog($"{source}: {abilityName}{effects}");
     }
 
-    private void OnPoisonTick(CombatPoisonTickEvent e)
+    private void OnStatusEffectTick(StatusEffectTickEvent e)
     {
-        string target = e.IsPlayer ? "Player" : "Enemy";
-        AddLog($"{target} took {e.PoisonDamage:F0} poison damage");
+        string target = e.IsTargetPlayer ? "Player" : "Enemy";
+        string effectName = e.Effect?.GetDisplayName() ?? "Effect";
+        AddLog($"{target} took {e.Value:F0} {effectName} damage");
     }
 
     private void OnHealthChanged(CombatHealthChangedEvent e)

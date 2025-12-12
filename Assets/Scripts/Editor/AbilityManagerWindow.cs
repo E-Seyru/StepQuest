@@ -50,7 +50,6 @@ public class AbilityManagerWindow : EditorWindow
         { AbilityEffectType.Damage, new Color(1f, 0.3f, 0.3f) },      // Red
         { AbilityEffectType.Heal, new Color(0.3f, 1f, 0.3f) },        // Green
         { AbilityEffectType.Shield, new Color(1f, 0.9f, 0.2f) },      // Yellow
-        { AbilityEffectType.Poison, new Color(0.7f, 0.3f, 0.9f) },    // Purple
         { AbilityEffectType.StatusEffect, new Color(1f, 0.6f, 0.2f) } // Orange
     };
 
@@ -271,16 +270,6 @@ public class AbilityManagerWindow : EditorWindow
         EditorGUILayout.LabelField($"ID: {ability.AbilityID}", EditorStyles.miniLabel, GUILayout.Width(120));
         EditorGUILayout.LabelField($"CD: {ability.Cooldown}s", EditorStyles.miniLabel, GUILayout.Width(60));
         EditorGUILayout.LabelField($"Weight: {ability.Weight}", EditorStyles.miniLabel, GUILayout.Width(60));
-
-        // Legacy indicator
-        if (!ability.UsesNewEffectSystem)
-        {
-            var oldColor = GUI.color;
-            GUI.color = Color.yellow;
-            EditorGUILayout.LabelField("[LEGACY]", EditorStyles.miniLabel, GUILayout.Width(60));
-            GUI.color = oldColor;
-        }
-
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.EndVertical();
@@ -535,16 +524,9 @@ public class AbilityManagerWindow : EditorWindow
 
         // Count by effect type
         var effectTypeCounts = new Dictionary<AbilityEffectType, int>();
-        int legacyCount = 0;
-        int newSystemCount = 0;
 
         foreach (var ability in validAbilities)
         {
-            if (ability.UsesNewEffectSystem)
-                newSystemCount++;
-            else
-                legacyCount++;
-
             var types = GetAbilityEffectTypes(ability);
             foreach (var type in types)
             {
@@ -553,9 +535,6 @@ public class AbilityManagerWindow : EditorWindow
                 effectTypeCounts[type]++;
             }
         }
-
-        EditorGUILayout.LabelField($"Using New Effect System: {newSystemCount}");
-        EditorGUILayout.LabelField($"Using Legacy System: {legacyCount}");
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("By Effect Type:", EditorStyles.boldLabel);
@@ -567,40 +546,6 @@ public class AbilityManagerWindow : EditorWindow
             EditorGUILayout.LabelField($"  {kvp.Key}: {kvp.Value}");
             GUI.color = oldColor;
         }
-
-        EditorGUILayout.Space();
-
-        // Batch operations
-        EditorGUILayout.LabelField("Batch Operations", EditorStyles.boldLabel);
-
-        if (legacyCount > 0)
-        {
-            EditorGUILayout.HelpBox($"{legacyCount} abilities use the legacy system. Consider migrating them.", MessageType.Warning);
-
-            if (GUILayout.Button("Migrate All Legacy Abilities"))
-            {
-                MigrateAllLegacyAbilities();
-            }
-        }
-    }
-
-    private void MigrateAllLegacyAbilities()
-    {
-        if (abilityRegistry == null) return;
-
-        int migratedCount = 0;
-        foreach (var ability in abilityRegistry.GetAllValidAbilities())
-        {
-            if (!ability.UsesNewEffectSystem)
-            {
-                ability.MigrateLegacyData();
-                EditorUtility.SetDirty(ability);
-                migratedCount++;
-            }
-        }
-
-        AssetDatabase.SaveAssets();
-        Debug.Log($"Migrated {migratedCount} abilities to new effect system.");
     }
     #endregion
 
@@ -763,11 +708,6 @@ public class AbilityManagerWindow : EditorWindow
                     EditorGUILayout.EndHorizontal();
                 }
                 break;
-
-            case AbilityEffectType.Poison:
-                effect.Value = EditorGUILayout.FloatField("Poison Stacks", effect.Value);
-                EditorGUILayout.HelpBox("Poison type is legacy. Consider using StatusEffect type instead.", MessageType.Warning);
-                break;
         }
 
         newAbilityEffects[index] = effect;
@@ -907,18 +847,14 @@ public class AbilityManagerWindow : EditorWindow
     {
         var types = new HashSet<AbilityEffectType>();
 
-        if (ability.UsesNewEffectSystem && ability.Effects != null)
+        if (ability.Effects != null)
         {
             foreach (var effect in ability.Effects)
             {
-                types.Add(effect.Type);
-            }
-        }
-        else if (ability.EffectTypes != null)
-        {
-            foreach (var effectType in ability.EffectTypes)
-            {
-                types.Add(effectType);
+                if (effect != null)
+                {
+                    types.Add(effect.Type);
+                }
             }
         }
 

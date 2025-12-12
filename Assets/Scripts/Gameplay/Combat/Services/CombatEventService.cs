@@ -87,11 +87,11 @@ public class CombatEventService
     // === ABILITY EVENTS ===
 
     public void PublishAbilityUsed(bool isPlayerAbility, AbilityDefinition ability, int instanceIndex,
-        float damageDealt = 0, float healingDone = 0, float shieldAdded = 0, float poisonApplied = 0)
+        float damageDealt = 0, float healingDone = 0, float shieldAdded = 0)
     {
         var evt = new CombatAbilityUsedEvent(
             isPlayerAbility, ability, instanceIndex,
-            damageDealt, healingDone, shieldAdded, poisonApplied
+            damageDealt, healingDone, shieldAdded
         );
         EventBus.Publish(evt);
 
@@ -113,7 +113,7 @@ public class CombatEventService
         }
     }
 
-    // === STATUS EFFECT EVENTS (NEW GENERIC SYSTEM) ===
+    // === STATUS EFFECT EVENTS ===
 
     public void PublishStatusEffectApplied(bool isTargetPlayer, StatusEffectDefinition effect,
         int stacksApplied, int totalStacks, bool wasAppliedByPlayer)
@@ -166,19 +166,6 @@ public class CombatEventService
     public void PublishStunEnded(bool isTargetPlayer)
     {
         var evt = new CombatStunEndedEvent(isTargetPlayer);
-        EventBus.Publish(evt);
-
-        if (_enableDebugLogs)
-        {
-            Logger.LogInfo($"CombatEventService: {evt}", Logger.LogCategory.General);
-        }
-    }
-
-    // === LEGACY POISON EVENT (for backwards compatibility) ===
-
-    public void PublishPoisonTick(bool isPlayer, float poisonDamage, float remainingStacks)
-    {
-        var evt = new CombatPoisonTickEvent(isPlayer, poisonDamage, remainingStacks);
         EventBus.Publish(evt);
 
         if (_enableDebugLogs)

@@ -320,10 +320,9 @@ namespace CombatEvents
         public float DamageDealt { get; }
         public float HealingDone { get; }
         public float ShieldAdded { get; }
-        public float PoisonApplied { get; }
 
         public CombatAbilityUsedEvent(bool isPlayerAbility, AbilityDefinition ability, int instanceIndex,
-            float damageDealt = 0, float healingDone = 0, float shieldAdded = 0, float poisonApplied = 0)
+            float damageDealt = 0, float healingDone = 0, float shieldAdded = 0)
         {
             IsPlayerAbility = isPlayerAbility;
             Ability = ability;
@@ -331,36 +330,12 @@ namespace CombatEvents
             DamageDealt = damageDealt;
             HealingDone = healingDone;
             ShieldAdded = shieldAdded;
-            PoisonApplied = poisonApplied;
         }
 
         public override string ToString()
         {
             var source = IsPlayerAbility ? "Player" : "Enemy";
             return $"{base.ToString()} - {source} used {Ability?.GetDisplayName() ?? "Unknown"}";
-        }
-    }
-
-    /// <summary>
-    /// Publie quand le poison fait des degats (tick)
-    /// </summary>
-    public class CombatPoisonTickEvent : EventBusEvent
-    {
-        public bool IsPlayer { get; }
-        public float PoisonDamage { get; }
-        public float RemainingStacks { get; }
-
-        public CombatPoisonTickEvent(bool isPlayer, float poisonDamage, float remainingStacks)
-        {
-            IsPlayer = isPlayer;
-            PoisonDamage = poisonDamage;
-            RemainingStacks = remainingStacks;
-        }
-
-        public override string ToString()
-        {
-            var target = IsPlayer ? "Player" : "Enemy";
-            return $"{base.ToString()} - {target} took {PoisonDamage} poison damage (stacks: {RemainingStacks})";
         }
     }
 

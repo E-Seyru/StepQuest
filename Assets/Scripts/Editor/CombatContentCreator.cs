@@ -82,8 +82,10 @@ public class CombatContentCreator : EditorWindow
         ability.Description = "A simple attack that deals damage.";
         ability.Cooldown = 2f;
         ability.Weight = 1;
-        ability.EffectTypes = new List<AbilityEffectType> { AbilityEffectType.Damage };
-        ability.DamageAmount = 10f;
+        ability.Effects = new List<AbilityEffect>
+        {
+            new AbilityEffect { Type = AbilityEffectType.Damage, Value = 10f }
+        };
         ability.AbilityColor = new Color(0.8f, 0.2f, 0.2f); // Red
 
         SaveAbility(ability, "BasicAttack");
@@ -94,11 +96,13 @@ public class CombatContentCreator : EditorWindow
         var ability = CreateInstance<AbilityDefinition>();
         ability.AbilityID = "heal";
         ability.AbilityName = "Heal";
-        ability.Description = "Restore health over time.";
+        ability.Description = "Restore health.";
         ability.Cooldown = 5f;
         ability.Weight = 2;
-        ability.EffectTypes = new List<AbilityEffectType> { AbilityEffectType.Heal };
-        ability.HealAmount = 15f;
+        ability.Effects = new List<AbilityEffect>
+        {
+            new AbilityEffect { Type = AbilityEffectType.Heal, Value = 15f, TargetsSelf = true }
+        };
         ability.AbilityColor = new Color(0.2f, 0.8f, 0.2f); // Green
 
         SaveAbility(ability, "Heal");
@@ -106,15 +110,35 @@ public class CombatContentCreator : EditorWindow
 
     private void CreatePoisonAbility()
     {
+        // Try to load the Poison status effect
+        var poisonEffect = AssetDatabase.LoadAssetAtPath<StatusEffectDefinition>("Assets/ScriptableObjects/StatusEffects/Poison.asset");
+
         var ability = CreateInstance<AbilityDefinition>();
         ability.AbilityID = "poison_strike";
         ability.AbilityName = "Poison Strike";
         ability.Description = "Apply poison that deals damage over time.";
         ability.Cooldown = 4f;
         ability.Weight = 2;
-        ability.EffectTypes = new List<AbilityEffectType> { AbilityEffectType.Damage, AbilityEffectType.Poison };
-        ability.DamageAmount = 5f;
-        ability.PoisonAmount = 3f;
+        ability.Effects = new List<AbilityEffect>
+        {
+            new AbilityEffect { Type = AbilityEffectType.Damage, Value = 5f }
+        };
+
+        // Add poison status effect if available
+        if (poisonEffect != null)
+        {
+            ability.Effects.Add(new AbilityEffect
+            {
+                Type = AbilityEffectType.StatusEffect,
+                StatusEffect = poisonEffect,
+                StatusEffectStacks = 3
+            });
+        }
+        else
+        {
+            Debug.LogWarning("Poison status effect not found. Create it via WalkAndRPG/Combat/Status Effect Manager first.");
+        }
+
         ability.AbilityColor = new Color(0.4f, 0.8f, 0.2f); // Yellow-green
 
         SaveAbility(ability, "PoisonStrike");
@@ -128,9 +152,11 @@ public class CombatContentCreator : EditorWindow
         ability.Description = "Gain shield and deal minor damage.";
         ability.Cooldown = 6f;
         ability.Weight = 2;
-        ability.EffectTypes = new List<AbilityEffectType> { AbilityEffectType.Shield, AbilityEffectType.Damage };
-        ability.ShieldAmount = 20f;
-        ability.DamageAmount = 5f;
+        ability.Effects = new List<AbilityEffect>
+        {
+            new AbilityEffect { Type = AbilityEffectType.Shield, Value = 20f, TargetsSelf = true },
+            new AbilityEffect { Type = AbilityEffectType.Damage, Value = 5f }
+        };
         ability.AbilityColor = new Color(0.8f, 0.8f, 0.2f); // Yellow
 
         SaveAbility(ability, "ShieldBash");
@@ -197,8 +223,10 @@ public class CombatContentCreator : EditorWindow
         fastAttack.Description = "A quick biting attack.";
         fastAttack.Cooldown = 1.5f;
         fastAttack.Weight = 1;
-        fastAttack.EffectTypes = new List<AbilityEffectType> { AbilityEffectType.Damage };
-        fastAttack.DamageAmount = 8f;
+        fastAttack.Effects = new List<AbilityEffect>
+        {
+            new AbilityEffect { Type = AbilityEffectType.Damage, Value = 8f }
+        };
         fastAttack.AbilityColor = new Color(0.6f, 0.3f, 0.3f);
         SaveAbility(fastAttack, "Bite");
 

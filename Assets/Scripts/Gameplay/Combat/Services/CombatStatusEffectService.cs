@@ -239,12 +239,6 @@ public class CombatStatusEffectService
                         effect.RemainingDuration
                     );
 
-                    // Also publish legacy poison event for backwards compatibility
-                    if (definition.EffectType == StatusEffectType.Poison)
-                    {
-                        _eventService.PublishPoisonTick(target.IsPlayer, actualDamage, stacksAfter);
-                    }
-
                     // Publish health changed
                     _eventService.PublishHealthChanged(target);
 

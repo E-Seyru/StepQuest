@@ -25,7 +25,6 @@ public struct AbilityExecutionResult
 
 /// <summary>
 /// Service responsible for executing abilities and applying their effects.
-/// Works with both legacy ability format and new AbilityEffect list format.
 /// </summary>
 public class CombatAbilityService
 {
@@ -42,7 +41,6 @@ public class CombatAbilityService
 
     /// <summary>
     /// Execute an ability from source to target.
-    /// Handles both legacy fields and new AbilityEffect list.
     /// </summary>
     /// <param name="ability">The ability to execute</param>
     /// <param name="source">The combatant using the ability</param>
@@ -56,35 +54,11 @@ public class CombatAbilityService
             return AbilityExecutionResult.Empty;
         }
 
-        var result = new AbilityExecutionResult
-        {
-            StatusEffectsApplied = new Dictionary<StatusEffectDefinition, int>()
-        };
-
         // Get stat modifiers from source
         var sourceStats = source.GetModifiedStats();
 
-        // Check if ability has new Effects list
-        if (ability.Effects != null && ability.Effects.Count > 0)
-        {
-            // Use new system
-            result = ProcessNewEffects(ability, source, target, sourceStats);
-        }
-        else
-        {
-            // Use legacy fields
-            result = ProcessLegacyEffects(ability, source, target, sourceStats);
-        }
-
-        // Calculate legacy poison for event (for backwards compatibility)
-        float poisonApplied = 0;
-        foreach (var kvp in result.StatusEffectsApplied)
-        {
-            if (kvp.Key != null && kvp.Key.EffectType == StatusEffectType.Poison)
-            {
-                poisonApplied += kvp.Value;
-            }
-        }
+        // Process effects
+        var result = ProcessEffects(ability, source, target, sourceStats);
 
         // Publish ability used event
         _eventService.PublishAbilityUsed(
@@ -93,8 +67,7 @@ public class CombatAbilityService
             instanceIndex,
             result.DamageDealt,
             result.HealingDone,
-            result.ShieldAdded,
-            poisonApplied
+            result.ShieldAdded
         );
 
         if (_enableDebugLogs)
@@ -108,14 +81,16 @@ public class CombatAbilityService
     }
 
     /// <summary>
-    /// Process ability effects using the new AbilityEffect list system
+    /// Process ability effects
     /// </summary>
-    private AbilityExecutionResult ProcessNewEffects(AbilityDefinition ability, ICombatant source, ICombatant target, CombatantStats sourceStats)
+    private AbilityExecutionResult ProcessEffects(AbilityDefinition ability, ICombatant source, ICombatant target, CombatantStats sourceStats)
     {
         var result = new AbilityExecutionResult
         {
             StatusEffectsApplied = new Dictionary<StatusEffectDefinition, int>()
         };
+
+        if (ability.Effects == null) return result;
 
         foreach (var effect in ability.Effects)
         {
@@ -166,67 +141,6 @@ public class CombatAbilityService
                         result.StatusEffectsApplied[effect.StatusEffect] += effect.StatusEffectStacks;
                     }
                     break;
-            }
-        }
-
-        return result;
-    }
-
-    /// <summary>
-    /// Process ability effects using legacy fields (backwards compatibility)
-    /// </summary>
-    private AbilityExecutionResult ProcessLegacyEffects(AbilityDefinition ability, ICombatant source, ICombatant target, CombatantStats sourceStats)
-    {
-        var result = new AbilityExecutionResult
-        {
-            StatusEffectsApplied = new Dictionary<StatusEffectDefinition, int>()
-        };
-
-        // Damage
-        if (ability.HasEffect(AbilityEffectType.Damage) && ability.DamageAmount > 0)
-        {
-            float modifiedDamage = ability.DamageAmount * sourceStats.AttackMultiplier;
-            float actualDamage = target.TakeDamage(modifiedDamage);
-            result.DamageDealt = actualDamage;
-            _eventService.PublishHealthChanged(target);
-        }
-
-        // Heal (always heals self)
-        if (ability.HasEffect(AbilityEffectType.Heal) && ability.HealAmount > 0)
-        {
-            float actualHeal = source.Heal(ability.HealAmount);
-            result.HealingDone = actualHeal;
-            _eventService.PublishHealthChanged(source);
-        }
-
-        // Shield (always shields self)
-        if (ability.HasEffect(AbilityEffectType.Shield) && ability.ShieldAmount > 0)
-        {
-            source.AddShield(ability.ShieldAmount);
-            result.ShieldAdded = ability.ShieldAmount;
-            _eventService.PublishHealthChanged(source);
-        }
-
-        // Poison (legacy - applies to target, need to find or create poison effect)
-        if (ability.HasEffect(AbilityEffectType.Poison) && ability.PoisonAmount > 0)
-        {
-            // Try to find poison effect in registry
-            var poisonEffect = StatusEffectRegistry.Instance?.GetEffect("poison");
-
-            if (poisonEffect != null)
-            {
-                int stacks = Mathf.RoundToInt(ability.PoisonAmount);
-                _statusEffectService.ApplyEffect(target, poisonEffect, stacks, source.IsPlayer);
-                result.StatusEffectsApplied[poisonEffect] = stacks;
-            }
-            else
-            {
-                // Legacy fallback: directly add poison stacks to combatant data
-                // This will be handled by the old system if StatusEffectRegistry isn't set up
-                if (_enableDebugLogs)
-                {
-                    Logger.LogWarning("CombatAbilityService: No poison effect in registry, using legacy system", Logger.LogCategory.General);
-                }
             }
         }
 

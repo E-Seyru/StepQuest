@@ -93,7 +93,6 @@ public class CombatPanelUI : MonoBehaviour
         EventBus.Subscribe<CombatFledEvent>(OnCombatFled);
         EventBus.Subscribe<CombatHealthChangedEvent>(OnHealthChanged);
         EventBus.Subscribe<CombatAbilityUsedEvent>(OnAbilityUsed);
-        EventBus.Subscribe<CombatPoisonTickEvent>(OnPoisonTick);
         EventBus.Subscribe<StatusEffectTickEvent>(OnStatusEffectTick);
     }
 
@@ -160,7 +159,6 @@ public class CombatPanelUI : MonoBehaviour
         EventBus.Unsubscribe<CombatFledEvent>(OnCombatFled);
         EventBus.Unsubscribe<CombatHealthChangedEvent>(OnHealthChanged);
         EventBus.Unsubscribe<CombatAbilityUsedEvent>(OnAbilityUsed);
-        EventBus.Unsubscribe<CombatPoisonTickEvent>(OnPoisonTick);
         EventBus.Unsubscribe<StatusEffectTickEvent>(OnStatusEffectTick);
 
         if (fleeButton != null)
@@ -355,40 +353,13 @@ public class CombatPanelUI : MonoBehaviour
             SpawnPopup(shieldPopupPrefab, eventData.ShieldAdded, casterImage);
         }
 
-        if (eventData.PoisonApplied > 0)
-        {
-            if (eventData.IsPlayerAbility)
-                AddToCombatLog($"{actorName} avez empoisonne {targetName} de <color=#9B6BFF>{eventData.PoisonApplied:F0}</color> avec {abilityName} !");
-            else
-                AddToCombatLog($"{actorName} vous a empoisonne de <color=#9B6BFF>{eventData.PoisonApplied:F0}</color> avec {abilityName} !");
-
-            // NOTE: Status effect display is now handled by StatusEffectUI via StatusEffectAppliedEvent
-            // Removed legacy AddEffect call that was causing double-apply bug
-        }
-
         // Animate character images like original system
         AnimateImage(eventData.IsPlayerAbility);
-    }
-
-    private void OnPoisonTick(CombatPoisonTickEvent eventData)
-    {
-        string target = eventData.IsPlayer ? "Vous souffrez" : $"{currentEnemy?.GetDisplayName() ?? "Ennemi"} souffre";
-        AddToCombatLog($"{target} du poison ! <color=#9B6BFF>{eventData.PoisonDamage:F0}</color> degats subis !");
-
-        // Spawn poison damage popup
-        RectTransform targetImage = eventData.IsPlayer ? playerImageTransform : enemyImageTransform;
-        SpawnPopup(poisonPopupPrefab, eventData.PoisonDamage, targetImage);
-
-        // NOTE: Status effect stack display is now handled by StatusEffectUI via StatusEffectAppliedEvent
-        // Removed legacy UpdateEffect call - stacks don't change on tick, only on new applications
     }
 
     private void OnStatusEffectTick(StatusEffectTickEvent eventData)
     {
         if (eventData.Effect == null) return;
-
-        // Skip poison - handled by legacy OnPoisonTick for backwards compatibility
-        if (eventData.Effect.EffectType == StatusEffectType.Poison) return;
 
         RectTransform targetImage = eventData.IsTargetPlayer ? playerImageTransform : enemyImageTransform;
         string targetName = eventData.IsTargetPlayer ? "Vous" : (currentEnemy?.GetDisplayName() ?? "Ennemi");
@@ -396,15 +367,17 @@ public class CombatPanelUI : MonoBehaviour
         // Handle different effect types
         if (eventData.Effect.IsDamageOverTime)
         {
-            // Burn, Bleed, etc.
             string effectName = eventData.Effect.GetDisplayName();
             string colorHex = ColorUtility.ToHtmlStringRGB(eventData.Effect.EffectColor);
             AddToCombatLog($"{targetName} {(eventData.IsTargetPlayer ? "subissez" : "subit")} <color=#{colorHex}>{eventData.Value:F0}</color> degats de {effectName} !");
 
-            // Use burn popup if available, otherwise damage popup
-            GameObject popup = eventData.Effect.EffectType == StatusEffectType.Burn && burnPopupPrefab != null
-                ? burnPopupPrefab
-                : damagePopupPrefab;
+            // Select appropriate popup based on effect type
+            GameObject popup = damagePopupPrefab;
+            if (eventData.Effect.EffectType == StatusEffectType.Poison && poisonPopupPrefab != null)
+                popup = poisonPopupPrefab;
+            else if (eventData.Effect.EffectType == StatusEffectType.Burn && burnPopupPrefab != null)
+                popup = burnPopupPrefab;
+
             SpawnPopup(popup, eventData.Value, targetImage);
         }
         else if (eventData.Effect.IsHealOverTime)

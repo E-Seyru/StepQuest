@@ -139,7 +139,7 @@ public class AbilityRegistry : ScriptableObject
     {
         if (AllAbilities == null) return new List<AbilityDefinition>();
 
-        return AllAbilities.Where(a => a != null && a.UsesNewEffectSystem && a.Effects != null &&
+        return AllAbilities.Where(a => a != null && a.Effects != null &&
             a.Effects.Any(e => e.Type == AbilityEffectType.StatusEffect &&
                               e.StatusEffect != null &&
                               e.StatusEffect.EffectID == statusEffectId))
@@ -239,18 +239,14 @@ public class AbilityRegistry : ScriptableObject
     {
         var types = new HashSet<AbilityEffectType>();
 
-        if (ability.UsesNewEffectSystem && ability.Effects != null)
+        if (ability.Effects != null)
         {
             foreach (var effect in ability.Effects)
             {
-                types.Add(effect.Type);
-            }
-        }
-        else if (ability.EffectTypes != null)
-        {
-            foreach (var effectType in ability.EffectTypes)
-            {
-                types.Add(effectType);
+                if (effect != null)
+                {
+                    types.Add(effect.Type);
+                }
             }
         }
 
@@ -384,11 +380,11 @@ public class AbilityRegistry : ScriptableObject
             }
 
             // Check for missing status effect references
-            if (ability.UsesNewEffectSystem && ability.Effects != null)
+            if (ability.Effects != null)
             {
                 foreach (var effect in ability.Effects)
                 {
-                    if (effect.Type == AbilityEffectType.StatusEffect && effect.StatusEffect == null)
+                    if (effect != null && effect.Type == AbilityEffectType.StatusEffect && effect.StatusEffect == null)
                     {
                         issues.Add($"Ability '{ability.AbilityID}' has StatusEffect type but no StatusEffect reference");
                     }

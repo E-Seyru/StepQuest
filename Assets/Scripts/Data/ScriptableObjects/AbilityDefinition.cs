@@ -11,33 +11,65 @@ public enum AbilityEffectType
 {
     Damage,         // Deal damage to target
     Heal,           // Restore health
-    Poison,         // Apply poison (legacy - use StatusEffect instead)
     Shield,         // Add shield
-    StatusEffect    // Apply a generic status effect (new system)
+    StatusEffect    // Apply a status effect
 }
 
 /// <summary>
 /// A single effect that an ability applies when used.
-/// Part of the new generic effects system.
+///
+/// HOW EFFECTS WORK:
+/// - Damage: Deals instant damage to the enemy. Value = damage amount.
+/// - Heal: Restores health instantly. Value = heal amount. Use TargetsSelf for self-heal.
+/// - Shield: Adds temporary shield that absorbs damage. Value = shield amount. Use TargetsSelf for self-shield.
+/// - StatusEffect: Applies a status effect (DoT, buff, debuff, stun, etc).
+///   The StatusEffect field determines WHAT happens, StatusEffectStacks determines HOW MUCH.
 /// </summary>
 [Serializable]
 public class AbilityEffect
 {
-    [Tooltip("Type of effect")]
+    [Tooltip("Type of effect to apply:\n\n" +
+             "- Damage: Deal instant damage (Value = damage amount)\n" +
+             "- Heal: Restore health instantly (Value = heal amount)\n" +
+             "- Shield: Add damage-absorbing shield (Value = shield amount)\n" +
+             "- StatusEffect: Apply a status effect like poison, burn, stun, buff, etc.")]
     public AbilityEffectType Type;
 
-    [Tooltip("Value for this effect (damage, heal, or shield amount)")]
+    [Tooltip("DEPENDS ON TYPE:\n\n" +
+             "- Damage: Amount of damage dealt instantly\n" +
+             "- Heal: Amount of health restored instantly\n" +
+             "- Shield: Amount of shield added\n" +
+             "- StatusEffect: NOT USED (damage/healing is defined in the StatusEffect itself)")]
     [Min(0)]
     public float Value;
 
-    [Tooltip("Status effect to apply (only for StatusEffect type)")]
+    [Tooltip("ONLY FOR StatusEffect TYPE:\n\n" +
+             "The status effect to apply (e.g., Poison, Burn, Stun, Regen).\n\n" +
+             "The StatusEffect defines:\n" +
+             "- What type of effect (DoT, HoT, buff, debuff, stun)\n" +
+             "- How much damage/healing per tick\n" +
+             "- How long it lasts\n" +
+             "- How it stacks")]
     public StatusEffectDefinition StatusEffect;
 
-    [Tooltip("Number of stacks to apply (only for StatusEffect type)")]
+    [Tooltip("ONLY FOR StatusEffect TYPE:\n\n" +
+             "Number of stacks to apply.\n\n" +
+             "Example with Poison (5 dmg/tick per stack):\n" +
+             "- 1 stack = 5 damage per tick\n" +
+             "- 3 stacks = 15 damage per tick\n" +
+             "- 5 stacks = 25 damage per tick\n\n" +
+             "Stacks can be limited by the StatusEffect's MaxStacks setting.")]
     [Min(1)]
     public int StatusEffectStacks = 1;
 
-    [Tooltip("If true, effect targets self instead of enemy (for heals/shields/buffs)")]
+    [Tooltip("WHO RECEIVES THIS EFFECT:\n\n" +
+             "- FALSE (default): Effect targets the ENEMY\n" +
+             "  Use for: Damage, offensive debuffs, DoTs\n\n" +
+             "- TRUE: Effect targets YOURSELF\n" +
+             "  Use for: Heals, shields, buffs, HoTs\n\n" +
+             "Example: A 'Vampiric Strike' might have:\n" +
+             "- Damage effect with TargetsSelf=false (hurts enemy)\n" +
+             "- Heal effect with TargetsSelf=true (heals you)")]
     public bool TargetsSelf;
 
     /// <summary>
@@ -60,8 +92,6 @@ public class AbilityEffect
                     return $"{StatusEffect.GetDisplayName()} x{StatusEffectStacks}{target}";
                 }
                 return "No effect";
-            case AbilityEffectType.Poison:
-                return $"{Value} poison (legacy)";
             default:
                 return "Unknown effect";
         }
@@ -92,8 +122,15 @@ public class AbilityDefinition : ScriptableObject
     [Tooltip("Color associated with this ability")]
     public Color AbilityColor = Color.white;
 
-    [Header("Effects (New System)")]
-    [Tooltip("List of effects this ability applies. Use this for new abilities.")]
+    [Header("Effects")]
+    [Tooltip("List of effects this ability applies when used.\n\n" +
+             "An ability can have MULTIPLE effects!\n\n" +
+             "EXAMPLES:\n" +
+             "- Basic Attack: 1 Damage effect\n" +
+             "- Poison Strike: 1 Damage + 1 StatusEffect (Poison)\n" +
+             "- Shield Bash: 1 Shield (self) + 1 Damage\n" +
+             "- Vampiric Strike: 1 Damage + 1 Heal (self)\n\n" +
+             "Hover over each field in an effect for detailed help.")]
     public List<AbilityEffect> Effects = new List<AbilityEffect>();
 
     [Header("Combat Stats")]
@@ -105,40 +142,9 @@ public class AbilityDefinition : ScriptableObject
     [Min(1)]
     public int Weight = 1;
 
-    // === LEGACY FIELDS (for backwards compatibility) ===
-    // These will be used if Effects list is empty
-
-    [Header("Legacy Effect Types (use Effects list instead)")]
-    [Tooltip("Effect types this ability has (LEGACY - use Effects list instead)")]
-    public List<AbilityEffectType> EffectTypes = new List<AbilityEffectType>();
-
-    [Header("Legacy Effect Values (use Effects list instead)")]
-    [Tooltip("Damage dealt (LEGACY)")]
-    [Min(0)]
-    public float DamageAmount = 0f;
-
-    [Tooltip("Healing amount (LEGACY)")]
-    [Min(0)]
-    public float HealAmount = 0f;
-
-    [Tooltip("Poison stacks to apply (LEGACY)")]
-    [Min(0)]
-    public float PoisonAmount = 0f;
-
-    [Tooltip("Shield amount added (LEGACY)")]
-    [Min(0)]
-    public float ShieldAmount = 0f;
-
     [Header("Debug")]
     [TextArea(1, 2)]
     public string DeveloperNotes;
-
-    // === PUBLIC PROPERTIES ===
-
-    /// <summary>
-    /// Check if this ability uses the new Effects system
-    /// </summary>
-    public bool UsesNewEffectSystem => Effects != null && Effects.Count > 0;
 
     // === PUBLIC METHODS ===
 
@@ -151,24 +157,18 @@ public class AbilityDefinition : ScriptableObject
     }
 
     /// <summary>
-    /// Check if ability has a specific effect type.
-    /// Works with both new Effects list and legacy EffectTypes.
+    /// Check if ability has a specific effect type
     /// </summary>
     public bool HasEffect(AbilityEffectType effectType)
     {
-        // Check new system first
-        if (Effects != null && Effects.Count > 0)
-        {
-            foreach (var effect in Effects)
-            {
-                if (effect != null && effect.Type == effectType)
-                    return true;
-            }
-            return false;
-        }
+        if (Effects == null) return false;
 
-        // Fall back to legacy system
-        return EffectTypes != null && EffectTypes.Contains(effectType);
+        foreach (var effect in Effects)
+        {
+            if (effect != null && effect.Type == effectType)
+                return true;
+        }
+        return false;
     }
 
     /// <summary>
@@ -179,24 +179,19 @@ public class AbilityDefinition : ScriptableObject
         if (string.IsNullOrEmpty(AbilityID)) return false;
         if (string.IsNullOrEmpty(AbilityName)) return false;
         if (Cooldown <= 0) return false;
+        if (Effects == null || Effects.Count == 0) return false;
 
-        // Valid if has new effects OR legacy effects
-        bool hasNewEffects = Effects != null && Effects.Count > 0;
-        bool hasLegacyEffects = EffectTypes != null && EffectTypes.Count > 0;
-
-        return hasNewEffects || hasLegacyEffects;
+        return true;
     }
 
     /// <summary>
-    /// Get a summary of this ability's effects for UI.
-    /// Works with both new Effects list and legacy system.
+    /// Get a summary of this ability's effects for UI
     /// </summary>
     public string GetEffectsSummary()
     {
         var parts = new List<string>();
 
-        // Use new system if available
-        if (Effects != null && Effects.Count > 0)
+        if (Effects != null)
         {
             foreach (var effect in Effects)
             {
@@ -205,18 +200,6 @@ public class AbilityDefinition : ScriptableObject
                     parts.Add(effect.GetSummary());
                 }
             }
-        }
-        else
-        {
-            // Fall back to legacy system
-            if (HasEffect(AbilityEffectType.Damage) && DamageAmount > 0)
-                parts.Add($"{DamageAmount} damage");
-            if (HasEffect(AbilityEffectType.Heal) && HealAmount > 0)
-                parts.Add($"{HealAmount} heal");
-            if (HasEffect(AbilityEffectType.Poison) && PoisonAmount > 0)
-                parts.Add($"{PoisonAmount} poison");
-            if (HasEffect(AbilityEffectType.Shield) && ShieldAmount > 0)
-                parts.Add($"{ShieldAmount} shield");
         }
 
         return parts.Count > 0 ? string.Join(", ", parts) : "No effects";
@@ -230,80 +213,6 @@ public class AbilityDefinition : ScriptableObject
         {
             AbilityID = AbilityName.ToLower().Replace(" ", "_").Replace("'", "");
         }
-    }
-
-    /// <summary>
-    /// Migrate legacy effect data to new Effects list.
-    /// Call this from inspector to convert old abilities.
-    /// </summary>
-    [ContextMenu("Migrate Legacy Data to Effects")]
-    public void MigrateLegacyData()
-    {
-        if (Effects == null)
-            Effects = new List<AbilityEffect>();
-
-        // Only migrate if Effects is empty and we have legacy data
-        if (Effects.Count > 0)
-        {
-            Debug.LogWarning($"AbilityDefinition '{AbilityName}': Effects list is not empty. Clear it first if you want to migrate.");
-            return;
-        }
-
-        if (EffectTypes == null || EffectTypes.Count == 0)
-        {
-            Debug.LogWarning($"AbilityDefinition '{AbilityName}': No legacy data to migrate.");
-            return;
-        }
-
-        // Migrate each legacy effect type
-        if (EffectTypes.Contains(AbilityEffectType.Damage) && DamageAmount > 0)
-        {
-            Effects.Add(new AbilityEffect
-            {
-                Type = AbilityEffectType.Damage,
-                Value = DamageAmount,
-                TargetsSelf = false
-            });
-        }
-
-        if (EffectTypes.Contains(AbilityEffectType.Heal) && HealAmount > 0)
-        {
-            Effects.Add(new AbilityEffect
-            {
-                Type = AbilityEffectType.Heal,
-                Value = HealAmount,
-                TargetsSelf = true // Heals always target self in legacy
-            });
-        }
-
-        if (EffectTypes.Contains(AbilityEffectType.Shield) && ShieldAmount > 0)
-        {
-            Effects.Add(new AbilityEffect
-            {
-                Type = AbilityEffectType.Shield,
-                Value = ShieldAmount,
-                TargetsSelf = true // Shields always target self in legacy
-            });
-        }
-
-        if (EffectTypes.Contains(AbilityEffectType.Poison) && PoisonAmount > 0)
-        {
-            // Note: For poison, you'll need to manually assign a StatusEffectDefinition
-            // after running this migration
-            Effects.Add(new AbilityEffect
-            {
-                Type = AbilityEffectType.StatusEffect,
-                Value = 0, // Not used for status effects
-                StatusEffectStacks = Mathf.RoundToInt(PoisonAmount),
-                TargetsSelf = false
-            });
-            Debug.LogWarning($"AbilityDefinition '{AbilityName}': Poison migrated - please assign StatusEffect reference manually.");
-        }
-
-        Debug.Log($"AbilityDefinition '{AbilityName}': Migrated {Effects.Count} effects from legacy data.");
-
-        // Mark dirty for saving
-        UnityEditor.EditorUtility.SetDirty(this);
     }
 #endif
 }
