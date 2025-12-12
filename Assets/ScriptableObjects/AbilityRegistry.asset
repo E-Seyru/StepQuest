@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c5ff4ec91ebd744a8569469b4325ba8, type: 3}
+  m_Name: AbilityRegistry
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityRegistry
+  AllAbilities:
+  - {fileID: 11400000, guid: 7104522b238f0fe4dbd8f4fa446cc3b5, type: 2}
+  - {fileID: 11400000, guid: a09602b08f09a1741944acddf79fcce3, type: 2}
+  - {fileID: 11400000, guid: f07eb8b98ef14d2478b8606a660c0839, type: 2}
+  - {fileID: 11400000, guid: 129996eab3816d542939cb004345146c, type: 2}
+  - {fileID: 11400000, guid: b7c28f128f678494d84bcc52ae74adda, type: 2}
+  - {fileID: 11400000, guid: 6cbfbb990018c014bbd05601093a7d3b, type: 2}
+  enableFallbackSearch: 1
+  logMissingAbilities: 0
+  ValidationStatus: '! Issues found:
+
+    - Ability ''armor_break'' missing icon
+
+    -
+    Ability ''battle_cry'' missing icon
+
+    - Ability ''burn_strike'' missing icon
+
+    -
+    Ability ''regenerate'' missing icon
+
+    - Ability ''shield_bash'' missing icon
+
+    -
+    Ability ''stunning_blow'' missing icon
+
+    - Ability ''venom_strike'' missing
+    icon'

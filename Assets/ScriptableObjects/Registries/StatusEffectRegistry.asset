@@ -21,19 +21,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 0c62b1d4550d21248af19548aafaeeac, type: 2}
   enableFallbackSearch: 1
   logMissingEffects: 0
-  ValidationStatus: '! Issues found:
-
-    - Effect ''attack_up'' missing icon
-
-    -
-    Effect ''burn'' missing icon
-
-    - Effect ''defense_down'' missing icon
-
-    -
-    Effect ''poison'' missing icon
-
-    - Effect ''regeneration'' missing icon
-
-    -
-    Effect ''stun'' missing icon'
+  ValidationStatus: "\u2713 Registry is valid! (6 effects)"

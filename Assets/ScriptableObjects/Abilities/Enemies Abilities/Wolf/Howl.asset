@@ -22,7 +22,7 @@ MonoBehaviour:
     Value: 5
     StatusEffect: {fileID: 11400000, guid: 1a61e01ae292e0d49ad05af08b61139a, type: 2}
     StatusEffectStacks: 5
-    TargetsSelf: 0
+    TargetsSelf: 1
   Cooldown: 2
   Weight: 2
   EffectTypes: 

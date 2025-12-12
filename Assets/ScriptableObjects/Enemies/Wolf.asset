@@ -16,6 +16,7 @@ MonoBehaviour:
   EnemyName: Wolf
   Description: A fierce predator with sharp fangs.
   EnemySprite: {fileID: -117419959325037672, guid: 8983c5970126a144da0c4a051e2df50b, type: 3}
+  Avatar: {fileID: 787877278570876907, guid: ca5b85badf06d0e46902785edfff4bac, type: 3}
   EnemyColor: {r: 1, g: 1, b: 1, a: 1}
   Level: 1
   MaxHealth: 500
