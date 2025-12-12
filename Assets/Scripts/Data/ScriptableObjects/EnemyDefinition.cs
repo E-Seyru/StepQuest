@@ -55,6 +55,9 @@ public class EnemyDefinition : ScriptableObject
     [Tooltip("Sprite representing this enemy in combat")]
     public Sprite EnemySprite;
 
+    [Tooltip("Avatar image displayed in the ActivitiesSectionPanel")]
+    public Sprite Avatar;
+
     [Tooltip("Color theme for this enemy")]
     public Color EnemyColor = Color.white;
 

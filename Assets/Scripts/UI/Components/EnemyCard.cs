@@ -92,11 +92,15 @@ public class EnemyCard : MonoBehaviour
             nameText.text = enemyDefinition.GetDisplayName();
         }
 
-        // Enemy sprite
-        if (enemyImage != null && enemyDefinition.EnemySprite != null)
+        // Enemy avatar (fallback to EnemySprite if no avatar set)
+        if (enemyImage != null)
         {
-            enemyImage.sprite = enemyDefinition.EnemySprite;
-            enemyImage.preserveAspect = true;
+            Sprite displaySprite = enemyDefinition.Avatar != null ? enemyDefinition.Avatar : enemyDefinition.EnemySprite;
+            if (displaySprite != null)
+            {
+                enemyImage.sprite = displaySprite;
+                enemyImage.preserveAspect = true;
+            }
         }
 
         // Level indicator
