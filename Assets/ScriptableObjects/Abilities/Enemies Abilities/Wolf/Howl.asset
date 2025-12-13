@@ -18,16 +18,11 @@ MonoBehaviour:
   AbilityIcon: {fileID: -8598552180650092416, guid: e81d69008d85cca40acbdf3f58c42946, type: 3}
   AbilityColor: {r: 1, g: 1, b: 1, a: 1}
   Effects:
-  - Type: 4
+  - Type: 3
     Value: 5
     StatusEffect: {fileID: 11400000, guid: 1a61e01ae292e0d49ad05af08b61139a, type: 2}
-    StatusEffectStacks: 5
+    StatusEffectStacks: 1
     TargetsSelf: 1
   Cooldown: 2
   Weight: 2
-  EffectTypes: 
-  DamageAmount: 0
-  HealAmount: 0
-  PoisonAmount: 0
-  ShieldAmount: 0
   DeveloperNotes: 

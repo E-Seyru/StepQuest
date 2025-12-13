@@ -232,4 +232,19 @@ public class CombatAbilityUI : MonoBehaviour
             abilityImage.transform.localScale = Vector3.one;
         }
     }
+
+    /// <summary>
+    /// Hide the cooldown overlay permanently (for use in equipment display)
+    /// </summary>
+    public void HideCooldownOverlay()
+    {
+        if (cooldownOverlay != null)
+        {
+            cooldownOverlay.gameObject.SetActive(false);
+        }
+
+        // Unsubscribe from cooldown events since we won't use them
+        EventBus.Unsubscribe<CombatAbilityCooldownStartedEvent>(OnCooldownStarted);
+        EventBus.Unsubscribe<CombatAbilityUsedEvent>(OnAbilityUsed);
+    }
 }

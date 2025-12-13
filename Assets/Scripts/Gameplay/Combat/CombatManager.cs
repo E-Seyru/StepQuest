@@ -255,8 +255,8 @@ public class CombatManager : MonoBehaviour
         // Stop current activity if any
         _executionService.StopCurrentActivity();
 
-        // Create combatants
-        var combatants = _executionService.CreateCombatants(enemy, playerMaxHealth, playerAbilities);
+        // Create combatants - use GetPlayerAbilities() to get from AbilityManager
+        var combatants = _executionService.CreateCombatants(enemy, playerMaxHealth, GetPlayerAbilities());
         _player = combatants.player;
         _enemy = combatants.enemy;
         _currentEnemyDef = enemy;
@@ -328,13 +328,24 @@ public class CombatManager : MonoBehaviour
         return _executionService.GetDebugInfo(_player, _enemy, _currentEnemyDef, _combatStartTimeMs);
     }
 
-    // === TEMPORARY: Player ability management (will be replaced by AbilityManager later) ===
+    // === PLAYER ABILITY MANAGEMENT ===
 
     /// <summary>
-    /// Get currently equipped player abilities (temporary - will come from AbilityManager)
+    /// Get currently equipped player abilities from AbilityManager (with fallback to inspector list)
     /// </summary>
     public List<AbilityDefinition> GetPlayerAbilities()
     {
+        // Use AbilityManager if available and has equipped abilities
+        if (AbilityManager.Instance != null)
+        {
+            var equippedAbilities = AbilityManager.Instance.GetEquippedAbilities();
+            if (equippedAbilities != null && equippedAbilities.Count > 0)
+            {
+                return equippedAbilities;
+            }
+        }
+
+        // Fallback to inspector list for testing
         return playerAbilities;
     }
 
@@ -361,8 +372,8 @@ public class CombatManager : MonoBehaviour
         _abilityTrackers.Clear();
         _abilityInstanceCounts.Clear();
 
-        // Create trackers for player abilities
-        foreach (var ability in playerAbilities)
+        // Create trackers for player abilities (from AbilityManager)
+        foreach (var ability in GetPlayerAbilities())
         {
             if (ability == null) continue;
             int instanceIndex = GetAndIncrementInstanceCount(ability);
@@ -405,7 +416,7 @@ public class CombatManager : MonoBehaviour
 
         if (enableDebugLogs)
         {
-            Logger.LogInfo($"CombatManager: Initialized {_abilityTrackers.Count} ability trackers ({playerAbilities.Count} player, {_currentEnemyDef?.Abilities?.Count ?? 0} enemy)", Logger.LogCategory.General);
+            Logger.LogInfo($"CombatManager: Initialized {_abilityTrackers.Count} ability trackers ({GetPlayerAbilities().Count} player, {_currentEnemyDef?.Abilities?.Count ?? 0} enemy)", Logger.LogCategory.General);
         }
     }
 

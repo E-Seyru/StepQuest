@@ -286,6 +286,92 @@ public class PlayerData
         }
     }
 
+    // === SYSTEME D'ABILITIES ===
+
+    // Abilities possedees (JSON serialise - liste d'IDs)
+    private string _ownedAbilitiesJson;
+    [Column("OwnedAbilitiesJson")]
+    public string OwnedAbilitiesJson
+    {
+        get { return _ownedAbilitiesJson; }
+        set { _ownedAbilitiesJson = value; }
+    }
+
+    // Abilities equipees (JSON serialise - liste d'IDs)
+    private string _equippedAbilitiesJson;
+    [Column("EquippedAbilitiesJson")]
+    public string EquippedAbilitiesJson
+    {
+        get { return _equippedAbilitiesJson; }
+        set { _equippedAbilitiesJson = value; }
+    }
+
+    // Propriete pour acceder facilement aux abilities possedees
+    [Ignore]
+    public List<string> OwnedAbilities
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_ownedAbilitiesJson))
+                return new List<string>();
+
+            try
+            {
+                return JsonConvert.DeserializeObject<List<string>>(_ownedAbilitiesJson);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error deserializing OwnedAbilities: {ex.Message}", Logger.LogCategory.General);
+                return new List<string>();
+            }
+        }
+        set
+        {
+            try
+            {
+                _ownedAbilitiesJson = value != null ? JsonConvert.SerializeObject(value) : null;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error serializing OwnedAbilities: {ex.Message}", Logger.LogCategory.General);
+                _ownedAbilitiesJson = null;
+            }
+        }
+    }
+
+    // Propriete pour acceder facilement aux abilities equipees
+    [Ignore]
+    public List<string> EquippedAbilities
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_equippedAbilitiesJson))
+                return new List<string>();
+
+            try
+            {
+                return JsonConvert.DeserializeObject<List<string>>(_equippedAbilitiesJson);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error deserializing EquippedAbilities: {ex.Message}", Logger.LogCategory.General);
+                return new List<string>();
+            }
+        }
+        set
+        {
+            try
+            {
+                _equippedAbilitiesJson = value != null ? JsonConvert.SerializeObject(value) : null;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error serializing EquippedAbilities: {ex.Message}", Logger.LogCategory.General);
+                _equippedAbilitiesJson = null;
+            }
+        }
+    }
+
     // === CONSTRUCTEUR ===
 
     // Constructeur par defaut
@@ -316,6 +402,10 @@ public class PlayerData
         // XP System
         _skillsJson = null;
         _subSkillsJson = null;
+
+        // Ability System
+        _ownedAbilitiesJson = null;
+        _equippedAbilitiesJson = null;
     }
 
     // === MeTHODES DE VOYAGE ===

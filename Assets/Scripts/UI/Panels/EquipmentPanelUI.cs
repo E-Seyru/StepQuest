@@ -18,6 +18,9 @@ public class EquipmentPanelUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI totalStatsText;
     [SerializeField] private TextMeshProUGUI equipmentInfoText;
 
+    [Header("Equipped Abilities")]
+    [SerializeField] private EquippedAbilitiesContainer equippedAbilitiesContainer;
+
     // Equipment data storage (simplified - you might want to move this to PlayerData later)
     private Dictionary<EquipmentType, string> equippedItems = new Dictionary<EquipmentType, string>();
 

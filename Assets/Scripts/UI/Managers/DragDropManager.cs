@@ -27,6 +27,12 @@ public class DragDropManager : MonoBehaviour
     private string sourceContainerId = null;
     private UniversalSlotUI.SlotContext sourceContext;
 
+    // Ability drag state
+    private bool isAbilityDrag = false;
+    private AbilitySlotUI abilitySourceSlot = null;
+    private string draggedAbilityId = null;
+    private AbilityDefinition draggedAbility = null;
+
     // Drop detection (event-driven)
     private IDragDropSlot currentHoveredSlot = null;
 
@@ -459,7 +465,7 @@ public class DragDropManager : MonoBehaviour
         return false;
     }
 
-    private void EndDrag()
+    public void EndDrag()
     {
         isDragging = false;
         sourceSlot = null;
@@ -467,6 +473,12 @@ public class DragDropManager : MonoBehaviour
         draggedQuantity = 0;
 
         sourceContainerId = null;
+
+        // Reset ability drag state
+        isAbilityDrag = false;
+        abilitySourceSlot = null;
+        draggedAbilityId = null;
+        draggedAbility = null;
 
         // Safety: check if hovered slot still exists
         if (currentHoveredSlot != null)
@@ -480,5 +492,107 @@ public class DragDropManager : MonoBehaviour
             Destroy(draggedItemVisual);
             draggedItemVisual = null;
         }
+    }
+
+    // === ABILITY DRAG SUPPORT ===
+
+    /// <summary>
+    /// Start dragging an ability
+    /// </summary>
+    public bool StartAbilityDrag(AbilitySlotUI slot, string abilityId, AbilityDefinition ability)
+    {
+        if (isDragging || slot == null || string.IsNullOrEmpty(abilityId))
+            return false;
+
+        isDragging = true;
+        isAbilityDrag = true;
+        abilitySourceSlot = slot;
+        draggedAbilityId = abilityId;
+        draggedAbility = ability;
+
+        CreateAbilityDragVisual();
+
+        Logger.LogInfo($"DragDropManager: Started dragging ability '{ability?.GetDisplayName() ?? abilityId}'", Logger.LogCategory.General);
+        return true;
+    }
+
+    /// <summary>
+    /// Update drag position (called from drag handler)
+    /// </summary>
+    public void UpdateDragPosition(Vector2 screenPosition)
+    {
+        if (!isDragging || draggedItemVisual == null || dragCanvas == null) return;
+
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            dragCanvas.transform as RectTransform,
+            screenPosition,
+            dragCanvas.worldCamera,
+            out Vector2 localPoint);
+
+        draggedItemVisual.transform.localPosition = localPoint;
+    }
+
+    /// <summary>
+    /// Check if currently dragging an ability
+    /// </summary>
+    public bool IsAbilityDrag => isAbilityDrag;
+
+    /// <summary>
+    /// Get the ability being dragged
+    /// </summary>
+    public string GetDraggedAbilityId() => isAbilityDrag ? draggedAbilityId : null;
+
+    /// <summary>
+    /// Get the ability definition being dragged
+    /// </summary>
+    public AbilityDefinition GetDraggedAbility() => isAbilityDrag ? draggedAbility : null;
+
+    /// <summary>
+    /// Complete ability drag - equip the ability
+    /// </summary>
+    public bool CompleteAbilityDrag()
+    {
+        if (!isDragging || !isAbilityDrag) return false;
+
+        bool success = false;
+
+        // Try to equip the ability
+        if (AbilityManager.Instance != null && !string.IsNullOrEmpty(draggedAbilityId))
+        {
+            success = AbilityManager.Instance.TryEquipAbility(draggedAbilityId);
+        }
+
+        if (success)
+        {
+            Logger.LogInfo($"DragDropManager: Successfully equipped ability '{draggedAbility?.GetDisplayName()}'", Logger.LogCategory.General);
+        }
+
+        EndDrag();
+        return success;
+    }
+
+    private void CreateAbilityDragVisual()
+    {
+        if (dragCanvas == null || draggedAbility == null) return;
+
+        // Create a simple visual for ability drag
+        draggedItemVisual = new GameObject("DraggedAbility");
+        draggedItemVisual.transform.SetParent(dragCanvas.transform, false);
+
+        // Add image component
+        var image = draggedItemVisual.AddComponent<UnityEngine.UI.Image>();
+        image.sprite = draggedAbility.AbilityIcon;
+        image.color = draggedAbility.AbilityColor;
+        image.raycastTarget = false;
+
+        // Set size
+        var rectTransform = draggedItemVisual.GetComponent<RectTransform>();
+        rectTransform.sizeDelta = new Vector2(60, 60);
+
+        // Apply drag scale
+        draggedItemVisual.transform.localScale = Vector3.one * dragScale;
+
+        // Position at mouse
+        UpdateDragVisualPosition();
     }
 }

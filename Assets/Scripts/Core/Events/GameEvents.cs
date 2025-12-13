@@ -534,3 +534,109 @@ namespace CombatEvents
         }
     }
 }
+
+/// <summary>
+/// Evenements lies au systeme d'abilities (inventaire et equipement)
+/// </summary>
+namespace AbilityEvents
+{
+    /// <summary>
+    /// Publie quand le joueur acquiert une nouvelle ability
+    /// </summary>
+    public class AbilityAcquiredEvent : EventBusEvent
+    {
+        public string AbilityId { get; }
+        public AbilityDefinition Ability { get; }
+
+        public AbilityAcquiredEvent(string abilityId, AbilityDefinition ability)
+        {
+            AbilityId = abilityId;
+            Ability = ability;
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} - Acquired ability: {Ability?.GetDisplayName() ?? AbilityId}";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand une ability est equipee
+    /// </summary>
+    public class AbilityEquippedEvent : EventBusEvent
+    {
+        public string AbilityId { get; }
+        public AbilityDefinition Ability { get; }
+
+        public AbilityEquippedEvent(string abilityId, AbilityDefinition ability)
+        {
+            AbilityId = abilityId;
+            Ability = ability;
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} - Equipped ability: {Ability?.GetDisplayName() ?? AbilityId}";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand une ability est desequipee
+    /// </summary>
+    public class AbilityUnequippedEvent : EventBusEvent
+    {
+        public string AbilityId { get; }
+        public AbilityDefinition Ability { get; }
+
+        public AbilityUnequippedEvent(string abilityId, AbilityDefinition ability)
+        {
+            AbilityId = abilityId;
+            Ability = ability;
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} - Unequipped ability: {Ability?.GetDisplayName() ?? AbilityId}";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand la liste des abilities equipees change
+    /// </summary>
+    public class EquippedAbilitiesChangedEvent : EventBusEvent
+    {
+        public System.Collections.Generic.List<string> EquippedAbilityIds { get; }
+        public int CurrentWeight { get; }
+        public int MaxWeight { get; }
+
+        public EquippedAbilitiesChangedEvent(System.Collections.Generic.List<string> equippedAbilityIds, int currentWeight, int maxWeight)
+        {
+            EquippedAbilityIds = equippedAbilityIds ?? new System.Collections.Generic.List<string>();
+            CurrentWeight = currentWeight;
+            MaxWeight = maxWeight;
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} - Equipped abilities changed: {EquippedAbilityIds.Count} abilities ({CurrentWeight}/{MaxWeight} weight)";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand la liste des abilities possedees change
+    /// </summary>
+    public class OwnedAbilitiesChangedEvent : EventBusEvent
+    {
+        public System.Collections.Generic.List<string> OwnedAbilityIds { get; }
+
+        public OwnedAbilitiesChangedEvent(System.Collections.Generic.List<string> ownedAbilityIds)
+        {
+            OwnedAbilityIds = ownedAbilityIds ?? new System.Collections.Generic.List<string>();
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} - Owned abilities changed: {OwnedAbilityIds.Count} abilities";
+        }
+    }
+}

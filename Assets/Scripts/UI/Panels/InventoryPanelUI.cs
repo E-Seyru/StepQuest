@@ -7,11 +7,24 @@ using UnityEngine.UI;
 
 public class InventoryPanelUI : MonoBehaviour
 {
+    public enum InventoryTab
+    {
+        Items,
+        Abilities
+    }
+
     [Header("UI References")]
     [SerializeField] private Transform slotsContainer;
     [SerializeField] private GameObject slotPrefab; // Should have UniversalSlotUI component
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private Button addWoodButton;
+
+    [Header("Tab System")]
+    [SerializeField] private Button itemsTabButton;
+    [SerializeField] private Button abilitiesTabButton;
+    [SerializeField] private AbilitiesInventoryContainer abilitiesContainer;
+    [SerializeField] private Color activeTabColor = Color.white;
+    [SerializeField] private Color inactiveTabColor = new Color(0.6f, 0.6f, 0.6f, 1f);
 
     [Header("Info Display")]
     [SerializeField] private TextMeshProUGUI capacityText;
@@ -23,10 +36,14 @@ public class InventoryPanelUI : MonoBehaviour
     private UniversalSlotUI selectedSlot;
     private string currentContainerId = GameConstants.ContainerIdPlayer;
 
+    // Tab system state
+    private InventoryTab currentTab = InventoryTab.Items;
+
     // Auto-deselection
     private bool isPointerOverInventory = false;
 
     public static InventoryPanelUI Instance { get; private set; }
+    public InventoryTab CurrentTab => currentTab;
 
     void Awake()
     {
@@ -55,9 +72,21 @@ public class InventoryPanelUI : MonoBehaviour
         // Subscribe to inventory events
         inventoryManager.OnContainerChanged += OnInventoryChanged;
 
+        // Subscribe to ability events
+        if (AbilityManager.Instance != null)
+        {
+            AbilityManager.Instance.OnOwnedAbilitiesChanged += OnOwnedAbilitiesChanged;
+        }
+
+        // Setup tab buttons
+        SetupTabButtons();
+
         // Initial setup
         CreateSlotUIs();
         RefreshDisplay();
+
+        // Start on Items tab
+        SwitchToTab(InventoryTab.Items);
     }
 
     void Update()
@@ -72,6 +101,11 @@ public class InventoryPanelUI : MonoBehaviour
         if (inventoryManager != null)
         {
             inventoryManager.OnContainerChanged -= OnInventoryChanged;
+        }
+
+        if (AbilityManager.Instance != null)
+        {
+            AbilityManager.Instance.OnOwnedAbilitiesChanged -= OnOwnedAbilitiesChanged;
         }
     }
 
@@ -364,6 +398,139 @@ public class InventoryPanelUI : MonoBehaviour
         else
         {
             Debug.LogError("InventoryManager not initialized!");
+        }
+    }
+
+    // === TAB SYSTEM ===
+
+    /// <summary>
+    /// Setup tab button listeners
+    /// </summary>
+    private void SetupTabButtons()
+    {
+        if (itemsTabButton != null)
+        {
+            itemsTabButton.onClick.AddListener(() => SwitchToTab(InventoryTab.Items));
+        }
+
+        if (abilitiesTabButton != null)
+        {
+            abilitiesTabButton.onClick.AddListener(() => SwitchToTab(InventoryTab.Abilities));
+        }
+    }
+
+    /// <summary>
+    /// Switch to a specific tab
+    /// </summary>
+    public void SwitchToTab(InventoryTab tab)
+    {
+        currentTab = tab;
+
+        // Update tab button visuals
+        UpdateTabVisuals();
+
+        // Show/hide appropriate containers
+        if (slotsContainer != null)
+        {
+            slotsContainer.gameObject.SetActive(tab == InventoryTab.Items);
+        }
+
+        if (abilitiesContainer != null)
+        {
+            abilitiesContainer.gameObject.SetActive(tab == InventoryTab.Abilities);
+            if (tab == InventoryTab.Abilities)
+            {
+                abilitiesContainer.RefreshDisplay();
+            }
+        }
+
+        // Deselect any selected slots
+        DeselectCurrentSlot();
+
+        // Refresh the appropriate display
+        if (tab == InventoryTab.Items)
+        {
+            RefreshDisplay();
+        }
+
+        // Update title and capacity text
+        if (titleText != null)
+        {
+            titleText.text = tab == InventoryTab.Items ? "Inventaire" : "Abilities";
+        }
+
+        // Update capacity text
+        UpdateCapacityText();
+
+        Logger.LogInfo($"InventoryPanelUI: Switched to {tab} tab", Logger.LogCategory.General);
+    }
+
+    /// <summary>
+    /// Update capacity text based on current tab
+    /// </summary>
+    private void UpdateCapacityText()
+    {
+        if (capacityText == null) return;
+
+        if (currentTab == InventoryTab.Items)
+        {
+            var container = inventoryManager?.GetContainer(currentContainerId);
+            if (container != null)
+            {
+                capacityText.text = $"{container.GetUsedSlotsCount()}/{container.MaxSlots}";
+            }
+        }
+        else
+        {
+            if (AbilityManager.Instance != null)
+            {
+                int owned = AbilityManager.Instance.GetOwnedAbilities().Count;
+                capacityText.text = $"{owned} abilities";
+            }
+        }
+    }
+
+    /// <summary>
+    /// Update tab button visuals
+    /// </summary>
+    private void UpdateTabVisuals()
+    {
+        if (itemsTabButton != null)
+        {
+            var colors = itemsTabButton.colors;
+            colors.normalColor = currentTab == InventoryTab.Items ? activeTabColor : inactiveTabColor;
+            itemsTabButton.colors = colors;
+
+            // Also update the image if there's one
+            var image = itemsTabButton.GetComponent<Image>();
+            if (image != null)
+            {
+                image.color = currentTab == InventoryTab.Items ? activeTabColor : inactiveTabColor;
+            }
+        }
+
+        if (abilitiesTabButton != null)
+        {
+            var colors = abilitiesTabButton.colors;
+            colors.normalColor = currentTab == InventoryTab.Abilities ? activeTabColor : inactiveTabColor;
+            abilitiesTabButton.colors = colors;
+
+            var image = abilitiesTabButton.GetComponent<Image>();
+            if (image != null)
+            {
+                image.color = currentTab == InventoryTab.Abilities ? activeTabColor : inactiveTabColor;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Handle owned abilities changed event
+    /// </summary>
+    private void OnOwnedAbilitiesChanged()
+    {
+        if (currentTab == InventoryTab.Abilities)
+        {
+            UpdateCapacityText();
         }
     }
 }
