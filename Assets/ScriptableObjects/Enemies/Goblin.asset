@@ -16,6 +16,7 @@ MonoBehaviour:
   EnemyName: Goblin
   Description: A cunning little creature with poisoned daggers.
   EnemySprite: {fileID: 21300000, guid: 58777b6de49663b4880003ccafaa7d82, type: 3}
+  Avatar: {fileID: 0}
   EnemyColor: {r: 0.2, g: 0.6, b: 0.2, a: 1}
   Level: 1
   MaxHealth: 50
@@ -25,8 +26,8 @@ MonoBehaviour:
   ExperienceReward: 15
   LootTable:
   - Item: {fileID: 0}
-    MinQuantity: 0
-    MaxQuantity: 0
+    MinQuantity: 1
+    MaxQuantity: 1
     DropChance: 0
   VictoryTitle: Goblin Slain!
   VictoryDescription: The goblin falls with a screech.

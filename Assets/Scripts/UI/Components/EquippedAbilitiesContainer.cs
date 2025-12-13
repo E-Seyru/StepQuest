@@ -113,6 +113,18 @@ public class EquippedAbilitiesContainer : MonoBehaviour, IDropHandler, IPointerE
     {
         ClearDisplays();
 
+        // Update VerticalLayoutGroup padding in case it changed in Inspector
+        var verticalLayout = GetComponent<VerticalLayoutGroup>();
+        if (verticalLayout != null)
+        {
+            verticalLayout.padding = new RectOffset(padding, padding, padding, padding);
+            verticalLayout.spacing = spacing;
+        }
+
+        // Force layout update to get accurate rect width
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
+
         int currentWeight = 0;
         int maxWeight = 12;
 
@@ -129,13 +141,16 @@ public class EquippedAbilitiesContainer : MonoBehaviour, IDropHandler, IPointerE
         }
 
         // Calculate layout dimensions
-        float availableWidth = rectTransform.rect.width - (padding * 2);
-        if (availableWidth <= 0)
+        float containerWidth = rectTransform.rect.width;
+        if (containerWidth <= 0)
         {
-            availableWidth = 300f - (padding * 2); // Fallback
+            containerWidth = 300f; // Fallback
         }
+        float availableWidth = containerWidth - (padding * 2);
 
-        float baseWidth = (availableWidth - (spacing * (weightsPerRow - 1))) / weightsPerRow;
+        // Floor to avoid floating point overflow causing items to exceed row width
+        float totalSpacing = (weightsPerRow - 1) * spacing;
+        float baseWidth = Mathf.Floor((availableWidth - totalSpacing) / weightsPerRow);
 
         // Calculate row height
         float rowHeight;
@@ -315,6 +330,7 @@ public class EquippedAbilitiesContainer : MonoBehaviour, IDropHandler, IPointerE
         row.transform.SetParent(transform, false);
 
         HorizontalLayoutGroup layout = row.GetComponent<HorizontalLayoutGroup>();
+        layout.padding = new RectOffset(0, 0, 0, 0); // No padding on rows
         layout.spacing = spacing;
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = false;

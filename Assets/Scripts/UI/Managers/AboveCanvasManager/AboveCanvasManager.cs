@@ -34,7 +34,8 @@ public class AboveCanvasManager : MonoBehaviour
 
     [Header("UI References - Idle Bar")]
     [SerializeField] private GameObject idleBar;
-    [SerializeField] private Image idleBarImage;  // NOUVEAU : L'image a l'interieur de l'IdleBar pour l'animation
+    [SerializeField] private Image idleBarImage;  // Image de repos (sleeping) pour l'animation
+    [SerializeField] private Image fightingBarImage;  // Image de combat (fighting)
 
     [Header("UI References - Navigation Bar")]
     [SerializeField] private GameObject navigationBar;
@@ -66,6 +67,12 @@ public class AboveCanvasManager : MonoBehaviour
     [SerializeField] private float idleShakeIntensity = 5f;         // Intensite de la vibration (en pixels)
     [SerializeField] private LeanTweenType idleInflateEase = LeanTweenType.easeInSine;   // Animation d'inspiration
     [SerializeField] private LeanTweenType idleDeflateEase = LeanTweenType.easeOutBounce; // Animation d'expiration
+
+    [Header("Combat Bar Animation Settings (Heartbeat)")]
+    [SerializeField] private float combatHeartbeatInterval = 1.0f;  // Intervalle entre les battements (en secondes)
+    [SerializeField] private float combatPulseScale = 1.15f;        // Facteur d'agrandissement du pulse (15% plus grand)
+    [SerializeField] private float combatPulseDuration = 0.15f;     // Duree d'un pulse (rapide)
+    [SerializeField] private float combatDoubleBeatDelay = 0.12f;   // Delai entre les deux battements
 
     [Header("LocationButton Settings")]
     [SerializeField] private float locationButtonClickScale = 0.95f;     // Facteur de retrecissement au clic (ex: 0.95 = 5% plus petit)
@@ -168,7 +175,8 @@ public class AboveCanvasManager : MonoBehaviour
 
     // NOUVEAU : Accessor pour IdleBar
     public GameObject IdleBar => idleBar;
-    public Image IdleBarImage => idleBarImage;  // NOUVEAU : Accessor pour l'image de l'IdleBar
+    public Image IdleBarImage => idleBarImage;  // Image de repos (sleeping)
+    public Image FightingBarImage => fightingBarImage;  // Image de combat (fighting)
 
     public GameObject NavigationBar => navigationBar;
     public bool HideNavigationOnMap => hideNavigationOnMap;
@@ -195,6 +203,12 @@ public class AboveCanvasManager : MonoBehaviour
     public float IdleShakeIntensity => idleShakeIntensity;
     public LeanTweenType IdleInflateEase => idleInflateEase;
     public LeanTweenType IdleDeflateEase => idleDeflateEase;
+
+    // Combat Animation Settings Accessors (Heartbeat)
+    public float CombatHeartbeatInterval => combatHeartbeatInterval;
+    public float CombatPulseScale => combatPulseScale;
+    public float CombatPulseDuration => combatPulseDuration;
+    public float CombatDoubleBeatDelay => combatDoubleBeatDelay;
 
     // NOUVEAU : LocationButton Settings Accessors
     public float LocationButtonClickScale => locationButtonClickScale;

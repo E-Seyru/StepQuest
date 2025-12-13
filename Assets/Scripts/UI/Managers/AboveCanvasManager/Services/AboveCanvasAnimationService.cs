@@ -15,8 +15,8 @@ public class AboveCanvasAnimationService
     private int currentPopId = -1;        // Renomme pour le pop
     private Color originalFillColor;
     private Vector3 originalFillScale;
-    private Vector3 originalRightIconScale;  // echelle originale de l'icône droite
-    private Color originalRightIconColor;    // Couleur originale de l'icône droite
+    private Vector3 originalRightIconScale;  // echelle originale de l'icï¿½ne droite
+    private Color originalRightIconColor;    // Couleur originale de l'icï¿½ne droite
 
     // NOUVEAU : Positions originales pour les animations de slide
     private Vector3 activityBarOriginalPosition;
@@ -31,6 +31,12 @@ public class AboveCanvasAnimationService
     private int idleShakeAnimationId = -1;        // ID de l'animation de vibration
     private bool isIdleAnimationActive = false;   // Flag pour savoir si l'animation est active
 
+    // Variables pour l'animation de combat (heartbeat)
+    private Vector3 fightingBarImageOriginalScale;  // echelle originale de l'image Fighting
+    private int combatAnimationTimerId = -1;        // ID du timer pour repeter l'animation
+    private int combatPulseAnimationId = -1;        // ID de l'animation de pulse
+    private bool isCombatAnimationActive = false;   // Flag pour savoir si l'animation est active
+
     public AboveCanvasAnimationService(AboveCanvasManager manager)
     {
         this.manager = manager;
@@ -41,6 +47,7 @@ public class AboveCanvasAnimationService
         // Configuration des animations peut se faire ici
         SaveOriginalPositions();
         SaveIdleBarImageOriginalValues();
+        SaveFightingBarImageOriginalValues();
     }
 
     private void SaveOriginalPositions()
@@ -70,6 +77,15 @@ public class AboveCanvasAnimationService
         }
     }
 
+    // Sauvegarder les valeurs originales de l'image FightingBar
+    private void SaveFightingBarImageOriginalValues()
+    {
+        if (manager.FightingBarImage != null)
+        {
+            fightingBarImageOriginalScale = manager.FightingBarImage.transform.localScale;
+        }
+    }
+
     public void SetupProgressBar()
     {
         if (manager.FillBar != null)
@@ -93,7 +109,7 @@ public class AboveCanvasAnimationService
             manager.BackgroundBar.type = Image.Type.Simple;
         }
 
-        // Sauvegarder les valeurs originales de l'icône droite pour l'animation de pop
+        // Sauvegarder les valeurs originales de l'icï¿½ne droite pour l'animation de pop
         if (manager.RightIcon != null)
         {
             originalRightIconScale = manager.RightIcon.transform.localScale;
@@ -169,7 +185,7 @@ public class AboveCanvasAnimationService
 
     public void PulseFillBar()
     {
-        // Methode separee pour les cas où on veut juste un pulse sans animation de remplissage
+        // Methode separee pour les cas oï¿½ on veut juste un pulse sans animation de remplissage
         PulseFillBarParallel();
     }
 
@@ -440,12 +456,142 @@ public class AboveCanvasAnimationService
             }).id;
     }
 
+    // ===============================================
+    // GESTION DE L'ANIMATION COMBAT BAR (HEARTBEAT)
+    // ===============================================
+
+    /// <summary>
+    /// Demarre l'animation de battement de coeur pour l'icone de combat
+    /// </summary>
+    public void StartCombatBarAnimation()
+    {
+        if (manager.FightingBarImage == null || isCombatAnimationActive) return;
+
+        // Sauvegarder l'echelle si pas encore fait
+        if (fightingBarImageOriginalScale == Vector3.zero)
+        {
+            fightingBarImageOriginalScale = manager.FightingBarImage.transform.localScale;
+        }
+
+        isCombatAnimationActive = true;
+        Logger.LogInfo("AboveCanvasManager: Starting combat heartbeat animation", Logger.LogCategory.General);
+
+        // Demarrer immediatement le premier battement
+        PlayHeartbeatAnimation();
+
+        // Puis programmer les repetitions
+        ScheduleNextHeartbeat();
+    }
+
+    /// <summary>
+    /// Arrete l'animation de battement de coeur
+    /// </summary>
+    public void StopCombatBarAnimation()
+    {
+        if (!isCombatAnimationActive) return;
+
+        isCombatAnimationActive = false;
+        Logger.LogInfo("AboveCanvasManager: Stopping combat heartbeat animation", Logger.LogCategory.General);
+
+        // Annuler le timer de repetition
+        if (combatAnimationTimerId != -1)
+        {
+            LeanTween.cancel(combatAnimationTimerId);
+            combatAnimationTimerId = -1;
+        }
+
+        // Annuler l'animation en cours
+        if (combatPulseAnimationId != -1)
+        {
+            LeanTween.cancel(combatPulseAnimationId);
+            combatPulseAnimationId = -1;
+        }
+
+        // Remettre l'image a son echelle originale
+        if (manager.FightingBarImage != null)
+        {
+            manager.FightingBarImage.transform.localScale = fightingBarImageOriginalScale;
+        }
+    }
+
+    /// <summary>
+    /// Programme le prochain battement de coeur
+    /// </summary>
+    private void ScheduleNextHeartbeat()
+    {
+        if (!isCombatAnimationActive) return;
+
+        combatAnimationTimerId = LeanTween.delayedCall(manager.CombatHeartbeatInterval, () =>
+        {
+            if (isCombatAnimationActive)
+            {
+                PlayHeartbeatAnimation();
+                ScheduleNextHeartbeat();
+            }
+        }).id;
+    }
+
+    /// <summary>
+    /// Joue l'animation de battement de coeur (double pulse rapide)
+    /// </summary>
+    private void PlayHeartbeatAnimation()
+    {
+        if (manager.FightingBarImage == null || !isCombatAnimationActive) return;
+
+        // Premier battement
+        PlaySinglePulse(() =>
+        {
+            if (!isCombatAnimationActive) return;
+
+            // Petit delai entre les deux battements
+            LeanTween.delayedCall(manager.CombatDoubleBeatDelay, () =>
+            {
+                if (isCombatAnimationActive)
+                {
+                    // Deuxieme battement (un peu plus petit)
+                    PlaySinglePulse(null, 0.8f);
+                }
+            });
+        });
+    }
+
+    /// <summary>
+    /// Joue un seul pulse de battement
+    /// </summary>
+    private void PlaySinglePulse(System.Action onComplete, float scaleMultiplier = 1f)
+    {
+        if (manager.FightingBarImage == null || !isCombatAnimationActive) return;
+
+        float targetScale = 1f + (manager.CombatPulseScale - 1f) * scaleMultiplier;
+        Vector3 pulseScale = fightingBarImageOriginalScale * targetScale;
+        float pulseDuration = manager.CombatPulseDuration;
+
+        // Grossir rapidement
+        combatPulseAnimationId = LeanTween.scale(manager.FightingBarImage.gameObject, pulseScale, pulseDuration * 0.4f)
+            .setEase(LeanTweenType.easeOutQuad)
+            .setOnComplete(() =>
+            {
+                if (manager.FightingBarImage != null && isCombatAnimationActive)
+                {
+                    // Retour a la normale
+                    LeanTween.scale(manager.FightingBarImage.gameObject, fightingBarImageOriginalScale, pulseDuration * 0.6f)
+                        .setEase(LeanTweenType.easeInQuad)
+                        .setOnComplete(() =>
+                        {
+                            combatPulseAnimationId = -1;
+                            onComplete?.Invoke();
+                        });
+                }
+            }).id;
+    }
+
     public void Cleanup()
     {
-        // Arreter l'animation de l'IdleBar
+        // Arreter les animations
         StopIdleBarAnimation();
+        StopCombatBarAnimation();
 
-        // Version securisee : annuler par GameObject plutôt que par ID
+        // Version securisee : annuler par GameObject plutot que par ID
         // evite les "orphan tweens" quand l'objet est detruit
         if (manager.FillBar != null)
         {
@@ -462,6 +608,11 @@ public class AboveCanvasAnimationService
             LeanTween.cancel(manager.IdleBarImage.gameObject);
         }
 
+        if (manager.FightingBarImage != null)
+        {
+            LeanTween.cancel(manager.FightingBarImage.gameObject);
+        }
+
         // Reset des IDs pour securite
         currentAnimationId = -1;
         currentPulseId = -1;
@@ -469,5 +620,7 @@ public class AboveCanvasAnimationService
         idleAnimationTimerId = -1;
         idleSnoreAnimationId = -1;
         idleShakeAnimationId = -1;
+        combatAnimationTimerId = -1;
+        combatPulseAnimationId = -1;
     }
 }

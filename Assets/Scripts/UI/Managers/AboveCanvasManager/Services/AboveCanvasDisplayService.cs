@@ -132,11 +132,13 @@ public class AboveCanvasDisplayService
 
         var activityManager = ActivityManager.Instance;
         var dataManager = DataManager.Instance;
+        var gameManager = GameManager.Instance;
 
         bool hasActiveActivity = activityManager?.HasActiveActivity() == true;
         bool isCurrentlyTraveling = dataManager?.PlayerData?.IsCurrentlyTraveling() == true;
+        bool isInCombat = gameManager?.CurrentState == GameState.InCombat;
 
-        Logger.LogInfo($"AboveCanvasManager: hasActiveActivity={hasActiveActivity}, isCurrentlyTraveling={isCurrentlyTraveling}", Logger.LogCategory.General);
+        Logger.LogInfo($"AboveCanvasManager: hasActiveActivity={hasActiveActivity}, isCurrentlyTraveling={isCurrentlyTraveling}, isInCombat={isInCombat}", Logger.LogCategory.General);
 
         if (isCurrentlyTraveling)
         {
@@ -147,6 +149,11 @@ public class AboveCanvasDisplayService
         {
             SetupActivityDisplay();
             HideIdleBar(); // NOUVEAU : Cacher IdleBar pendant activite
+        }
+        else if (isInCombat)
+        {
+            HideActivityBar();
+            ShowCombatBar(); // Afficher IdleBar avec icone de combat
         }
         else
         {
@@ -415,6 +422,12 @@ public class AboveCanvasDisplayService
 
         Logger.LogInfo("AboveCanvasManager: Showing idle bar", Logger.LogCategory.General);
 
+        // Afficher l'image de repos, cacher l'image de combat
+        if (manager.IdleBarImage != null)
+            manager.IdleBarImage.gameObject.SetActive(true);
+        if (manager.FightingBarImage != null)
+            manager.FightingBarImage.gameObject.SetActive(false);
+
         if (isInitializing)
         {
             manager.IdleBar.SetActive(true);
@@ -424,14 +437,44 @@ public class AboveCanvasDisplayService
             animationService?.SlideInBar(manager.IdleBar);
         }
 
-        // NOUVEAU : Demarrer l'animation repetitive d'inactivite
+        // Arreter l'animation de combat si elle etait active
+        animationService?.StopCombatBarAnimation();
+        // Demarrer l'animation repetitive d'inactivite
         animationService?.StartIdleBarAnimation();
+    }
+
+    private void ShowCombatBar()
+    {
+        if (manager.IdleBar == null) return;
+
+        Logger.LogInfo("AboveCanvasManager: Showing combat bar (fighting icon)", Logger.LogCategory.General);
+
+        // Afficher l'image de combat, cacher l'image de repos
+        if (manager.IdleBarImage != null)
+            manager.IdleBarImage.gameObject.SetActive(false);
+        if (manager.FightingBarImage != null)
+            manager.FightingBarImage.gameObject.SetActive(true);
+
+        if (isInitializing)
+        {
+            manager.IdleBar.SetActive(true);
+        }
+        else
+        {
+            animationService?.SlideInBar(manager.IdleBar);
+        }
+
+        // Pas d'animation de ronflement pendant le combat
+        animationService?.StopIdleBarAnimation();
+        // Demarrer l'animation de battement de coeur
+        animationService?.StartCombatBarAnimation();
     }
 
     private void HideIdleBar()
     {
-        // NOUVEAU : Arreter l'animation repetitive d'inactivite
+        // Arreter les animations
         animationService?.StopIdleBarAnimation();
+        animationService?.StopCombatBarAnimation();
         animationService?.HideBar(manager.IdleBar);
     }
 

@@ -83,15 +83,44 @@ public class AbilitiesInventoryContainer : MonoBehaviour
     {
         ClearDisplays();
 
-        // Calculate layout dimensions
-        float availableWidth = rectTransform.rect.width - (padding * 2);
-        if (availableWidth <= 0)
+        // Update VerticalLayoutGroup padding in case it changed in Inspector
+        var verticalLayout = GetComponent<VerticalLayoutGroup>();
+        if (verticalLayout != null)
         {
-            availableWidth = 300f - (padding * 2); // Fallback
+            verticalLayout.padding = new RectOffset(padding, padding, padding, padding);
+            verticalLayout.spacing = spacing;
         }
 
-        float baseWidth = (availableWidth - (spacing * (weightsPerRow - 1))) / weightsPerRow;
-        float rowHeight = baseWidth * heightRatio;
+        // Force layout update to get accurate rect width
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
+
+        // Calculate layout dimensions
+        // Get width from parent (Viewport) if available, otherwise use own width
+        float containerWidth = rectTransform.rect.width;
+
+        // If parent exists (e.g., Viewport), use parent's width as constraint
+        if (rectTransform.parent != null)
+        {
+            RectTransform parentRect = rectTransform.parent as RectTransform;
+            if (parentRect != null && parentRect.rect.width > 0)
+            {
+                containerWidth = parentRect.rect.width;
+            }
+        }
+
+        if (containerWidth <= 0)
+        {
+            containerWidth = 300f; // Fallback
+        }
+        float availableWidth = containerWidth - (padding * 2);
+
+        // Base width calculation: total available space minus all gaps between items, divided by number of weight units
+        // Total spacing between items = (weightsPerRow - 1) * spacing
+        float totalSpacing = (weightsPerRow - 1) * spacing;
+        // Floor to avoid floating point overflow causing items to exceed row width
+        float baseWidth = Mathf.Floor((availableWidth - totalSpacing) / weightsPerRow);
+        float rowHeight = Mathf.Floor(baseWidth * heightRatio);
 
         var ownedAbilities = AbilityManager.Instance?.GetOwnedAbilities() ?? new List<AbilityDefinition>();
 
@@ -161,6 +190,13 @@ public class AbilitiesInventoryContainer : MonoBehaviour
         // Force layout update
         LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
         Canvas.ForceUpdateCanvases();
+
+        // Reset scroll position to top
+        ScrollRect scrollRect = GetComponentInParent<ScrollRect>();
+        if (scrollRect != null)
+        {
+            scrollRect.verticalNormalizedPosition = 1f; // 1 = top, 0 = bottom
+        }
     }
 
     /// <summary>
@@ -196,6 +232,7 @@ public class AbilitiesInventoryContainer : MonoBehaviour
         row.transform.SetParent(transform, false);
 
         HorizontalLayoutGroup layout = row.GetComponent<HorizontalLayoutGroup>();
+        layout.padding = new RectOffset(0, 0, 0, 0); // No padding on rows
         layout.spacing = spacing;
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = false;
