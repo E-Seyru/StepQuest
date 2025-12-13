@@ -20,7 +20,7 @@ MonoBehaviour:
   EffectType: 0
   Behavior: 0
   Stacking: 0
-  MaxStacks: 10
+  MaxStacks: 999
   Decay: 0
   Duration: 10
   TickInterval: 1

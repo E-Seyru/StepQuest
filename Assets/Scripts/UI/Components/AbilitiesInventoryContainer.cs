@@ -17,13 +17,19 @@ public class AbilitiesInventoryContainer : MonoBehaviour
 
     [Header("Layout Settings")]
     [SerializeField] private float spacing = 5f;
-    [SerializeField] private int weightsPerRow = 10; // Higher = smaller abilities (10 makes them ~60% smaller than 6)
+    [SerializeField] private int weightsPerRow = 6;
     [SerializeField] private int padding = 5;
     [SerializeField] private float heightRatio = 1.0f; // Height as ratio of width (1.0 = square, 2.0 = combat style)
 
+    [Header("Empty Slots")]
+    [SerializeField] private GameObject emptySlotPrefab; // Prefab for empty slot (1:2 ratio)
+    [SerializeField] private Color emptySlotColor = new Color(0.3f, 0.3f, 0.3f, 0.5f); // Fallback if no prefab
+
     private RectTransform rectTransform;
     private List<GameObject> abilityDisplays = new List<GameObject>();
-    private Dictionary<GameObject, float> rowWeights = new Dictionary<GameObject, float>();
+    private List<GameObject> emptySlots = new List<GameObject>();
+    private List<GameObject> rows = new List<GameObject>();
+    private List<float> rowWeightsUsed = new List<float>();
 
     // Track ability instances for click handling
     private Dictionary<GameObject, string> displayToAbilityId = new Dictionary<GameObject, string>();
@@ -45,13 +51,8 @@ public class AbilitiesInventoryContainer : MonoBehaviour
         verticalLayout.childControlHeight = false;
         verticalLayout.padding = new RectOffset(padding, padding, padding, padding);
 
-        // Add ContentSizeFitter for scrolling
-        var sizeFitter = GetComponent<ContentSizeFitter>();
-        if (sizeFitter == null)
-        {
-            sizeFitter = gameObject.AddComponent<ContentSizeFitter>();
-        }
-        sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        // Note: If scrolling is needed, add ContentSizeFitter manually in editor
+        // Don't add it here to avoid resizing the container at runtime
     }
 
     private void Start()
@@ -83,12 +84,6 @@ public class AbilitiesInventoryContainer : MonoBehaviour
     {
         ClearDisplays();
 
-        if (AbilityManager.Instance == null) return;
-
-        var ownedAbilities = AbilityManager.Instance.GetOwnedAbilities();
-
-        if (ownedAbilities == null || ownedAbilities.Count == 0) return;
-
         // Calculate layout dimensions
         float availableWidth = rectTransform.rect.width - (padding * 2);
         if (availableWidth <= 0)
@@ -99,7 +94,30 @@ public class AbilitiesInventoryContainer : MonoBehaviour
         float baseWidth = (availableWidth - (spacing * (weightsPerRow - 1))) / weightsPerRow;
         float rowHeight = baseWidth * heightRatio;
 
-        // Place abilities in rows based on weight (no limit on rows)
+        if (AbilityManager.Instance == null)
+        {
+            // Create one empty row even with no abilities
+            CreateRowWithEmptySlots(rowHeight, baseWidth, weightsPerRow);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
+            Canvas.ForceUpdateCanvases();
+            return;
+        }
+
+        var ownedAbilities = AbilityManager.Instance.GetOwnedAbilities();
+
+        if (ownedAbilities == null || ownedAbilities.Count == 0)
+        {
+            // Create one empty row
+            CreateRowWithEmptySlots(rowHeight, baseWidth, weightsPerRow);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
+            Canvas.ForceUpdateCanvases();
+            return;
+        }
+
+        // First pass: calculate how many rows we need and assign abilities
+        List<List<AbilityDefinition>> rowAssignments = new List<List<AbilityDefinition>>();
+        List<int> rowWeightTotals = new List<int>();
+
         for (int i = 0; i < ownedAbilities.Count; i++)
         {
             var ability = ownedAbilities[i];
@@ -107,16 +125,60 @@ public class AbilitiesInventoryContainer : MonoBehaviour
 
             int abilityWeight = ability.Weight > 0 ? ability.Weight : 1;
 
-            // Find or create a row with enough space
-            GameObject targetRow = FindOrCreateRow(abilityWeight, rowHeight);
-
-            // Create the ability display
-            GameObject abilityObj = CreateAbilityDisplay(ability, i, targetRow.transform, baseWidth, rowHeight);
-            if (abilityObj != null)
+            // Find a row with space or create new
+            int targetRow = -1;
+            for (int r = 0; r < rowAssignments.Count; r++)
             {
-                abilityDisplays.Add(abilityObj);
-                displayToAbilityId[abilityObj] = ability.AbilityID;
-                rowWeights[targetRow] += abilityWeight;
+                if (weightsPerRow - rowWeightTotals[r] >= abilityWeight)
+                {
+                    targetRow = r;
+                    break;
+                }
+            }
+
+            if (targetRow < 0)
+            {
+                rowAssignments.Add(new List<AbilityDefinition>());
+                rowWeightTotals.Add(0);
+                targetRow = rowAssignments.Count - 1;
+            }
+
+            rowAssignments[targetRow].Add(ability);
+            rowWeightTotals[targetRow] += abilityWeight;
+        }
+
+        // Ensure at least one row
+        if (rowAssignments.Count == 0)
+        {
+            rowAssignments.Add(new List<AbilityDefinition>());
+            rowWeightTotals.Add(0);
+        }
+
+        // Create rows: abilities first, then empty slots at the end
+        for (int r = 0; r < rowAssignments.Count; r++)
+        {
+            GameObject row = CreateRow(rowHeight);
+            rows.Add(row);
+            rowWeightsUsed.Add(rowWeightTotals[r]);
+
+            // Create abilities first
+            foreach (var ability in rowAssignments[r])
+            {
+                int abilityIndex = ownedAbilities.IndexOf(ability);
+                GameObject abilityObj = CreateAbilityDisplay(ability, abilityIndex, row.transform, baseWidth, rowHeight);
+                if (abilityObj != null)
+                {
+                    abilityDisplays.Add(abilityObj);
+                    displayToAbilityId[abilityObj] = ability.AbilityID;
+                }
+            }
+
+            // Then add empty slots to fill remaining space
+            int remainingWeight = weightsPerRow - rowWeightTotals[r];
+            for (int w = 0; w < remainingWeight; w++)
+            {
+                GameObject emptySlot = CreateEmptySlot(row.transform, baseWidth, rowHeight);
+                emptySlots.Add(emptySlot);
             }
         }
 
@@ -126,24 +188,46 @@ public class AbilitiesInventoryContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Find a row with enough space, or create a new one (no row limit)
+    /// Create a row filled with empty slots (used when no abilities)
     /// </summary>
-    private GameObject FindOrCreateRow(int abilityWeight, float rowHeight)
+    private void CreateRowWithEmptySlots(float rowHeight, float baseWidth, int slotCount)
     {
-        // Try to fit in existing rows (top to bottom)
-        foreach (var rowEntry in rowWeights)
+        GameObject row = CreateRow(rowHeight);
+        rows.Add(row);
+        rowWeightsUsed.Add(0f);
+
+        for (int i = 0; i < slotCount; i++)
         {
-            float remainingSpace = weightsPerRow - rowEntry.Value;
-            if (remainingSpace >= abilityWeight)
-            {
-                return rowEntry.Key;
-            }
+            GameObject emptySlot = CreateEmptySlot(row.transform, baseWidth, rowHeight);
+            emptySlots.Add(emptySlot);
+        }
+    }
+
+    /// <summary>
+    /// Create an empty slot background
+    /// </summary>
+    private GameObject CreateEmptySlot(Transform parent, float baseWidth, float rowHeight)
+    {
+        GameObject slot;
+
+        if (emptySlotPrefab != null)
+        {
+            slot = Instantiate(emptySlotPrefab, parent);
+        }
+        else
+        {
+            // Fallback: create simple slot
+            slot = new GameObject("EmptySlot", typeof(RectTransform), typeof(Image));
+            slot.transform.SetParent(parent, false);
+
+            var image = slot.GetComponent<Image>();
+            image.color = emptySlotColor;
         }
 
-        // Create new row (no limit)
-        GameObject newRow = CreateRow(rowHeight);
-        rowWeights.Add(newRow, 0f);
-        return newRow;
+        RectTransform rect = slot.GetComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(baseWidth, rowHeight);
+
+        return slot;
     }
 
     private GameObject CreateRow(float rowHeight)
@@ -248,12 +332,20 @@ public class AbilitiesInventoryContainer : MonoBehaviour
         abilityDisplays.Clear();
         displayToAbilityId.Clear();
 
-        foreach (var row in rowWeights.Keys)
+        foreach (var slot in emptySlots)
+        {
+            if (slot != null)
+                Destroy(slot);
+        }
+        emptySlots.Clear();
+
+        foreach (var row in rows)
         {
             if (row != null)
                 Destroy(row);
         }
-        rowWeights.Clear();
+        rows.Clear();
+        rowWeightsUsed.Clear();
     }
 
     /// <summary>

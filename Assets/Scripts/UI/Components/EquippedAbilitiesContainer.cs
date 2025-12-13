@@ -32,9 +32,20 @@ public class EquippedAbilitiesContainer : MonoBehaviour, IDropHandler, IPointerE
     [SerializeField] private Color validDropColor = new Color(0f, 1f, 0f, 0.3f);
     [SerializeField] private Color invalidDropColor = new Color(1f, 0f, 0f, 0.3f);
 
+    [Header("Slot Prefabs")]
+    [SerializeField] private GameObject emptySlotPrefab; // Prefab for empty slot (1:2 ratio)
+    [SerializeField] private GameObject lockedSlotPrefab; // Prefab for locked slot (shows lock icon)
+    [SerializeField] private Color emptySlotColor = new Color(0.3f, 0.3f, 0.3f, 0.5f); // Fallback if no prefab
+
+    [Header("Unlock System")]
+    [SerializeField] private int defaultUnlockedWeight = 6; // Start with 1 row unlocked
+
     private RectTransform rectTransform;
     private List<GameObject> abilityDisplays = new List<GameObject>();
-    private Dictionary<GameObject, float> rowWeights = new Dictionary<GameObject, float>();
+    private List<GameObject> emptySlots = new List<GameObject>();
+    private List<GameObject> lockedSlots = new List<GameObject>();
+    private List<GameObject> rows = new List<GameObject>();
+    private int[] rowWeightUsed;
 
     // Track ability instances for click handling
     private Dictionary<GameObject, int> displayToIndex = new Dictionary<GameObject, int>();
@@ -90,19 +101,20 @@ public class EquippedAbilitiesContainer : MonoBehaviour, IDropHandler, IPointerE
     {
         ClearDisplays();
 
-        if (AbilityManager.Instance == null) return;
+        int currentWeight = 0;
+        int maxWeight = 12;
 
-        var equippedAbilities = AbilityManager.Instance.GetEquippedAbilities();
-        int currentWeight = AbilityManager.Instance.GetCurrentEquippedWeight();
-        int maxWeight = AbilityManager.Instance.MaxEquippedWeight;
+        if (AbilityManager.Instance != null)
+        {
+            currentWeight = AbilityManager.Instance.GetCurrentEquippedWeight();
+            maxWeight = AbilityManager.Instance.MaxEquippedWeight;
+        }
 
         // Update weight text
         if (weightText != null)
         {
             weightText.text = $"{currentWeight}/{maxWeight}";
         }
-
-        if (equippedAbilities == null || equippedAbilities.Count == 0) return;
 
         // Calculate layout dimensions
         float availableWidth = rectTransform.rect.width - (padding * 2);
@@ -112,33 +124,97 @@ public class EquippedAbilitiesContainer : MonoBehaviour, IDropHandler, IPointerE
         }
 
         float baseWidth = (availableWidth - (spacing * (weightsPerRow - 1))) / weightsPerRow;
-        float rowHeight = baseWidth * heightRatio;
 
-        // Place abilities in rows based on weight
-        for (int i = 0; i < equippedAbilities.Count; i++)
+        // Calculate row height from container height to prevent overflow
+        float availableHeight = rectTransform.rect.height - (padding * 2) - (spacing * (maxRows - 1));
+        float rowHeight = availableHeight / maxRows;
+        if (rowHeight <= 0) rowHeight = baseWidth * heightRatio; // Fallback
+
+        // Initialize row weight tracking
+        rowWeightUsed = new int[maxRows];
+
+        // First pass: assign abilities to rows
+        List<List<int>> rowAbilityIndices = new List<List<int>>();
+        for (int r = 0; r < maxRows; r++)
         {
-            var ability = equippedAbilities[i];
-            if (ability == null) continue;
+            rowAbilityIndices.Add(new List<int>());
+        }
 
-            int abilityWeight = ability.Weight > 0 ? ability.Weight : 1;
-
-            // Find or create a row with enough space
-            GameObject targetRow = FindOrCreateRow(abilityWeight, rowHeight);
-
-            if (targetRow == null)
+        var equippedAbilities = AbilityManager.Instance?.GetEquippedAbilities();
+        if (equippedAbilities != null)
+        {
+            for (int i = 0; i < equippedAbilities.Count; i++)
             {
-                // No space left
-                Logger.LogWarning($"EquippedAbilitiesContainer: No space for ability '{ability.GetDisplayName()}'", Logger.LogCategory.General);
-                continue;
+                var ability = equippedAbilities[i];
+                if (ability == null) continue;
+
+                int abilityWeight = ability.Weight > 0 ? ability.Weight : 1;
+
+                // Find a row with enough space
+                int targetRow = -1;
+                for (int r = 0; r < maxRows; r++)
+                {
+                    if (weightsPerRow - rowWeightUsed[r] >= abilityWeight)
+                    {
+                        targetRow = r;
+                        break;
+                    }
+                }
+
+                if (targetRow < 0)
+                {
+                    Logger.LogWarning($"EquippedAbilitiesContainer: No space for ability '{ability.GetDisplayName()}'", Logger.LogCategory.General);
+                    continue;
+                }
+
+                rowAbilityIndices[targetRow].Add(i);
+                rowWeightUsed[targetRow] += abilityWeight;
+            }
+        }
+
+        // Create rows: abilities first, then empty slots
+        for (int r = 0; r < maxRows; r++)
+        {
+            GameObject row = CreateRow(rowHeight);
+            rows.Add(row);
+
+            // Create abilities first
+            if (equippedAbilities != null)
+            {
+                foreach (int abilityIndex in rowAbilityIndices[r])
+                {
+                    var ability = equippedAbilities[abilityIndex];
+                    GameObject abilityObj = CreateAbilityDisplay(ability, abilityIndex, row.transform, baseWidth, rowHeight);
+                    if (abilityObj != null)
+                    {
+                        abilityDisplays.Add(abilityObj);
+                        displayToIndex[abilityObj] = abilityIndex;
+                    }
+                }
             }
 
-            // Create the ability display
-            GameObject abilityObj = CreateAbilityDisplay(ability, i, targetRow.transform, baseWidth, rowHeight);
-            if (abilityObj != null)
+            // Calculate unlocked and locked slots for this row
+            int unlockedWeight = GetUnlockedWeight();
+            int rowStartWeight = r * weightsPerRow;
+            int rowEndWeight = rowStartWeight + weightsPerRow;
+
+            // Add empty slots (unlocked) and locked slots
+            for (int w = rowWeightUsed[r]; w < weightsPerRow; w++)
             {
-                abilityDisplays.Add(abilityObj);
-                displayToIndex[abilityObj] = i;
-                rowWeights[targetRow] += abilityWeight;
+                int absoluteWeight = rowStartWeight + w;
+
+                if (absoluteWeight < unlockedWeight)
+                {
+                    // Unlocked empty slot
+                    GameObject emptySlot = CreateEmptySlot(row.transform, baseWidth, rowHeight);
+                    emptySlots.Add(emptySlot);
+                }
+                else
+                {
+                    // Locked slot
+                    GameObject lockedSlot = CreateLockedSlot(row.transform, baseWidth, rowHeight);
+                    lockedSlots.Add(lockedSlot);
+                }
             }
         }
 
@@ -148,31 +224,68 @@ public class EquippedAbilitiesContainer : MonoBehaviour, IDropHandler, IPointerE
     }
 
     /// <summary>
-    /// Find a row with enough space, or create a new one
-    /// Row fill rule: If ability doesn't fit remaining space on top row, place on bottom row
+    /// Get unlocked weight capacity (from PlayerData or default)
     /// </summary>
-    private GameObject FindOrCreateRow(int abilityWeight, float rowHeight)
+    private int GetUnlockedWeight()
     {
-        // Try to fit in existing rows (top to bottom)
-        foreach (var rowEntry in rowWeights)
+        // TODO: Get from PlayerData when implemented
+        // if (DataManager.Instance?.PlayerData != null)
+        //     return DataManager.Instance.PlayerData.UnlockedAbilityWeight;
+        return defaultUnlockedWeight;
+    }
+
+    /// <summary>
+    /// Create an empty slot (unlocked)
+    /// </summary>
+    private GameObject CreateEmptySlot(Transform parent, float baseWidth, float rowHeight)
+    {
+        GameObject slot;
+
+        if (emptySlotPrefab != null)
         {
-            float remainingSpace = weightsPerRow - rowEntry.Value;
-            if (remainingSpace >= abilityWeight)
-            {
-                return rowEntry.Key;
-            }
+            slot = Instantiate(emptySlotPrefab, parent);
+        }
+        else
+        {
+            // Fallback: create simple slot
+            slot = new GameObject("EmptySlot", typeof(RectTransform), typeof(Image));
+            slot.transform.SetParent(parent, false);
+
+            var image = slot.GetComponent<Image>();
+            image.color = emptySlotColor;
         }
 
-        // Need a new row - check if we can create one
-        if (rowWeights.Count >= maxRows)
+        RectTransform rect = slot.GetComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(baseWidth, rowHeight);
+
+        return slot;
+    }
+
+    /// <summary>
+    /// Create a locked slot
+    /// </summary>
+    private GameObject CreateLockedSlot(Transform parent, float baseWidth, float rowHeight)
+    {
+        GameObject slot;
+
+        if (lockedSlotPrefab != null)
         {
-            return null; // Max rows reached
+            slot = Instantiate(lockedSlotPrefab, parent);
+        }
+        else
+        {
+            // Fallback: create simple locked slot (darker)
+            slot = new GameObject("LockedSlot", typeof(RectTransform), typeof(Image));
+            slot.transform.SetParent(parent, false);
+
+            var image = slot.GetComponent<Image>();
+            image.color = new Color(0.2f, 0.2f, 0.2f, 0.7f);
         }
 
-        // Create new row
-        GameObject newRow = CreateRow(rowHeight);
-        rowWeights.Add(newRow, 0f);
-        return newRow;
+        RectTransform rect = slot.GetComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(baseWidth, rowHeight);
+
+        return slot;
     }
 
     private GameObject CreateRow(float rowHeight)
@@ -272,12 +385,28 @@ public class EquippedAbilitiesContainer : MonoBehaviour, IDropHandler, IPointerE
         abilityDisplays.Clear();
         displayToIndex.Clear();
 
-        foreach (var row in rowWeights.Keys)
+        foreach (var slot in emptySlots)
+        {
+            if (slot != null)
+                Destroy(slot);
+        }
+        emptySlots.Clear();
+
+        foreach (var slot in lockedSlots)
+        {
+            if (slot != null)
+                Destroy(slot);
+        }
+        lockedSlots.Clear();
+
+        foreach (var row in rows)
         {
             if (row != null)
                 Destroy(row);
         }
-        rowWeights.Clear();
+        rows.Clear();
+
+        rowWeightUsed = null;
     }
 
     /// <summary>
