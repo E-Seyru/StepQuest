@@ -23,10 +23,19 @@ public class ActivityDisplayPanel : MonoBehaviour
     [Header("Visual")]
     [SerializeField] private Image activityIcon;
 
+    [Header("Slide Animation")]
+    [SerializeField] private float slideAnimationDuration = 0.3f;
+    [SerializeField] private LeanTweenType slideEaseIn = LeanTweenType.easeOutBack;
+    [SerializeField] private LeanTweenType slideEaseOut = LeanTweenType.easeInBack;
+    [SerializeField] private float slideOffsetY = -500f; // How far below to start (negative = below)
+
     // Etat actuel
     private ActivityData currentActivity;
     private ActivityVariant currentVariant;
     private bool isDisplaying = false;
+    private RectTransform rectTransform;
+    private Vector3 originalPosition;
+    private int currentAnimationId = -1;
 
     public static ActivityDisplayPanel Instance { get; private set; }
 
@@ -40,6 +49,13 @@ public class ActivityDisplayPanel : MonoBehaviour
         {
             Destroy(gameObject);
             return;
+        }
+
+        // Cache RectTransform and save original position
+        rectTransform = GetComponent<RectTransform>();
+        if (rectTransform != null)
+        {
+            originalPosition = rectTransform.localPosition;
         }
     }
 
@@ -208,26 +224,75 @@ public class ActivityDisplayPanel : MonoBehaviour
     // === GESTION DE L'AFFICHAGE ===
 
     /// <summary>
-    /// Afficher le panel
+    /// Afficher le panel avec animation de slide up
     /// </summary>
     public void ShowPanel()
     {
         if (!isDisplaying)
         {
-            gameObject.SetActive(true);
             isDisplaying = true;
+
+            // Cancel any ongoing animation
+            if (currentAnimationId != -1)
+            {
+                LeanTween.cancel(currentAnimationId);
+                currentAnimationId = -1;
+            }
+
+            // Set starting position (below screen)
+            if (rectTransform != null)
+            {
+                Vector3 startPosition = originalPosition + new Vector3(0, slideOffsetY, 0);
+                rectTransform.localPosition = startPosition;
+            }
+
+            // Activate and animate
+            gameObject.SetActive(true);
+
+            if (rectTransform != null)
+            {
+                currentAnimationId = LeanTween.moveLocal(gameObject, originalPosition, slideAnimationDuration)
+                    .setEase(slideEaseIn)
+                    .setOnComplete(() => currentAnimationId = -1)
+                    .id;
+            }
         }
     }
 
     /// <summary>
-    /// Cacher le panel (n'arrete PAS l'activite)
+    /// Cacher le panel avec animation de slide down (n'arrete PAS l'activite)
     /// </summary>
     public void HidePanel()
     {
         if (isDisplaying)
         {
-            gameObject.SetActive(false);
             isDisplaying = false;
+
+            // Cancel any ongoing animation
+            if (currentAnimationId != -1)
+            {
+                LeanTween.cancel(currentAnimationId);
+                currentAnimationId = -1;
+            }
+
+            if (rectTransform != null)
+            {
+                Vector3 endPosition = originalPosition + new Vector3(0, slideOffsetY, 0);
+                currentAnimationId = LeanTween.moveLocal(gameObject, endPosition, slideAnimationDuration)
+                    .setEase(slideEaseOut)
+                    .setOnComplete(() =>
+                    {
+                        currentAnimationId = -1;
+                        gameObject.SetActive(false);
+                        // Reset position for next show
+                        rectTransform.localPosition = originalPosition;
+                    })
+                    .id;
+            }
+            else
+            {
+                gameObject.SetActive(false);
+            }
         }
     }
 
@@ -471,6 +536,13 @@ public class ActivityDisplayPanel : MonoBehaviour
 
     void OnDestroy()
     {
+        // Cancel any ongoing animation
+        if (currentAnimationId != -1)
+        {
+            LeanTween.cancel(currentAnimationId);
+            currentAnimationId = -1;
+        }
+
         UnsubscribeFromActivityEvents();
     }
 
