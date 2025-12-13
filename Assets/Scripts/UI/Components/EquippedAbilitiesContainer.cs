@@ -23,6 +23,7 @@ public class EquippedAbilitiesContainer : MonoBehaviour, IDropHandler, IPointerE
     [SerializeField] private int maxRows = 2;
     [SerializeField] private int padding = 5;
     [SerializeField] private float heightRatio = 1.0f; // Height per weight unit (1.0 = square, 2.0 = combat style)
+    [SerializeField] private bool useScrollView = false; // If true, uses ContentSizeFitter for scrolling
 
     [Header("Weight Display")]
     [SerializeField] private TextMeshProUGUI weightText;
@@ -66,6 +67,17 @@ public class EquippedAbilitiesContainer : MonoBehaviour, IDropHandler, IPointerE
         verticalLayout.childControlWidth = true;
         verticalLayout.childControlHeight = false;
         verticalLayout.padding = new RectOffset(padding, padding, padding, padding);
+
+        // Add ContentSizeFitter for scroll view mode
+        if (useScrollView)
+        {
+            var sizeFitter = GetComponent<ContentSizeFitter>();
+            if (sizeFitter == null)
+            {
+                sizeFitter = gameObject.AddComponent<ContentSizeFitter>();
+            }
+            sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        }
 
         // Hide drop highlight initially
         if (dropHighlight != null)
@@ -125,10 +137,20 @@ public class EquippedAbilitiesContainer : MonoBehaviour, IDropHandler, IPointerE
 
         float baseWidth = (availableWidth - (spacing * (weightsPerRow - 1))) / weightsPerRow;
 
-        // Calculate row height from container height to prevent overflow
-        float availableHeight = rectTransform.rect.height - (padding * 2) - (spacing * (maxRows - 1));
-        float rowHeight = availableHeight / maxRows;
-        if (rowHeight <= 0) rowHeight = baseWidth * heightRatio; // Fallback
+        // Calculate row height
+        float rowHeight;
+        if (useScrollView)
+        {
+            // For scroll view: use width-based ratio (content expands)
+            rowHeight = baseWidth * heightRatio;
+        }
+        else
+        {
+            // For fixed container: fit rows within container height
+            float availableHeight = rectTransform.rect.height - (padding * 2) - (spacing * (maxRows - 1));
+            rowHeight = availableHeight / maxRows;
+            if (rowHeight <= 0) rowHeight = baseWidth * heightRatio; // Fallback
+        }
 
         // Initialize row weight tracking
         rowWeightUsed = new int[maxRows];
@@ -224,13 +246,12 @@ public class EquippedAbilitiesContainer : MonoBehaviour, IDropHandler, IPointerE
     }
 
     /// <summary>
-    /// Get unlocked weight capacity (from PlayerData or default)
+    /// Get unlocked weight capacity (from AbilityManager)
     /// </summary>
     private int GetUnlockedWeight()
     {
-        // TODO: Get from PlayerData when implemented
-        // if (DataManager.Instance?.PlayerData != null)
-        //     return DataManager.Instance.PlayerData.UnlockedAbilityWeight;
+        if (AbilityManager.Instance != null)
+            return AbilityManager.Instance.UnlockedWeight;
         return defaultUnlockedWeight;
     }
 

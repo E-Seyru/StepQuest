@@ -18,6 +18,7 @@ public class AbilityManager : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private int maxEquippedWeight = 12; // 2 rows x 6 weight
     [SerializeField] private int weightsPerRow = 6;
+    [SerializeField] private int defaultUnlockedWeight = 6; // Start with 1 row unlocked
 
     [Header("Registry")]
     [SerializeField] private AbilityRegistry abilityRegistry;
@@ -30,6 +31,20 @@ public class AbilityManager : MonoBehaviour
     public int MaxEquippedWeight => maxEquippedWeight;
     public int WeightsPerRow => weightsPerRow;
     public int MaxRows => 2;
+
+    /// <summary>
+    /// Get unlocked weight capacity (from PlayerData or default)
+    /// </summary>
+    public int UnlockedWeight
+    {
+        get
+        {
+            // TODO: Get from PlayerData when implemented
+            // var playerData = DataManager.Instance?.PlayerData;
+            // if (playerData != null) return playerData.UnlockedAbilityWeight;
+            return defaultUnlockedWeight;
+        }
+    }
 
     private void Awake()
     {
@@ -238,7 +253,7 @@ public class AbilityManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Check if an ability can be equipped (weight check)
+    /// Check if an ability can be equipped (weight check against unlocked weight)
     /// </summary>
     public bool CanEquipAbility(string abilityId)
     {
@@ -248,9 +263,9 @@ public class AbilityManager : MonoBehaviour
         var ability = GetAbilityDefinition(abilityId);
         if (ability == null) return false;
 
-        // Check weight
+        // Check weight against UNLOCKED weight (not max)
         int currentWeight = GetCurrentEquippedWeight();
-        return (currentWeight + ability.Weight) <= maxEquippedWeight;
+        return (currentWeight + ability.Weight) <= UnlockedWeight;
     }
 
     /// <summary>

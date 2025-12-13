@@ -18,6 +18,7 @@ public class AbilitiesInventoryContainer : MonoBehaviour
     [Header("Layout Settings")]
     [SerializeField] private float spacing = 5f;
     [SerializeField] private int weightsPerRow = 6;
+    [SerializeField] private int fixedRowCount = 4; // Always show this many rows
     [SerializeField] private int padding = 5;
     [SerializeField] private float heightRatio = 1.0f; // Height as ratio of width (1.0 = square, 2.0 = combat style)
 
@@ -51,8 +52,6 @@ public class AbilitiesInventoryContainer : MonoBehaviour
         verticalLayout.childControlHeight = false;
         verticalLayout.padding = new RectOffset(padding, padding, padding, padding);
 
-        // Note: If scrolling is needed, add ContentSizeFitter manually in editor
-        // Don't add it here to avoid resizing the container at runtime
     }
 
     private void Start()
@@ -94,30 +93,17 @@ public class AbilitiesInventoryContainer : MonoBehaviour
         float baseWidth = (availableWidth - (spacing * (weightsPerRow - 1))) / weightsPerRow;
         float rowHeight = baseWidth * heightRatio;
 
-        if (AbilityManager.Instance == null)
-        {
-            // Create one empty row even with no abilities
-            CreateRowWithEmptySlots(rowHeight, baseWidth, weightsPerRow);
-            LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
-            Canvas.ForceUpdateCanvases();
-            return;
-        }
+        var ownedAbilities = AbilityManager.Instance?.GetOwnedAbilities() ?? new List<AbilityDefinition>();
 
-        var ownedAbilities = AbilityManager.Instance.GetOwnedAbilities();
-
-        if (ownedAbilities == null || ownedAbilities.Count == 0)
-        {
-            // Create one empty row
-            CreateRowWithEmptySlots(rowHeight, baseWidth, weightsPerRow);
-            LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
-            Canvas.ForceUpdateCanvases();
-            return;
-        }
-
-        // First pass: calculate how many rows we need and assign abilities
+        // Initialize fixed number of rows with their weight tracking
         List<List<AbilityDefinition>> rowAssignments = new List<List<AbilityDefinition>>();
-        List<int> rowWeightTotals = new List<int>();
+        int[] rowWeightTotals = new int[fixedRowCount];
+        for (int r = 0; r < fixedRowCount; r++)
+        {
+            rowAssignments.Add(new List<AbilityDefinition>());
+        }
 
+        // Assign abilities to rows
         for (int i = 0; i < ownedAbilities.Count; i++)
         {
             var ability = ownedAbilities[i];
@@ -125,9 +111,9 @@ public class AbilitiesInventoryContainer : MonoBehaviour
 
             int abilityWeight = ability.Weight > 0 ? ability.Weight : 1;
 
-            // Find a row with space or create new
+            // Find a row with space
             int targetRow = -1;
-            for (int r = 0; r < rowAssignments.Count; r++)
+            for (int r = 0; r < fixedRowCount; r++)
             {
                 if (weightsPerRow - rowWeightTotals[r] >= abilityWeight)
                 {
@@ -136,26 +122,16 @@ public class AbilitiesInventoryContainer : MonoBehaviour
                 }
             }
 
-            if (targetRow < 0)
+            if (targetRow >= 0)
             {
-                rowAssignments.Add(new List<AbilityDefinition>());
-                rowWeightTotals.Add(0);
-                targetRow = rowAssignments.Count - 1;
+                rowAssignments[targetRow].Add(ability);
+                rowWeightTotals[targetRow] += abilityWeight;
             }
-
-            rowAssignments[targetRow].Add(ability);
-            rowWeightTotals[targetRow] += abilityWeight;
+            // If no space, ability won't be displayed (shouldn't happen with enough rows)
         }
 
-        // Ensure at least one row
-        if (rowAssignments.Count == 0)
-        {
-            rowAssignments.Add(new List<AbilityDefinition>());
-            rowWeightTotals.Add(0);
-        }
-
-        // Create rows: abilities first, then empty slots at the end
-        for (int r = 0; r < rowAssignments.Count; r++)
+        // Create all fixed rows: abilities first, then empty slots
+        for (int r = 0; r < fixedRowCount; r++)
         {
             GameObject row = CreateRow(rowHeight);
             rows.Add(row);
@@ -173,7 +149,7 @@ public class AbilitiesInventoryContainer : MonoBehaviour
                 }
             }
 
-            // Then add empty slots to fill remaining space
+            // Fill remaining space with empty slots
             int remainingWeight = weightsPerRow - rowWeightTotals[r];
             for (int w = 0; w < remainingWeight; w++)
             {
@@ -185,22 +161,6 @@ public class AbilitiesInventoryContainer : MonoBehaviour
         // Force layout update
         LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
         Canvas.ForceUpdateCanvases();
-    }
-
-    /// <summary>
-    /// Create a row filled with empty slots (used when no abilities)
-    /// </summary>
-    private void CreateRowWithEmptySlots(float rowHeight, float baseWidth, int slotCount)
-    {
-        GameObject row = CreateRow(rowHeight);
-        rows.Add(row);
-        rowWeightsUsed.Add(0f);
-
-        for (int i = 0; i < slotCount; i++)
-        {
-            GameObject emptySlot = CreateEmptySlot(row.transform, baseWidth, rowHeight);
-            emptySlots.Add(emptySlot);
-        }
     }
 
     /// <summary>
@@ -252,6 +212,7 @@ public class AbilitiesInventoryContainer : MonoBehaviour
         var layoutElement = row.AddComponent<LayoutElement>();
         layoutElement.minHeight = rowHeight;
         layoutElement.preferredHeight = rowHeight;
+        layoutElement.flexibleHeight = 0; // Don't expand
 
         return row;
     }
