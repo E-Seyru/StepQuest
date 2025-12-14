@@ -277,8 +277,7 @@ public class AboveCanvasTravelPathService
     }
 
     /// <summary>
-    /// Applies a target size to an object by scaling it proportionally and adding a LayoutElement.
-    /// This preserves child proportions (including 9-slice borders) while making layout work correctly.
+    /// Applies a target size to an object and all its children proportionally.
     /// </summary>
     private void ApplySize(GameObject obj, Vector2 targetSize)
     {
@@ -296,18 +295,19 @@ public class AboveCanvasTravelPathService
         // Avoid division by zero
         if (originalSize.x <= 0 || originalSize.y <= 0) return;
 
-        // Calculate uniform scale factor (use the smaller ratio to maintain aspect ratio)
+        // Calculate scale factor
         float scaleX = targetSize.x / originalSize.x;
         float scaleY = targetSize.y / originalSize.y;
         float uniformScale = Mathf.Min(scaleX, scaleY);
 
-        // Apply scale to resize everything proportionally (including children and 9-slice borders)
-        rectTransform.localScale = new Vector3(uniformScale, uniformScale, 1f);
-
-        // Set sizeDelta to target size (layout group will use this)
+        // Set parent to target size
         rectTransform.sizeDelta = targetSize;
+        rectTransform.localScale = Vector3.one;
 
-        // Add LayoutElement so the layout system uses the target size
+        // Scale all children's sizeDelta proportionally
+        ScaleChildrenSizes(rectTransform, uniformScale);
+
+        // Add LayoutElement for layout group
         var layoutElement = obj.GetComponent<LayoutElement>();
         if (layoutElement == null)
         {
@@ -317,6 +317,24 @@ public class AboveCanvasTravelPathService
         layoutElement.preferredHeight = targetSize.y;
         layoutElement.minWidth = targetSize.x;
         layoutElement.minHeight = targetSize.y;
+    }
+
+    /// <summary>
+    /// Recursively scales all children's sizeDelta by the given factor.
+    /// </summary>
+    private void ScaleChildrenSizes(Transform parent, float scale)
+    {
+        foreach (Transform child in parent)
+        {
+            var childRect = child.GetComponent<RectTransform>();
+            if (childRect != null)
+            {
+                childRect.sizeDelta *= scale;
+                childRect.anchoredPosition *= scale;
+            }
+            // Recurse into grandchildren
+            ScaleChildrenSizes(child, scale);
+        }
     }
 
     /// <summary>
