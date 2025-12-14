@@ -9,6 +9,7 @@ public class AboveCanvasDisplayService
 {
     private readonly AboveCanvasManager manager;
     private AboveCanvasAnimationService animationService;
+    private AboveCanvasTravelPathService travelPathService;
     private bool isInitializing = true; // NOUVEAU : Flag pour eviter animations pendant init
 
     public AboveCanvasDisplayService(AboveCanvasManager manager)
@@ -20,6 +21,7 @@ public class AboveCanvasDisplayService
     {
         // Recuperer la reference au service d'animation
         animationService = manager.AnimationService;
+        travelPathService = manager.TravelPathService;
     }
 
     // NOUVEAU : Methode pour marquer la fin de l'initialisation
@@ -183,13 +185,24 @@ public class AboveCanvasDisplayService
         }
 
         var playerData = dataManager.PlayerData;
-        string currentLocationId = playerData.CurrentLocationId;
-        string destinationId = playerData.TravelDestinationId;
 
-        Logger.LogInfo($"AboveCanvasManager: Travel from {currentLocationId} to {destinationId}", Logger.LogCategory.General);
+        // Hide activity icon containers during travel
+        if (manager.ActivityIconContainer != null)
+        {
+            manager.ActivityIconContainer.gameObject.SetActive(false);
+        }
+        if (manager.LeftIconContainer != null)
+        {
+            manager.LeftIconContainer.gameObject.SetActive(false);
+        }
+        // Also hide RightIcon explicitly (in case it's not a child of ActivityIconContainer)
+        if (manager.RightIcon != null)
+        {
+            manager.RightIcon.gameObject.SetActive(false);
+        }
 
-        // Configurer les icônes
-        SetupTravelIcons(currentLocationId, destinationId);
+        // Build dynamic travel path
+        travelPathService?.BuildTravelPathFromCurrentTravel();
 
         // Calculer la progression une seule fois
         long progress = playerData.GetTravelProgress(playerData.TotalSteps);
@@ -211,10 +224,10 @@ public class AboveCanvasDisplayService
             manager.FillBar.fillAmount = Mathf.Clamp01(progressPercent);
         }
 
-        // Montrer la fleche pour le voyage
+        // Hide old arrow icon (arrows are now in the path)
         if (manager.ArrowIcon != null)
         {
-            manager.ArrowIcon.SetActive(true);
+            manager.ArrowIcon.SetActive(false);
         }
     }
 
@@ -245,10 +258,24 @@ public class AboveCanvasDisplayService
             animationService?.SlideInBar(manager.ActivityBar);
         }
 
-        // For activities: hide left icon, show only the resource/variant icon
-        if (manager.LeftIcon != null)
+        // Clear travel path if any
+        travelPathService?.ClearTravelPath();
+
+        // For activities: hide left icon container
+        if (manager.LeftIconContainer != null)
+        {
+            manager.LeftIconContainer.gameObject.SetActive(false);
+        }
+        else if (manager.LeftIcon != null)
         {
             manager.LeftIcon.gameObject.SetActive(false);
+        }
+
+        // Show and position the activity icon container at center
+        if (manager.ActivityIconContainer != null)
+        {
+            manager.ActivityIconContainer.gameObject.SetActive(true);
+            manager.ActivityIconContainer.anchoredPosition = manager.RightContainerActivityPosition;
         }
 
         // Show only the variant/resource icon (RightIcon)
@@ -357,52 +384,10 @@ public class AboveCanvasDisplayService
             return $"{timeMs / 60000f:F1}min";
     }
 
-    private void SetupTravelIcons(string currentLocationId, string destinationId)
-    {
-        var locationRegistry = MapManager.Instance?.LocationRegistry;
-        if (locationRegistry == null)
-        {
-            Logger.LogWarning("AboveCanvasManager: LocationRegistry is null in SetupTravelIcons", Logger.LogCategory.General);
-            return;
-        }
-
-        // Icône de depart
-        if (manager.LeftIcon != null)
-        {
-            var currentLocation = locationRegistry.GetLocationById(currentLocationId);
-            if (currentLocation != null)
-            {
-                var icon = currentLocation.GetIcon();
-                manager.LeftIcon.sprite = icon;
-                Logger.LogInfo($"AboveCanvasManager: Set left travel icon to {(icon != null ? icon.name : "null")} for location {currentLocationId}", Logger.LogCategory.General);
-            }
-            else
-            {
-                Logger.LogWarning($"AboveCanvasManager: Current location {currentLocationId} not found", Logger.LogCategory.General);
-            }
-            manager.LeftIcon.gameObject.SetActive(true);
-        }
-
-        // Icône d'arrivee
-        if (manager.RightIcon != null)
-        {
-            var destinationLocation = locationRegistry.GetLocationById(destinationId);
-            if (destinationLocation != null)
-            {
-                var icon = destinationLocation.GetIcon();
-                manager.RightIcon.sprite = icon;
-                Logger.LogInfo($"AboveCanvasManager: Set right travel icon to {(icon != null ? icon.name : "null")} for destination {destinationId}", Logger.LogCategory.General);
-            }
-            else
-            {
-                Logger.LogWarning($"AboveCanvasManager: Destination location {destinationId} not found", Logger.LogCategory.General);
-            }
-            manager.RightIcon.gameObject.SetActive(true);
-        }
-    }
-
     private void HideActivityBar()
     {
+        // Clear travel path when hiding
+        travelPathService?.ClearTravelPath();
         animationService?.HideBar(manager.ActivityBar);
     }
 

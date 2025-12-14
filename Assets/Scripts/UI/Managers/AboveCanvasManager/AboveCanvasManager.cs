@@ -27,6 +27,7 @@ public class AboveCanvasManager : MonoBehaviour
     [SerializeField] private GameObject activityBar;
     [SerializeField] private Button activityBarButton; // Button component for clicking on ActivityBar
     [SerializeField] private Image leftIcon;
+    [SerializeField] private RectTransform leftIconContainer; // Parent container for left/origin icon (shown during travel)
     [SerializeField] private Image rightIcon;
     [SerializeField] private RectTransform activityIconContainer; // Parent container to animate for activity rewards
     [SerializeField] private TextMeshProUGUI activityText;
@@ -56,6 +57,16 @@ public class AboveCanvasManager : MonoBehaviour
     [Header("Slide Animation Settings")]
     [SerializeField] private float slideAnimationDuration = 0.25f;
     [SerializeField] private LeanTweenType slideAnimationEase = LeanTweenType.easeOutQuart;
+
+    [Header("Icon Container Positions (Activity Mode)")]
+    [SerializeField] private Vector2 rightContainerActivityPosition = new Vector2(0f, 0f); // Position during activity (centered)
+
+    [Header("Travel Path Display")]
+    [SerializeField] private RectTransform travelPathContainer; // Container with HorizontalLayoutGroup for travel path
+    [SerializeField] private GameObject locationIconPrefab; // Prefab for location icons in path
+    [SerializeField] private GameObject arrowPrefab; // Prefab for arrows between locations
+    [SerializeField] private Vector2 locationIconSize = new Vector2(50f, 50f); // Size of location icons in travel path
+    [SerializeField] private Vector2 arrowSize = new Vector2(30f, 30f); // Size of arrows in travel path
 
     [Header("Pop Settings (Reward Animation)")]
     [SerializeField] private float popScaleAmount = 1.3f;        // Grossit de 30%
@@ -89,11 +100,13 @@ public class AboveCanvasManager : MonoBehaviour
     private AboveCanvasDisplayService displayService;
     private AboveCanvasAnimationService animationService;
     private AboveCanvasEventService eventService;
+    private AboveCanvasTravelPathService travelPathService;
 
     // Internal accessors for services
     internal AboveCanvasEventService EventService => eventService;
     internal AboveCanvasAnimationService AnimationService => animationService;
     internal AboveCanvasDisplayService DisplayService => displayService;
+    internal AboveCanvasTravelPathService TravelPathService => travelPathService;
 
     public Sprite TravelIcon => travelIcon; // NOUVEAU : Accesseur pour l'icône de voyage
 
@@ -145,6 +158,7 @@ public class AboveCanvasManager : MonoBehaviour
     {
         // Creer les services dans l'ordre (animation et display d'abord)
         animationService = new AboveCanvasAnimationService(this);
+        travelPathService = new AboveCanvasTravelPathService(this);
         displayService = new AboveCanvasDisplayService(this);
         eventService = new AboveCanvasEventService(this, displayService, animationService);
         initializationService = new AboveCanvasInitializationService(this, eventService, animationService);
@@ -171,6 +185,7 @@ public class AboveCanvasManager : MonoBehaviour
     public GameObject ActivityBar => activityBar;
     public Button ActivityBarButton => activityBarButton;
     public Image LeftIcon => leftIcon;
+    public RectTransform LeftIconContainer => leftIconContainer;
     public Image RightIcon => rightIcon;
     public RectTransform ActivityIconContainer => activityIconContainer;
     public TextMeshProUGUI ActivityText => activityText;
@@ -196,6 +211,16 @@ public class AboveCanvasManager : MonoBehaviour
     // Slide Animation Settings Accessors
     public float SlideAnimationDuration => slideAnimationDuration;
     public LeanTweenType SlideAnimationEase => slideAnimationEase;
+
+    // Icon Container Position Accessors
+    public Vector2 RightContainerActivityPosition => rightContainerActivityPosition;
+
+    // Travel Path Accessors
+    public RectTransform TravelPathContainer => travelPathContainer;
+    public GameObject LocationIconPrefab => locationIconPrefab;
+    public GameObject ArrowPrefab => arrowPrefab;
+    public Vector2 LocationIconSize => locationIconSize;
+    public Vector2 ArrowSize => arrowSize;
     // Pop Settings Accessors (Reward Animation)
     public float PopScaleAmount => popScaleAmount;
     public float PopDuration => popDuration;
