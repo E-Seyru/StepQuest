@@ -15,8 +15,8 @@ public class AboveCanvasAnimationService
     private int currentPopId = -1;        // Renomme pour le pop
     private Color originalFillColor;
     private Vector3 originalFillScale;
-    private Vector3 originalRightIconScale;  // echelle originale de l'ic�ne droite
-    private Color originalRightIconColor;    // Couleur originale de l'ic�ne droite
+    private Vector3 originalActivityIconContainerScale;  // echelle originale du container d'icone
+    private Color originalActivityIconContainerColor;    // Couleur originale du container d'icone
 
     // NOUVEAU : Positions originales pour les animations de slide
     private Vector3 activityBarOriginalPosition;
@@ -109,11 +109,13 @@ public class AboveCanvasAnimationService
             manager.BackgroundBar.type = Image.Type.Simple;
         }
 
-        // Sauvegarder les valeurs originales de l'ic�ne droite pour l'animation de pop
-        if (manager.RightIcon != null)
+        // Sauvegarder les valeurs originales du container d'icone pour l'animation de pop
+        if (manager.ActivityIconContainer != null)
         {
-            originalRightIconScale = manager.RightIcon.transform.localScale;
-            originalRightIconColor = manager.RightIcon.color;
+            originalActivityIconContainerScale = manager.ActivityIconContainer.localScale;
+            // Try to get color from Image component if exists
+            var containerImage = manager.ActivityIconContainer.GetComponent<Image>();
+            originalActivityIconContainerColor = containerImage != null ? containerImage.color : Color.white;
         }
     }
 
@@ -192,7 +194,7 @@ public class AboveCanvasAnimationService
     public void ShakeRightIcon()
     {
         // NOUVEAU : Pop de recompense au lieu de shake d'erreur !
-        PopRightIcon();
+        PopActivityIcon();
     }
 
     // NOUVEAU : Animation de slide pour les barres
@@ -256,9 +258,9 @@ public class AboveCanvasAnimationService
         bar.transform.localPosition = hiddenPos;
     }
 
-    private void PopRightIcon()
+    private void PopActivityIcon()
     {
-        if (manager.RightIcon == null) return;
+        if (manager.ActivityIconContainer == null) return;
 
         // Arreter le pop precedent
         if (currentPopId != -1)
@@ -267,32 +269,22 @@ public class AboveCanvasAnimationService
         }
 
         // Animation de POP satisfaisante :
-        // 1. Grossit rapidement avec couleur plus lumineuse
+        // 1. Grossit rapidement
         // 2. Retourne a la normale avec bounce
 
-        // Scale + couleur en parallele
-        currentPopId = LeanTween.scale(manager.RightIcon.gameObject, originalRightIconScale * manager.PopScaleAmount, manager.PopDuration * 0.4f)
+        // Scale animation on the container
+        currentPopId = LeanTween.scale(manager.ActivityIconContainer.gameObject, originalActivityIconContainerScale * manager.PopScaleAmount, manager.PopDuration * 0.4f)
             .setEase(LeanTweenType.easeOutQuart)
             .setOnComplete(() =>
             {
                 // Phase 2: Retour a la normale avec bounce satisfaisant
-                LeanTween.scale(manager.RightIcon.gameObject, originalRightIconScale, manager.PopDuration * 0.6f)
+                LeanTween.scale(manager.ActivityIconContainer.gameObject, originalActivityIconContainerScale, manager.PopDuration * 0.6f)
                     .setEase(manager.PopEaseType) // easeOutBack pour l'effet bounce
                     .setOnComplete(() =>
                     {
                         currentPopId = -1;
                     });
             }).id;
-
-        // Animation de couleur en parallele (illumination)
-        LeanTween.color(manager.RightIcon.rectTransform, manager.PopBrightColor, manager.PopDuration * 0.4f)
-            .setEase(LeanTweenType.easeOutQuart)
-            .setOnComplete(() =>
-            {
-                // Retour couleur normale
-                LeanTween.color(manager.RightIcon.rectTransform, originalRightIconColor, manager.PopDuration * 0.6f)
-                    .setEase(LeanTweenType.easeOutQuart);
-            });
     }
 
     // ===============================================
@@ -598,9 +590,9 @@ public class AboveCanvasAnimationService
             LeanTween.cancel(manager.FillBar.gameObject);
         }
 
-        if (manager.RightIcon != null)
+        if (manager.ActivityIconContainer != null)
         {
-            LeanTween.cancel(manager.RightIcon.gameObject);
+            LeanTween.cancel(manager.ActivityIconContainer.gameObject);
         }
 
         if (manager.IdleBarImage != null)

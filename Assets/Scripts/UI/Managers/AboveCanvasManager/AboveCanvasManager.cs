@@ -28,6 +28,7 @@ public class AboveCanvasManager : MonoBehaviour
     [SerializeField] private Button activityBarButton; // Button component for clicking on ActivityBar
     [SerializeField] private Image leftIcon;
     [SerializeField] private Image rightIcon;
+    [SerializeField] private RectTransform activityIconContainer; // Parent container to animate for activity rewards
     [SerializeField] private TextMeshProUGUI activityText;
     [SerializeField] private Image backgroundBar;
     [SerializeField] private Image fillBar;
@@ -171,6 +172,7 @@ public class AboveCanvasManager : MonoBehaviour
     public Button ActivityBarButton => activityBarButton;
     public Image LeftIcon => leftIcon;
     public Image RightIcon => rightIcon;
+    public RectTransform ActivityIconContainer => activityIconContainer;
     public TextMeshProUGUI ActivityText => activityText;
     public Image BackgroundBar => backgroundBar;
     public Image FillBar => fillBar;

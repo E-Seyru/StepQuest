@@ -245,25 +245,19 @@ public class AboveCanvasDisplayService
             animationService?.SlideInBar(manager.ActivityBar);
         }
 
-        // CORRECTION: Recuperer l'activite principale pour l'icône gauche
-        var activityDefinition = activityManager.ActivityRegistry?.GetActivity(activity.ActivityId);
-
-        // Configurer l'icône gauche avec l'ACTIVITe PRINCIPALE
+        // For activities: hide left icon, show only the resource/variant icon
         if (manager.LeftIcon != null)
         {
-            var activityIcon = activityDefinition?.ActivityReference?.GetIcon();
-            manager.LeftIcon.sprite = activityIcon;
-            manager.LeftIcon.gameObject.SetActive(true);
-            Logger.LogInfo($"AboveCanvasManager: Set left icon to ACTIVITY {(activityIcon != null ? activityIcon.name : "null")}", Logger.LogCategory.General);
+            manager.LeftIcon.gameObject.SetActive(false);
         }
 
-        // CORRECTION: Afficher l'icône droite avec le VARIANT
+        // Show only the variant/resource icon (RightIcon)
         if (manager.RightIcon != null)
         {
             var variantIcon = variant.GetIcon();
             manager.RightIcon.sprite = variantIcon;
             manager.RightIcon.gameObject.SetActive(true);
-            Logger.LogInfo($"AboveCanvasManager: Set right icon to VARIANT {(variantIcon != null ? variantIcon.name : "null")}", Logger.LogCategory.General);
+            Logger.LogInfo($"AboveCanvasManager: Set activity icon to VARIANT {(variantIcon != null ? variantIcon.name : "null")}", Logger.LogCategory.General);
         }
 
         // NOUVEAU : Affichage du texte avec progression detaillee
