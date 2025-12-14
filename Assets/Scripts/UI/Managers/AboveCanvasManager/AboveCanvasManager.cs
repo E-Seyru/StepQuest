@@ -25,6 +25,7 @@ public class AboveCanvasManager : MonoBehaviour
 
     [Header("UI References - Activity/Travel Bar")]
     [SerializeField] private GameObject activityBar;
+    [SerializeField] private Button activityBarButton; // Button component for clicking on ActivityBar
     [SerializeField] private Image leftIcon;
     [SerializeField] private Image rightIcon;
     [SerializeField] private TextMeshProUGUI activityText;
@@ -34,6 +35,7 @@ public class AboveCanvasManager : MonoBehaviour
 
     [Header("UI References - Idle Bar")]
     [SerializeField] private GameObject idleBar;
+    [SerializeField] private Button idleBarButton; // Button component for clicking on IdleBar
     [SerializeField] private Image idleBarImage;  // Image de repos (sleeping) pour l'animation
     [SerializeField] private Image fightingBarImage;  // Image de combat (fighting)
 
@@ -166,6 +168,7 @@ public class AboveCanvasManager : MonoBehaviour
     public Image LocationButtonBackground => locationButtonBackground; // NOUVEAU : Accessor pour le background
     public Image LocationButtonShadow => locationButtonShadow; // NOUVEAU : Accessor pour l'ombre
     public GameObject ActivityBar => activityBar;
+    public Button ActivityBarButton => activityBarButton;
     public Image LeftIcon => leftIcon;
     public Image RightIcon => rightIcon;
     public TextMeshProUGUI ActivityText => activityText;
@@ -175,6 +178,7 @@ public class AboveCanvasManager : MonoBehaviour
 
     // NOUVEAU : Accessor pour IdleBar
     public GameObject IdleBar => idleBar;
+    public Button IdleBarButton => idleBarButton;
     public Image IdleBarImage => idleBarImage;  // Image de repos (sleeping)
     public Image FightingBarImage => fightingBarImage;  // Image de combat (fighting)
 

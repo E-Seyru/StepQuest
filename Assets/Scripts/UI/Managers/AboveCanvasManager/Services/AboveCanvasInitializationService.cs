@@ -73,6 +73,8 @@ public class AboveCanvasInitializationService
     {
         SetupMapButton();
         SetupLocationButton(); // NOUVEAU: Ajouter cette ligne
+        SetupActivityBarButton(); // Setup click handler for ActivityBar
+        SetupIdleBarButton(); // Setup click handler for IdleBar (combat mode)
         SetupProgressBar();
     }
 
@@ -137,6 +139,90 @@ public class AboveCanvasInitializationService
 
         // L'icône sera mise a jour quand UpdateLocationDisplay() sera appele
         Logger.LogInfo("AboveCanvasManager: LocationButtonIcon initialized", Logger.LogCategory.General);
+    }
+
+    private void SetupActivityBarButton()
+    {
+        if (manager.ActivityBarButton != null)
+        {
+            manager.ActivityBarButton.onClick.AddListener(OnActivityBarClicked);
+            Logger.LogInfo("AboveCanvasManager: ActivityBarButton configured", Logger.LogCategory.General);
+        }
+        else
+        {
+            Logger.LogWarning("AboveCanvasManager: ActivityBarButton is null - assign a Button component to ActivityBar for click handling", Logger.LogCategory.General);
+        }
+    }
+
+    private void OnActivityBarClicked()
+    {
+        // Check if currently traveling - block access during travel
+        var dataManager = DataManager.Instance;
+        if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
+        {
+            string destinationName = dataManager.PlayerData.TravelDestinationId;
+            var destinationLocation = MapManager.Instance?.LocationRegistry?.GetLocationById(destinationName);
+            if (destinationLocation != null)
+            {
+                destinationName = destinationLocation.DisplayName;
+            }
+
+            if (ErrorPanel.Instance != null)
+            {
+                ErrorPanel.Instance.ShowError($"Vous etes en voyage vers {destinationName}. Attendez d'arriver a destination.");
+            }
+
+            Logger.LogInfo("AboveCanvasManager: ActivityBar clicked during travel - access blocked", Logger.LogCategory.General);
+            return;
+        }
+
+        // Check that PanelManager is available
+        if (PanelManager.Instance == null)
+        {
+            Logger.LogWarning("AboveCanvasManager: PanelManager.Instance is null", Logger.LogCategory.General);
+            return;
+        }
+
+        // Navigate to LocationDetailsPanel (ActivityDisplayPanel will show automatically if activity is active)
+        PanelManager.Instance.HideMapAndGoToPanel("LocationDetailsPanel");
+
+        Logger.LogInfo("AboveCanvasManager: ActivityBar clicked - navigating to LocationDetailsPanel", Logger.LogCategory.General);
+    }
+
+    private void SetupIdleBarButton()
+    {
+        if (manager.IdleBarButton != null)
+        {
+            manager.IdleBarButton.onClick.AddListener(OnIdleBarClicked);
+            Logger.LogInfo("AboveCanvasManager: IdleBarButton configured", Logger.LogCategory.General);
+        }
+        else
+        {
+            Logger.LogWarning("AboveCanvasManager: IdleBarButton is null - assign a Button component to IdleBar for click handling", Logger.LogCategory.General);
+        }
+    }
+
+    private void OnIdleBarClicked()
+    {
+        var gameManager = GameManager.Instance;
+
+        // Check if we're in combat - open CombatPanel
+        if (gameManager?.CurrentState == GameState.InCombat)
+        {
+            if (CombatPanelUI.Instance != null)
+            {
+                CombatPanelUI.Instance.ShowActiveCombat();
+                Logger.LogInfo("AboveCanvasManager: IdleBar clicked during combat - opening CombatPanel", Logger.LogCategory.General);
+            }
+            else
+            {
+                Logger.LogWarning("AboveCanvasManager: CombatPanelUI.Instance is null", Logger.LogCategory.General);
+            }
+            return;
+        }
+
+        // If not in combat (idle state), do nothing or optionally navigate somewhere
+        Logger.LogInfo("AboveCanvasManager: IdleBar clicked in idle state - no action", Logger.LogCategory.General);
     }
 
     private void SetupProgressBar()

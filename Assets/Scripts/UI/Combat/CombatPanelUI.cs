@@ -72,6 +72,9 @@ public class CombatPanelUI : MonoBehaviour
     [SerializeField] private float attackAnimDuration = 0.3f;
     [SerializeField] private float hitScalePunch = 1.15f;
 
+    // Singleton
+    public static CombatPanelUI Instance { get; private set; }
+
     // Runtime state
     private CombatData currentCombat;
     private EnemyDefinition currentEnemy;
@@ -87,6 +90,18 @@ public class CombatPanelUI : MonoBehaviour
 
     void Awake()
     {
+        // Singleton setup
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else if (Instance != this)
+        {
+            Logger.LogWarning("CombatPanelUI: Multiple instances detected! Destroying duplicate.", Logger.LogCategory.General);
+            Destroy(gameObject);
+            return;
+        }
+
         // Subscribe to combat events in Awake so it works even if GameObject starts disabled
         EventBus.Subscribe<CombatStartedEvent>(OnCombatStarted);
         EventBus.Subscribe<CombatEndedEvent>(OnCombatEnded);
@@ -744,6 +759,42 @@ public class CombatPanelUI : MonoBehaviour
             }
         }
         return dict;
+    }
+
+    /// <summary>
+    /// Shows the combat panel if combat is currently active.
+    /// Used to reopen the panel from external UI (e.g., clicking IdleBar during combat).
+    /// </summary>
+    public void ShowActiveCombat()
+    {
+        // Check if we're actually in combat
+        if (GameManager.Instance?.CurrentState != GameState.InCombat)
+        {
+            Logger.LogWarning("CombatPanelUI: ShowActiveCombat called but not in combat state", Logger.LogCategory.General);
+            return;
+        }
+
+        // If we have active combat data, show the panel
+        if (currentCombat != null && currentEnemy != null && !isCombatOver)
+        {
+            if (combatPanel != null)
+            {
+                combatPanel.SetActive(true);
+            }
+            Logger.LogInfo("CombatPanelUI: Reopened combat panel for active combat", Logger.LogCategory.General);
+        }
+        else
+        {
+            Logger.LogWarning("CombatPanelUI: No active combat data to display", Logger.LogCategory.General);
+        }
+    }
+
+    /// <summary>
+    /// Returns true if the combat panel is currently visible
+    /// </summary>
+    public bool IsPanelVisible()
+    {
+        return combatPanel != null && combatPanel.activeInHierarchy;
     }
 }
 
