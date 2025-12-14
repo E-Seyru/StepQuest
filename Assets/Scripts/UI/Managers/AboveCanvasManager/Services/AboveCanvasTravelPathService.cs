@@ -365,4 +365,79 @@ public class AboveCanvasTravelPathService
     {
         return instantiatedPathElements.Count > 0;
     }
+
+    /// <summary>
+    /// Builds a single centered activity icon in the path container (no arrows, no other icons)
+    /// </summary>
+    /// <param name="activityIcon">The sprite to display for the activity</param>
+    public void BuildActivityPath(Sprite activityIcon)
+    {
+        // Clear any existing path elements
+        ClearTravelPath();
+
+        if (manager.TravelPathContainer == null)
+        {
+            Logger.LogWarning("AboveCanvasTravelPathService: TravelPathContainer is null", Logger.LogCategory.General);
+            return;
+        }
+
+        if (activityIcon == null)
+        {
+            Logger.LogWarning("AboveCanvasTravelPathService: Activity icon is null", Logger.LogCategory.General);
+            return;
+        }
+
+        // Show the container
+        manager.TravelPathContainer.gameObject.SetActive(true);
+
+        // Add single centered activity icon
+        AddActivityIcon(activityIcon);
+
+        Logger.LogInfo($"AboveCanvasTravelPathService: Built activity path with centered icon", Logger.LogCategory.General);
+    }
+
+    /// <summary>
+    /// Adds a single activity icon to the path container (centered)
+    /// </summary>
+    private void AddActivityIcon(Sprite activityIcon)
+    {
+        if (manager.LocationIconPrefab == null)
+        {
+            Logger.LogWarning("AboveCanvasTravelPathService: LocationIconPrefab is null - assign it in inspector!", Logger.LogCategory.General);
+            return;
+        }
+
+        if (manager.TravelPathContainer == null)
+        {
+            Logger.LogWarning("AboveCanvasTravelPathService: TravelPathContainer is null - assign it in inspector!", Logger.LogCategory.General);
+            return;
+        }
+
+        Logger.LogInfo($"AboveCanvasTravelPathService: Instantiating activity icon", Logger.LogCategory.General);
+
+        var iconObj = Object.Instantiate(manager.LocationIconPrefab, manager.TravelPathContainer);
+        instantiatedPathElements.Add(iconObj);
+
+        // Ensure the instantiated object and all children are active
+        iconObj.SetActive(true);
+        SetAllChildrenActive(iconObj.transform);
+
+        // Apply configured size using scale (to resize children proportionally)
+        // and LayoutElement (so layout system uses the correct size)
+        ApplySize(iconObj, manager.LocationIconSize);
+
+        // Find the Image with no sprite assigned - that's the one meant to receive the icon
+        // (Background and Border have their sprites pre-assigned in the prefab)
+        Image iconImage = FindEmptyImage(iconObj.transform);
+
+        if (iconImage != null)
+        {
+            iconImage.sprite = activityIcon;
+            Logger.LogInfo($"AboveCanvasTravelPathService: Set activity sprite on {iconImage.gameObject.name}", Logger.LogCategory.General);
+        }
+
+        iconObj.name = "PathIcon_Activity";
+
+        Logger.LogInfo($"AboveCanvasTravelPathService: Added activity icon", Logger.LogCategory.General);
+    }
 }

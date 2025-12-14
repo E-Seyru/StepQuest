@@ -258,36 +258,26 @@ public class AboveCanvasDisplayService
             animationService?.SlideInBar(manager.ActivityBar);
         }
 
-        // Clear travel path if any
-        travelPathService?.ClearTravelPath();
-
-        // For activities: hide left icon container
+        // Hide old activity icon containers (we now use the path container like travel)
+        if (manager.ActivityIconContainer != null)
+        {
+            manager.ActivityIconContainer.gameObject.SetActive(false);
+        }
         if (manager.LeftIconContainer != null)
         {
             manager.LeftIconContainer.gameObject.SetActive(false);
         }
-        else if (manager.LeftIcon != null)
-        {
-            manager.LeftIcon.gameObject.SetActive(false);
-        }
-
-        // Show and position the activity icon container at center
-        if (manager.ActivityIconContainer != null)
-        {
-            manager.ActivityIconContainer.gameObject.SetActive(true);
-            manager.ActivityIconContainer.anchoredPosition = manager.RightContainerActivityPosition;
-        }
-
-        // Show only the variant/resource icon (RightIcon)
         if (manager.RightIcon != null)
         {
-            var variantIcon = variant.GetIcon();
-            manager.RightIcon.sprite = variantIcon;
-            manager.RightIcon.gameObject.SetActive(true);
-            Logger.LogInfo($"AboveCanvasManager: Set activity icon to VARIANT {(variantIcon != null ? variantIcon.name : "null")}", Logger.LogCategory.General);
+            manager.RightIcon.gameObject.SetActive(false);
         }
 
-        // NOUVEAU : Affichage du texte avec progression detaillee
+        // Build activity path with single centered icon (same prefab as travel locations)
+        var variantIcon = variant.GetIcon();
+        travelPathService?.BuildActivityPath(variantIcon);
+        Logger.LogInfo($"AboveCanvasManager: Set activity icon to VARIANT {(variantIcon != null ? variantIcon.name : "null")}", Logger.LogCategory.General);
+
+        // Affichage du texte avec progression detaillee
         if (manager.ActivityText != null)
         {
             string progressText = FormatActivityProgress(activity, variant);
@@ -303,7 +293,7 @@ public class AboveCanvasDisplayService
         {
             manager.FillBar.fillAmount = Mathf.Clamp01(progressPercent);
 
-            // NOUVEAU : Couleur differente pour les activites temporelles
+            // Couleur differente pour les activites temporelles
             if (activity.IsTimeBased)
             {
                 manager.FillBar.color = Color.Lerp(Color.cyan, Color.yellow, progressPercent);
