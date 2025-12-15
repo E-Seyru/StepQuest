@@ -4,7 +4,10 @@
       "Bash(rm:*)",
       "Bash(find:*)",
       "Bash(git checkout:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(cd:*)",
+      "Bash(dir:*)",
+      "Bash(xargs -I {} sh -c 'echo \"\"File: {}\"\" && grep \"\"guid:\"\" \"\"{}\"\"')"
     ],
     "deny": [],
     "ask": []

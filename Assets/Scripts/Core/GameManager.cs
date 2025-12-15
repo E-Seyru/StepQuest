@@ -218,21 +218,6 @@ public class GameManager : MonoBehaviour
         ChangeState(GameState.Idle);
     }
 
-    // === MeTHODES PUBLIQUES POUR FORCER UN CHANGEMENT D'eTAT ===
-
-    public void SetGamePaused(bool isPaused)
-    {
-        if (isPaused)
-        {
-            ChangeState(GameState.Paused);
-        }
-        else
-        {
-            // Revenir a l'etat approprie
-            DetermineInitialGameState();
-        }
-    }
-
     // === GESTION DES eVeNEMENTS SYSTeME ===
 
     void OnApplicationPause(bool pauseStatus)
@@ -269,21 +254,5 @@ public class GameManager : MonoBehaviour
         EventBus.Unsubscribe<CombatStartedEvent>(OnCombatStarted);
         EventBus.Unsubscribe<CombatEndedEvent>(OnCombatEnded);
         EventBus.Unsubscribe<CombatFledEvent>(OnCombatFled);
-    }
-
-    // === MeTHODES DE DEBUG ===
-
-    public string GetGameStateInfo()
-    {
-        string info = $"Game State: {currentState}\n";
-
-        if (dataManager?.PlayerData != null)
-        {
-            info += $"Traveling: {dataManager.PlayerData.IsCurrentlyTraveling()}\n";
-            info += $"Has Activity: {activityManager?.HasActiveActivity()}\n";
-            info += $"Current Location: {dataManager.PlayerData.CurrentLocationId}";
-        }
-
-        return info;
     }
 }

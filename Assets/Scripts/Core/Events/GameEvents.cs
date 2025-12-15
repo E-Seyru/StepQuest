@@ -26,27 +26,6 @@ namespace GameEvents
             return $"{base.ToString()} - {PreviousState} → {NewState}";
         }
     }
-
-    /// <summary>
-    /// Publie AVANT que l'etat du jeu change (annulable)
-    /// Nouveau: permet d'empecher un changement d'etat si necessaire
-    /// </summary>
-    public class BeforeGameStateChangeEvent : CancellableEventBusEvent
-    {
-        public GameState CurrentState { get; }
-        public GameState RequestedState { get; }
-
-        public BeforeGameStateChangeEvent(GameState currentState, GameState requestedState)
-        {
-            CurrentState = currentState;
-            RequestedState = requestedState;
-        }
-
-        public override string ToString()
-        {
-            return $"{base.ToString()} - Requesting {CurrentState} → {RequestedState}";
-        }
-    }
 }
 
 /// <summary>

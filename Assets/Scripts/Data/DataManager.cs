@@ -75,11 +75,6 @@ public class DataManager : MonoBehaviour
 
     // === PUBLIC API (DELEGATED TO SERVICES) ===
 
-    public void CheckAndResetDailySteps()
-    {
-        Logger.LogInfo("DataManager: CheckAndResetDailySteps called but ignored - this functionality is now handled by StepManager", Logger.LogCategory.General);
-    }
-
     public async Task SaveGameAsync()
     {
         await saveLoadService.SaveGameAsync(PlayerData);

@@ -566,16 +566,6 @@ public class MapTravelService
         // ----- Sauvegarde ---------------------------------------------------------
         dataManager.SaveGame();
     }
-    private void ApplyLeftoverSteps(long leftoverSteps, DataManager dataManager)
-    {
-        if (leftoverSteps <= 0) return;
-
-        // On « remonte » TravelStartSteps pour que le surplus soit compte
-        dataManager.PlayerData.TravelStartSteps -= leftoverSteps;
-
-        Logger.LogInfo($"MapManager: Carried over {leftoverSteps} surplus steps to next segment.",
-                       Logger.LogCategory.MapLog);
-    }
 
     public void CompleteTravel()
     {

@@ -1,20 +1,13 @@
 // Purpose: UI controller for the bank panel using UniversalSlotUI
 // Filepath: Assets/Scripts/UI/Panels/BankPanelUI.cs
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class BankPanelUI : MonoBehaviour
+public class BankPanelUI : ContainerPanelUI
 {
-    [Header("UI References")]
-    [SerializeField] private Transform slotsContainer;
-    [SerializeField] private GameObject slotPrefab; // Should have UniversalSlotUI component
-    [SerializeField] private TextMeshProUGUI titleText;
+    [Header("Bank-Specific")]
     [SerializeField] private Button closeButton;
-
-    [Header("Info Display")]
-    [SerializeField] private TextMeshProUGUI capacityText;
     [SerializeField] private TextMeshProUGUI bankInfoText;
 
     [Header("Optional Features")]
@@ -22,16 +15,11 @@ public class BankPanelUI : MonoBehaviour
     [SerializeField] private Button expandButton;
     [SerializeField] private TextMeshProUGUI expandCostText;
 
-    // Internal state
-    private InventoryManager inventoryManager;
-    private List<UniversalSlotUI> slotUIs = new List<UniversalSlotUI>();
-    private UniversalSlotUI selectedSlot;
-    private string currentContainerId = GameConstants.ContainerIdBank;
-
-    // Auto-deselection
-    private bool isPointerOverBank = false;
-
     public static BankPanelUI Instance { get; private set; }
+
+    // Base class abstract implementations
+    protected override string ContainerId => GameConstants.ContainerIdBank;
+    protected override UniversalSlotUI.SlotContext SlotContext => UniversalSlotUI.SlotContext.Bank;
 
     void Awake()
     {
@@ -46,20 +34,8 @@ public class BankPanelUI : MonoBehaviour
         }
     }
 
-    void Start()
+    protected override void OnInitialize()
     {
-        // Get InventoryManager reference
-        inventoryManager = InventoryManager.Instance;
-
-        if (inventoryManager == null)
-        {
-            Logger.LogError("BankPanelUI: InventoryManager not found!", Logger.LogCategory.InventoryLog);
-            return;
-        }
-
-        // Subscribe to inventory events
-        inventoryManager.OnContainerChanged += OnContainerChanged;
-
         // Setup buttons
         if (closeButton != null)
             closeButton.onClick.AddListener(ClosePanel);
@@ -70,228 +46,34 @@ public class BankPanelUI : MonoBehaviour
         if (expandButton != null)
             expandButton.onClick.AddListener(ExpandBank);
 
-        // Initial setup
-        CreateSlotUIs();
-        RefreshDisplay();
-
         // Start closed
         gameObject.SetActive(false);
     }
 
-    void Update()
+    protected override void OnSlotCreated(UniversalSlotUI slotUI, int index)
     {
-        // Auto-deselection comme dans InventoryPanelUI
-        CheckForDeselection();
+        slotUI.OnSlotRightClicked += OnSlotRightClicked;
     }
 
-    void OnDestroy()
+    protected override void OnSlotClearing(UniversalSlotUI slotUI)
     {
-        // Unsubscribe from events
-        if (inventoryManager != null)
-        {
-            inventoryManager.OnContainerChanged -= OnContainerChanged;
-        }
+        slotUI.OnSlotRightClicked -= OnSlotRightClicked;
     }
 
-    /// <summary>
-    /// Check for auto-deselection (mobile-friendly)
-    /// </summary>
-    private void CheckForDeselection()
+    protected override void OnRefreshInfo(InventoryContainer container)
     {
-        if (selectedSlot == null) return;
-
-        bool inputDetected = false;
-
-        // Pour mobile (touch)
-        if (Input.touchCount > 0)
+        // Update title
+        if (titleText != null)
         {
-            Touch touch = Input.GetTouch(0);
-            if (touch.phase == TouchPhase.Began)
-            {
-                inputDetected = true;
-            }
-        }
-        // Pour desktop (mouse)
-        else if (Input.GetMouseButtonDown(0))
-        {
-            inputDetected = true;
+            titleText.text = "Coffre de Banque";
         }
 
-        if (inputDetected)
-        {
-            if (!IsPointerOverBankArea())
-            {
-                DeselectCurrentSlot();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Check if pointer/touch is over bank area
-    /// </summary>
-    private bool IsPointerOverBankArea()
-    {
-        Vector2 screenPosition;
-
-        if (Input.touchCount > 0)
-        {
-            screenPosition = Input.GetTouch(0).position;
-        }
-        else
-        {
-            screenPosition = Input.mousePosition;
-        }
-
-        // Check ItemActionPanel
-        if (ItemActionPanel.Instance != null && ItemActionPanel.Instance.gameObject.activeInHierarchy)
-        {
-            RectTransform actionPanelRect = ItemActionPanel.Instance.GetComponent<RectTransform>();
-            if (actionPanelRect != null && RectTransformUtility.RectangleContainsScreenPoint(
-                actionPanelRect, screenPosition, Camera.main))
-            {
-                return true;
-            }
-        }
-
-        // Check bank slots
-        foreach (var slot in slotUIs)
-        {
-            if (slot != null && RectTransformUtility.RectangleContainsScreenPoint(
-                slot.GetRectTransform(), screenPosition, Camera.main))
-            {
-                return true;
-            }
-        }
-
-        // Check bank panel
-        RectTransform bankRect = GetComponent<RectTransform>();
-        if (bankRect != null)
-        {
-            return RectTransformUtility.RectangleContainsScreenPoint(
-                bankRect, screenPosition, Camera.main);
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Deselect current slot
-    /// </summary>
-    private void DeselectCurrentSlot()
-    {
-        if (selectedSlot != null)
-        {
-            selectedSlot.SetSelected(false);
-            selectedSlot = null;
-            RefreshInfo();
-        }
-    }
-
-    /// <summary>
-    /// Create UI slots based on bank capacity
-    /// </summary>
-    private void CreateSlotUIs()
-    {
-        if (slotsContainer == null || slotPrefab == null)
-        {
-            Logger.LogError("BankPanelUI: Missing slotsContainer or slotPrefab!", Logger.LogCategory.InventoryLog);
-            return;
-        }
-
-        // Clear existing slots
-        ClearSlotUIs();
-
-        // Get bank container
-        var container = inventoryManager?.GetContainer(currentContainerId);
-        if (container == null)
-        {
-            Logger.LogError($"BankPanelUI: Container '{currentContainerId}' not found!", Logger.LogCategory.InventoryLog);
-            return;
-        }
-
-        // Create slot UIs
-        for (int i = 0; i < container.MaxSlots; i++)
-        {
-            GameObject slotObj = Instantiate(slotPrefab, slotsContainer);
-            UniversalSlotUI slotUI = slotObj.GetComponent<UniversalSlotUI>();
-
-            if (slotUI != null)
-            {
-                // Setup with Bank context
-                slotUI.Setup(container.Slots[i], i, currentContainerId, UniversalSlotUI.SlotContext.Bank);
-                slotUI.OnSlotClicked += OnSlotClicked;
-                slotUI.OnSlotRightClicked += OnSlotRightClicked;
-                slotUIs.Add(slotUI);
-            }
-            else
-            {
-                Logger.LogError("BankPanelUI: SlotPrefab doesn't have UniversalSlotUI component!", Logger.LogCategory.InventoryLog);
-            }
-        }
-
-        Logger.LogInfo($"BankPanelUI: Created {slotUIs.Count} slot UIs for bank", Logger.LogCategory.InventoryLog);
-    }
-
-    /// <summary>
-    /// Clear all slot UIs
-    /// </summary>
-    private void ClearSlotUIs()
-    {
-        foreach (var slotUI in slotUIs)
-        {
-            if (slotUI != null)
-            {
-                slotUI.OnSlotClicked -= OnSlotClicked;
-                slotUI.OnSlotRightClicked -= OnSlotRightClicked;
-                Destroy(slotUI.gameObject);
-            }
-        }
-        slotUIs.Clear();
-    }
-
-    /// <summary>
-    /// Refresh entire display
-    /// </summary>
-    private void RefreshDisplay()
-    {
-        RefreshSlots();
-        RefreshInfo();
-    }
-
-    /// <summary>
-    /// Refresh all slot displays
-    /// </summary>
-    private void RefreshSlots()
-    {
-        var container = inventoryManager?.GetContainer(currentContainerId);
-        if (container == null) return;
-
-        for (int i = 0; i < slotUIs.Count && i < container.Slots.Count; i++)
-        {
-            slotUIs[i].Setup(container.Slots[i], i, currentContainerId, UniversalSlotUI.SlotContext.Bank);
-        }
-    }
-
-    /// <summary>
-    /// Refresh info display
-    /// </summary>
-    private void RefreshInfo()
-    {
-        var container = inventoryManager?.GetContainer(currentContainerId);
-        if (container == null) return;
-
-        // Update capacity
+        // Update capacity with label
         if (capacityText != null)
         {
             int used = container.GetUsedSlotsCount();
             int max = container.MaxSlots;
             capacityText.text = $"Capacite: {used}/{max}";
-        }
-
-        // Update title
-        if (titleText != null)
-        {
-            titleText.text = "Coffre de Banque";
         }
 
         // Update bank info
@@ -328,22 +110,14 @@ public class BankPanelUI : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Handle slot clicked
-    /// </summary>
-    private void OnSlotClicked(UniversalSlotUI slotUI, int index)
+    protected override void OnPanelOpened()
     {
-        // Deselect previous
-        if (selectedSlot != null)
-        {
-            selectedSlot.SetSelected(false);
-        }
+        Logger.LogInfo("BankPanelUI: Bank opened", Logger.LogCategory.InventoryLog);
+    }
 
-        // Select new
-        selectedSlot = slotUI;
-        selectedSlot.SetSelected(true);
-
-        RefreshInfo();
+    protected override void OnPanelClosed()
+    {
+        Logger.LogInfo("BankPanelUI: Bank closed", Logger.LogCategory.InventoryLog);
     }
 
     /// <summary>
@@ -353,39 +127,6 @@ public class BankPanelUI : MonoBehaviour
     {
         // Cette methode n'est pas utilisee sur mobile
         // On pourrait implementer un long-press pour quick transfer
-    }
-
-    /// <summary>
-    /// Open the bank panel
-    /// </summary>
-    public void OpenPanel()
-    {
-        gameObject.SetActive(true);
-        RefreshDisplay();
-
-
-
-        Logger.LogInfo("BankPanelUI: Bank opened", Logger.LogCategory.InventoryLog);
-    }
-
-    /// <summary>
-    /// Close the bank panel
-    /// </summary>
-    public void ClosePanel()
-    {
-        gameObject.SetActive(false);
-
-        // Deselect
-        DeselectCurrentSlot();
-
-        // Close ItemActionPanel if open
-        if (ItemActionPanel.Instance != null)
-        {
-            ItemActionPanel.Instance.HidePanel();
-
-        }
-
-        Logger.LogInfo("BankPanelUI: Bank closed", Logger.LogCategory.InventoryLog);
     }
 
     /// <summary>
@@ -408,7 +149,7 @@ public class BankPanelUI : MonoBehaviour
     /// </summary>
     private void ExpandBank()
     {
-        var container = inventoryManager?.GetContainer(currentContainerId);
+        var container = inventoryManager?.GetContainer(ContainerId);
         if (container == null) return;
 
         int currentSlots = container.MaxSlots;
@@ -419,7 +160,7 @@ public class BankPanelUI : MonoBehaviour
 
         // Expand the container
         container.Resize(newSlots);
-        inventoryManager.TriggerContainerChanged(currentContainerId);
+        inventoryManager.TriggerContainerChanged(ContainerId);
 
         // Recreate UI to show new slots
         CreateSlotUIs();
@@ -436,23 +177,5 @@ public class BankPanelUI : MonoBehaviour
         // Progressive cost: 100 gold per 10 slots, increasing by 50 each time
         int expansions = (currentSlots - inventoryManager.DefaultBankSlots) / 10;
         return 100 + (expansions * 50);
-    }
-
-    // Event handlers
-    private void OnContainerChanged(string containerId)
-    {
-        if (containerId == currentContainerId)
-        {
-            RefreshDisplay();
-        }
-    }
-
-    /// <summary>
-    /// Get debug info
-    /// </summary>
-    public string GetDebugInfo()
-    {
-        var container = inventoryManager?.GetContainer(currentContainerId);
-        return $"BankUI State: {slotUIs.Count} slots, Container: {container?.GetDebugInfo() ?? "null"}";
     }
 }

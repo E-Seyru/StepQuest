@@ -47,11 +47,13 @@ public class POI : MonoBehaviour, IPointerClickHandler
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
 
+    [Header("References (Optional - auto-found if not assigned)")]
+    [SerializeField] private TravelConfirmationPopup travelPopup;
+
     // Internal state
     private MapManager mapManager;
     private DataManager dataManager;
     private LocationRegistry locationRegistry;
-    private TravelConfirmationPopup travelPopup;
     private PanelManager panelManager;
 
     // Variables pour l'animation
@@ -85,8 +87,11 @@ public class POI : MonoBehaviour, IPointerClickHandler
             locationRegistry = mapManager.LocationRegistry;
         }
 
-        // Trouver le TravelConfirmationPopup dans la scene
-        travelPopup = FindObjectOfType<TravelConfirmationPopup>();
+        // Trouver le TravelConfirmationPopup dans la scene si non assigne
+        if (travelPopup == null)
+        {
+            travelPopup = FindObjectOfType<TravelConfirmationPopup>();
+        }
 
         // Valider les references critiques
         if (mapManager == null)

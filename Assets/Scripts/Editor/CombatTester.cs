@@ -40,7 +40,6 @@ public class CombatTester : EditorWindow
         EventBus.Subscribe<CombatFledEvent>(OnCombatFled);
         EventBus.Subscribe<CombatAbilityUsedEvent>(OnAbilityUsed);
         EventBus.Subscribe<StatusEffectTickEvent>(OnStatusEffectTick);
-        EventBus.Subscribe<CombatHealthChangedEvent>(OnHealthChanged);
         isSubscribed = true;
     }
 
@@ -53,7 +52,6 @@ public class CombatTester : EditorWindow
         EventBus.Unsubscribe<CombatFledEvent>(OnCombatFled);
         EventBus.Unsubscribe<CombatAbilityUsedEvent>(OnAbilityUsed);
         EventBus.Unsubscribe<StatusEffectTickEvent>(OnStatusEffectTick);
-        EventBus.Unsubscribe<CombatHealthChangedEvent>(OnHealthChanged);
         isSubscribed = false;
     }
 
@@ -98,12 +96,6 @@ public class CombatTester : EditorWindow
         string target = e.IsTargetPlayer ? "Player" : "Enemy";
         string effectName = e.Effect?.GetDisplayName() ?? "Effect";
         AddLog($"{target} took {e.Value:F0} {effectName} damage");
-    }
-
-    private void OnHealthChanged(CombatHealthChangedEvent e)
-    {
-        // Don't log every health change - too verbose
-        // The ability used event already shows damage/healing
     }
 
     private void AddLog(string message)
