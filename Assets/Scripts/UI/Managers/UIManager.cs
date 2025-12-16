@@ -6,7 +6,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UIManager : SingletonMonoBehaviour<UIManager>
+public class UIManager : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private TextMeshProUGUI totalStepsText;
@@ -22,8 +22,20 @@ public class UIManager : SingletonMonoBehaviour<UIManager>
     private Coroutine updateCoroutine;
     private Dictionary<TextMeshProUGUI, Coroutine> flashCoroutines = new Dictionary<TextMeshProUGUI, Coroutine>();
 
-    protected override void OnAwakeInitialize()
+    public static UIManager Instance { get; private set; }
+
+    void Awake()
     {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         if (totalStepsText == null)
         {
             Logger.LogError("UIManager: totalStepsText n'est pas assigne dans l'inspecteur !", Logger.LogCategory.General);
@@ -50,7 +62,7 @@ public class UIManager : SingletonMonoBehaviour<UIManager>
         StartUIUpdateCoroutine();
     }
 
-    protected override void OnSingletonDestroyed()
+    void OnDestroy()
     {
         StopUIUpdateCoroutine();
 

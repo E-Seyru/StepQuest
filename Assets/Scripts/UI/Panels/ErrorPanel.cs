@@ -3,7 +3,7 @@
 using TMPro;
 using UnityEngine;
 
-public class ErrorPanel : SingletonMonoBehaviour<ErrorPanel>
+public class ErrorPanel : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private TextMeshProUGUI errorText;
@@ -23,6 +23,21 @@ public class ErrorPanel : SingletonMonoBehaviour<ErrorPanel>
     private bool isDisplaying = false;
     private Transform currentPOI = null;
     private Vector2 currentOffset;
+
+    public static ErrorPanel Instance { get; private set; }
+
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+    }
 
     void Start()
     {
@@ -46,7 +61,7 @@ public class ErrorPanel : SingletonMonoBehaviour<ErrorPanel>
         }
     }
 
-    protected override void OnSingletonDestroyed()
+    void OnDestroy()
     {
         LeanTween.cancel(gameObject);
         currentPOI = null;

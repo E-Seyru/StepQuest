@@ -38,10 +38,7 @@ public class StepManager : MonoBehaviour
     private float lastLargeUpdateTime = 0f;
     private const long MAX_STEPS_PER_UPDATE = GameConstants.MaxStepsPerUpdate;
     
-    // Periode de grâce apres le retour au premier plan
-    private const float SENSOR_GRACE_PERIOD = GameConstants.SensorGracePeriodSeconds;
-    private float sensorGraceTimer = 0f;
-    private bool inSensorGracePeriod = false;
+    // Note: Grace period removed - spike filtering handles anomalies instead
 
     // Parametre pour contrôler la frequence des sauvegardes DB
     private const float DB_SAVE_INTERVAL = GameConstants.DatabaseSaveIntervalSeconds;
@@ -356,16 +353,13 @@ public class StepManager : MonoBehaviour
             Logger.LogInfo($"StepManager: Updated LastSync and LastPause to: {LocalDatabase.GetReadableDateFromEpoch(nowEpochMs)}", Logger.LogCategory.StepLog);
         }
 
-        // Si on revient de l'arriere-plan, activer la periode de grâce pour le sensor
+        // Reset flags after returning from background
+        // Note: Grace period removed - spike filtering (SensorSpikeThreshold) handles anomalies
         if (isReturningFromBackground)
         {
-            Logger.LogInfo("StepManager: Activating sensor grace period after returning from background.", Logger.LogCategory.StepLog);
-            inSensorGracePeriod = true;
-            sensorGraceTimer = 0f;
             isSensorStartCountValid = false; // Reinitialiser le flag
-            // Reset le flag
             isReturningFromBackground = false;
-            wasProbablyCrash = false; // Reinitialiser egalement ce flag
+            wasProbablyCrash = false;
         }
 
         // Attendre que sensorStartCount soit valide avant de demarrer le capteur direct
@@ -384,67 +378,42 @@ public class StepManager : MonoBehaviour
         apiCounter.StartDirectSensorListener();
 
         // Attendre d'obtenir une valeur valide pour sensorStartCount
+        // Simplified: just wait for first valid reading (>0), spike filtering handles anomalies
         float waitTime = 0f;
-        long currentSensorValue = -1;
-        int stableReadingCount = 0;
-        long previousReading = -1;
+        const float maxWaitTime = 3.0f; // Reduced from 10s
+        const float pollInterval = 0.25f; // Faster polling
 
-        while (waitTime < 10.0f) // Maximum 10 secondes d'attente
+        while (waitTime < maxWaitTime)
         {
-            currentSensorValue = apiCounter.GetCurrentRawSensorSteps();
+            long currentSensorValue = apiCounter.GetCurrentRawSensorSteps();
 
             if (currentSensorValue > 0)
             {
-                // Verifier si la lecture est stable (meme valeur plusieurs fois)
-                if (currentSensorValue == previousReading)
-                {
-                    stableReadingCount++;
+                // Accept first valid reading - spike filtering will catch anomalies during counting
+                sensorStartCount = currentSensorValue;
+                lastRecordedSensorValue = currentSensorValue;
+                sensorDeltaThisSession = 0;
+                isSensorStartCountValid = true;
 
-                    // Si on a 3 lectures stables consecutives, on considere que la valeur est valide
-                    if (stableReadingCount >= 3)
-                    {
-                        sensorStartCount = currentSensorValue;
-                        lastRecordedSensorValue = currentSensorValue;
-                        sensorDeltaThisSession = 0;
-                        isSensorStartCountValid = true;
-
-                        Logger.LogInfo($"StepManager: sensorStartCount successfully initialized to {sensorStartCount} after {stableReadingCount} stable readings", Logger.LogCategory.StepLog);
-                        break;
-                    }
-                }
-                else
-                {
-                    // Reinitialiser le compteur de lectures stables
-                    stableReadingCount = 1;
-                    previousReading = currentSensorValue;
-                }
+                Logger.LogInfo($"StepManager: sensorStartCount initialized to {sensorStartCount} in {waitTime:F2}s", Logger.LogCategory.StepLog);
+                break;
             }
 
-            yield return new WaitForSeconds(0.5f);
-            waitTime += 0.5f;
+            yield return new WaitForSeconds(pollInterval);
+            waitTime += pollInterval;
         }
 
-        // Si on n'a pas reussi a obtenir une valeur stable, on utilise la derniere valeur obtenue
-        if (!isSensorStartCountValid && currentSensorValue > 0)
+        if (!isSensorStartCountValid)
         {
-            sensorStartCount = currentSensorValue;
-            lastRecordedSensorValue = currentSensorValue;
-            sensorDeltaThisSession = 0;
-            isSensorStartCountValid = true;
-            Logger.LogInfo($"StepManager: Couldn't get stable readings. Using last sensor value: {sensorStartCount}", Logger.LogCategory.StepLog);
-        }
-        else if (!isSensorStartCountValid)
-        {
-            Logger.LogWarning("StepManager: Couldn't initialize sensorStartCount with a valid value.", Logger.LogCategory.StepLog);
+            Logger.LogWarning("StepManager: Couldn't initialize sensorStartCount with a valid value after 3s.", Logger.LogCategory.StepLog);
             sensorStartCount = -1;
             lastRecordedSensorValue = -1;
             sensorDeltaThisSession = 0;
         }
 
-        // La periode de grâce commence apres l'initialisation du capteur
-        inSensorGracePeriod = true;
-        sensorGraceTimer = 0f;
-        Logger.LogInfo("StepManager: Direct sensor initialization complete. Grace period started.", Logger.LogCategory.StepLog);
+        // Note: Grace period is handled by HandleAppOpeningOrResuming when returning from background
+        // No need to start it again here - avoids double grace period delay
+        Logger.LogInfo("StepManager: Direct sensor initialization complete.", Logger.LogCategory.StepLog);
     }
 
     // Mettre a jour le timestamp du capteur direct
@@ -706,38 +675,11 @@ public class StepManager : MonoBehaviour
     {
         Logger.LogInfo("StepManager: Starting DirectSensorUpdateLoop.", Logger.LogCategory.StepLog);
         lastDBSaveTime = Time.time; // Initialiser le timer de sauvegarde
+        const float updateInterval = 0.5f;
 
         while (isAppInForeground)
         {
-            yield return new WaitForSeconds(1.0f);
-
-            // Mise a jour de la periode de grâce
-            if (inSensorGracePeriod)
-            {
-                sensorGraceTimer += 1.0f;
-                if (sensorGraceTimer >= SENSOR_GRACE_PERIOD)
-                {
-                    inSensorGracePeriod = false;
-                    Logger.LogInfo("StepManager: Sensor grace period ended - normal step counting resumed.", Logger.LogCategory.StepLog);
-                }
-                else
-                {
-                    // Pendant la periode de grâce, on continue a lire les valeurs du capteur mais on ignore les changements
-                    long currentRawValue = apiCounter.GetCurrentRawSensorSteps();
-                    if (currentRawValue > 0 && currentRawValue != lastRecordedSensorValue)
-                    {
-                        Logger.LogInfo($"StepManager: [GRACE PERIOD] Ignoring sensor update from {lastRecordedSensorValue} to {currentRawValue}", Logger.LogCategory.StepLog);
-
-                        // Mettre a jour la valeur de reference pour eviter les ecarts importants apres la periode de grâce
-                        lastRecordedSensorValue = currentRawValue;
-                        sensorStartCount = currentRawValue;
-                        sensorDeltaThisSession = 0;
-                    }
-
-                    // Ignorer le reste de la boucle pendant la periode de grâce
-                    continue;
-                }
-            }
+            yield return new WaitForSeconds(updateInterval);
 
             if (!apiCounter.HasPermission())
             {

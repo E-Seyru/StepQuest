@@ -21,7 +21,7 @@ public static class GameConstants
     public const int SensorDebounceSeconds = 3;
 
     /// <summary>Grace period after returning from background before counting steps</summary>
-    public const float SensorGracePeriodSeconds = 5.0f;
+    public const float SensorGracePeriodSeconds = 1.0f;
 
     /// <summary>Padding to avoid overlap between sensor and API timestamps</summary>
     public const long SensorApiPaddingMs = 1500;

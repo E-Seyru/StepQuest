@@ -1,0 +1,140 @@
+# Masterplan: Walk & RPG Project
+
+## 1. App Overview and Objectives
+
+*   **Concept:** An Android RPG where core progression mechanics are tied to real-world activity. Walking (steps) drives travel, resource gathering, exploration, and affinity building. Time drives crafting and combat encounters.
+*   **Genre:** Single-player RPG with idle/passive progression elements and an auto-battler combat system.
+*   **Platform:** Android Native (likely using Unity, based on user's existing work).
+*   **Primary Objective:** To create a deep, engaging RPG experience primarily for the developer's own enjoyment, merging satisfying progression loops with a unique real-world activity hook. Secondary objective is potential future publication.
+*   **Core Pillars:** Exploration via walking, time-based progression for passive tasks, strategic combat preparation, deep crafting & skill systems, story-driven content.
+
+## 2. Target Audience
+
+*   **Primary:** The developer themselves.
+*   **Secondary:** Players who enjoy RPGs, character progression, idle games, and concepts that integrate real-world activity (like fitness RPGs), but with a focus on steps rather than GPS.
+
+## 3. Core Features and Functionality
+
+*   **Step-Based Progression:**
+    *   **Travel:** Move between locations on the game map based on IRL steps walked.
+    *   **Gathering:** Collect resources (mining, woodcutting, fishing, etc.) based on steps taken while the activity is set.
+    *   **Exploration:** Discover locations, NPCs, and loot in towns and zones based on steps walked. Skill level influences speed/rarity. Zone exploration has completion targets.
+    *   **Affinity:** Increase relationship levels with NPCs (e.g., by "walking with them") using steps.
+    *   **Saved Steps:** Excess steps taken when no task is active are saved and double the effectiveness of future steps until depleted.
+    *   **Step Tracking:** Utilizes Android's Health Connect / Google Fit for reliable, battery-efficient background step counting, even when the app is closed.
+*   **Time-Based Progression:**
+    *   **Crafting:** Create items (gear, potions, food) over time. Can progress while the app is closed.
+    *   **Combat:** Auto-battler encounters progress over time.
+        *   **Active Combat:** Player watches the fight play out in real-time on the combat panel (e.g., for story bosses, single encounters).
+        *   **Looped Combat (Grinding):** Player can set combat to loop automatically in certain zones. Progress (fights completed, potions used, rewards gained, potential KO) is calculated via a **risk-aware simulation** when the player returns to the app, allowing offline progress. Consumable usage rules (e.g., potion threshold) are player-defined.
+*   **Combat System:**
+    *   **Auto-Battler:** Player equips abilities; abilities trigger automatically based on cooldowns during combat. No direct player interaction during the fight itself.
+    *   **Ability System:** Abilities have types (Damage, Heal, Poison, Shield, etc.), stats, cooldowns, and a **Weight**.
+    *   **Weight Limit:** Player can only equip abilities up to a maximum total weight, requiring strategic choices before combat.
+    *   **Rewards:** Combat yields Experience Points (for Combat Skill), Currency, Crafting Materials, and potentially rare Ability drops from monsters or Items from human opponents.
+*   **Character Progression:**
+    *   **Skill System:** Players level up individual skills (e.g., Mining, Woodcutting, Fishing, Alchemy, Cooking, Blacksmithing, Combat Proficiency, Exploration) by performing related actions. Skill levels unlock recipes, gathering tiers, improve efficiency, and potentially grant minor thematic bonuses or access.
+    *   **Combat Stat Allocation:** Leveling up "Combat Proficiency" grants Stat Points, which the player manually allocates to core stats (Strength, Intelligence, Stamina, etc.) for build customization.
+    *   **Equipment:** Gear (crafted, found via exploration, or looted) is the primary source of significant stat improvements.
+    *   **Legacy Steps:** For every X steps walked (e.g., 10,000), the player earns a point to spend in a passive tree, offering long-term bonuses and rewarding engagement with the core walking mechanic.
+    *   **No Overall Player Level (Initially):** Progression focuses on the combination of Skills, Stat Allocation, Gear, and Legacy Steps.
+*   **Story & World:**
+    *   **Fantasy Setting:** Serious but not overly grim tone.
+    *   **Story Delivery:** Presented through text dialogues integrated into UI panels. Player choices can affect story outcomes and unlocked content.
+    *   **World Structure:** Explorable map with various locations (towns, forests, mountains) unlocked through travel and potentially story/skill progression.
+    *   **NPC Affinity System:** Building relationships with characters unlocks unique rewards (skills, buffs, quests). Can be influenced by step-based activities (walking together), quests, and potentially time-based interactions.
+*   **User Authentication:**
+    *   **Google Sign-In:** Used for player identification to support optional cloud saving.
+*   **Data Management:**
+    *   **Local Storage:** Game state (inventory, skills, progress, etc.) stored primarily in a local database on the device.
+    *   **Optional Cloud Save:** Player can opt-in (via Google Sign-In) to automatically back up save data to the cloud, allowing recovery or multi-device play.
+
+## 4. High-Level Technical Stack Recommendations
+
+*   **Game Engine:** **Unity** (Based on user's existing code). Provides a robust framework for 2D/UI, animations, asset management, and cross-platform potential (though initially Android-focused).
+*   **Platform:** **Android**.
+*   **Step Tracking:** **Health Connect SDK** (newer standard) or **Google Fit REST API** (older standard, fallback). Provides reliable background step data access. Requires user permission.
+*   **Local Data Storage:** **SQLite Database** via an abstraction layer like **SQLite-net for Unity** or similar. Suitable for structured relational data (inventory, skills, quests, etc.).
+*   **Cloud Save Backend:** **Firebase** (Firestore/Realtime Database for data storage, Firebase Authentication for Google Sign-In). Offers a scalable, relatively easy-to-integrate solution for auth and cloud data sync. Alternatively, Google Play Games Services Saved Games could be considered, but Firebase offers more flexibility.
+*   **UI:** Unity UI (UGUI) or potentially UI Toolkit for building the panel-based interface.
+*   **Animation:** Unity's animation system or a tweening library like LeanTween (already used by the developer).
+
+## 5. Conceptual Data Model (Key Entities)
+
+*   **Player:** Stats (allocated base stats, current HP), Skill Levels (Mining, Combat Proficiency, Exploration, etc.), Legacy Points, Current Location, Active Tasks (Walking/Crafting/Combat Loop info), Currency, Story Flags.
+*   **Skill:** Definition (Name, Description), Level, Experience Points.
+*   **Ability:** Definition (Name, Description, Weight, Cooldown, Effects - Damage, Heal, etc., Icon), Instance data if needed (e.g. player-specific level of an ability if they can be leveled up).
+*   **Item:** Definition (Name, Description, Type - Gear, Consumable, Material), Stats (if gear), Effects (if consumable), Stackable flag.
+*   **Inventory:** Link between Player and Items (Quantity).
+*   **EquippedGear:** Link between Player and specific Item instances (Gear).
+*   **EquippedAbilities:** Link between Player and specific Ability instances.
+*   **Quest:** Definition (Name, Description, Objectives, Rewards), Status (Not Started, In Progress, Completed).
+*   **MapLocation:** Definition (Name, Type - Town, Forest), Available Actions (Gathering spots, Combat zones, NPCs), Exploration Progress/Status.
+*   **NPC:** Definition (Name, Location, Dialogue), Affinity Level with Player.
+*   **Monster:** Definition (Name, Stats, Abilities, Loot Table).
+*   **ActiveTask:** Start Time, Target (Item to craft, Location to travel, Zone to fight in), Progress, Step Count at start (if step-based).
+
+## 6. User Interface Design Principles
+
+*   **Panel-Based:** Core content areas divided into distinct panels (Map, Inventory/Character, Combat, Crafting, Story/Quests, Affinity).
+*   **Navigation:** Intuitive main navigation, likely a bottom navigation bar. Sub-navigation within panels as needed.
+*   **Visual Style:** High-quality 2D art with an Ankama-inspired aesthetic (vibrant, polished). Requires significant art asset creation or sourcing.
+*   **Clarity:** Important information (progress, stats, cooldowns, logs) should be clearly presented.
+*   **Responsiveness:** Provide feedback for actions (button presses, combat events, task completion). Use subtle animations (like LeanTween) to enhance the feel.
+*   **Audio:** Thematic background music for locations/story beats. Sound effects for key actions (combat hits, crafting complete, level up) but avoid overly repetitive sounds for background tasks.
+
+## 7. Security Considerations
+
+*   **Cloud Save Integrity:** Protect against tampering with cloud save data. Firebase rules can help enforce data validation on the server-side. Implement checks to prevent illogical states (e.g., negative currency, impossible stats).
+*   **Offline Progress Calculation:** Ensure the simulation logic is robust and not easily exploitable (e.g., by manipulating device time, though this is hard to prevent entirely on client-side). Calculations should be validated where possible.
+
+## 8. Development Phases or Milestones (Suggested)
+
+1.  **Phase 1: Core Walking & Data Foundation:**
+    *   Implement basic step tracking integration (Health Connect/Fit).
+    *   Set up local database structure.
+    *   Implement step-based travel between simple locations on a basic map panel.
+    *   Implement basic resource gathering (start task -> walk -> check progress on return).
+    *   Basic UI framework with bottom navigation.
+2.  **Phase 2: Basic Combat & Progression:**
+    *   Implement the active auto-battler panel (visuals, ability display).
+    *   Implement core combat logic (HP, cooldowns, basic damage/heal abilities).
+    *   Implement Combat Proficiency skill leveling and manual Stat Point allocation.
+    *   Implement basic Inventory panel and equipping Gear/Abilities (with Weight limit).
+3.  **Phase 3: Crafting & Time-Based Loop:**
+    *   Implement basic crafting system (select recipe -> time passes -> item gained).
+    *   Implement offline progress calculation for crafting.
+    *   Introduce basic crafting skills (e.g., Alchemy for potions).
+4.  **Phase 4: Looped Combat & Simulation:**
+    *   Implement the "Loop Battles" option.
+    *   Develop the risk-aware offline combat simulation logic.
+    *   Integrate consumable usage (potions) into loops based on player rules.
+5.  **Phase 5: Expanded Content & Systems:**
+    *   Implement Exploration system (Town & Zone).
+    *   Implement Affinity system.
+    *   Implement Legacy Steps system.
+    *   Begin adding story content (dialogues, quests).
+    *   Expand variety of abilities, monsters, items, locations, skills.
+6.  **Phase 6: Polish & Balancing:**
+    *   Refine UI/UX, add visual polish (Ankama style).
+    *   Implement audio (music, SFX).
+    *   Extensive balancing of combat, progression, economy.
+    *   Implement optional Cloud Save functionality.
+    *   Testing and bug fixing.
+
+## 9. Potential Challenges and Solutions
+
+*   **Health Connect/Fit Integration:** Can be finicky, requires handling permissions correctly and dealing with potential inconsistencies across devices/Android versions. (Solution: Thorough testing, follow best practices, provide clear user guidance on permissions).
+*   **Offline Progress Simulation:** Designing the risk-aware combat simulation to be fast, fair, and reasonably accurate is complex. (Solution: Start simple, iterate, focus on capturing key risks/mechanics rather than perfect simulation, extensive testing).
+*   **Balancing:** Balancing combat, multiple progression systems (skills, gear, stats, legacy), crafting, and the economy in a large RPG is difficult. (Solution: Incremental balancing, playtesting, potentially using analytics if published later, focus on player feel).
+*   **Art Asset Creation:** Achieving a high-quality, consistent Ankama-inspired style requires significant artistic skill and time. (Solution: Dedicate time, collaborate with artists, find/adapt suitable asset packs, or adjust style scope if needed).
+*   **Scope Management:** The vision is large; maintaining focus and momentum over a long development time can be hard. (Solution: Follow phased development, celebrate milestones, focus on core loops first, don't be afraid to simplify non-essential features initially).
+
+## 10. Future Expansion Possibilities
+
+*   Deeper social features (Guilds, friends, trading - though this adds significant complexity).
+*   More complex combat mechanics (status effects, synergies, positioning?).
+*   Player housing or customization.
+*   Expanded world map, storylines, skills, and content tiers.
+*   PvP elements (potentially asynchronous).
+*   Monetization (if published - cosmetics, convenience items, ensuring it respects the player experience).

@@ -516,16 +516,8 @@ public class CombatPanelUI : MonoBehaviour
 
     private void AnimateImage(bool isPlayerAttacking)
     {
-        Vector3 defaultScale = Vector3.one;
-
         if (isPlayerAttacking)
         {
-            // Reset scales
-            if (playerImageTransform != null)
-                playerImageTransform.localScale = defaultScale;
-            if (enemyImageTransform != null)
-                enemyImageTransform.localScale = defaultScale;
-
             // Player attacks - move forward then back
             if (playerImageTransform != null)
             {
@@ -533,49 +525,15 @@ public class CombatPanelUI : MonoBehaviour
                     .append(LeanTween.moveX(playerImageTransform, playerStartPosition.x + attackAnimOffset, 0.10f).setEaseInQuad())
                     .append(LeanTween.moveX(playerImageTransform, playerStartPosition.x, 0.20f).setEaseOutBack());
             }
-
-            // Enemy takes hit - scale punch
-            if (enemyImageTransform != null && !isEnemyScalingInProgress)
-            {
-                isEnemyScalingInProgress = true;
-                LeanTween.scale(enemyImageTransform, new Vector3(hitScalePunch, hitScalePunch, hitScalePunch), 0.40f)
-                    .setEasePunch()
-                    .setOnComplete(() =>
-                    {
-                        isEnemyScalingInProgress = false;
-                        if (enemyImageTransform != null)
-                            enemyImageTransform.localScale = defaultScale;
-                    });
-            }
         }
         else
         {
-            // Reset scales
-            if (playerImageTransform != null)
-                playerImageTransform.localScale = defaultScale;
-            if (enemyImageTransform != null)
-                enemyImageTransform.localScale = defaultScale;
-
             // Enemy attacks - move forward then back
             if (enemyImageTransform != null)
             {
                 LeanTween.sequence()
                     .append(LeanTween.moveX(enemyImageTransform, enemyStartPosition.x - attackAnimOffset, 0.10f).setEaseInQuad())
                     .append(LeanTween.moveX(enemyImageTransform, enemyStartPosition.x, 0.20f).setEaseOutBack());
-            }
-
-            // Player takes hit - scale punch
-            if (playerImageTransform != null && !isPlayerScalingInProgress)
-            {
-                isPlayerScalingInProgress = true;
-                LeanTween.scale(playerImageTransform, new Vector3(hitScalePunch, hitScalePunch, hitScalePunch), 0.40f)
-                    .setEasePunch()
-                    .setOnComplete(() =>
-                    {
-                        isPlayerScalingInProgress = false;
-                        if (playerImageTransform != null)
-                            playerImageTransform.localScale = defaultScale;
-                    });
             }
         }
     }

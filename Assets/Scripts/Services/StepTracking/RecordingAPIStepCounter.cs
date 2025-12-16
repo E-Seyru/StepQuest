@@ -347,4 +347,58 @@ public class RecordingAPIStepCounter : MonoBehaviour
         return stepPluginClass.CallStatic<long>("getCurrentRawSensorSteps");
 #endif
     }
+
+    /// <summary>
+    /// Get time in milliseconds since the last sensor event was received.
+    /// Returns -1 if no events have been received yet.
+    /// </summary>
+    public long GetTimeSinceLastSensorEventMs()
+    {
+#if UNITY_EDITOR
+        return 0; // Always fresh in editor
+#else
+        if (!isPluginClassInitialized || stepPluginClass == null)
+        {
+            return -1;
+        }
+        return stepPluginClass.CallStatic<long>("getTimeSinceLastSensorEventMs");
+#endif
+    }
+
+    /// <summary>
+    /// Force flush any pending sensor events. Lightweight operation.
+    /// </summary>
+    public void FlushSensorEvents()
+    {
+#if UNITY_EDITOR
+        return; // No-op in editor
+#else
+        if (!isPluginClassInitialized || stepPluginClass == null)
+        {
+            return;
+        }
+
+        stepPluginClass.CallStatic("flushSensorEvents");
+#endif
+    }
+
+    /// <summary>
+    /// Force re-register the sensor listener to wake it up from idle state.
+    /// Call this when the sensor has been idle for a while and may be batching events.
+    /// </summary>
+    public void RefreshSensorListener()
+    {
+#if UNITY_EDITOR
+        Logger.LogInfo("RecordingAPIStepCounter: [EDITOR] RefreshSensorListener called", Logger.LogCategory.StepLog);
+        return;
+#else
+        if (!isPluginClassInitialized || stepPluginClass == null || !HasPermission())
+        {
+            Logger.LogWarning("RecordingAPIStepCounter: RefreshSensorListener - plugin not ready or no permission.", Logger.LogCategory.StepLog);
+            return;
+        }
+
+        stepPluginClass.CallStatic("refreshSensorListener");
+#endif
+    }
 }

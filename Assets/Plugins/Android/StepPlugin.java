@@ -43,6 +43,7 @@ public class StepPlugin implements SensorEventListener {
     private static StepPlugin instance;
     private static long currentDeviceRawSteps = -1;
     private static boolean directSensorListenerActive = false;
+    private static long lastSensorEventTimeMs = 0;  // Track when we last got an event
 
     public static StepPlugin getInstance() {
         if (instance == null) {
@@ -289,21 +290,20 @@ public class StepPlugin implements SensorEventListener {
 
         if (stepCounterSensor != null) {
             if (!directSensorListenerActive) {
-                // Essayer d'enregistrer l'écouteur avec une fréquence plus basse pour économiser la batterie
-                if (sensorManager.registerListener(getInstance(), stepCounterSensor, SensorManager.SENSOR_DELAY_NORMAL)) {
+                boolean registered = sensorManager.registerListener(
+                    getInstance(),
+                    stepCounterSensor,
+                    SensorManager.SENSOR_DELAY_NORMAL
+                );
+
+                if (registered) {
                     directSensorListenerActive = true;
                     Log.i(TAG, "[Direct Sensor] Listener registered with NORMAL delay.");
-                } else { 
-                    // Tentative avec une fréquence plus élevée en cas d'échec
-                    if (sensorManager.registerListener(getInstance(), stepCounterSensor, SensorManager.SENSOR_DELAY_UI)) {
-                        directSensorListenerActive = true;
-                        Log.i(TAG, "[Direct Sensor] Listener registered with UI delay.");
-                    } else {
-                        Log.e(TAG, "[Direct Sensor] Listener registration FAILED with all delays."); 
-                    }
+                } else {
+                    Log.e(TAG, "[Direct Sensor] Listener registration FAILED.");
                 }
-            } else { 
-                Log.i(TAG, "[Direct Sensor] Listener already active."); 
+            } else {
+                Log.i(TAG, "[Direct Sensor] Listener already active.");
             }
         } else {
             Log.w(TAG, "[Direct Sensor] TYPE_STEP_COUNTER sensor not available.");
@@ -331,9 +331,88 @@ public class StepPlugin implements SensorEventListener {
         return currentDeviceRawSteps;
     }
 
+    /**
+     * Check if the sensor might be stale (no events received recently).
+     * Returns the number of milliseconds since the last sensor event.
+     * Returns -1 if no events have been received yet.
+     */
+    public static long getTimeSinceLastSensorEventMs() {
+        if (lastSensorEventTimeMs == 0) return -1;
+        return System.currentTimeMillis() - lastSensorEventTimeMs;
+    }
+
+    /**
+     * Force flush any pending sensor events.
+     * This is lighter weight than re-registering and may help get pending events delivered faster.
+     */
+    public static void flushSensorEvents() {
+        if (sensorManager == null || !directSensorListenerActive) {
+            return;
+        }
+
+        try {
+            // flush() forces the sensor to deliver any batched events immediately
+            boolean flushed = sensorManager.flush(getInstance());
+            if (flushed) {
+                Log.d(TAG, "[Direct Sensor] Sensor flush requested successfully.");
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "[Direct Sensor] Sensor flush failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Force re-register the sensor listener to wake it up from idle state.
+     * This is useful when the sensor has been idle for a while and may be batching events.
+     */
+    public static void refreshSensorListener() {
+        Log.i(TAG, "[Direct Sensor] refreshSensorListener called to wake up sensor.");
+
+        if (sensorManager == null || stepCounterSensor == null) {
+            Log.w(TAG, "[Direct Sensor] Cannot refresh - sensorManager or sensor is null.");
+            return;
+        }
+
+        if (!directSensorListenerActive) {
+            Log.w(TAG, "[Direct Sensor] Cannot refresh - listener not active. Call startDirectStepCounterListener first.");
+            return;
+        }
+
+        // Unregister and re-register to force the sensor to wake up
+        sensorManager.unregisterListener(getInstance(), stepCounterSensor);
+
+        boolean registered = sensorManager.registerListener(
+            getInstance(),
+            stepCounterSensor,
+            SensorManager.SENSOR_DELAY_FASTEST,
+            0  // maxReportLatencyUs = 0 disables batching
+        );
+
+        if (registered) {
+            Log.i(TAG, "[Direct Sensor] Listener refreshed successfully.");
+        } else {
+            // Try with GAME delay as fallback
+            registered = sensorManager.registerListener(
+                getInstance(),
+                stepCounterSensor,
+                SensorManager.SENSOR_DELAY_GAME,
+                0
+            );
+            if (registered) {
+                Log.i(TAG, "[Direct Sensor] Listener refreshed with GAME delay.");
+            } else {
+                directSensorListenerActive = false;
+                Log.e(TAG, "[Direct Sensor] Failed to refresh listener!");
+            }
+        }
+    }
+
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_STEP_COUNTER) {
+            // Track when we last received a sensor event
+            lastSensorEventTimeMs = System.currentTimeMillis();
+
             // Enregistrer uniquement des changements significatifs pour éviter les micro-fluctuations
             // qui peuvent causer des ajouts fantômes
             if (currentDeviceRawSteps == -1 || Math.abs(event.values[0] - currentDeviceRawSteps) >= 1.0f) {

@@ -1,0 +1,1 @@
+C:\Users\wilhe\Desktop\Projets Unity\StepQuest\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\build\intermediates\cxx\RelWithDebInfo\5wk3d6c6\obj\arm64-v8a

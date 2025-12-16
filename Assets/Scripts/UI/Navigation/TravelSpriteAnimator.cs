@@ -65,7 +65,8 @@ public class TravelSpriteAnimator : MonoBehaviour
 
         if (travelSprite != null)
         {
-            travelSprite.SetActive(true);
+            // Hide sprite initially - it will be shown after position is calculated
+            travelSprite.SetActive(false);
         }
     }
 
@@ -97,13 +98,27 @@ public class TravelSpriteAnimator : MonoBehaviour
         // NOUVEAU : Initialiser le cache des positions POI
         InitializePOICache();
 
-        // ⭐ NOUVEAU : Initialiser lastKnownLocationId PRIORITe 1: PlayerData, PRIORITe 2: CurrentLocation
-        if (dataManager?.PlayerData != null && !string.IsNullOrEmpty(dataManager.PlayerData.CurrentLocationId))
+        // Initialize lastKnownLocationId based on current state
+        // Priority: TravelOriginLocationId (if traveling) > CurrentLocationId > CurrentLocation
+        if (dataManager?.PlayerData != null)
         {
-            lastKnownLocationId = dataManager.PlayerData.CurrentLocationId;
-            if (enablePathfindingDebug)
+            if (dataManager.PlayerData.IsCurrentlyTraveling() &&
+                !string.IsNullOrEmpty(dataManager.PlayerData.TravelOriginLocationId))
             {
-                Logger.LogInfo($"TravelSpriteAnimator: Initialized lastKnownLocationId from PlayerData: {lastKnownLocationId}", Logger.LogCategory.MapLog);
+                // Mid-travel: use the origin of current travel segment
+                lastKnownLocationId = dataManager.PlayerData.TravelOriginLocationId;
+                if (enablePathfindingDebug)
+                {
+                    Logger.LogInfo($"TravelSpriteAnimator: Initialized lastKnownLocationId from TravelOriginLocationId: {lastKnownLocationId}", Logger.LogCategory.MapLog);
+                }
+            }
+            else if (!string.IsNullOrEmpty(dataManager.PlayerData.CurrentLocationId))
+            {
+                lastKnownLocationId = dataManager.PlayerData.CurrentLocationId;
+                if (enablePathfindingDebug)
+                {
+                    Logger.LogInfo($"TravelSpriteAnimator: Initialized lastKnownLocationId from CurrentLocationId: {lastKnownLocationId}", Logger.LogCategory.MapLog);
+                }
             }
         }
         else if (mapManager?.CurrentLocation != null)
@@ -211,20 +226,55 @@ public class TravelSpriteAnimator : MonoBehaviour
     {
         yield return new WaitForSeconds(0.5f);
 
+        // Wait for POI cache to be initialized
+        if (!isCacheInitialized)
+        {
+            Logger.LogWarning("TravelSpriteAnimator: POI cache not ready yet, waiting...", Logger.LogCategory.MapLog);
+            yield return new WaitForSeconds(0.5f);
+        }
+
         if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
         {
-            // MODIFIe : Configuration intelligente pour les voyages en cours
+            // Resume travel animation: use TravelOriginLocationId as the start point
             string currentDestination = dataManager.PlayerData.TravelDestinationId;
 
-            // ⭐ MODIFIe : Verifier qu'on a une position de depart valide
-            if (string.IsNullOrEmpty(lastKnownLocationId))
+            // Use TravelOriginLocationId if available, fallback to lastKnownLocationId
+            string startLocationId = dataManager.PlayerData.TravelOriginLocationId;
+            if (string.IsNullOrEmpty(startLocationId))
+            {
+                startLocationId = lastKnownLocationId;
+            }
+
+            if (string.IsNullOrEmpty(startLocationId))
             {
                 Logger.LogError("TravelSpriteAnimator: Cannot restore travel - no start location available", Logger.LogCategory.MapLog);
                 yield break;
             }
 
-            DetermineIfMultiSegmentTravel(currentDestination, lastKnownLocationId);
-            SetupTravelPath(currentDestination, lastKnownLocationId);
+            // Validate that both locations exist in the cache before proceeding
+            if (!poiPositionsCache.ContainsKey(startLocationId))
+            {
+                Logger.LogError($"TravelSpriteAnimator: Start location '{startLocationId}' not found in POI cache", Logger.LogCategory.MapLog);
+                yield break;
+            }
+            if (!poiPositionsCache.ContainsKey(currentDestination))
+            {
+                Logger.LogError($"TravelSpriteAnimator: Destination '{currentDestination}' not found in POI cache", Logger.LogCategory.MapLog);
+                yield break;
+            }
+
+            // Update lastKnownLocationId for consistency
+            lastKnownLocationId = startLocationId;
+
+            DetermineIfMultiSegmentTravel(currentDestination, startLocationId);
+            SetupTravelPath(currentDestination, startLocationId);
+
+            // Verify path was set up correctly (not at origin)
+            if (startPosition == Vector3.zero || endPosition == Vector3.zero)
+            {
+                Logger.LogError($"TravelSpriteAnimator: Invalid path positions - start: {startPosition}, end: {endPosition}", Logger.LogCategory.MapLog);
+                yield break;
+            }
 
             long currentTotalSteps = dataManager.PlayerData.TotalSteps;
             long progressSteps = dataManager.PlayerData.GetTravelProgress(currentTotalSteps);
@@ -234,7 +284,16 @@ public class TravelSpriteAnimator : MonoBehaviour
                 (float)progressSteps / requiredSteps : 0f;
             progress = Mathf.Clamp01(progress);
 
-            UpdateSpritePosition(progress);
+            // Ensure sprite is visible when resuming travel
+            if (travelSprite != null)
+            {
+                // IMPORTANT: Set position BEFORE activating to prevent showing at wrong location
+                Vector3 targetPos = Vector3.Lerp(startPosition, endPosition, progress);
+                travelSprite.transform.position = targetPos;
+                travelSprite.SetActive(true);
+
+                Logger.LogInfo($"TravelSpriteAnimator: Sprite activated at progress {progress:F2}, position set to {targetPos}", Logger.LogCategory.MapLog);
+            }
 
             if (bounceAnimation)
             {
@@ -243,7 +302,7 @@ public class TravelSpriteAnimator : MonoBehaviour
 
             if (enablePathfindingDebug)
             {
-                Logger.LogInfo($"TravelSpriteAnimator: Resumed travel animation from {lastKnownLocationId} to {currentDestination} - {progressSteps}/{requiredSteps} steps", Logger.LogCategory.MapLog);
+                Logger.LogInfo($"TravelSpriteAnimator: Resumed travel animation from {startLocationId} to {currentDestination} - {progressSteps}/{requiredSteps} steps", Logger.LogCategory.MapLog);
             }
         }
         else
@@ -492,9 +551,10 @@ public class TravelSpriteAnimator : MonoBehaviour
     {
         if (travelSprite == null) return;
 
-        travelSprite.SetActive(true);
+        // Set position BEFORE activating to avoid flicker at wrong position
         travelSprite.transform.position = startPosition;
         travelSprite.transform.localScale = Vector3.one * spriteScale;
+        travelSprite.SetActive(true);
 
         if (bounceAnimation)
         {
