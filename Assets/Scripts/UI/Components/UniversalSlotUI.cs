@@ -167,11 +167,11 @@ public class UniversalSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     {
         if (IsEmpty())
         {
-            // Empty slot
+            // Empty slot - hide the entire ItemIcon GameObject (includes quantity text)
             if (itemIcon != null)
             {
                 itemIcon.sprite = null;
-                itemIcon.enabled = false;
+                itemIcon.gameObject.SetActive(false);
             }
 
             if (quantityText != null)
@@ -185,9 +185,10 @@ public class UniversalSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
             var itemDef = InventoryManager.Instance?.GetItemRegistry()?.GetItem(slotData.ItemID);
             if (itemDef != null)
             {
-                // Set icon
+                // Show and set icon
                 if (itemIcon != null)
                 {
+                    itemIcon.gameObject.SetActive(true);
                     itemIcon.sprite = itemDef.ItemIcon;
                     itemIcon.color = itemDef.ItemColor;
                     itemIcon.enabled = true;

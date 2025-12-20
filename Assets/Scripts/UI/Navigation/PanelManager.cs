@@ -39,6 +39,10 @@ public class PanelManager : MonoBehaviour
     private bool isInputActive = false;
     private Coroutine inputCoroutine;
 
+    // Drag blocking - prevent swipes shortly after dragging
+    private float lastDragEndTime = -1f;
+    private const float DRAG_SWIPE_BLOCK_DURATION = 0.5f;
+
     public static PanelManager Instance { get; private set; }
 
     // Propriete publique pour connaître l'etat de la carte
@@ -211,6 +215,17 @@ public class PanelManager : MonoBehaviour
 
     private void HandleInput()
     {
+        // Skip swipe handling while dragging items in inventory
+        if (DragDropManager.Instance != null && DragDropManager.Instance.IsDragging)
+        {
+            lastDragEndTime = Time.time;
+            return;
+        }
+
+        // Block swipes for a short duration after dragging ends
+        if (Time.time - lastDragEndTime < DRAG_SWIPE_BLOCK_DURATION)
+            return;
+
         // Touch input handling
         if (Input.touchCount > 0)
         {

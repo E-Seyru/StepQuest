@@ -29,6 +29,12 @@ public class InventoryPanelUI : ContainerPanelUI
     // Tab system state
     private InventoryTab currentTab = InventoryTab.Items;
 
+    // Original colors for tabs
+    private Color itemsTabTextOriginalColor;
+    private Color abilitiesTabTextOriginalColor;
+    private Color itemsTabButtonOriginalColor;
+    private Color abilitiesTabButtonOriginalColor;
+
     public static InventoryPanelUI Instance { get; private set; }
     public InventoryTab CurrentTab => currentTab;
 
@@ -109,11 +115,19 @@ public class InventoryPanelUI : ContainerPanelUI
         if (itemsTabButton != null)
         {
             itemsTabButton.onClick.AddListener(() => SwitchToTab(InventoryTab.Items));
+            var text = itemsTabButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (text != null) itemsTabTextOriginalColor = text.color;
+            var image = itemsTabButton.GetComponent<Image>();
+            if (image != null) itemsTabButtonOriginalColor = image.color;
         }
 
         if (abilitiesTabButton != null)
         {
             abilitiesTabButton.onClick.AddListener(() => SwitchToTab(InventoryTab.Abilities));
+            var text = abilitiesTabButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (text != null) abilitiesTabTextOriginalColor = text.color;
+            var image = abilitiesTabButton.GetComponent<Image>();
+            if (image != null) abilitiesTabButtonOriginalColor = image.color;
         }
     }
 
@@ -178,22 +192,52 @@ public class InventoryPanelUI : ContainerPanelUI
 
     private void UpdateTabVisuals()
     {
-        UpdateTabButton(itemsTabButton, currentTab == InventoryTab.Items);
-        UpdateTabButton(abilitiesTabButton, currentTab == InventoryTab.Abilities);
+        UpdateTabButton(itemsTabButton, currentTab == InventoryTab.Items, itemsTabTextOriginalColor, itemsTabButtonOriginalColor);
+        UpdateTabButton(abilitiesTabButton, currentTab == InventoryTab.Abilities, abilitiesTabTextOriginalColor, abilitiesTabButtonOriginalColor);
     }
 
-    private void UpdateTabButton(Button button, bool isActive)
+    private void UpdateTabButton(Button button, bool isActive, Color originalTextColor, Color originalButtonColor)
     {
         if (button == null) return;
 
-        var colors = button.colors;
-        colors.normalColor = isActive ? activeTabColor : inactiveTabColor;
-        button.colors = colors;
+        float dimFactor = inactiveTabColor.r / activeTabColor.r; // Calculate dim ratio
 
+        // Update button image color
         var image = button.GetComponent<Image>();
         if (image != null)
         {
-            image.color = isActive ? activeTabColor : inactiveTabColor;
+            if (isActive)
+            {
+                image.color = originalButtonColor;
+            }
+            else
+            {
+                image.color = new Color(
+                    originalButtonColor.r * dimFactor,
+                    originalButtonColor.g * dimFactor,
+                    originalButtonColor.b * dimFactor,
+                    originalButtonColor.a
+                );
+            }
+        }
+
+        // Update child text color
+        var text = button.GetComponentInChildren<TextMeshProUGUI>();
+        if (text != null)
+        {
+            if (isActive)
+            {
+                text.color = originalTextColor;
+            }
+            else
+            {
+                text.color = new Color(
+                    originalTextColor.r * dimFactor,
+                    originalTextColor.g * dimFactor,
+                    originalTextColor.b * dimFactor,
+                    originalTextColor.a
+                );
+            }
         }
     }
 
