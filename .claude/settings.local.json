@@ -9,7 +9,8 @@
       "Bash(dir:*)",
       "Bash(xargs -I {} sh -c 'echo \"\"File: {}\"\" && grep \"\"guid:\"\" \"\"{}\"\"')",
       "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && wc -l \"\"{}\"\"')",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

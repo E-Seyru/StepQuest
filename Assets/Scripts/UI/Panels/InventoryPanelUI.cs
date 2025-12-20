@@ -19,6 +19,7 @@ public class InventoryPanelUI : ContainerPanelUI
     [SerializeField] private Button itemsTabButton;
     [SerializeField] private Button abilitiesTabButton;
     [SerializeField] private AbilitiesInventoryContainer abilitiesContainer;
+    [SerializeField] private GameObject abilitiesScrollViewPanel; // The scroll view panel to deactivate
     [SerializeField] private Color activeTabColor = Color.white;
     [SerializeField] private Color inactiveTabColor = new Color(0.6f, 0.6f, 0.6f, 1f);
 
@@ -122,24 +123,28 @@ public class InventoryPanelUI : ContainerPanelUI
 
         UpdateTabVisuals();
 
-        // Show/hide appropriate containers
+        bool isItemsTab = tab == InventoryTab.Items;
+
+        // Deactivate one panel, activate the other
         if (slotsContainer != null)
         {
-            slotsContainer.gameObject.SetActive(tab == InventoryTab.Items);
+            slotsContainer.gameObject.SetActive(isItemsTab);
         }
 
-        if (abilitiesContainer != null)
+        if (abilitiesScrollViewPanel != null)
         {
-            abilitiesContainer.gameObject.SetActive(tab == InventoryTab.Abilities);
-            if (tab == InventoryTab.Abilities)
-            {
-                abilitiesContainer.RefreshDisplay();
-            }
+            abilitiesScrollViewPanel.SetActive(!isItemsTab);
+        }
+
+        // Refresh abilities display when switching to that tab
+        if (!isItemsTab && abilitiesContainer != null)
+        {
+            abilitiesContainer.RefreshDisplay();
         }
 
         DeselectCurrentSlot();
 
-        if (tab == InventoryTab.Items)
+        if (isItemsTab)
         {
             RefreshDisplay();
         }
