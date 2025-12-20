@@ -25,6 +25,9 @@ public class LocationDetailsPanel : MonoBehaviour
     [SerializeField] private CombatSectionPanel combatSectionPanel; // Reference vers le panel combat
     [SerializeField] private GameObject combatPanelUI; // Reference vers le panel UI de combat a activer
 
+    [Header("Interface - Section Social - DELEGUe")]
+    [SerializeField] private SocialSectionPanel socialSectionPanel; // Reference vers le panel social
+
     [Header("Interface - Section Infos")]
     [SerializeField] private TextMeshProUGUI locationInfoText;
 
@@ -192,6 +195,10 @@ public class LocationDetailsPanel : MonoBehaviour
         {
             combatSectionPanel.OnEnemySelected -= OnEnemySelected;
         }
+        if (socialSectionPanel != null)
+        {
+            socialSectionPanel.OnSocialActivitySelected -= OnSocialActivitySelected;
+        }
 
         Logger.LogInfo("LocationDetailsPanel: Unsubscribed from EventBus events", Logger.LogCategory.General);
     }
@@ -218,6 +225,12 @@ public class LocationDetailsPanel : MonoBehaviour
         if (activitiesSectionPanel == null)
         {
             Logger.LogError("LocationDetailsPanel: ActivitiesSectionPanel n'est pas assigne !", Logger.LogCategory.General);
+            hasErrors = true;
+        }
+
+        if (socialSectionPanel == null)
+        {
+            Logger.LogError("LocationDetailsPanel: SocialSectionPanel n'est pas assigne !", Logger.LogCategory.General);
             hasErrors = true;
         }
 
@@ -431,6 +444,7 @@ public class LocationDetailsPanel : MonoBehaviour
         UpdateDescriptionSection();
         UpdateActivitiesSection(); // DeLeGUe au ActivitiesSectionPanel
         UpdateCombatSection(); // DeLeGUe au CombatSectionPanel
+        UpdateSocialSection(); // DeLeGUe au SocialSectionPanel
         UpdateInfoSection();
     }
 
@@ -606,6 +620,50 @@ public class LocationDetailsPanel : MonoBehaviour
         else
         {
             Logger.LogError("LocationDetailsPanel: combatPanelUI reference is null!", Logger.LogCategory.General);
+        }
+    }
+
+    /// <summary>
+    /// Met a jour la section sociale - DeLeGUe au SocialSectionPanel
+    /// </summary>
+    private void UpdateSocialSection()
+    {
+        if (socialSectionPanel == null) return;
+
+        // Pour l'instant, afficher une liste vide
+        // Plus tard, cela affichera les activites sociales disponibles
+        var socialActivities = new List<ActivityDefinition>();
+
+        socialSectionPanel.DisplaySocialActivities(socialActivities);
+
+        // S'abonner a l'evenement de selection d'activite sociale
+        socialSectionPanel.OnSocialActivitySelected -= OnSocialActivitySelected;
+        socialSectionPanel.OnSocialActivitySelected += OnSocialActivitySelected;
+    }
+
+    /// <summary>
+    /// Gere la selection d'une activite sociale depuis le SocialSectionPanel
+    /// </summary>
+    private void OnSocialActivitySelected(ActivityDefinition activityDefinition)
+    {
+        if (activityDefinition == null)
+        {
+            Logger.LogWarning("LocationDetailsPanel: Social activity selection avec null !", Logger.LogCategory.General);
+            return;
+        }
+
+        Logger.LogInfo($"LocationDetailsPanel: Social activity selected - {activityDefinition.GetDisplayName()}", Logger.LogCategory.General);
+
+        // TODO: Ouvrir le panel approprie pour les activites sociales
+        // Pour l'instant, on utilise le meme flux que les activites normales
+        var locationActivity = FindLocationActivityByDefinition(activityDefinition);
+
+        if (locationActivity != null)
+        {
+            if (ActivityVariantsPanel.Instance != null)
+            {
+                ActivityVariantsPanel.Instance.OpenWithActivity(locationActivity);
+            }
         }
     }
 

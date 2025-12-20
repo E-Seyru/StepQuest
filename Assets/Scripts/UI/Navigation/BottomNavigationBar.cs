@@ -47,10 +47,16 @@ public class BottomNavigationBar : MonoBehaviour
             }
         }
 
+        // Initialize all nav items to deselected state FIRST
+        for (int i = 0; i < navItems.Count; i++)
+        {
+            SetNavItemState(i, false);
+        }
+
         // Subscribe to panel change events
         panelManager.OnPanelChanged.AddListener(OnPanelChanged);
 
-        // Initialize to current panel
+        // Initialize to current panel (this will select the correct one)
         OnPanelChanged(panelManager.CurrentPanelIndex);
     }
 
@@ -133,6 +139,26 @@ public class BottomNavigationBar : MonoBehaviour
         // Animate color
         LeanTween.color(item.icon.rectTransform, targetColor, animationDuration)
             .setEase(LeanTweenType.easeOutQuad);
+    }
+
+    /// <summary>
+    /// Set nav item state immediately without animation (used for initialization)
+    /// </summary>
+    private void SetNavItemState(int navIndex, bool selected)
+    {
+        if (navIndex < 0 || navIndex >= navItems.Count) return;
+
+        NavItem item = navItems[navIndex];
+        if (item.icon == null) return;
+
+        float targetScale = selected ? selectedScale : normalScale;
+        Color targetColor = selected ? selectedColor : normalColor;
+
+        // Set scale immediately
+        item.icon.transform.localScale = Vector3.one * targetScale;
+
+        // Set color immediately
+        item.icon.color = targetColor;
     }
 
     /// <summary>

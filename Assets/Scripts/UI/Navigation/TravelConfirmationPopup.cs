@@ -9,7 +9,6 @@ public class TravelConfirmationPopup : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private GameObject popupPanel;
     [SerializeField] private TextMeshProUGUI titleText; // NOUVEAU : Titre de la popup
-    [SerializeField] private TextMeshProUGUI destinationNameText;
     [SerializeField] private TextMeshProUGUI destinationDescriptionText;
     [SerializeField] private TextMeshProUGUI travelCostText;
     [SerializeField] private TextMeshProUGUI currentLocationText;
@@ -90,10 +89,7 @@ public class TravelConfirmationPopup : MonoBehaviour
         {
             Logger.LogError("TravelConfirmationPopup: popupPanel not assigned!", Logger.LogCategory.MapLog);
         }
-        if (destinationNameText == null)
-        {
-            Logger.LogError("TravelConfirmationPopup: destinationNameText not assigned!", Logger.LogCategory.MapLog);
-        }
+    
         if (confirmTravelButton == null)
         {
             Logger.LogError("TravelConfirmationPopup: confirmTravelButton not assigned!", Logger.LogCategory.MapLog);
@@ -146,12 +142,6 @@ public class TravelConfirmationPopup : MonoBehaviour
         if (titleText != null)
         {
             titleText.text = $"{currentTravelInfo.To.DisplayName}";
-        }
-
-        // Nom de la destination
-        if (destinationNameText != null)
-        {
-            destinationNameText.text = currentTravelInfo.To.DisplayName;
         }
 
         // Description de la destination
