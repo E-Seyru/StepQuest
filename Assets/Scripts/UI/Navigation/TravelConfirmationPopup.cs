@@ -145,7 +145,7 @@ public class TravelConfirmationPopup : MonoBehaviour
         // NOUVEAU : Titre de la popup
         if (titleText != null)
         {
-            titleText.text = $"Voyage vers {currentTravelInfo.To.DisplayName}";
+            titleText.text = $"{currentTravelInfo.To.DisplayName}";
         }
 
         // Nom de la destination
