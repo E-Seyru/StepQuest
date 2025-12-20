@@ -21,6 +21,7 @@ public class TravelConfirmationPopup : MonoBehaviour
     [Header("Optional Visual Elements")]
     [SerializeField] private Image destinationImage; // Optionnel : image de la destination
     [SerializeField] private Image routeVisualization; // Optionnel : mini-carte du trajet
+    [SerializeField] private Sprite fallbackLocationSprite; // Image par dÃ©faut si aucune image de location
 
     // References aux services
     private MapManager mapManager;
@@ -162,14 +163,14 @@ public class TravelConfirmationPopup : MonoBehaviour
             destinationDescriptionText.text = description;
         }
 
-        // Coût du voyage
+        // Coï¿½t du voyage
         if (travelCostText != null)
         {
             if (currentTravelInfo.StepCost > 0)
             {
-                travelCostText.text = $"Coût: {currentTravelInfo.StepCost} pas";
+                travelCostText.text = $"{currentTravelInfo.StepCost}";
                 // Changer la couleur si le joueur n'a pas assez de pas (optionnel)
-                // TODO: Implementer la verification des pas actuels vs coût
+                // TODO: Implementer la verification des pas actuels vs coï¿½t
             }
             else
             {
@@ -192,8 +193,40 @@ public class TravelConfirmationPopup : MonoBehaviour
         // Image de destination (optionnel)
         if (destinationImage != null)
         {
-            // TODO: Ajouter un systeme d'images pour les locations
-            // destinationImage.sprite = GetLocationSprite(currentTravelInfo.To.LocationID);
+            UpdateDestinationImage();
+        }
+    }
+
+    /// <summary>
+    /// Met Ã  jour l'image de destination avec fallback
+    /// </summary>
+    private void UpdateDestinationImage()
+    {
+        if (destinationImage == null || currentTravelInfo == null || currentTravelInfo.To == null)
+            return;
+
+        // Essayer d'utiliser l'image de la location
+        Sprite locationSprite = currentTravelInfo.To.LocationImage;
+
+        if (locationSprite != null)
+        {
+            // Utiliser l'image spÃ©cifique de la location
+            destinationImage.sprite = locationSprite;
+            destinationImage.gameObject.SetActive(true);
+            Logger.LogInfo($"TravelConfirmationPopup: Using location image for {currentTravelInfo.To.DisplayName}", Logger.LogCategory.MapLog);
+        }
+        else if (fallbackLocationSprite != null)
+        {
+            // Utiliser l'image par dÃ©faut
+            destinationImage.sprite = fallbackLocationSprite;
+            destinationImage.gameObject.SetActive(true);
+            Logger.LogInfo($"TravelConfirmationPopup: Using fallback image for {currentTravelInfo.To.DisplayName}", Logger.LogCategory.MapLog);
+        }
+        else
+        {
+            // Aucune image disponible, cacher le composant Image
+            destinationImage.gameObject.SetActive(false);
+            Logger.LogInfo($"TravelConfirmationPopup: No image available for {currentTravelInfo.To.DisplayName}", Logger.LogCategory.MapLog);
         }
     }
 
