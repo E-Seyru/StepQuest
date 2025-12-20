@@ -31,6 +31,12 @@ public class ActivitiesSectionPanel : MonoBehaviour
 
         // Setup grid layout automatiquement
         SetupGridLayout();
+
+        // Hide "no activities" text by default
+        if (noActivitiesText != null)
+        {
+            noActivitiesText.gameObject.SetActive(false);
+        }
     }
 
     #region Public Methods

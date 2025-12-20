@@ -32,6 +32,12 @@ public class SocialSectionPanel : MonoBehaviour
     {
         ValidateReferences();
         SetupGridLayout();
+
+        // Hide "no social activities" text by default
+        if (noSocialActivitiesText != null)
+        {
+            noSocialActivitiesText.gameObject.SetActive(false);
+        }
     }
 
     #region Public Methods
@@ -51,16 +57,23 @@ public class SocialSectionPanel : MonoBehaviour
         // Nettoyer les cartes existantes
         RecycleSocialActivityCards();
 
-        // Afficher ou masquer selon la disponibilite
-        if (socialActivities.Count == 0)
+        // Update content (tab system controls visibility)
+        UpdateSectionTitle(socialActivities.Count);
+
+        if (socialActivities.Count > 0)
         {
-            HideSection();
+            CreateSocialActivityCards(socialActivities);
+            if (noSocialActivitiesText != null)
+            {
+                noSocialActivitiesText.gameObject.SetActive(false);
+            }
         }
         else
         {
-            ShowSection();
-            UpdateSectionTitle(socialActivities.Count);
-            CreateSocialActivityCards(socialActivities);
+            if (noSocialActivitiesText != null)
+            {
+                noSocialActivitiesText.gameObject.SetActive(true);
+            }
         }
 
         Debug.Log($"SocialSectionPanel: Displayed {socialActivities.Count} social activities");

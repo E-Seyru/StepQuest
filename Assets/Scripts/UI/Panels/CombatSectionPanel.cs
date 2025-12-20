@@ -33,6 +33,12 @@ public class CombatSectionPanel : MonoBehaviour
     {
         ValidateReferences();
         SetupGridLayout();
+
+        // Hide "no enemies" text by default
+        if (noEnemiesText != null)
+        {
+            noEnemiesText.gameObject.SetActive(false);
+        }
     }
 
     #region Public Methods
@@ -68,14 +74,17 @@ public class CombatSectionPanel : MonoBehaviour
         // Nettoyer les cartes existantes
         RecycleEnemyCards();
 
-        // Afficher ou masquer selon la disponibilite
+        // Update content (tab system controls visibility)
         if (enemies.Count == 0)
         {
-            HideSection();
+            ShowNoEnemiesMessage();
         }
         else
         {
-            ShowSection();
+            if (noEnemiesText != null)
+            {
+                noEnemiesText.gameObject.SetActive(false);
+            }
             UpdateSectionTitle(enemies.Count);
             CreateEnemyCards(enemies);
         }
@@ -170,6 +179,15 @@ public class CombatSectionPanel : MonoBehaviour
         {
             combatSectionTitle.text = $"Combattre ({enemyCount})";
         }
+    }
+
+    private void ShowNoEnemiesMessage()
+    {
+        if (noEnemiesText != null)
+        {
+            noEnemiesText.gameObject.SetActive(true);
+        }
+        UpdateSectionTitle(0);
     }
 
     #endregion
