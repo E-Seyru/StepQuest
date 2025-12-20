@@ -16,15 +16,20 @@ public class ItemActionPanel : MonoBehaviour
     [Header("Action Buttons")]
     [SerializeField] private Button discardButton;
     [SerializeField] private TextMeshProUGUI discardButtonText;
-    [SerializeField] private Button transferButton; // Remplace bankButton
+    [SerializeField] private Button transferButton;
     [SerializeField] private TextMeshProUGUI transferButtonText;
     [SerializeField] private Button useButton;
+    [SerializeField] private TextMeshProUGUI useButtonText;
     [SerializeField] private Button sellButton;
     [SerializeField] private TextMeshProUGUI sellButtonText;
-    [SerializeField] private Button buyButton; // Nouveau pour les shops
+    [SerializeField] private Button buyButton;
     [SerializeField] private TextMeshProUGUI buyButtonText;
     [SerializeField] private Button closeButton;
     [SerializeField] private Button backgroundButton;
+
+    [Header("Button Colors")]
+    [SerializeField] private Color enabledButtonColor = Color.white;
+    [SerializeField] private Color disabledButtonColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
 
     [Header("Animation Settings")]
     [SerializeField] private float animationDuration = 0.3f;
@@ -41,7 +46,10 @@ public class ItemActionPanel : MonoBehaviour
 
     // Animation
     private RectTransform rectTransform;
+    private Canvas parentCanvas;
     private int currentTween = -1;
+    private Vector2 animationOrigin; // Where the panel animates from (item position)
+    private Vector2 finalPosition;   // Where the panel ends up (near the item)
 
     public static ItemActionPanel Instance { get; private set; }
 
@@ -51,6 +59,7 @@ public class ItemActionPanel : MonoBehaviour
         {
             Instance = this;
             rectTransform = GetComponent<RectTransform>();
+            parentCanvas = GetComponentInParent<Canvas>();
         }
         else
         {
@@ -139,12 +148,82 @@ public class ItemActionPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Position panel
+    /// Convert world position to canvas local position and calculate final position near the item
     /// </summary>
     private void PositionPanel(Vector2 slotWorldPosition)
     {
-        // Center the panel for now
-        rectTransform.anchoredPosition = Vector2.zero;
+        if (parentCanvas == null)
+        {
+            animationOrigin = Vector2.zero;
+            finalPosition = Vector2.zero;
+            return;
+        }
+
+        RectTransform canvasRect = parentCanvas.GetComponent<RectTransform>();
+        Camera cam = parentCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : parentCanvas.worldCamera;
+
+        // Convert world position to screen position first
+        Vector2 screenPosition;
+        if (cam != null)
+        {
+            screenPosition = cam.WorldToScreenPoint(slotWorldPosition);
+        }
+        else
+        {
+            // For overlay canvas, world position IS screen position for UI elements
+            screenPosition = slotWorldPosition;
+        }
+
+        // Convert screen position to canvas local position
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvasRect,
+            screenPosition,
+            cam,
+            out animationOrigin
+        );
+
+        // Calculate panel size - use rect.size instead of sizeDelta to handle stretched anchors
+        Vector2 panelSize = rectTransform.rect.size;
+        Vector2 canvasSize = canvasRect.rect.size;
+
+        // DEBUG: Log all coordinates
+        Debug.LogWarning($"[ItemActionPanel] World: {slotWorldPosition}, Screen: {screenPosition}, Canvas Local: {animationOrigin}");
+        Debug.LogWarning($"[ItemActionPanel] Canvas size: {canvasSize}, Panel size: {panelSize}");
+
+        // Offset from the item (panel appears at top corner of the item)
+        float offsetX = panelSize.x * 0.5f + 10f; // Half panel width + small gap
+        float offsetY = panelSize.y * 0.5f + 10f; // Position panel's bottom edge near item's top
+
+        // Canvas local coordinates: (0,0) is center, positive X is right, positive Y is up
+        // Right edge of canvas is at canvasSize.x * 0.5f
+        // Check if placing panel to the right would keep it within bounds
+        float rightEdge = canvasSize.x * 0.5f;
+        float spaceOnRight = rightEdge - animationOrigin.x;
+        float spaceNeededOnRight = offsetX + panelSize.x * 0.5f + 10f; // offset + half panel + margin
+
+        bool placeOnRight = spaceOnRight >= spaceNeededOnRight;
+
+        Debug.LogWarning($"[ItemActionPanel] RightEdge: {rightEdge}, SpaceOnRight: {spaceOnRight}, SpaceNeeded: {spaceNeededOnRight}, PlaceOnRight: {placeOnRight}");
+
+        if (placeOnRight)
+        {
+            finalPosition = new Vector2(animationOrigin.x + offsetX, animationOrigin.y + offsetY);
+        }
+        else
+        {
+            finalPosition = new Vector2(animationOrigin.x - offsetX, animationOrigin.y + offsetY);
+        }
+
+        Debug.LogWarning($"[ItemActionPanel] Final position: {finalPosition}");
+
+        // Clamp to stay within screen bounds
+        float halfWidth = panelSize.x * 0.5f;
+        float halfHeight = panelSize.y * 0.5f;
+        float maxX = canvasSize.x * 0.5f - halfWidth - 10f;
+        float maxY = canvasSize.y * 0.5f - halfHeight - 10f;
+
+        finalPosition.x = Mathf.Clamp(finalPosition.x, -maxX, maxX);
+        finalPosition.y = Mathf.Clamp(finalPosition.y, -maxY, maxY);
     }
 
     /// <summary>
@@ -211,13 +290,6 @@ public class ItemActionPanel : MonoBehaviour
     /// </summary>
     private void SetupContextualButtons()
     {
-        // Reset all buttons
-        discardButton?.gameObject.SetActive(false);
-        transferButton?.gameObject.SetActive(false);
-        useButton?.gameObject.SetActive(false);
-        sellButton?.gameObject.SetActive(false);
-        buyButton?.gameObject.SetActive(false);
-
         switch (sourceContext)
         {
             case UniversalSlotUI.SlotContext.PlayerInventory:
@@ -242,98 +314,123 @@ public class ItemActionPanel : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Set a button's enabled/disabled state with visual feedback
+    /// </summary>
+    private void SetButtonState(Button button, TextMeshProUGUI buttonText, bool enabled, string text = null)
+    {
+        if (button == null) return;
+
+        button.interactable = enabled;
+
+        // Update button image color
+        var buttonImage = button.GetComponent<Image>();
+        if (buttonImage != null)
+        {
+            buttonImage.color = enabled ? enabledButtonColor : disabledButtonColor;
+        }
+
+        // Update text if provided
+        if (buttonText != null && text != null)
+        {
+            buttonText.text = text;
+        }
+
+        // Grey out text when disabled
+        if (buttonText != null)
+        {
+            buttonText.color = enabled ? Color.white : new Color(1f, 1f, 1f, 0.5f);
+        }
+    }
+
     private void SetupInventoryButtons()
     {
         // Discard - toujours disponible dans l'inventaire
-        if (discardButton != null)
-        {
-            discardButton.gameObject.SetActive(true);
-            if (discardButtonText != null)
-            {
-                discardButtonText.text = itemSlot.Quantity > 1 ? $"Jeter ({itemSlot.Quantity})" : "Jeter";
-            }
-        }
+        string discardText = itemSlot.Quantity > 1 ? $"Jeter ({itemSlot.Quantity})" : "Jeter";
+        SetButtonState(discardButton, discardButtonText, true, discardText);
 
-        // Transfer - si on a acces a un autre container
-        if (transferButton != null && HasOtherContainerOpen())
-        {
-            transferButton.gameObject.SetActive(true);
-            if (transferButtonText != null)
-            {
-                string targetName = GetTransferTargetName();
-                transferButtonText.text = $"Deposer → {targetName}";
-            }
-        }
+        // Transfer - disponible si un autre container est ouvert
+        bool canTransfer = HasOtherContainerOpen();
+        string transferText = canTransfer ? $"Deposer → {GetTransferTargetName()}" : "Deposer";
+        SetButtonState(transferButton, transferButtonText, canTransfer, transferText);
 
         // Use - pour les consommables
-        if (useButton != null)
-        {
-            bool canUse = itemDefinition.Type == ItemType.Consumable ||
-                         itemDefinition.Type == ItemType.Usable;
-            useButton.gameObject.SetActive(canUse);
-        }
+        bool canUse = itemDefinition.Type == ItemType.Consumable || itemDefinition.Type == ItemType.Usable;
+        SetButtonState(useButton, useButtonText, canUse, "Utiliser");
 
         // Sell - si un shop est ouvert
-        if (sellButton != null && IsShopOpen())
-        {
-            sellButton.gameObject.SetActive(true);
-            if (sellButtonText != null)
-            {
-                int sellPrice = Mathf.Max(1, itemDefinition.BasePrice / 2);
-                sellButtonText.text = $"Vendre ({sellPrice * itemSlot.Quantity} or)";
-            }
-        }
+        bool canSell = IsShopOpen();
+        int sellPrice = Mathf.Max(1, itemDefinition.BasePrice / 2);
+        string sellText = canSell ? $"Vendre ({sellPrice * itemSlot.Quantity} or)" : "Vendre";
+        SetButtonState(sellButton, sellButtonText, canSell, sellText);
+
+        // Buy - pas disponible depuis l'inventaire
+        SetButtonState(buyButton, buyButtonText, false, "Acheter");
     }
 
     private void SetupBankButtons()
     {
-        // Transfer vers l'inventaire
-        if (transferButton != null)
-        {
-            transferButton.gameObject.SetActive(true);
-            if (transferButtonText != null)
-            {
-                transferButtonText.text = $"Recuperer → Inventaire";
-            }
-        }
+        // Discard - pas disponible depuis la banque
+        SetButtonState(discardButton, discardButtonText, false, "Jeter");
 
-        // Pas de discard depuis la banque
-        // Pas de use depuis la banque
-        // Pas de sell depuis la banque
+        // Transfer vers l'inventaire - toujours disponible
+        SetButtonState(transferButton, transferButtonText, true, "Recuperer → Inventaire");
+
+        // Use - pas disponible depuis la banque
+        SetButtonState(useButton, useButtonText, false, "Utiliser");
+
+        // Sell - pas disponible depuis la banque
+        SetButtonState(sellButton, sellButtonText, false, "Vendre");
+
+        // Buy - pas disponible depuis la banque
+        SetButtonState(buyButton, buyButtonText, false, "Acheter");
     }
 
     private void SetupShopButtons()
     {
-        // Buy button pour acheter
-        if (buyButton != null)
-        {
-            buyButton.gameObject.SetActive(true);
-            if (buyButtonText != null)
-            {
-                int totalPrice = itemDefinition.BasePrice * itemSlot.Quantity;
-                buyButtonText.text = $"Acheter ({totalPrice} or)";
-            }
-        }
+        // Discard - pas disponible depuis le shop
+        SetButtonState(discardButton, discardButtonText, false, "Jeter");
 
-        // Pas de discard, transfer, use ou sell depuis le shop
+        // Transfer - pas disponible depuis le shop
+        SetButtonState(transferButton, transferButtonText, false, "Deposer");
+
+        // Use - pas disponible depuis le shop
+        SetButtonState(useButton, useButtonText, false, "Utiliser");
+
+        // Sell - pas disponible depuis le shop
+        SetButtonState(sellButton, sellButtonText, false, "Vendre");
+
+        // Buy - disponible
+        int totalPrice = itemDefinition.BasePrice * itemSlot.Quantity;
+        SetButtonState(buyButton, buyButtonText, true, $"Acheter ({totalPrice} or)");
     }
 
     private void SetupTradeButtons()
     {
         // TODO: Implementer les boutons pour le trade
+        SetButtonState(discardButton, discardButtonText, false, "Jeter");
+        SetButtonState(transferButton, transferButtonText, false, "Deposer");
+        SetButtonState(useButton, useButtonText, false, "Utiliser");
+        SetButtonState(sellButton, sellButtonText, false, "Vendre");
+        SetButtonState(buyButton, buyButtonText, false, "Acheter");
     }
 
     private void SetupLootButtons()
     {
-        // Prendre l'item
-        if (transferButton != null)
-        {
-            transferButton.gameObject.SetActive(true);
-            if (transferButtonText != null)
-            {
-                transferButtonText.text = "Prendre";
-            }
-        }
+        // Discard - pas disponible depuis le loot
+        SetButtonState(discardButton, discardButtonText, false, "Jeter");
+
+        // Transfer - prendre l'item
+        SetButtonState(transferButton, transferButtonText, true, "Prendre");
+
+        // Use - pas disponible depuis le loot
+        SetButtonState(useButton, useButtonText, false, "Utiliser");
+
+        // Sell - pas disponible depuis le loot
+        SetButtonState(sellButton, sellButtonText, false, "Vendre");
+
+        // Buy - pas disponible depuis le loot
+        SetButtonState(buyButton, buyButtonText, false, "Acheter");
     }
 
     /// <summary>
@@ -371,7 +468,7 @@ public class ItemActionPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Show panel with animation
+    /// Show panel with animation - scales up while moving from item to final position
     /// </summary>
     private void ShowWithAnimation()
     {
@@ -383,17 +480,24 @@ public class ItemActionPanel : MonoBehaviour
             LeanTween.cancel(currentTween);
         }
 
-        // Simple scale animation
+        // Start at the item position with scale 0
+        rectTransform.anchoredPosition = animationOrigin;
         rectTransform.localScale = Vector3.zero;
 
-        currentTween = LeanTween.scale(gameObject, Vector3.one, animationDuration)
+        // Animate scale from 0 to 1
+        LeanTween.scale(gameObject, Vector3.one, animationDuration)
+            .setEase(slideInEase);
+
+        // Animate position from item to final position
+        currentTween = LeanTween.value(gameObject, animationOrigin, finalPosition, animationDuration)
             .setEase(slideInEase)
+            .setOnUpdate((Vector2 pos) => rectTransform.anchoredPosition = pos)
             .setOnComplete(() => currentTween = -1)
             .id;
     }
 
     /// <summary>
-    /// Hide panel with animation
+    /// Hide panel with animation - scales down while moving back to item position
     /// </summary>
     public void HidePanel()
     {
@@ -405,8 +509,14 @@ public class ItemActionPanel : MonoBehaviour
             LeanTween.cancel(currentTween);
         }
 
-        currentTween = LeanTween.scale(gameObject, Vector3.zero, animationDuration)
+        // Animate scale from 1 to 0
+        LeanTween.scale(gameObject, Vector3.zero, animationDuration)
+            .setEase(slideOutEase);
+
+        // Animate position from final position back to item
+        currentTween = LeanTween.value(gameObject, rectTransform.anchoredPosition, animationOrigin, animationDuration)
             .setEase(slideOutEase)
+            .setOnUpdate((Vector2 pos) => rectTransform.anchoredPosition = pos)
             .setOnComplete(() =>
             {
                 currentTween = -1;
