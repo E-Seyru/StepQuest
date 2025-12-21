@@ -41,6 +41,10 @@ public class MapLocationDefinition : ScriptableObject
     [Tooltip("Enemies that can be fought at this location")]
     public List<LocationEnemy> AvailableEnemies = new List<LocationEnemy>();
 
+    [Header("Social")]
+    [Tooltip("NPCs that can be interacted with at this location")]
+    public List<NPCDefinition> AvailableNPCs = new List<NPCDefinition>();
+
     [Header("Visual")]
     [Tooltip("Icon for POI representation on map")]
     public Sprite LocationIcon;
@@ -174,6 +178,64 @@ public class MapLocationDefinition : ScriptableObject
             return $"1 ennemi: {validEnemies[0].GetDisplayName()}";
 
         return $"{validEnemies.Count} ennemis disponibles";
+    }
+
+    // === NPC METHODS ===
+
+    /// <summary>
+    /// Get all valid NPCs available at this location
+    /// </summary>
+    public List<NPCDefinition> GetAvailableNPCs()
+    {
+        if (AvailableNPCs == null)
+            return new List<NPCDefinition>();
+
+        return AvailableNPCs.Where(npc => npc != null && npc.IsValid() && npc.IsActive).ToList();
+    }
+
+    /// <summary>
+    /// Get NPC by ID
+    /// </summary>
+    public NPCDefinition GetNPCById(string npcId)
+    {
+        if (AvailableNPCs == null || string.IsNullOrEmpty(npcId))
+            return null;
+
+        return AvailableNPCs.FirstOrDefault(npc =>
+            npc != null &&
+            npc.NPCID == npcId);
+    }
+
+    /// <summary>
+    /// Check if NPCs are available at this location
+    /// </summary>
+    public bool HasNPCs()
+    {
+        return GetAvailableNPCs().Count > 0;
+    }
+
+    /// <summary>
+    /// Get count of available NPCs
+    /// </summary>
+    public int GetNPCCount()
+    {
+        return GetAvailableNPCs().Count;
+    }
+
+    /// <summary>
+    /// Get display text for NPCs (for UI summary)
+    /// </summary>
+    public string GetNPCSummary()
+    {
+        var validNPCs = GetAvailableNPCs();
+
+        if (validNPCs.Count == 0)
+            return "Aucun habitant";
+
+        if (validNPCs.Count == 1)
+            return $"1 habitant: {validNPCs[0].GetDisplayName()}";
+
+        return $"{validNPCs.Count} habitants";
     }
 
     /// <summary>

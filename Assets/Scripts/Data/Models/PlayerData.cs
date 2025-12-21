@@ -372,6 +372,50 @@ public class PlayerData
         }
     }
 
+    // === SYSTEME NPC ===
+
+    // Discovered NPCs (JSON serialise - List<npcId>)
+    private string _discoveredNPCsJson;
+    [Column("DiscoveredNPCsJson")]
+    public string DiscoveredNPCsJson
+    {
+        get { return _discoveredNPCsJson; }
+        set { _discoveredNPCsJson = value; }
+    }
+
+    // Propriete pour acceder aux NPCs decouverts
+    [Ignore]
+    public List<string> DiscoveredNPCs
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_discoveredNPCsJson))
+                return new List<string>();
+
+            try
+            {
+                return JsonConvert.DeserializeObject<List<string>>(_discoveredNPCsJson);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error deserializing DiscoveredNPCs: {ex.Message}", Logger.LogCategory.General);
+                return new List<string>();
+            }
+        }
+        set
+        {
+            try
+            {
+                _discoveredNPCsJson = value != null ? JsonConvert.SerializeObject(value) : null;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error serializing DiscoveredNPCs: {ex.Message}", Logger.LogCategory.General);
+                _discoveredNPCsJson = null;
+            }
+        }
+    }
+
     // === CONSTRUCTEUR ===
 
     // Constructeur par defaut
@@ -406,6 +450,9 @@ public class PlayerData
         // Ability System
         _ownedAbilitiesJson = null;
         _equippedAbilitiesJson = null;
+
+        // NPC System
+        _discoveredNPCsJson = null;
     }
 
     // === MeTHODES DE VOYAGE ===
@@ -544,6 +591,17 @@ public class PlayerData
             return subSkills[variantId].Experience;
         }
         return 0;
+    }
+
+    // === MeTHODES NPC ===
+
+    /// <summary>
+    /// Check if an NPC has been discovered
+    /// </summary>
+    public bool HasDiscoveredNPC(string npcId)
+    {
+        var discovered = DiscoveredNPCs;
+        return discovered.Contains(npcId);
     }
 
     // === PROPRIeTeS CALCULeES ET ALIASES ===

@@ -1,4 +1,4 @@
-// Purpose: Panel section for displaying social activities in a grid layout
+// Purpose: Panel section for displaying NPCs and social content in a grid layout
 // Filepath: Assets/Scripts/UI/Panels/SocialSectionPanel.cs
 using System.Collections.Generic;
 using TMPro;
@@ -6,8 +6,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Panel section for displaying social activities at a location.
-/// Similar to ActivitiesSectionPanel but for social/exploration activities.
+/// Panel section for displaying NPCs at a location.
+/// Shows NPC avatars that players can interact with.
 /// </summary>
 public class SocialSectionPanel : MonoBehaviour
 {
@@ -23,10 +23,10 @@ public class SocialSectionPanel : MonoBehaviour
     private List<GameObject> instantiatedSocialActivityCards = new List<GameObject>();
 
     // Current data
-    private List<ActivityDefinition> currentSocialActivities = new List<ActivityDefinition>();
+    private List<NPCDefinition> currentNPCs = new List<NPCDefinition>();
 
     // Events
-    public System.Action<ActivityDefinition> OnSocialActivitySelected;
+    public System.Action<NPCDefinition> OnNPCSelected;
 
     void Start()
     {
@@ -43,26 +43,26 @@ public class SocialSectionPanel : MonoBehaviour
     #region Public Methods
 
     /// <summary>
-    /// Affiche les activites sociales
+    /// Affiche les NPCs disponibles a cet emplacement
     /// </summary>
-    public void DisplaySocialActivities(List<ActivityDefinition> socialActivities)
+    public void DisplayNPCs(List<NPCDefinition> npcs)
     {
-        if (socialActivities == null)
+        if (npcs == null)
         {
-            socialActivities = new List<ActivityDefinition>();
+            npcs = new List<NPCDefinition>();
         }
 
-        currentSocialActivities = socialActivities;
+        currentNPCs = npcs;
 
         // Nettoyer les cartes existantes
         RecycleSocialActivityCards();
 
         // Update content (tab system controls visibility)
-        UpdateSectionTitle(socialActivities.Count);
+        UpdateSectionTitle(npcs.Count);
 
-        if (socialActivities.Count > 0)
+        if (npcs.Count > 0)
         {
-            CreateSocialActivityCards(socialActivities);
+            CreateNPCCards(npcs);
             if (noSocialActivitiesText != null)
             {
                 noSocialActivitiesText.gameObject.SetActive(false);
@@ -76,16 +76,16 @@ public class SocialSectionPanel : MonoBehaviour
             }
         }
 
-        Debug.Log($"SocialSectionPanel: Displayed {socialActivities.Count} social activities");
+        Debug.Log($"SocialSectionPanel: Displayed {npcs.Count} NPCs");
     }
 
     /// <summary>
-    /// Efface toutes les activites sociales affichees
+    /// Efface tous les NPCs affiches
     /// </summary>
-    public void ClearSocialActivities()
+    public void ClearNPCs()
     {
         RecycleSocialActivityCards();
-        currentSocialActivities.Clear();
+        currentNPCs.Clear();
         HideSection();
     }
 
@@ -112,11 +112,11 @@ public class SocialSectionPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Verifie si des activites sociales sont disponibles
+    /// Verifie si des NPCs sont disponibles
     /// </summary>
-    public bool HasSocialActivities()
+    public bool HasNPCs()
     {
-        return currentSocialActivities != null && currentSocialActivities.Count > 0;
+        return currentNPCs != null && currentNPCs.Count > 0;
     }
 
     #endregion
@@ -170,15 +170,15 @@ public class SocialSectionPanel : MonoBehaviour
 
     #endregion
 
-    #region Private Methods - Social Activity Cards Management
+    #region Private Methods - NPC Cards Management
 
-    private void CreateSocialActivityCards(List<ActivityDefinition> socialActivities)
+    private void CreateNPCCards(List<NPCDefinition> npcs)
     {
         if (socialActivitiesContainer == null || socialAvatarPrefab == null) return;
 
-        foreach (var activity in socialActivities)
+        foreach (var npc in npcs)
         {
-            if (activity == null || !activity.IsValidActivity()) continue;
+            if (npc == null || !npc.IsValid()) continue;
 
             GameObject cardObject = GetPooledSocialActivityCard();
             if (cardObject.transform.parent != socialActivitiesContainer)
@@ -187,16 +187,16 @@ public class SocialSectionPanel : MonoBehaviour
             }
 
             instantiatedSocialActivityCards.Add(cardObject);
-            SetupSocialActivityCard(cardObject, activity);
+            SetupNPCCard(cardObject, npc);
         }
 
         // Forcer la mise a jour du layout
         LayoutRebuilder.ForceRebuildLayoutImmediate(socialActivitiesContainer.GetComponent<RectTransform>());
     }
 
-    private void SetupSocialActivityCard(GameObject cardObject, ActivityDefinition activity)
+    private void SetupNPCCard(GameObject cardObject, NPCDefinition npc)
     {
-        if (cardObject == null || activity == null) return;
+        if (cardObject == null || npc == null) return;
 
         var avatarCard = cardObject.GetComponent<SocialAvatarCard>();
         if (avatarCard == null)
@@ -205,29 +205,29 @@ public class SocialSectionPanel : MonoBehaviour
             return;
         }
 
-        // Setup de la carte avec les donnees de l'activite
+        // Setup de la carte avec les donnees du NPC (utilise Avatar pour les cartes)
         avatarCard.Setup(
-            activity.ActivityID,
-            activity.GetDisplayName(),
-            activity.ActivityIcon,
-            true
+            npc.NPCID,
+            npc.GetDisplayName(),
+            npc.Avatar,
+            npc.IsActive
         );
 
         // S'abonner a l'evenement de clic
-        avatarCard.OnCardClicked -= OnSocialAvatarCardClicked;
-        avatarCard.OnCardClicked += OnSocialAvatarCardClicked;
+        avatarCard.OnCardClicked -= OnNPCAvatarCardClicked;
+        avatarCard.OnCardClicked += OnNPCAvatarCardClicked;
     }
 
-    private void OnSocialAvatarCardClicked(string avatarId)
+    private void OnNPCAvatarCardClicked(string npcId)
     {
-        Debug.Log($"SocialSectionPanel: Social avatar card clicked for {avatarId}");
+        Debug.Log($"SocialSectionPanel: NPC avatar card clicked for {npcId}");
 
-        // Retrouver l'activite correspondante
-        var activity = currentSocialActivities.Find(a => a.ActivityID == avatarId);
-        if (activity != null)
+        // Retrouver le NPC correspondant
+        var npc = currentNPCs.Find(n => n.NPCID == npcId);
+        if (npc != null)
         {
             // Propager l'evenement
-            OnSocialActivitySelected?.Invoke(activity);
+            OnNPCSelected?.Invoke(npc);
         }
     }
 
@@ -244,7 +244,7 @@ public class SocialSectionPanel : MonoBehaviour
                 var avatarCard = card.GetComponent<SocialAvatarCard>();
                 if (avatarCard != null)
                 {
-                    avatarCard.OnCardClicked -= OnSocialAvatarCardClicked;
+                    avatarCard.OnCardClicked -= OnNPCAvatarCardClicked;
                 }
 
                 card.SetActive(false);
@@ -279,7 +279,7 @@ public class SocialSectionPanel : MonoBehaviour
                 var avatarCard = card.GetComponent<SocialAvatarCard>();
                 if (avatarCard != null)
                 {
-                    avatarCard.OnCardClicked -= OnSocialAvatarCardClicked;
+                    avatarCard.OnCardClicked -= OnNPCAvatarCardClicked;
                 }
             }
         }

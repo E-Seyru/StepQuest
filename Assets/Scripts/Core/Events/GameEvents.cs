@@ -619,3 +619,45 @@ namespace AbilityEvents
         }
     }
 }
+
+/// <summary>
+/// Evenements lies aux NPCs et au systeme social
+/// </summary>
+namespace NPCEvents
+{
+    /// <summary>
+    /// Publie quand le joueur decouvre un NPC pour la premiere fois
+    /// </summary>
+    public class NPCDiscoveredEvent : EventBusEvent
+    {
+        public string NPCID { get; }
+
+        public NPCDiscoveredEvent(string npcId)
+        {
+            NPCID = npcId;
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} - Discovered NPC: {NPCID}";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand une interaction avec un NPC commence
+    /// </summary>
+    public class NPCInteractionStartedEvent : EventBusEvent
+    {
+        public string NPCID { get; }
+
+        public NPCInteractionStartedEvent(string npcId)
+        {
+            NPCID = npcId;
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} - Interaction started with NPC: {NPCID}";
+        }
+    }
+}

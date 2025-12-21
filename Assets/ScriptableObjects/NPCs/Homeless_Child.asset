@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8568e51b6729662419cc4ddf2c951723, type: 3}
+  m_Name: Homeless_Child
+  m_EditorClassIdentifier: Assembly-CSharp::NPCDefinition
+  NPCID: homeless_child
+  NPCName: Homeless_Child
+  Description: An homeless child
+  Avatar: {fileID: 8037868039139570920, guid: 61951df610e844240836dd57c0ca5905, type: 3}
+  Illustration: {fileID: -2574164509539785578, guid: 98f9a83ff5182354cad97a0ce12412db, type: 3}
+  ThemeColor: {r: 1, g: 1, b: 1, a: 1}
+  IsActive: 1
+  DeveloperNotes: 

@@ -197,7 +197,7 @@ public class LocationDetailsPanel : MonoBehaviour
         }
         if (socialSectionPanel != null)
         {
-            socialSectionPanel.OnSocialActivitySelected -= OnSocialActivitySelected;
+            socialSectionPanel.OnNPCSelected -= OnNPCSelected;
         }
 
         Logger.LogInfo("LocationDetailsPanel: Unsubscribed from EventBus events", Logger.LogCategory.General);
@@ -628,42 +628,45 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     private void UpdateSocialSection()
     {
-        if (socialSectionPanel == null) return;
+        if (socialSectionPanel == null || currentLocation == null) return;
 
-        // Pour l'instant, afficher une liste vide
-        // Plus tard, cela affichera les activites sociales disponibles
-        var socialActivities = new List<ActivityDefinition>();
+        // Recuperer les NPCs disponibles a cette location
+        var availableNPCs = currentLocation.GetAvailableNPCs();
 
-        socialSectionPanel.DisplaySocialActivities(socialActivities);
+        socialSectionPanel.DisplayNPCs(availableNPCs);
 
-        // S'abonner a l'evenement de selection d'activite sociale
-        socialSectionPanel.OnSocialActivitySelected -= OnSocialActivitySelected;
-        socialSectionPanel.OnSocialActivitySelected += OnSocialActivitySelected;
+        // S'abonner a l'evenement de selection de NPC
+        socialSectionPanel.OnNPCSelected -= OnNPCSelected;
+        socialSectionPanel.OnNPCSelected += OnNPCSelected;
     }
 
     /// <summary>
-    /// Gere la selection d'une activite sociale depuis le SocialSectionPanel
+    /// Gere la selection d'un NPC depuis le SocialSectionPanel
     /// </summary>
-    private void OnSocialActivitySelected(ActivityDefinition activityDefinition)
+    private void OnNPCSelected(NPCDefinition npcDefinition)
     {
-        if (activityDefinition == null)
+        if (npcDefinition == null)
         {
-            Logger.LogWarning("LocationDetailsPanel: Social activity selection avec null !", Logger.LogCategory.General);
+            Logger.LogWarning("LocationDetailsPanel: NPC selection avec null !", Logger.LogCategory.General);
             return;
         }
 
-        Logger.LogInfo($"LocationDetailsPanel: Social activity selected - {activityDefinition.GetDisplayName()}", Logger.LogCategory.General);
+        Logger.LogInfo($"LocationDetailsPanel: NPC selected - {npcDefinition.GetDisplayName()}", Logger.LogCategory.General);
 
-        // TODO: Ouvrir le panel approprie pour les activites sociales
-        // Pour l'instant, on utilise le meme flux que les activites normales
-        var locationActivity = FindLocationActivityByDefinition(activityDefinition);
-
-        if (locationActivity != null)
+        // Ouvrir le panel d'interaction NPC
+        if (NPCInteractionPanel.Instance != null)
         {
-            if (ActivityVariantsPanel.Instance != null)
-            {
-                ActivityVariantsPanel.Instance.OpenWithActivity(locationActivity);
-            }
+            NPCInteractionPanel.Instance.Show(npcDefinition);
+        }
+        else
+        {
+            Logger.LogWarning("LocationDetailsPanel: NPCInteractionPanel introuvable !", Logger.LogCategory.General);
+        }
+
+        // Notifier le NPCManager de l'interaction
+        if (NPCManager.Instance != null)
+        {
+            NPCManager.Instance.InteractWithNPC(npcDefinition.NPCID);
         }
     }
 
