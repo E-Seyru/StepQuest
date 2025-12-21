@@ -61,16 +61,8 @@ public class ActivityDisplayPanel : MonoBehaviour
 
     void Start()
     {
-        // Setup buttons
-        if (closeButton != null)
-        {
-            closeButton.onClick.AddListener(HidePanel);
-        }
-
-        if (stopActivityButton != null)
-        {
-            stopActivityButton.onClick.AddListener(StopCurrentActivity);
-        }
+        // Setup buttons (will also be called in OnEnable for panel switching)
+        SetupButtonListeners();
 
         // Setup custom progress bar
         SetupCustomProgressBar();
@@ -185,7 +177,8 @@ public class ActivityDisplayPanel : MonoBehaviour
                 Logger.LogWarning($"ActivityDisplayPanel: Failed to refund some or all materials for {eventData.Variant.GetDisplayName()}", Logger.LogCategory.General);
             }
         }
-        stopActivityButton.interactable = true;  // <── AJOUT
+        if (stopActivityButton != null)
+            stopActivityButton.interactable = true;
         HidePanel();
     }
 
@@ -546,8 +539,51 @@ public class ActivityDisplayPanel : MonoBehaviour
         UnsubscribeFromActivityEvents();
     }
 
+    void OnEnable()
+    {
+        // Re-setup button listeners when panel is re-enabled (after panel switching)
+        SetupButtonListeners();
+
+        // Restore isDisplaying flag if the panel is visible (e.g., after panel switching)
+        if (gameObject.activeInHierarchy)
+        {
+            isDisplaying = true;
+        }
+    }
+
     void OnDisable()
     {
         isDisplaying = false;
+        // Clean up button listeners to prevent stale references
+        CleanupButtonListeners();
+    }
+
+    private void SetupButtonListeners()
+    {
+        if (closeButton != null)
+        {
+            // Remove first to prevent duplicate listeners
+            closeButton.onClick.RemoveListener(HidePanel);
+            closeButton.onClick.AddListener(HidePanel);
+        }
+
+        if (stopActivityButton != null)
+        {
+            stopActivityButton.onClick.RemoveListener(StopCurrentActivity);
+            stopActivityButton.onClick.AddListener(StopCurrentActivity);
+        }
+    }
+
+    private void CleanupButtonListeners()
+    {
+        if (closeButton != null)
+        {
+            closeButton.onClick.RemoveListener(HidePanel);
+        }
+
+        if (stopActivityButton != null)
+        {
+            stopActivityButton.onClick.RemoveListener(StopCurrentActivity);
+        }
     }
 }
