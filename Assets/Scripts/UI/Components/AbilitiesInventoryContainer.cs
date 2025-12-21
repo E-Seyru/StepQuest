@@ -19,7 +19,10 @@ public class AbilitiesInventoryContainer : MonoBehaviour
     [SerializeField] private float spacing = 5f;
     [SerializeField] private int weightsPerRow = 6;
     [SerializeField] private int fixedRowCount = 4; // Always show this many rows
-    [SerializeField] private int padding = 5;
+    [SerializeField] private int paddingLeft = 5;
+    [SerializeField] private int paddingRight = 5;
+    [SerializeField] private int paddingTop = 5;
+    [SerializeField] private int paddingBottom = 5;
     [SerializeField] private float heightRatio = 1.0f; // Height as ratio of width (1.0 = square, 2.0 = combat style)
 
     [Header("Empty Slots")]
@@ -50,7 +53,7 @@ public class AbilitiesInventoryContainer : MonoBehaviour
         verticalLayout.childForceExpandHeight = false;
         verticalLayout.childControlWidth = true;
         verticalLayout.childControlHeight = false;
-        verticalLayout.padding = new RectOffset(padding, padding, padding, padding);
+        verticalLayout.padding = new RectOffset(paddingLeft, paddingRight, paddingTop, paddingBottom);
 
     }
 
@@ -87,7 +90,7 @@ public class AbilitiesInventoryContainer : MonoBehaviour
         var verticalLayout = GetComponent<VerticalLayoutGroup>();
         if (verticalLayout != null)
         {
-            verticalLayout.padding = new RectOffset(padding, padding, padding, padding);
+            verticalLayout.padding = new RectOffset(paddingLeft, paddingRight, paddingTop, paddingBottom);
             verticalLayout.spacing = spacing;
         }
 
@@ -113,7 +116,7 @@ public class AbilitiesInventoryContainer : MonoBehaviour
         {
             containerWidth = 300f; // Fallback
         }
-        float availableWidth = containerWidth - (padding * 2);
+        float availableWidth = containerWidth - paddingLeft - paddingRight;
 
         // Base width calculation: total available space minus all gaps between items, divided by number of weight units
         // Total spacing between items = (weightsPerRow - 1) * spacing
