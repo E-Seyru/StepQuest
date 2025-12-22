@@ -29,6 +29,10 @@ public class DialoguePanelUI : MonoBehaviour
     [SerializeField] private GameObject continueIndicator;  // Arrow showing ready to continue
     [SerializeField] private GameObject endDialogueIndicator;  // "Click to leave" indicator
 
+    [Header("Continue Arrow Animation")]
+    [SerializeField] private float arrowMoveDistance = 10f;  // How far the arrow moves left-right
+    [SerializeField] private float arrowMoveSpeed = 2f;  // Speed of the animation
+
     [Header("Choices")]
     [SerializeField] private GameObject choicesContainer;
     [SerializeField] private GameObject choiceButtonPrefab;
@@ -67,6 +71,8 @@ public class DialoguePanelUI : MonoBehaviour
     private string _pendingRewardAbilityName;  // Ability display name
     private List<DialogueItemReward> _pendingRewardItems;  // Items waiting to be shown
     private bool _waitingForRewardPopup;  // True when reward popup is open and we're waiting for it to close
+    private Coroutine _arrowAnimCoroutine;
+    private Vector3 _arrowStartPos;
 
     void Awake()
     {
@@ -113,9 +119,12 @@ public class DialoguePanelUI : MonoBehaviour
             }
         }
 
-        // Hide indicators initially
+        // Hide indicators initially and store arrow start position
         if (continueIndicator != null)
+        {
+            _arrowStartPos = continueIndicator.transform.localPosition;
             continueIndicator.SetActive(false);
+        }
         if (endDialogueIndicator != null)
             endDialogueIndicator.SetActive(false);
 
@@ -445,9 +454,12 @@ public class DialoguePanelUI : MonoBehaviour
             }
             else
             {
-                // Show continue indicator (arrow)
+                // Show continue indicator (arrow) with animation
                 if (continueIndicator != null)
+                {
                     continueIndicator.SetActive(true);
+                    StartArrowAnimation();
+                }
             }
         }
     }
@@ -463,10 +475,45 @@ public class DialoguePanelUI : MonoBehaviour
 
     private void HideIndicators()
     {
+        // Stop arrow animation
+        StopArrowAnimation();
+
         if (continueIndicator != null)
             continueIndicator.SetActive(false);
         if (endDialogueIndicator != null)
             endDialogueIndicator.SetActive(false);
+    }
+
+    private void StartArrowAnimation()
+    {
+        if (continueIndicator == null) return;
+
+        StopArrowAnimation();
+        _arrowAnimCoroutine = StartCoroutine(ArrowAnimationLoop());
+    }
+
+    private void StopArrowAnimation()
+    {
+        if (_arrowAnimCoroutine != null)
+        {
+            StopCoroutine(_arrowAnimCoroutine);
+            _arrowAnimCoroutine = null;
+        }
+
+        // Reset arrow position
+        if (continueIndicator != null)
+            continueIndicator.transform.localPosition = _arrowStartPos;
+    }
+
+    private IEnumerator ArrowAnimationLoop()
+    {
+        while (true)
+        {
+            float t = Mathf.PingPong(Time.time * arrowMoveSpeed, 1f);
+            float offset = Mathf.Lerp(0f, arrowMoveDistance, t);
+            continueIndicator.transform.localPosition = _arrowStartPos + new Vector3(offset, 0f, 0f);
+            yield return null;
+        }
     }
 
     // === INPUT HANDLING ===
