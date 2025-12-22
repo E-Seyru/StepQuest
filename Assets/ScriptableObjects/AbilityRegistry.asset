@@ -19,24 +19,14 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 129996eab3816d542939cb004345146c, type: 2}
   - {fileID: 11400000, guid: b7c28f128f678494d84bcc52ae74adda, type: 2}
   - {fileID: 11400000, guid: 6cbfbb990018c014bbd05601093a7d3b, type: 2}
+  - {fileID: 11400000, guid: c0b83bcd936dbf847b9e24b04d2e7a29, type: 2}
   enableFallbackSearch: 1
   logMissingAbilities: 0
   ValidationStatus: '! Issues found:
 
-    - Ability ''armor_break'' missing icon
+    - Ability ''BasicAttack'' failed validation
 
     -
-    Ability ''battle_cry'' missing icon
+    Ability ''Heal'' failed validation
 
-    - Ability ''burn_strike'' missing icon
-
-    -
-    Ability ''regenerate'' missing icon
-
-    - Ability ''shield_bash'' missing icon
-
-    -
-    Ability ''stunning_blow'' missing icon
-
-    - Ability ''venom_strike'' missing
-    icon'
+    - Ability ''venom_strike'' missing icon'

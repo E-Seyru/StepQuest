@@ -23,6 +23,13 @@ public class DialogueLine
     [Tooltip("Optional choices at this line (if empty, dialogue continues normally)")]
     public List<DialogueChoice> Choices = new List<DialogueChoice>();
 
+    [Header("Line Options")]
+    [Tooltip("If true, the dialogue ends after this line (click to close)")]
+    public bool EndsDialogue = false;
+
+    [Tooltip("If true, show any pending reward notification on this line")]
+    public bool ShowReward = false;
+
     /// <summary>
     /// Does this line have choices for the player?
     /// </summary>
@@ -74,9 +81,21 @@ public class DialogueChoice
     [Tooltip("NPC ID for relationship change (leave empty to use current NPC)")]
     public string RelationshipNPCId;
 
+    [Header("Rewards")]
+    [Tooltip("Ability ID to grant when this choice is selected (leave empty for no ability)")]
+    public string AbilityToGrant;
+
+    [Tooltip("Items to grant when this choice is selected")]
+    public List<DialogueItemReward> ItemsToGrant = new List<DialogueItemReward>();
+
     [Header("Navigation")]
     [Tooltip("Jump to specific line index after this choice (-1 = continue to next line)")]
     public int NextLineIndex = -1;
+
+    /// <summary>
+    /// Does this choice grant any rewards?
+    /// </summary>
+    public bool HasRewards => !string.IsNullOrEmpty(AbilityToGrant) || (ItemsToGrant != null && ItemsToGrant.Count > 0);
 
     /// <summary>
     /// Create a simple choice that just continues the dialogue
@@ -140,5 +159,54 @@ public class DialogueChoice
             ChoiceText = text,
             NextLineIndex = nextLineIndex
         };
+    }
+
+    /// <summary>
+    /// Create a choice that grants an ability
+    /// </summary>
+    public static DialogueChoice CreateWithAbility(string text, string abilityId)
+    {
+        return new DialogueChoice
+        {
+            ChoiceText = text,
+            AbilityToGrant = abilityId,
+            NextLineIndex = -1
+        };
+    }
+
+    /// <summary>
+    /// Create a choice with full rewards
+    /// </summary>
+    public static DialogueChoice CreateWithRewards(string text, string flagToSet, int relationshipChange, string abilityId)
+    {
+        return new DialogueChoice
+        {
+            ChoiceText = text,
+            FlagToSet = flagToSet,
+            RelationshipChange = relationshipChange,
+            AbilityToGrant = abilityId,
+            NextLineIndex = -1
+        };
+    }
+}
+
+/// <summary>
+/// Item reward from dialogue (item + quantity)
+/// </summary>
+[Serializable]
+public class DialogueItemReward
+{
+    [Tooltip("Item ID to grant")]
+    public string ItemId;
+
+    [Tooltip("Quantity to grant")]
+    public int Quantity = 1;
+
+    public DialogueItemReward() { }
+
+    public DialogueItemReward(string itemId, int quantity = 1)
+    {
+        ItemId = itemId;
+        Quantity = quantity;
     }
 }

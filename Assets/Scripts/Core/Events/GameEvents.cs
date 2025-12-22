@@ -767,4 +767,39 @@ namespace DialogueEvents
             return $"{base.ToString()} - Dialogue '{DialogueID}' {status} with NPC '{NPCID}'";
         }
     }
+
+    /// <summary>
+    /// Publie quand le joueur recoit des recompenses d'un dialogue (choix ou completion)
+    /// </summary>
+    public class DialogueRewardEvent : EventBusEvent
+    {
+        public string NPCID { get; }
+        public string DialogueID { get; }
+        public string AbilityGranted { get; }
+        public System.Collections.Generic.List<DialogueItemReward> ItemsGranted { get; }
+        public bool FromChoice { get; } // true = from choice, false = from dialogue completion
+
+        public DialogueRewardEvent(string npcId, string dialogueId, string abilityGranted,
+            System.Collections.Generic.List<DialogueItemReward> itemsGranted, bool fromChoice)
+        {
+            NPCID = npcId;
+            DialogueID = dialogueId;
+            AbilityGranted = abilityGranted;
+            ItemsGranted = itemsGranted ?? new System.Collections.Generic.List<DialogueItemReward>();
+            FromChoice = fromChoice;
+        }
+
+        public override string ToString()
+        {
+            var source = FromChoice ? "choice" : "completion";
+            var rewards = new System.Text.StringBuilder();
+            if (!string.IsNullOrEmpty(AbilityGranted)) rewards.Append($"Ability: {AbilityGranted}");
+            if (ItemsGranted.Count > 0)
+            {
+                if (rewards.Length > 0) rewards.Append(", ");
+                rewards.Append($"{ItemsGranted.Count} items");
+            }
+            return $"{base.ToString()} - Rewards from {source}: {rewards}";
+        }
+    }
 }

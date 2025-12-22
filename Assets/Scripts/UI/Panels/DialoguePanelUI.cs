@@ -46,7 +46,15 @@ public class DialoguePanelUI : MonoBehaviour
     [Header("Background")]
     [SerializeField] private Image locationBackground;  // Optional location background
 
+    [Header("NPC Animation")]
+    [SerializeField] private float npcFadeInDuration = 0.5f;
+    [SerializeField] private AnimationCurve npcFadeInCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
     // Runtime state
+    private CanvasGroup _npcCanvasGroup;
+    private Coroutine _npcFadeCoroutine;
+    private bool _isNPCFadingIn;
+    private DialogueLine _pendingLine;  // Line waiting for fade to complete
     private NPCDefinition _currentNPC;
     private DialogueLine _currentLine;
     private Coroutine _typewriterCoroutine;
@@ -55,6 +63,10 @@ public class DialoguePanelUI : MonoBehaviour
     private bool _isDialogueEnding;
     private List<GameObject> _choiceButtons = new List<GameObject>();
     private int _charsSinceLastSound;
+    private string _pendingRewardAbility;  // Ability ID waiting to be shown
+    private string _pendingRewardAbilityName;  // Ability display name
+    private List<DialogueItemReward> _pendingRewardItems;  // Items waiting to be shown
+    private bool _waitingForRewardPopup;  // True when reward popup is open and we're waiting for it to close
 
     void Awake()
     {
@@ -106,6 +118,16 @@ public class DialoguePanelUI : MonoBehaviour
             continueIndicator.SetActive(false);
         if (endDialogueIndicator != null)
             endDialogueIndicator.SetActive(false);
+
+        // Get or add CanvasGroup on NPC container for fade animation
+        if (npcContainer != null)
+        {
+            _npcCanvasGroup = npcContainer.GetComponent<CanvasGroup>();
+            if (_npcCanvasGroup == null)
+            {
+                _npcCanvasGroup = npcContainer.AddComponent<CanvasGroup>();
+            }
+        }
     }
 
     private void SubscribeToEvents()
@@ -113,6 +135,7 @@ public class DialoguePanelUI : MonoBehaviour
         EventBus.Subscribe<DialogueStartedEvent>(OnDialogueStarted);
         EventBus.Subscribe<DialogueLineAdvancedEvent>(OnLineAdvanced);
         EventBus.Subscribe<DialogueEndedEvent>(OnDialogueEnded);
+        EventBus.Subscribe<DialogueRewardEvent>(OnRewardReceived);
     }
 
     private void UnsubscribeFromEvents()
@@ -120,6 +143,7 @@ public class DialoguePanelUI : MonoBehaviour
         EventBus.Unsubscribe<DialogueStartedEvent>(OnDialogueStarted);
         EventBus.Unsubscribe<DialogueLineAdvancedEvent>(OnLineAdvanced);
         EventBus.Unsubscribe<DialogueEndedEvent>(OnDialogueEnded);
+        EventBus.Unsubscribe<DialogueRewardEvent>(OnRewardReceived);
     }
 
     // === EVENT HANDLERS ===
@@ -128,6 +152,12 @@ public class DialoguePanelUI : MonoBehaviour
     {
         _currentNPC = eventData.NPC;
         _isDialogueEnding = false;
+        _waitingForRewardPopup = false;
+
+        // Clear any pending rewards from previous dialogue
+        _pendingRewardAbility = null;
+        _pendingRewardAbilityName = null;
+        _pendingRewardItems = null;
 
         // Setup NPC display with default dialogue sprite
         if (npcImage != null && _currentNPC != null)
@@ -165,7 +195,16 @@ public class DialoguePanelUI : MonoBehaviour
     {
         _currentLine = eventData.Line;
         _isDialogueEnding = false;
-        DisplayLine(_currentLine);
+
+        // If NPC is still fading in, store the line and wait
+        if (_isNPCFadingIn)
+        {
+            _pendingLine = _currentLine;
+        }
+        else
+        {
+            DisplayLine(_currentLine);
+        }
     }
 
     private void OnDialogueEnded(DialogueEndedEvent eventData)
@@ -174,6 +213,80 @@ public class DialoguePanelUI : MonoBehaviour
         _currentNPC = null;
         _currentLine = null;
         _isDialogueEnding = false;
+    }
+
+    private void OnRewardReceived(DialogueRewardEvent eventData)
+    {
+        // Store ability reward
+        if (!string.IsNullOrEmpty(eventData.AbilityGranted))
+        {
+            _pendingRewardAbility = eventData.AbilityGranted;
+
+            // Get display name
+            _pendingRewardAbilityName = eventData.AbilityGranted;
+            if (AbilityManager.Instance != null)
+            {
+                var ability = AbilityManager.Instance.GetAbilityDefinition(eventData.AbilityGranted);
+                if (ability != null)
+                    _pendingRewardAbilityName = ability.GetDisplayName();
+            }
+        }
+
+        // Store item rewards
+        if (eventData.ItemsGranted != null && eventData.ItemsGranted.Count > 0)
+        {
+            _pendingRewardItems = new List<DialogueItemReward>(eventData.ItemsGranted);
+        }
+
+        Debug.Log($"DialoguePanelUI: Stored pending reward - Ability: {_pendingRewardAbilityName ?? "none"}, Items: {_pendingRewardItems?.Count ?? 0}");
+    }
+
+    // === REWARD POPUP ===
+
+    private void ShowRewardPopup()
+    {
+        if (RewardPopupPanel.Instance == null)
+        {
+            Debug.LogWarning("DialoguePanelUI: RewardPopupPanel not found, cannot show reward popup");
+            return;
+        }
+
+        _waitingForRewardPopup = true;
+
+        // Subscribe to popup close event
+        RewardPopupPanel.Instance.OnPopupClosed += OnRewardPopupClosed;
+
+        // Get ability icon if available
+        Sprite rewardIcon = null;
+        if (!string.IsNullOrEmpty(_pendingRewardAbility) && AbilityManager.Instance != null)
+        {
+            var ability = AbilityManager.Instance.GetAbilityDefinition(_pendingRewardAbility);
+            if (ability != null)
+                rewardIcon = ability.AbilityIcon;
+        }
+
+        // Show the popup with rewards and icon
+        RewardPopupPanel.Instance.ShowRewards(_pendingRewardAbilityName, _pendingRewardItems, rewardIcon);
+
+        // Clear pending rewards
+        _pendingRewardAbility = null;
+        _pendingRewardAbilityName = null;
+        _pendingRewardItems = null;
+
+        Debug.Log("DialoguePanelUI: Showing reward popup");
+    }
+
+    private void OnRewardPopupClosed()
+    {
+        Debug.Log("DialoguePanelUI: Reward popup closed");
+
+        // Unsubscribe
+        if (RewardPopupPanel.Instance != null)
+            RewardPopupPanel.Instance.OnPopupClosed -= OnRewardPopupClosed;
+
+        _waitingForRewardPopup = false;
+
+        // Just close the popup - dialogue continues normally with user clicks
     }
 
     // === DISPLAY METHODS ===
@@ -192,11 +305,23 @@ public class DialoguePanelUI : MonoBehaviour
         HideChoices();
         HideIndicators();
 
+        // Check if we should show a reward popup on this line
+        bool hasReward = !string.IsNullOrEmpty(_pendingRewardAbility) || (_pendingRewardItems != null && _pendingRewardItems.Count > 0);
+        Debug.Log($"DialoguePanelUI: DisplayLine - ShowReward={line.ShowReward}, HasReward={hasReward}");
+
+        if (line.ShowReward && hasReward)
+        {
+            // Show reward popup - dialogue continues normally after it's closed
+            ShowRewardPopup();
+        }
+
+        string displayText = line.Text;
+
         // Start typewriter effect
         if (_typewriterCoroutine != null)
             StopCoroutine(_typewriterCoroutine);
 
-        _typewriterCoroutine = StartCoroutine(TypewriterEffect(line.Text, line.HasChoices));
+        _typewriterCoroutine = StartCoroutine(TypewriterEffect(displayText, line.HasChoices, line.EndsDialogue));
     }
 
     private void UpdateEmotionSprite(NPCEmotion emotion)
@@ -229,7 +354,7 @@ public class DialoguePanelUI : MonoBehaviour
         }
     }
 
-    private IEnumerator TypewriterEffect(string fullText, bool hasChoices)
+    private IEnumerator TypewriterEffect(string fullText, bool hasChoices, bool endsDialogue = false)
     {
         _isTypewriterActive = true;
         _isFullTextDisplayed = false;
@@ -239,7 +364,7 @@ public class DialoguePanelUI : MonoBehaviour
         {
             _isTypewriterActive = false;
             _isFullTextDisplayed = true;
-            OnTypewriterComplete(hasChoices);
+            OnTypewriterComplete(hasChoices, endsDialogue);
             yield break;
         }
 
@@ -249,7 +374,7 @@ public class DialoguePanelUI : MonoBehaviour
         {
             _isTypewriterActive = false;
             _isFullTextDisplayed = true;
-            OnTypewriterComplete(hasChoices);
+            OnTypewriterComplete(hasChoices, endsDialogue);
             yield break;
         }
 
@@ -277,7 +402,7 @@ public class DialoguePanelUI : MonoBehaviour
         _isTypewriterActive = false;
         _isFullTextDisplayed = true;
 
-        OnTypewriterComplete(hasChoices);
+        OnTypewriterComplete(hasChoices, endsDialogue);
     }
 
     private void SkipTypewriter()
@@ -289,15 +414,17 @@ public class DialoguePanelUI : MonoBehaviour
 
         // Show full text immediately
         if (dialogueText != null && _currentLine != null)
+        {
             dialogueText.text = _currentLine.Text;
+        }
 
         _isTypewriterActive = false;
         _isFullTextDisplayed = true;
 
-        OnTypewriterComplete(_currentLine?.HasChoices ?? false);
+        OnTypewriterComplete(_currentLine?.HasChoices ?? false, _currentLine?.EndsDialogue ?? false);
     }
 
-    private void OnTypewriterComplete(bool hasChoices)
+    private void OnTypewriterComplete(bool hasChoices, bool endsDialogue = false)
     {
         if (hasChoices)
         {
@@ -306,8 +433,8 @@ public class DialoguePanelUI : MonoBehaviour
         }
         else
         {
-            // Check if this is the last line
-            bool isLastLine = DialogueManager.Instance?.IsLastLine ?? false;
+            // Check if this line ends the dialogue or is the last line
+            bool isLastLine = endsDialogue || (DialogueManager.Instance?.IsLastLine ?? false);
 
             if (isLastLine)
             {
@@ -346,6 +473,10 @@ public class DialoguePanelUI : MonoBehaviour
 
     private void OnPanelClicked()
     {
+        // Don't process clicks while waiting for reward popup to close
+        if (_waitingForRewardPopup)
+            return;
+
         if (_isTypewriterActive)
         {
             // First tap while typewriter is running: skip to full text
@@ -450,13 +581,73 @@ public class DialoguePanelUI : MonoBehaviour
             panelCanvasGroup.interactable = true;
             panelCanvasGroup.blocksRaycasts = true;
         }
+
+        // Start NPC fade-in animation
+        StartNPCFadeIn();
+    }
+
+    private void StartNPCFadeIn()
+    {
+        if (_npcCanvasGroup == null || npcContainer == null) return;
+
+        // Stop any existing fade animation
+        if (_npcFadeCoroutine != null)
+            StopCoroutine(_npcFadeCoroutine);
+
+        _npcFadeCoroutine = StartCoroutine(NPCFadeInAnimation());
+    }
+
+    private IEnumerator NPCFadeInAnimation()
+    {
+        _isNPCFadingIn = true;
+        _pendingLine = null;
+
+        // Start fully transparent
+        _npcCanvasGroup.alpha = 0f;
+
+        float elapsed = 0f;
+
+        while (elapsed < npcFadeInDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / npcFadeInDuration);
+
+            // Apply easing curve
+            float curveValue = npcFadeInCurve.Evaluate(t);
+
+            // Lerp alpha
+            _npcCanvasGroup.alpha = curveValue;
+
+            yield return null;
+        }
+
+        // Ensure fully visible
+        _npcCanvasGroup.alpha = 1f;
+        _isNPCFadingIn = false;
+        _npcFadeCoroutine = null;
+
+        // If there's a pending line, display it now
+        if (_pendingLine != null)
+        {
+            DisplayLine(_pendingLine);
+            _pendingLine = null;
+        }
     }
 
     private void HidePanel()
     {
-        // Stop any running coroutine
+        // Stop any running coroutines
         if (_typewriterCoroutine != null)
             StopCoroutine(_typewriterCoroutine);
+        if (_npcFadeCoroutine != null)
+            StopCoroutine(_npcFadeCoroutine);
+
+        // Reset NPC alpha for next time
+        if (_npcCanvasGroup != null)
+            _npcCanvasGroup.alpha = 1f;
+
+        _isNPCFadingIn = false;
+        _pendingLine = null;
 
         HideChoices();
         HideIndicators();

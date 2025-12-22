@@ -10,63 +10,67 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 359ef7277cc326f40b6747f14bbdf029, type: 3}
-  m_Name: HC_Intro
+  m_Name: HC_BuildingTrust
   m_EditorClassIdentifier: Assembly-CSharp::DialogueDefinition
-  DialogueID: hc_intro
-  DialogueName: Premiere Rencontre
-  Priority: 100
+  DialogueID: hc_building_trust
+  DialogueName: Confiance Naissante
+  Priority: 80
   Conditions:
   - Type: 0
     Key: HC_HasMet
     Operator: 0
+    Value: 1
+  - Type: 0
+    Key: HC_TalkedTwice
+    Operator: 0
     Value: 0
   Lines:
   - Speaker: Enfant sans-abri
-    Text: '*L''enfant leve les yeux vers vous, surpris*'
+    Text: '*L''enfant vous reconnait et s''illumine*'
+    Emotion: 1
+    Choices: []
+    EndsDialogue: 0
+    ShowReward: 0
+  - Speaker: Enfant sans-abri
+    Text: Vous etes revenu ! Je... je pensais pas que vous reviendriez.
     Emotion: 4
     Choices: []
     EndsDialogue: 0
     ShowReward: 0
   - Speaker: Enfant sans-abri
-    Text: Oh... Bonjour. Les gens passent d'habitude sans me voir.
-    Emotion: 2
-    Choices: []
-    EndsDialogue: 0
-    ShowReward: 0
-  - Speaker: Enfant sans-abri
-    Text: Vous... vous voulez me parler ?
+    Text: Vous savez, j'aime bien ramasser des cailloux. Y en a des jolis par ici.
     Emotion: 6
     Choices:
-    - ChoiceText: Oui, comment tu t'appelles ?
+    - ChoiceText: Ah oui ? Tu me montres ?
+      FlagToSet: 
+      RelationshipChange: 2
+      RelationshipNPCId: 
+      AbilityToGrant: 
+      ItemsToGrant: []
+      NextLineIndex: -1
+    - ChoiceText: C'est interessant.
       FlagToSet: 
       RelationshipChange: 1
       RelationshipNPCId: 
       AbilityToGrant: 
       ItemsToGrant: []
       NextLineIndex: -1
-    - ChoiceText: Je passais juste par la.
-      FlagToSet: 
-      RelationshipChange: 0
-      RelationshipNPCId: 
-      AbilityToGrant: 
-      ItemsToGrant: []
-      NextLineIndex: -1
     EndsDialogue: 0
     ShowReward: 0
   - Speaker: Enfant sans-abri
-    Text: '*Un petit sourire apparait sur son visage*'
+    Text: '*Il sort quelques cailloux de sa poche et les regarde avec fierte*'
     Emotion: 1
     Choices: []
     EndsDialogue: 0
     ShowReward: 0
   - Speaker: Enfant sans-abri
-    Text: Merci de m'avoir regarde. Revenez me voir si vous voulez !
-    Emotion: 1
+    Text: Peut-etre qu'un jour... on pourrait jouer ensemble ?
+    Emotion: 7
     Choices: []
     EndsDialogue: 0
     ShowReward: 0
   FlagsToSetOnCompletion:
-  - HC_HasMet
+  - HC_TalkedTwice
   AbilityToGrantOnCompletion: 
   ItemsToGrantOnCompletion: []
-  DeveloperNotes: First meeting. Sets HC_HasMet flag.
+  DeveloperNotes: Second meeting. Child starts warming up.

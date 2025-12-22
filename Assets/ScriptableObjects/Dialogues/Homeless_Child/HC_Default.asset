@@ -13,31 +13,23 @@ MonoBehaviour:
   m_Name: HC_Default
   m_EditorClassIdentifier: Assembly-CSharp::DialogueDefinition
   DialogueID: hc_default
-  DialogueName: Default Chat
+  DialogueName: Discussion Simple
   Priority: 0
   Conditions: []
   Lines:
   - Speaker: Enfant sans-abri
     Text: '*L''enfant vous regarde avec curiosite*'
+    Emotion: 6
     Choices: []
+    EndsDialogue: 0
+    ShowReward: 0
   - Speaker: Enfant sans-abri
-    Text: Bonjour, voyageur. C'est gentil de passer me voir.
+    Text: Bonjour voyageur. C'est gentil de passer me voir.
+    Emotion: 0
     Choices: []
-  - Speaker: Enfant sans-abri
-    Text: Les journees sont longues ici, mais ca va.
-    Choices:
-    - ChoiceText: Je reviendrai te voir.
-      FlagToSet: 
-      RelationshipChange: 1
-      RelationshipNPCId: 
-      NextLineIndex: -1
-    - ChoiceText: Prends soin de toi.
-      FlagToSet: 
-      RelationshipChange: 0
-      RelationshipNPCId: 
-      NextLineIndex: -1
-  - Speaker: Enfant sans-abri
-    Text: '*L''enfant hoche la tete*'
-    Choices: []
+    EndsDialogue: 0
+    ShowReward: 0
   FlagsToSetOnCompletion: []
-  DeveloperNotes: Fallback dialogue when no other conditions are met
+  AbilityToGrantOnCompletion: 
+  ItemsToGrantOnCompletion: []
+  DeveloperNotes: Fallback dialogue. Should rarely play due to other dialogues.

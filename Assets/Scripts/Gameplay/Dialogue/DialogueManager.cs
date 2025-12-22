@@ -142,6 +142,13 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
+        // Check if current line ends the dialogue
+        if (CurrentLine?.EndsDialogue == true)
+        {
+            EndDialogue(true);
+            return;
+        }
+
         _currentLineIndex++;
 
         if (_currentLineIndex >= _currentDialogue.LineCount)
@@ -239,6 +246,12 @@ public class DialogueManager : MonoBehaviour
                         Logger.LogInfo($"DialogueManager: Set completion flag '{flag}'", Logger.LogCategory.General);
                 }
             }
+        }
+
+        // Apply completion rewards if completed naturally
+        if (completedNaturally)
+        {
+            ApplyCompletionRewards();
         }
 
         // Publish end event
@@ -345,6 +358,89 @@ public class DialogueManager : MonoBehaviour
             playerData.ModifyNPCRelationship(npcId, choice.RelationshipChange);
             if (enableDebugLogs)
                 Logger.LogInfo($"DialogueManager: Modified relationship with '{npcId}' by {choice.RelationshipChange:+#;-#;0}", Logger.LogCategory.General);
+        }
+
+        // Apply rewards if specified
+        if (choice.HasRewards)
+        {
+            ApplyRewards(choice.AbilityToGrant, choice.ItemsToGrant, true);
+        }
+    }
+
+    private void ApplyCompletionRewards()
+    {
+        if (_currentDialogue == null || !_currentDialogue.HasCompletionRewards) return;
+
+        ApplyRewards(_currentDialogue.AbilityToGrantOnCompletion, _currentDialogue.ItemsToGrantOnCompletion, false);
+    }
+
+    private void ApplyRewards(string abilityId, System.Collections.Generic.List<DialogueItemReward> items, bool fromChoice)
+    {
+        bool hasAnyReward = false;
+
+        // Grant ability if specified
+        if (!string.IsNullOrEmpty(abilityId))
+        {
+            if (AbilityManager.Instance != null)
+            {
+                // Check if player already owns this ability
+                if (!AbilityManager.Instance.OwnsAbility(abilityId))
+                {
+                    AbilityManager.Instance.AddOwnedAbility(abilityId);
+                    hasAnyReward = true;
+                    if (enableDebugLogs)
+                        Logger.LogInfo($"DialogueManager: Granted ability '{abilityId}'", Logger.LogCategory.General);
+                }
+                else
+                {
+                    if (enableDebugLogs)
+                        Logger.LogInfo($"DialogueManager: Player already has ability '{abilityId}'", Logger.LogCategory.General);
+                }
+            }
+            else
+            {
+                Logger.LogWarning("DialogueManager: AbilityManager not available to grant ability", Logger.LogCategory.General);
+            }
+        }
+
+        // Grant items if specified
+        if (items != null && items.Count > 0)
+        {
+            foreach (var itemReward in items)
+            {
+                if (string.IsNullOrEmpty(itemReward.ItemId) || itemReward.Quantity <= 0) continue;
+
+                if (InventoryManager.Instance != null)
+                {
+                    bool added = InventoryManager.Instance.AddItem("player", itemReward.ItemId, itemReward.Quantity);
+                    if (added)
+                    {
+                        hasAnyReward = true;
+                        if (enableDebugLogs)
+                            Logger.LogInfo($"DialogueManager: Granted {itemReward.Quantity}x '{itemReward.ItemId}'", Logger.LogCategory.General);
+                    }
+                    else
+                    {
+                        Logger.LogWarning($"DialogueManager: Failed to add item '{itemReward.ItemId}' to inventory", Logger.LogCategory.General);
+                    }
+                }
+                else
+                {
+                    Logger.LogWarning("DialogueManager: InventoryManager not available to grant items", Logger.LogCategory.General);
+                }
+            }
+        }
+
+        // Publish reward event for UI feedback
+        if (hasAnyReward)
+        {
+            EventBus.Publish(new DialogueRewardEvent(
+                _currentNPC.NPCID,
+                _currentDialogue.DialogueID,
+                abilityId,
+                items,
+                fromChoice
+            ));
         }
     }
 }

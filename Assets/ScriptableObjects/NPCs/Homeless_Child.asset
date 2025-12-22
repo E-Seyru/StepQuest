@@ -18,9 +18,20 @@ MonoBehaviour:
   Avatar: {fileID: 8037868039139570920, guid: 61951df610e844240836dd57c0ca5905, type: 3}
   Illustration: {fileID: -2574164509539785578, guid: 98f9a83ff5182354cad97a0ce12412db, type: 3}
   ThemeColor: {r: 1, g: 1, b: 1, a: 1}
+  EmotionNeutral: {fileID: 8313593300519353791, guid: 7297f1be5c301dc489b05218059e76a6, type: 3}
+  EmotionJoy: {fileID: 0}
+  EmotionSadness: {fileID: 0}
+  EmotionAnger: {fileID: 0}
+  EmotionSurprise: {fileID: 0}
+  EmotionFear: {fileID: 0}
+  EmotionCuriosity: {fileID: 0}
+  EmotionEmbarrassment: {fileID: 0}
+  EmotionLove: {fileID: 0}
   IsActive: 1
   Dialogues:
   - {fileID: 11400000, guid: 027bf29414d3c5b43a2bd7d90c669ed0, type: 2}
-  - {fileID: 11400000, guid: cf1caadda2d19284faaaf7c94cab3e4c, type: 2}
+  - {fileID: 11400000, guid: 45571da1b0c20ff4aa94b4ffe60b7b2d, type: 2}
+  - {fileID: 11400000, guid: 15d66f3459eb58948be19bc029bc7e77, type: 2}
+  - {fileID: 11400000, guid: d7db82eaf86803f4690c76180eda1477, type: 2}
   - {fileID: 11400000, guid: 3346e3eebea977a40a9a21eb28736b86, type: 2}
   DeveloperNotes: 

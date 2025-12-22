@@ -28,9 +28,16 @@ public class DialogueDefinition : ScriptableObject
     [Tooltip("The dialogue lines in order")]
     public List<DialogueLine> Lines = new List<DialogueLine>();
 
-    [Header("Flags to Set After Completion")]
+    [Header("Completion Effects")]
     [Tooltip("Flags to set when this dialogue is completed (useful for one-time dialogues)")]
     public List<string> FlagsToSetOnCompletion = new List<string>();
+
+    [Header("Completion Rewards")]
+    [Tooltip("Ability ID to grant when this dialogue is completed (leave empty for no ability)")]
+    public string AbilityToGrantOnCompletion;
+
+    [Tooltip("Items to grant when this dialogue is completed")]
+    public List<DialogueItemReward> ItemsToGrantOnCompletion = new List<DialogueItemReward>();
 
     [Header("Debug")]
     [TextArea(1, 2)]
@@ -75,6 +82,12 @@ public class DialogueDefinition : ScriptableObject
     public bool HasConditions => Conditions != null && Conditions.Count > 0;
 
     /// <summary>
+    /// Check if dialogue grants any rewards on completion
+    /// </summary>
+    public bool HasCompletionRewards => !string.IsNullOrEmpty(AbilityToGrantOnCompletion) ||
+                                        (ItemsToGrantOnCompletion != null && ItemsToGrantOnCompletion.Count > 0);
+
+    /// <summary>
     /// Get a summary of conditions for display
     /// </summary>
     public string GetConditionsSummary()
@@ -103,6 +116,7 @@ public class DialogueDefinition : ScriptableObject
         if (Conditions == null) Conditions = new List<DialogueCondition>();
         if (Lines == null) Lines = new List<DialogueLine>();
         if (FlagsToSetOnCompletion == null) FlagsToSetOnCompletion = new List<string>();
+        if (ItemsToGrantOnCompletion == null) ItemsToGrantOnCompletion = new List<DialogueItemReward>();
     }
 #endif
 }

@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 641a3dc1ecc234641919c977f1ece986, type: 3}
+  m_Name: ThrowRock
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityDefinition
+  AbilityID: throw_rock
+  AbilityName: Lancer de Pierre
+  Description: Lance une pierre sur l'ennemi. Un cadeau d'un ami special.
+  AbilityIcon: {fileID: -8012538535851946274, guid: d29a09239e6252a459f46d5173137234, type: 3}
+  AbilityColor: {r: 0.6, g: 0.5, b: 0.4, a: 1}
+  Effects:
+  - Type: 0
+    Value: 8
+    StatusEffect: {fileID: 0}
+    StatusEffectStacks: 1
+    TargetsSelf: 0
+  Cooldown: 3
+  Weight: 1
+  DeveloperNotes: Obtained from Homeless Child after playing rocks together

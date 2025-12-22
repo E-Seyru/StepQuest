@@ -10,43 +10,37 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 359ef7277cc326f40b6747f14bbdf029, type: 3}
-  m_Name: HC_Intro
+  m_Name: HC_Friend
   m_EditorClassIdentifier: Assembly-CSharp::DialogueDefinition
-  DialogueID: hc_intro
-  DialogueName: Premiere Rencontre
-  Priority: 100
+  DialogueID: hc_friend
+  DialogueName: Ami pour Toujours
+  Priority: 40
   Conditions:
   - Type: 0
-    Key: HC_HasMet
+    Key: HC_PlayedRocks
     Operator: 0
-    Value: 0
+    Value: 1
   Lines:
   - Speaker: Enfant sans-abri
-    Text: '*L''enfant leve les yeux vers vous, surpris*'
-    Emotion: 4
+    Text: '*L''enfant vous fait un grand signe de la main*'
+    Emotion: 1
     Choices: []
     EndsDialogue: 0
     ShowReward: 0
   - Speaker: Enfant sans-abri
-    Text: Oh... Bonjour. Les gens passent d'habitude sans me voir.
-    Emotion: 2
-    Choices: []
-    EndsDialogue: 0
-    ShowReward: 0
-  - Speaker: Enfant sans-abri
-    Text: Vous... vous voulez me parler ?
-    Emotion: 6
+    Text: Mon ami ! Vous utilisez toujours les cailloux que je vous ai donnes ?
+    Emotion: 1
     Choices:
-    - ChoiceText: Oui, comment tu t'appelles ?
+    - ChoiceText: Bien sur ! Ils sont tres utiles.
       FlagToSet: 
       RelationshipChange: 1
       RelationshipNPCId: 
       AbilityToGrant: 
       ItemsToGrant: []
       NextLineIndex: -1
-    - ChoiceText: Je passais juste par la.
+    - ChoiceText: Je les garde precieusement.
       FlagToSet: 
-      RelationshipChange: 0
+      RelationshipChange: 1
       RelationshipNPCId: 
       AbilityToGrant: 
       ItemsToGrant: []
@@ -54,19 +48,18 @@ MonoBehaviour:
     EndsDialogue: 0
     ShowReward: 0
   - Speaker: Enfant sans-abri
-    Text: '*Un petit sourire apparait sur son visage*'
+    Text: '*Il sourit de toutes ses dents*'
     Emotion: 1
     Choices: []
     EndsDialogue: 0
     ShowReward: 0
   - Speaker: Enfant sans-abri
-    Text: Merci de m'avoir regarde. Revenez me voir si vous voulez !
-    Emotion: 1
+    Text: Je suis content d'avoir un ami comme vous. Revenez vite !
+    Emotion: 8
     Choices: []
     EndsDialogue: 0
     ShowReward: 0
-  FlagsToSetOnCompletion:
-  - HC_HasMet
+  FlagsToSetOnCompletion: []
   AbilityToGrantOnCompletion: 
   ItemsToGrantOnCompletion: []
-  DeveloperNotes: First meeting. Sets HC_HasMet flag.
+  DeveloperNotes: After playing rocks together. They are friends now!
