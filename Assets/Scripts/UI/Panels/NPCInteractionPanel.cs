@@ -163,11 +163,11 @@ public class NPCInteractionPanel : MonoBehaviour
             }
         }
 
-        // Hearts - for now just show 0 points
-        // TODO: Get actual relationship points from PlayerData
+        // Hearts - get actual relationship points from PlayerData
         if (heartDisplay != null)
         {
-            heartDisplay.SetPoints(0);
+            int relationshipPoints = DataManager.Instance?.PlayerData?.GetNPCRelationship(currentNPC.NPCID) ?? 0;
+            heartDisplay.SetPoints(relationshipPoints);
         }
     }
 
@@ -183,11 +183,37 @@ public class NPCInteractionPanel : MonoBehaviour
 
     private void OnTalkClicked()
     {
-        if (currentNPC == null) return;
+        if (currentNPC == null)
+        {
+            Debug.LogWarning("NPCInteractionPanel: currentNPC is null!");
+            return;
+        }
 
-        Logger.LogInfo($"NPCInteractionPanel: Talk clicked for {currentNPC.GetDisplayName()}", Logger.LogCategory.General);
+        Debug.Log($"NPCInteractionPanel: Talk clicked for {currentNPC.GetDisplayName()}");
+        Debug.Log($"NPCInteractionPanel: NPC has {currentNPC.Dialogues?.Count ?? 0} dialogues assigned");
 
-        // TODO: Implement talk functionality
+        // Start dialogue via DialogueManager
+        if (DialogueManager.Instance != null)
+        {
+            Debug.Log("NPCInteractionPanel: DialogueManager found, starting dialogue...");
+            bool started = DialogueManager.Instance.StartDialogue(currentNPC);
+            Debug.Log($"NPCInteractionPanel: StartDialogue returned {started}");
+
+            if (started)
+            {
+                // Hide this panel while in dialogue
+                Hide();
+            }
+            else
+            {
+                // No dialogue available - could show a default message
+                Debug.LogWarning($"NPCInteractionPanel: No dialogue available for {currentNPC.GetDisplayName()}");
+            }
+        }
+        else
+        {
+            Debug.LogError("NPCInteractionPanel: DialogueManager.Instance is null!");
+        }
     }
 
     private void OnGiftClicked()

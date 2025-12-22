@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 359ef7277cc326f40b6747f14bbdf029, type: 3}
+  m_Name: HC_Default
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueDefinition
+  DialogueID: hc_default
+  DialogueName: Default Chat
+  Priority: 0
+  Conditions: []
+  Lines:
+  - Speaker: Enfant sans-abri
+    Text: '*L''enfant vous regarde avec curiosite*'
+    Choices: []
+  - Speaker: Enfant sans-abri
+    Text: Bonjour, voyageur. C'est gentil de passer me voir.
+    Choices: []
+  - Speaker: Enfant sans-abri
+    Text: Les journees sont longues ici, mais ca va.
+    Choices:
+    - ChoiceText: Je reviendrai te voir.
+      FlagToSet: 
+      RelationshipChange: 1
+      RelationshipNPCId: 
+      NextLineIndex: -1
+    - ChoiceText: Prends soin de toi.
+      FlagToSet: 
+      RelationshipChange: 0
+      RelationshipNPCId: 
+      NextLineIndex: -1
+  - Speaker: Enfant sans-abri
+    Text: '*L''enfant hoche la tete*'
+    Choices: []
+  FlagsToSetOnCompletion: []
+  DeveloperNotes: Fallback dialogue when no other conditions are met

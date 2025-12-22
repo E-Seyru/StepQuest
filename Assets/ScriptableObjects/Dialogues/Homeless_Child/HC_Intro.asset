@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 359ef7277cc326f40b6747f14bbdf029, type: 3}
+  m_Name: HC_Intro
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueDefinition
+  DialogueID: hc_intro
+  DialogueName: First Meeting
+  Priority: 100
+  Conditions:
+  - Type: 0
+    Key: HC_HasMet
+    Operator: 0
+    Value: 0
+  Lines:
+  - Speaker: Enfant sans-abri
+    Text: '*L''enfant leve les yeux vers vous, l''air mefiant*'
+    Choices: []
+  - Speaker: Enfant sans-abri
+    Text: Vous... vous etes pas comme les autres. Vous me regardez vraiment.
+    Choices: []
+  - Speaker: Enfant sans-abri
+    Text: La plupart des gens passent sans meme me voir...
+    Choices:
+    - ChoiceText: Comment t'appelles-tu ?
+      FlagToSet: 
+      RelationshipChange: 1
+      RelationshipNPCId: 
+      NextLineIndex: -1
+    - ChoiceText: Tu as l'air d'avoir faim.
+      FlagToSet: 
+      RelationshipChange: 1
+      RelationshipNPCId: 
+      NextLineIndex: -1
+    - ChoiceText: Je dois y aller.
+      FlagToSet: 
+      RelationshipChange: 0
+      RelationshipNPCId: 
+      NextLineIndex: -1
+  - Speaker: Enfant sans-abri
+    Text: '*Un faible sourire apparait sur son visage*'
+    Choices: []
+  - Speaker: Enfant sans-abri
+    Text: Merci de m'avoir parle. Ca fait du bien...
+    Choices: []
+  FlagsToSetOnCompletion:
+  - HC_HasMet
+  DeveloperNotes: Plays only when HC_HasMet flag is not set

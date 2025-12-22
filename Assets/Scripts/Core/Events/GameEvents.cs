@@ -661,3 +661,110 @@ namespace NPCEvents
         }
     }
 }
+
+/// <summary>
+/// Evenements lies au systeme de dialogue
+/// </summary>
+namespace DialogueEvents
+{
+    /// <summary>
+    /// Publie quand un dialogue commence
+    /// </summary>
+    public class DialogueStartedEvent : EventBusEvent
+    {
+        public string NPCID { get; }
+        public string DialogueID { get; }
+        public NPCDefinition NPC { get; }
+        public DialogueDefinition Dialogue { get; }
+
+        public DialogueStartedEvent(string npcId, string dialogueId, NPCDefinition npc, DialogueDefinition dialogue)
+        {
+            NPCID = npcId;
+            DialogueID = dialogueId;
+            NPC = npc;
+            Dialogue = dialogue;
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} - Dialogue '{DialogueID}' started with NPC '{NPCID}'";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand le dialogue avance a la ligne suivante
+    /// </summary>
+    public class DialogueLineAdvancedEvent : EventBusEvent
+    {
+        public string NPCID { get; }
+        public int LineIndex { get; }
+        public DialogueLine Line { get; }
+        public bool HasChoices { get; }
+
+        public DialogueLineAdvancedEvent(string npcId, int lineIndex, DialogueLine line)
+        {
+            NPCID = npcId;
+            LineIndex = lineIndex;
+            Line = line;
+            HasChoices = line?.HasChoices ?? false;
+        }
+
+        public override string ToString()
+        {
+            var choicesInfo = HasChoices ? " (has choices)" : "";
+            return $"{base.ToString()} - Line {LineIndex} for NPC '{NPCID}'{choicesInfo}";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand le joueur fait un choix de dialogue
+    /// </summary>
+    public class DialogueChoiceMadeEvent : EventBusEvent
+    {
+        public string NPCID { get; }
+        public int ChoiceIndex { get; }
+        public DialogueChoice Choice { get; }
+        public string FlagSet { get; }
+        public int RelationshipChange { get; }
+
+        public DialogueChoiceMadeEvent(string npcId, int choiceIndex, DialogueChoice choice)
+        {
+            NPCID = npcId;
+            ChoiceIndex = choiceIndex;
+            Choice = choice;
+            FlagSet = choice?.FlagToSet;
+            RelationshipChange = choice?.RelationshipChange ?? 0;
+        }
+
+        public override string ToString()
+        {
+            var effects = "";
+            if (!string.IsNullOrEmpty(FlagSet)) effects += $" [Flag: {FlagSet}]";
+            if (RelationshipChange != 0) effects += $" [Relationship: {RelationshipChange:+#;-#;0}]";
+            return $"{base.ToString()} - Choice {ChoiceIndex} made for NPC '{NPCID}'{effects}";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand un dialogue se termine
+    /// </summary>
+    public class DialogueEndedEvent : EventBusEvent
+    {
+        public string NPCID { get; }
+        public string DialogueID { get; }
+        public bool CompletedNaturally { get; } // false si annule/interrompu
+
+        public DialogueEndedEvent(string npcId, string dialogueId, bool completedNaturally = true)
+        {
+            NPCID = npcId;
+            DialogueID = dialogueId;
+            CompletedNaturally = completedNaturally;
+        }
+
+        public override string ToString()
+        {
+            var status = CompletedNaturally ? "completed" : "cancelled";
+            return $"{base.ToString()} - Dialogue '{DialogueID}' {status} with NPC '{NPCID}'";
+        }
+    }
+}

@@ -19,4 +19,8 @@ MonoBehaviour:
   Illustration: {fileID: -2574164509539785578, guid: 98f9a83ff5182354cad97a0ce12412db, type: 3}
   ThemeColor: {r: 1, g: 1, b: 1, a: 1}
   IsActive: 1
+  Dialogues:
+  - {fileID: 11400000, guid: 027bf29414d3c5b43a2bd7d90c669ed0, type: 2}
+  - {fileID: 11400000, guid: cf1caadda2d19284faaaf7c94cab3e4c, type: 2}
+  - {fileID: 11400000, guid: 3346e3eebea977a40a9a21eb28736b86, type: 2}
   DeveloperNotes: 

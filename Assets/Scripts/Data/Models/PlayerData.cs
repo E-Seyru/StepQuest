@@ -376,6 +376,92 @@ public class PlayerData
 
     // Discovered NPCs (JSON serialise - List<npcId>)
     private string _discoveredNPCsJson;
+
+    // === SYSTEME DE DIALOGUE ===
+
+    // Dialogue flags (JSON serialise - Dictionary<flagName, bool>)
+    private string _dialogueFlagsJson;
+    [Column("DialogueFlagsJson")]
+    public string DialogueFlagsJson
+    {
+        get { return _dialogueFlagsJson; }
+        set { _dialogueFlagsJson = value; }
+    }
+
+    // NPC Relationships (JSON serialise - Dictionary<npcId, int> - echelle 0 a 10)
+    private string _npcRelationshipsJson;
+    [Column("NPCRelationshipsJson")]
+    public string NPCRelationshipsJson
+    {
+        get { return _npcRelationshipsJson; }
+        set { _npcRelationshipsJson = value; }
+    }
+
+    // Propriete pour acceder aux flags de dialogue
+    [Ignore]
+    public Dictionary<string, bool> DialogueFlags
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_dialogueFlagsJson))
+                return new Dictionary<string, bool>();
+
+            try
+            {
+                return JsonConvert.DeserializeObject<Dictionary<string, bool>>(_dialogueFlagsJson);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error deserializing DialogueFlags: {ex.Message}", Logger.LogCategory.General);
+                return new Dictionary<string, bool>();
+            }
+        }
+        set
+        {
+            try
+            {
+                _dialogueFlagsJson = value != null ? JsonConvert.SerializeObject(value) : null;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error serializing DialogueFlags: {ex.Message}", Logger.LogCategory.General);
+                _dialogueFlagsJson = null;
+            }
+        }
+    }
+
+    // Propriete pour acceder aux relations NPC
+    [Ignore]
+    public Dictionary<string, int> NPCRelationships
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_npcRelationshipsJson))
+                return new Dictionary<string, int>();
+
+            try
+            {
+                return JsonConvert.DeserializeObject<Dictionary<string, int>>(_npcRelationshipsJson);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error deserializing NPCRelationships: {ex.Message}", Logger.LogCategory.General);
+                return new Dictionary<string, int>();
+            }
+        }
+        set
+        {
+            try
+            {
+                _npcRelationshipsJson = value != null ? JsonConvert.SerializeObject(value) : null;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error serializing NPCRelationships: {ex.Message}", Logger.LogCategory.General);
+                _npcRelationshipsJson = null;
+            }
+        }
+    }
     [Column("DiscoveredNPCsJson")]
     public string DiscoveredNPCsJson
     {
@@ -453,6 +539,10 @@ public class PlayerData
 
         // NPC System
         _discoveredNPCsJson = null;
+
+        // Dialogue System
+        _dialogueFlagsJson = null;
+        _npcRelationshipsJson = null;
     }
 
     // === MeTHODES DE VOYAGE ===
@@ -602,6 +692,60 @@ public class PlayerData
     {
         var discovered = DiscoveredNPCs;
         return discovered.Contains(npcId);
+    }
+
+    // === METHODES DE DIALOGUE ===
+
+    /// <summary>
+    /// Get the value of a dialogue flag
+    /// </summary>
+    public bool GetDialogueFlag(string flagName)
+    {
+        if (string.IsNullOrEmpty(flagName)) return false;
+        var flags = DialogueFlags;
+        return flags.ContainsKey(flagName) && flags[flagName];
+    }
+
+    /// <summary>
+    /// Set a dialogue flag
+    /// </summary>
+    public void SetDialogueFlag(string flagName, bool value)
+    {
+        if (string.IsNullOrEmpty(flagName)) return;
+        var flags = DialogueFlags;
+        flags[flagName] = value;
+        DialogueFlags = flags;
+    }
+
+    /// <summary>
+    /// Get the relationship level with an NPC (0-10)
+    /// </summary>
+    public int GetNPCRelationship(string npcId)
+    {
+        if (string.IsNullOrEmpty(npcId)) return 0;
+        var relationships = NPCRelationships;
+        return relationships.ContainsKey(npcId) ? relationships[npcId] : 0;
+    }
+
+    /// <summary>
+    /// Set the relationship level with an NPC (clamped 0-10)
+    /// </summary>
+    public void SetNPCRelationship(string npcId, int value)
+    {
+        if (string.IsNullOrEmpty(npcId)) return;
+        var relationships = NPCRelationships;
+        relationships[npcId] = UnityEngine.Mathf.Clamp(value, 0, 10);
+        NPCRelationships = relationships;
+    }
+
+    /// <summary>
+    /// Modify the relationship level with an NPC by a delta (can be negative)
+    /// </summary>
+    public void ModifyNPCRelationship(string npcId, int delta)
+    {
+        if (string.IsNullOrEmpty(npcId)) return;
+        int current = GetNPCRelationship(npcId);
+        SetNPCRelationship(npcId, current + delta);
     }
 
     // === PROPRIeTeS CALCULeES ET ALIASES ===
