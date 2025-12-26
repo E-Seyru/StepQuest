@@ -127,6 +127,16 @@ public class AbilitiesInventoryContainer : MonoBehaviour
 
         var ownedAbilities = AbilityManager.Instance?.GetOwnedAbilities() ?? new List<AbilityDefinition>();
 
+        // Filter out equipped abilities - only show unequipped ones in inventory
+        var unequippedAbilities = new List<AbilityDefinition>();
+        foreach (var ability in ownedAbilities)
+        {
+            if (ability != null && AbilityManager.Instance != null && !AbilityManager.Instance.IsAbilityEquipped(ability.AbilityID))
+            {
+                unequippedAbilities.Add(ability);
+            }
+        }
+
         // Initialize fixed number of rows with their weight tracking
         List<List<AbilityDefinition>> rowAssignments = new List<List<AbilityDefinition>>();
         int[] rowWeightTotals = new int[fixedRowCount];
@@ -136,9 +146,9 @@ public class AbilitiesInventoryContainer : MonoBehaviour
         }
 
         // Assign abilities to rows
-        for (int i = 0; i < ownedAbilities.Count; i++)
+        for (int i = 0; i < unequippedAbilities.Count; i++)
         {
-            var ability = ownedAbilities[i];
+            var ability = unequippedAbilities[i];
             if (ability == null) continue;
 
             int abilityWeight = ability.Weight > 0 ? ability.Weight : 1;
@@ -172,7 +182,7 @@ public class AbilitiesInventoryContainer : MonoBehaviour
             // Create abilities first
             foreach (var ability in rowAssignments[r])
             {
-                int abilityIndex = ownedAbilities.IndexOf(ability);
+                int abilityIndex = unequippedAbilities.IndexOf(ability);
                 GameObject abilityObj = CreateAbilityDisplay(ability, abilityIndex, row.transform, baseWidth, rowHeight);
                 if (abilityObj != null)
                 {
@@ -271,32 +281,33 @@ public class AbilitiesInventoryContainer : MonoBehaviour
             abilityObj = CreateSimpleAbilityDisplay(ability, parent);
         }
 
-        // Setup click handler for equip
-        var button = abilityObj.GetComponent<Button>();
-        if (button == null)
-        {
-            button = abilityObj.AddComponent<Button>();
-        }
-        string capturedAbilityId = ability.AbilityID;
-        button.onClick.AddListener(() => OnAbilityClicked(capturedAbilityId));
-
         // Setup CombatAbilityUI if present (reusing combat prefab)
         var combatAbilityUI = abilityObj.GetComponent<CombatAbilityUI>();
         if (combatAbilityUI != null)
         {
             combatAbilityUI.Setup(ability, index, true, 0);
-            // Disable cooldown overlay for inventory display
+            // Disable cooldown overlay for inventory display (also enables dragging)
             combatAbilityUI.HideCooldownOverlay();
+
+            // Click handler will be handled by CombatAbilityUI to show AbilityActionPanel
         }
         else
         {
-            // Simple visual setup
+            // Fallback: add button and setup visuals if no CombatAbilityUI
             var image = abilityObj.GetComponent<Image>();
             if (image != null)
             {
                 image.sprite = ability.AbilityIcon;
                 image.color = ability.AbilityColor;
             }
+
+            var button = abilityObj.GetComponent<Button>();
+            if (button == null)
+            {
+                button = abilityObj.AddComponent<Button>();
+            }
+            string capturedAbilityId = ability.AbilityID;
+            button.onClick.AddListener(() => OnAbilityClicked(capturedAbilityId));
         }
 
         // Calculate size based on weight

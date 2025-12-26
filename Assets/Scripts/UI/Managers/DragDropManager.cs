@@ -33,6 +33,10 @@ public class DragDropManager : MonoBehaviour
     private string draggedAbilityId = null;
     private AbilityDefinition draggedAbility = null;
 
+    // Track where the ability drag originated from
+    public enum AbilityDragSource { Inventory, Equipped }
+    private AbilityDragSource abilityDragSource;
+
     // Drop detection (event-driven)
     private IDragDropSlot currentHoveredSlot = null;
 
@@ -497,7 +501,7 @@ public class DragDropManager : MonoBehaviour
     // === ABILITY DRAG SUPPORT ===
 
     /// <summary>
-    /// Start dragging an ability
+    /// Start dragging an ability from AbilitySlotUI
     /// </summary>
     public bool StartAbilityDrag(AbilitySlotUI slot, string abilityId, AbilityDefinition ability)
     {
@@ -509,10 +513,32 @@ public class DragDropManager : MonoBehaviour
         abilitySourceSlot = slot;
         draggedAbilityId = abilityId;
         draggedAbility = ability;
+        abilityDragSource = AbilityDragSource.Inventory; // AbilitySlotUI is used in inventory
 
         CreateAbilityDragVisual();
 
-        Logger.LogInfo($"DragDropManager: Started dragging ability '{ability?.GetDisplayName() ?? abilityId}'", Logger.LogCategory.General);
+        Logger.LogInfo($"DragDropManager: Started dragging ability '{ability?.GetDisplayName() ?? abilityId}' from inventory", Logger.LogCategory.General);
+        return true;
+    }
+
+    /// <summary>
+    /// Start dragging an ability from any source (CombatAbilityUI, etc.)
+    /// </summary>
+    public bool StartAbilityDrag(MonoBehaviour source, string abilityId, AbilityDefinition ability, AbilityDragSource dragSource = AbilityDragSource.Inventory)
+    {
+        if (isDragging || source == null || string.IsNullOrEmpty(abilityId))
+            return false;
+
+        isDragging = true;
+        isAbilityDrag = true;
+        abilitySourceSlot = null; // No specific slot for generic sources
+        draggedAbilityId = abilityId;
+        draggedAbility = ability;
+        abilityDragSource = dragSource;
+
+        CreateAbilityDragVisual();
+
+        Logger.LogInfo($"DragDropManager: Started dragging ability '{ability?.GetDisplayName() ?? abilityId}' from {dragSource}", Logger.LogCategory.General);
         return true;
     }
 
@@ -548,7 +574,7 @@ public class DragDropManager : MonoBehaviour
     public AbilityDefinition GetDraggedAbility() => isAbilityDrag ? draggedAbility : null;
 
     /// <summary>
-    /// Complete ability drag - equip the ability
+    /// Complete ability drag - equip the ability (handles both inventory and equipped sources)
     /// </summary>
     public bool CompleteAbilityDrag()
     {
@@ -556,15 +582,25 @@ public class DragDropManager : MonoBehaviour
 
         bool success = false;
 
-        // Try to equip the ability
         if (AbilityManager.Instance != null && !string.IsNullOrEmpty(draggedAbilityId))
         {
-            success = AbilityManager.Instance.TryEquipAbility(draggedAbilityId);
-        }
+            // If dragging from equipped abilities, we don't need to equip again
+            // Just cancel the drag (ability stays equipped)
+            if (abilityDragSource == AbilityDragSource.Equipped)
+            {
+                Logger.LogInfo($"DragDropManager: Dropped equipped ability '{draggedAbility?.GetDisplayName()}' back to equipped container (no change)", Logger.LogCategory.General);
+                success = true; // No error, just no change needed
+            }
+            else
+            {
+                // Dragging from inventory - try to equip
+                success = AbilityManager.Instance.TryEquipAbility(draggedAbilityId);
 
-        if (success)
-        {
-            Logger.LogInfo($"DragDropManager: Successfully equipped ability '{draggedAbility?.GetDisplayName()}'", Logger.LogCategory.General);
+                if (success)
+                {
+                    Logger.LogInfo($"DragDropManager: Successfully equipped ability '{draggedAbility?.GetDisplayName()}'", Logger.LogCategory.General);
+                }
+            }
         }
 
         EndDrag();
@@ -582,12 +618,17 @@ public class DragDropManager : MonoBehaviour
         // Add image component
         var image = draggedItemVisual.AddComponent<UnityEngine.UI.Image>();
         image.sprite = draggedAbility.AbilityIcon;
-        image.color = draggedAbility.AbilityColor;
+        image.color = Color.white; // Use white for drag visual
         image.raycastTarget = false;
 
-        // Set size
+        // Set size based on ability weight to preserve aspect ratio
+        // Abilities have weight (1-6), and use a 1:2 width:height ratio like in combat/equipment
         var rectTransform = draggedItemVisual.GetComponent<RectTransform>();
-        rectTransform.sizeDelta = new Vector2(60, 60);
+        int weight = draggedAbility.Weight > 0 ? draggedAbility.Weight : 1;
+        float baseSize = 50f; // Base size for 1 weight unit
+        float width = baseSize * weight;
+        float height = baseSize * 2f; // 1:2 ratio (combat style)
+        rectTransform.sizeDelta = new Vector2(width, height);
 
         // Apply drag scale
         draggedItemVisual.transform.localScale = Vector3.one * dragScale;

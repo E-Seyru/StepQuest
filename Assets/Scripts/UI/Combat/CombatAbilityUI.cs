@@ -3,13 +3,15 @@
 
 using CombatEvents;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
 /// Displays a single ability during combat with cooldown visualization.
 /// Uses a vertical overlay that shrinks from top to bottom during cooldown.
+/// Supports drag and drop for equipping/unequipping abilities.
 /// </summary>
-public class CombatAbilityUI : MonoBehaviour
+public class CombatAbilityUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
 {
     [Header("Display")]
     [SerializeField] private Image abilityImage;
@@ -26,6 +28,14 @@ public class CombatAbilityUI : MonoBehaviour
     private bool isPlayerAbility;
     private bool isOnCooldown;
     private RectTransform rectTransform;
+
+    // Drag state
+    private bool isDragging = false;
+    private bool allowDragging = false; // Only allow dragging in inventory/equipment contexts
+    private DragDropManager.AbilityDragSource dragSource = DragDropManager.AbilityDragSource.Inventory;
+
+    // Click callback
+    public System.Action<int> OnAbilityClicked;
 
     void Awake()
     {
@@ -91,6 +101,7 @@ public class CombatAbilityUI : MonoBehaviour
             {
                 abilityImage.sprite = ability.AbilityIcon;
             }
+            // Use ability color in combat, white elsewhere
             abilityImage.color = ability.AbilityColor;
         }
 
@@ -102,6 +113,15 @@ public class CombatAbilityUI : MonoBehaviour
         }
 
         isOnCooldown = false;
+    }
+
+    /// <summary>
+    /// Enable or disable dragging for this ability display
+    /// </summary>
+    public void SetDraggingEnabled(bool enabled, DragDropManager.AbilityDragSource source = DragDropManager.AbilityDragSource.Inventory)
+    {
+        allowDragging = enabled;
+        dragSource = source;
     }
 
     private void OnCooldownStarted(CombatAbilityCooldownStartedEvent eventData)
@@ -246,5 +266,102 @@ public class CombatAbilityUI : MonoBehaviour
         // Unsubscribe from cooldown events since we won't use them
         EventBus.Unsubscribe<CombatAbilityCooldownStartedEvent>(OnCooldownStarted);
         EventBus.Unsubscribe<CombatAbilityUsedEvent>(OnAbilityUsed);
+
+        // Enable dragging when used in inventory/equipment context
+        allowDragging = true;
+
+        // Use white color for inventory/equipment display
+        if (abilityImage != null)
+        {
+            abilityImage.color = Color.white;
+        }
+    }
+
+    // === POINTER EVENTS ===
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        // Only handle clicks when dragging is allowed (inventory/equipment context)
+        if (!allowDragging || ability == null) return;
+
+        // Show ability action panel
+        if (AbilityActionPanel.Instance != null)
+        {
+            bool equipped = dragSource == DragDropManager.AbilityDragSource.Equipped;
+            Vector2 worldPosition = transform.position;
+            AbilityActionPanel.Instance.ShowPanel(ability, equipped, worldPosition);
+        }
+
+        // Also invoke callback if registered (for legacy support)
+        OnAbilityClicked?.Invoke(instanceIndex);
+    }
+
+    // === DRAG EVENTS ===
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        if (!allowDragging || ability == null) return;
+
+        isDragging = true;
+
+        // Notify drag system with the correct source
+        if (DragDropManager.Instance != null)
+        {
+            DragDropManager.Instance.StartAbilityDrag(this, ability.AbilityID, ability, dragSource);
+        }
+
+        // Visual feedback - make semi-transparent
+        if (abilityImage != null)
+        {
+            var color = abilityImage.color;
+            color.a = 0.5f;
+            abilityImage.color = color;
+        }
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        if (!isDragging) return;
+
+        // Update drag visual position
+        if (DragDropManager.Instance != null)
+        {
+            DragDropManager.Instance.UpdateDragPosition(eventData.position);
+        }
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        if (!isDragging) return;
+
+        isDragging = false;
+
+        // If dragging from equipped and didn't drop on equipped container, unequip it
+        if (DragDropManager.Instance != null)
+        {
+            // Check if we're dragging from equipped
+            if (dragSource == DragDropManager.AbilityDragSource.Equipped)
+            {
+                // If the drag wasn't completed (no valid drop target), unequip the ability
+                if (DragDropManager.Instance.IsAbilityDrag)
+                {
+                    // Unequip the ability
+                    if (AbilityManager.Instance != null && ability != null)
+                    {
+                        AbilityManager.Instance.TryUnequipAbility(ability.AbilityID);
+                        Logger.LogInfo($"CombatAbilityUI: Unequipped ability '{ability.GetDisplayName()}' by dragging out", Logger.LogCategory.General);
+                    }
+                }
+            }
+
+            DragDropManager.Instance.EndDrag();
+        }
+
+        // Restore visual
+        if (abilityImage != null && ability != null)
+        {
+            // Restore to white if in inventory/equipment context, otherwise use ability color
+            abilityImage.color = allowDragging ? Color.white : ability.AbilityColor;
+        }
     }
 }

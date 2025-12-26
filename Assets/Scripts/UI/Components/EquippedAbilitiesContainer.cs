@@ -360,32 +360,35 @@ public class EquippedAbilitiesContainer : MonoBehaviour, IDropHandler, IPointerE
             abilityObj = CreateSimpleAbilityDisplay(ability, parent);
         }
 
-        // Setup click handler for unequip
-        var button = abilityObj.GetComponent<Button>();
-        if (button == null)
-        {
-            button = abilityObj.AddComponent<Button>();
-        }
-        int capturedIndex = index;
-        button.onClick.AddListener(() => OnAbilityClicked(capturedIndex));
-
         // Setup CombatAbilityUI if present (reusing combat prefab)
         var combatAbilityUI = abilityObj.GetComponent<CombatAbilityUI>();
         if (combatAbilityUI != null)
         {
             combatAbilityUI.Setup(ability, index, true, 0);
-            // Disable cooldown overlay for equipment display
+            // Disable cooldown overlay for equipment display (also enables dragging)
             combatAbilityUI.HideCooldownOverlay();
+            // Set drag source to Equipped so it doesn't duplicate when dragged within this container
+            combatAbilityUI.SetDraggingEnabled(true, DragDropManager.AbilityDragSource.Equipped);
+
+            // Click handler will be handled by CombatAbilityUI to show AbilityActionPanel
         }
         else
         {
-            // Simple visual setup
+            // Fallback: add button and setup visuals if no CombatAbilityUI
             var image = abilityObj.GetComponent<Image>();
             if (image != null)
             {
                 image.sprite = ability.AbilityIcon;
                 image.color = ability.AbilityColor;
             }
+
+            var button = abilityObj.GetComponent<Button>();
+            if (button == null)
+            {
+                button = abilityObj.AddComponent<Button>();
+            }
+            int capturedIndex = index;
+            button.onClick.AddListener(() => OnAbilityClicked(capturedIndex));
         }
 
         // Calculate size based on weight
