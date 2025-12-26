@@ -57,6 +57,40 @@ public class AbilityActionPanel : MonoBehaviour
     [Tooltip("Icon for Shield effects")]
     [SerializeField] private Sprite shieldIcon;
 
+    [Header("Ability Effect Type Colors")]
+    [Tooltip("Color for Damage effect badges")]
+    [SerializeField] private Color damageColor = new Color(0.85f, 0.2f, 0.2f);
+    [Tooltip("Color for Heal effect badges")]
+    [SerializeField] private Color healColor = new Color(0.2f, 0.85f, 0.3f);
+    [Tooltip("Color for Shield effect badges")]
+    [SerializeField] private Color shieldColor = new Color(0.3f, 0.6f, 0.9f);
+
+    [Header("Status Effect Type Colors")]
+    [Tooltip("Color for Poison status effect badges")]
+    [SerializeField] private Color poisonColor = new Color(0.5f, 0.8f, 0.2f);
+    [Tooltip("Color for Burn status effect badges")]
+    [SerializeField] private Color burnColor = new Color(0.95f, 0.5f, 0.1f);
+    [Tooltip("Color for Bleed status effect badges")]
+    [SerializeField] private Color bleedColor = new Color(0.8f, 0.1f, 0.1f);
+    [Tooltip("Color for Stun status effect badges")]
+    [SerializeField] private Color stunColor = new Color(0.9f, 0.9f, 0.3f);
+    [Tooltip("Color for Regeneration status effect badges")]
+    [SerializeField] private Color regenerationColor = new Color(0.3f, 0.9f, 0.5f);
+    [Tooltip("Color for Shield status effect badges")]
+    [SerializeField] private Color statusShieldColor = new Color(0.4f, 0.7f, 0.95f);
+    [Tooltip("Color for Attack Buff status effect badges")]
+    [SerializeField] private Color attackBuffColor = new Color(0.9f, 0.3f, 0.3f);
+    [Tooltip("Color for Defense Buff status effect badges")]
+    [SerializeField] private Color defenseBuffColor = new Color(0.3f, 0.5f, 0.85f);
+    [Tooltip("Color for Speed Buff status effect badges")]
+    [SerializeField] private Color speedBuffColor = new Color(0.95f, 0.85f, 0.3f);
+    [Tooltip("Color for Attack Debuff status effect badges")]
+    [SerializeField] private Color attackDebuffColor = new Color(0.6f, 0.2f, 0.2f);
+    [Tooltip("Color for Defense Debuff status effect badges")]
+    [SerializeField] private Color defenseDebuffColor = new Color(0.3f, 0.3f, 0.6f);
+    [Tooltip("Color for Speed Debuff status effect badges")]
+    [SerializeField] private Color speedDebuffColor = new Color(0.6f, 0.5f, 0.2f);
+
     // State
     private AbilityDefinition currentAbility;
     private bool isEquipped;
@@ -246,13 +280,19 @@ public class AbilityActionPanel : MonoBehaviour
 
         GameObject badge = Instantiate(typeBadgePrefab, abilityTypeContainer);
 
+        // Add LayoutElement to prevent vertical expansion
+        var layoutElement = badge.GetComponent<LayoutElement>();
+        if (layoutElement == null)
+        {
+            layoutElement = badge.AddComponent<LayoutElement>();
+        }
+        layoutElement.flexibleHeight = 0; // Don't expand vertically
+
         // Set the text
         var textComponent = badge.GetComponentInChildren<TextMeshProUGUI>();
         if (textComponent != null)
         {
             textComponent.text = GetLabelForEffectType(effectType);
-            // Enable auto-sizing so text scales with container
-            textComponent.enableAutoSizing = true;
         }
 
         // Set the color
@@ -278,13 +318,19 @@ public class AbilityActionPanel : MonoBehaviour
 
         GameObject badge = Instantiate(typeBadgePrefab, abilityTypeContainer);
 
+        // Add LayoutElement to prevent vertical expansion
+        var layoutElement = badge.GetComponent<LayoutElement>();
+        if (layoutElement == null)
+        {
+            layoutElement = badge.AddComponent<LayoutElement>();
+        }
+        layoutElement.flexibleHeight = 0; // Don't expand vertically
+
         // Set the text
         var textComponent = badge.GetComponentInChildren<TextMeshProUGUI>();
         if (textComponent != null)
         {
             textComponent.text = GetLabelForStatusEffectType(statusEffectType);
-            // Enable auto-sizing so text scales with container
-            textComponent.enableAutoSizing = true;
         }
 
         // Set the color
@@ -359,11 +405,11 @@ public class AbilityActionPanel : MonoBehaviour
         switch (effectType)
         {
             case AbilityEffectType.Damage:
-                return new Color(0.85f, 0.2f, 0.2f); // Red
+                return damageColor;
             case AbilityEffectType.Heal:
-                return new Color(0.2f, 0.85f, 0.3f); // Green
+                return healColor;
             case AbilityEffectType.Shield:
-                return new Color(0.3f, 0.6f, 0.9f); // Blue
+                return shieldColor;
             default:
                 return Color.gray;
         }
@@ -377,29 +423,29 @@ public class AbilityActionPanel : MonoBehaviour
         switch (statusEffectType)
         {
             case StatusEffectType.Poison:
-                return new Color(0.5f, 0.8f, 0.2f); // Toxic green
+                return poisonColor;
             case StatusEffectType.Burn:
-                return new Color(0.95f, 0.5f, 0.1f); // Orange/fire
+                return burnColor;
             case StatusEffectType.Bleed:
-                return new Color(0.8f, 0.1f, 0.1f); // Dark red
+                return bleedColor;
             case StatusEffectType.Stun:
-                return new Color(0.9f, 0.9f, 0.3f); // Yellow
+                return stunColor;
             case StatusEffectType.Regeneration:
-                return new Color(0.3f, 0.9f, 0.5f); // Light green
+                return regenerationColor;
             case StatusEffectType.Shield:
-                return new Color(0.4f, 0.7f, 0.95f); // Light blue
+                return statusShieldColor;
             case StatusEffectType.AttackBuff:
-                return new Color(0.9f, 0.3f, 0.3f); // Light red (attack)
+                return attackBuffColor;
             case StatusEffectType.DefenseBuff:
-                return new Color(0.3f, 0.5f, 0.85f); // Medium blue (defense)
+                return defenseBuffColor;
             case StatusEffectType.SpeedBuff:
-                return new Color(0.95f, 0.85f, 0.3f); // Gold (speed)
+                return speedBuffColor;
             case StatusEffectType.AttackDebuff:
-                return new Color(0.6f, 0.2f, 0.2f); // Dark red (attack down)
+                return attackDebuffColor;
             case StatusEffectType.DefenseDebuff:
-                return new Color(0.3f, 0.3f, 0.6f); // Dark blue (defense down)
+                return defenseDebuffColor;
             case StatusEffectType.SpeedDebuff:
-                return new Color(0.6f, 0.5f, 0.2f); // Dark gold (speed down)
+                return speedDebuffColor;
             default:
                 return Color.gray;
         }
