@@ -22,6 +22,7 @@ public class UniversalSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     [Header("UI References")]
     [SerializeField] private Image itemIcon;
     [SerializeField] private TextMeshProUGUI quantityText;
+    [SerializeField] private GameObject quantityTextContainer; // Optional: parent container for quantity text
     [SerializeField] private Image background;
     [SerializeField] private Image selectionHighlight;
     [SerializeField] private Image contextIndicator; // Optionnel: indicateur visuel du type de container
@@ -178,6 +179,12 @@ public class UniversalSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
             {
                 quantityText.gameObject.SetActive(false);
             }
+
+            // Also hide container if assigned
+            if (quantityTextContainer != null)
+            {
+                quantityTextContainer.SetActive(false);
+            }
         }
         else
         {
@@ -211,14 +218,28 @@ public class UniversalSlotUI : MonoBehaviour, IDragDropSlot, IPointerClickHandle
     {
         if (quantityText != null)
         {
-            if (slotData.Quantity > 1 || (!hideQuantityIfOne && slotData.Quantity > 0))
+            bool shouldShow = slotData.Quantity > 1 || (!hideQuantityIfOne && slotData.Quantity > 0);
+
+            if (shouldShow)
             {
                 quantityText.text = slotData.Quantity.ToString();
                 quantityText.gameObject.SetActive(true);
+
+                // Also activate container if assigned
+                if (quantityTextContainer != null)
+                {
+                    quantityTextContainer.SetActive(true);
+                }
             }
             else
             {
                 quantityText.gameObject.SetActive(false);
+
+                // Also hide container if assigned
+                if (quantityTextContainer != null)
+                {
+                    quantityTextContainer.SetActive(false);
+                }
             }
         }
     }

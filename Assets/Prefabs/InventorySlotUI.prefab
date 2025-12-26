@@ -542,6 +542,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemIcon: {fileID: 4352704738492244256}
   quantityText: {fileID: 8708829361570747147}
+  quantityTextContainer: {fileID: 4898506587121218370}
   background: {fileID: 6330142561913946773}
   selectionHighlight: {fileID: 0}
   contextIndicator: {fileID: 0}
