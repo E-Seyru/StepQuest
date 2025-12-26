@@ -115,6 +115,7 @@ public class AboveCanvasEventService
         if (eventData.TicksCompleted > 0)
         {
             animationService?.ShakeRightIcon(); // Animation de satisfaction !
+            animationService?.FlashTravelPathContainer(); // Flash du container pour montrer le succes
             Logger.LogInfo($"AboveCanvasManager: Activity tick completed - {eventData.TicksCompleted} ticks, {eventData.Rewards.Length} rewards", Logger.LogCategory.General);
         }
     }

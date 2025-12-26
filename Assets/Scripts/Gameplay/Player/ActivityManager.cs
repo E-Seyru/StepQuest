@@ -373,6 +373,7 @@ public class ActivityTimeService
         }
 
         // Verifier si on peut recommencer automatiquement (boucle)
+        bool shouldContinue = false;
         if (variantCache.CanCraft(InventoryManager.Instance))
         {
             // Consommer les materiaux et redemarrer
@@ -381,6 +382,7 @@ public class ActivityTimeService
                 // Reset l'activite pour une nouvelle boucle
                 activityCache.AccumulatedTimeMs = 0;
                 activityCache.LastProcessedTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                shouldContinue = true;
             }
             else
             {
@@ -394,9 +396,12 @@ public class ActivityTimeService
             StopTimedActivity(activityCache, variantCache);
         }
 
-        // Sauvegarder l'etat (thread-safe)
-        DataManager.Instance.UpdateActivity(activityCache);
-        ActivityManager.Instance.PersistenceService.MarkDirty();
+        // Sauvegarder l'etat SEULEMENT si on continue (thread-safe)
+        if (shouldContinue)
+        {
+            DataManager.Instance.UpdateActivity(activityCache);
+            ActivityManager.Instance.PersistenceService.MarkDirty();
+        }
     }
 
     /// <summary>
@@ -432,6 +437,7 @@ public class ActivityTimeService
         // Simuler le temps offline par chunks pour gerer les boucles
         long remainingTime = offlineTimeMs;
         int completedCrafts = 0;
+        bool activityWasStopped = false;
 
         while (remainingTime > 0 && currentActivityCache.IsTimeBased)
         {
@@ -462,6 +468,7 @@ public class ActivityTimeService
                     // Plus de materiaux, arreter (thread-safe)
                     currentActivityCache.Clear();
                     DataManager.Instance.StopActivity();
+                    activityWasStopped = true;
                     break;
                 }
             }
@@ -473,10 +480,13 @@ public class ActivityTimeService
             }
         }
 
-        // Mettre a jour le timestamp (thread-safe)
-        currentActivityCache.LastProcessedTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-        DataManager.Instance.UpdateActivity(currentActivityCache);
-        ActivityManager.Instance.PersistenceService.MarkDirty();
+        // Mettre a jour le timestamp SEULEMENT si l'activite n'a pas ete arretee (thread-safe)
+        if (!activityWasStopped)
+        {
+            currentActivityCache.LastProcessedTimeMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            DataManager.Instance.UpdateActivity(currentActivityCache);
+            ActivityManager.Instance.PersistenceService.MarkDirty();
+        }
 
         if (completedCrafts > 0)
         {
@@ -691,6 +701,12 @@ public class ActivityProgressService
         // Add steps to activity
         currentActivityCache.AddSteps(newSteps);
 
+        // =====================================
+        // EVENTBUS - Publier l'evenement de progression AVANT le traitement des ticks
+        // =====================================
+        EventBus.Publish(new ActivityProgressEvent(currentActivityCache, currentVariantCache,
+            currentActivityCache.GetProgressToNextTick(currentVariantCache) * 100f));
+
         // Check for completed ticks
         int completedTicks = currentActivityCache.CalculateCompleteTicks(currentVariantCache, 0);
 
@@ -704,12 +720,6 @@ public class ActivityProgressService
 
         // Mark as dirty for persistence
         ActivityManager.Instance.PersistenceService.MarkDirty();
-
-        // =====================================
-        // EVENTBUS - Publier l'evenement de progression
-        // =====================================
-        EventBus.Publish(new ActivityProgressEvent(currentActivityCache, currentVariantCache,
-            currentActivityCache.GetProgressToNextTick(currentVariantCache) * 100f));
 
         if (enableDebugLogs && newSteps > 0)
         {
@@ -753,10 +763,29 @@ public class ActivityProgressService
         // =====================================
         EventBus.Publish(new ActivityTickEvent(currentActivityCache, currentVariantCache, ticksCompleted, resourceId));
 
+        // =====================================
+        // EVENTBUS - Publier l'evenement de progression APRES le traitement des ticks (pour montrer le reset)
+        // Delai leger pour permettre aux animations de completion de s'afficher
+        // =====================================
+        ActivityManager.Instance.StartCoroutine(PublishProgressEventDelayed(currentActivityCache, currentVariantCache));
+
         if (enableDebugLogs)
         {
             Logger.LogInfo($"ActivityManager: Completed {ticksCompleted} ticks, gained {totalRewards} {resourceId}", Logger.LogCategory.General);
         }
+    }
+
+    /// <summary>
+    /// Coroutine pour publier l'evenement de progression avec un leger delai
+    /// </summary>
+    private static System.Collections.IEnumerator PublishProgressEventDelayed(ActivityData activity, ActivityVariant variant)
+    {
+        // Attendre un court instant pour que l'animation de completion soit visible
+        yield return new WaitForSeconds(0.3f);
+
+        // Publier l'evenement de progression pour montrer le reset
+        EventBus.Publish(new ActivityProgressEvent(activity, variant,
+            activity.GetProgressToNextTick(variant) * 100f));
     }
 
     // MODIFIE: ProcessOfflineProgress pour gerer les deux types

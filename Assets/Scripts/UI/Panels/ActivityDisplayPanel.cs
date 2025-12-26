@@ -22,12 +22,21 @@ public class ActivityDisplayPanel : MonoBehaviour
 
     [Header("Visual")]
     [SerializeField] private Image activityIcon;
+    [SerializeField] private GameObject backgroundActivityImage; // GameObject to flash on tick completion
 
     [Header("Slide Animation")]
     [SerializeField] private float slideAnimationDuration = 0.3f;
     [SerializeField] private LeanTweenType slideEaseIn = LeanTweenType.easeOutBack;
     [SerializeField] private LeanTweenType slideEaseOut = LeanTweenType.easeInBack;
     [SerializeField] private float slideOffsetY = -500f; // How far below to start (negative = below)
+
+    [Header("Progress Bar Animation")]
+    [SerializeField] private float progressAnimationDuration = 0.2f;
+    [SerializeField] private LeanTweenType progressAnimationEase = LeanTweenType.easeOutQuad;
+
+    [Header("Tick Completion Animation")]
+    [SerializeField] private float tickFlashDuration = 0.3f;
+    [SerializeField] private float tickScalePunch = 1.1f;
 
     // Etat actuel
     private ActivityData currentActivity;
@@ -36,6 +45,8 @@ public class ActivityDisplayPanel : MonoBehaviour
     private RectTransform rectTransform;
     private Vector3 originalPosition;
     private int currentAnimationId = -1;
+    private int progressBarAnimationId = -1;
+    private float currentProgressBarFill = 0f;
 
     public static ActivityDisplayPanel Instance { get; private set; }
 
@@ -365,10 +376,10 @@ public class ActivityDisplayPanel : MonoBehaviour
                                $"Progression: {currentActivity.AccumulatedTimeMs}ms / {totalTime}";
         }
 
-        // Barre de progression
+        // Barre de progression avec animation
         if (progressBarFill != null)
         {
-            progressBarFill.fillAmount = progressPercent;
+            AnimateProgressBar(progressPercent);
 
             // Couleur speciale pour les activites temporelles
             Color timeColor = Color.Lerp(Color.cyan, Color.yellow, progressPercent);
@@ -398,10 +409,10 @@ public class ActivityDisplayPanel : MonoBehaviour
                                $"Progression: {currentActivity.AccumulatedSteps}/{currentVariant.ActionCost}";
         }
 
-        // Barre de progression
+        // Barre de progression avec animation
         if (progressBarFill != null)
         {
-            progressBarFill.fillAmount = progressPercent;
+            AnimateProgressBar(progressPercent);
 
             // Couleur standard pour les activites de pas
             Color currentColor = Color.Lerp(progressFillColor, Color.yellow, progressPercent * 0.5f);
@@ -433,20 +444,73 @@ public class ActivityDisplayPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Effet visuel quand des ticks sont completes (optionnel)
+    /// Effet visuel quand des ticks sont completes
     /// </summary>
     private void ShowTickRewardFeedback(int ticksCompleted)
     {
-        // Ici vous pourriez ajouter des effets visuels :
-        // - Animation de la barre de progression
-        // - Texte qui apparaît pour montrer les recompenses
-        // - Son ou vibration
+        if (ticksCompleted <= 0) return;
 
-        // Exemple simple : effet visuel sur la barre custom
-        if (progressBarFill != null)
+        // Flash/pulse animation sur le BackgroundActivityImage
+        if (backgroundActivityImage == null)
         {
-            // L'UpdateDisplay() va etre appele apres, donc la barre se remplira automatiquement
-            // Ici on pourrait ajouter un effet de "flash" ou d'animation
+            Logger.LogWarning("ActivityDisplayPanel: backgroundActivityImage is null - assign it in inspector!", Logger.LogCategory.General);
+            return;
+        }
+
+        Logger.LogInfo($"ActivityDisplayPanel: ShowTickRewardFeedback called with {ticksCompleted} ticks", Logger.LogCategory.General);
+
+        // S'assurer que le GameObject est actif
+        bool wasActive = backgroundActivityImage.activeSelf;
+        if (!wasActive)
+        {
+            backgroundActivityImage.SetActive(true);
+            Logger.LogInfo("ActivityDisplayPanel: Activated backgroundActivityImage", Logger.LogCategory.General);
+        }
+
+        // Animation de scale punch (agrandissement puis retour)
+        Transform bgTransform = backgroundActivityImage.transform;
+        Vector3 originalScale = bgTransform.localScale;
+
+        LeanTween.cancel(backgroundActivityImage);
+        LeanTween.scale(backgroundActivityImage, originalScale * tickScalePunch, tickFlashDuration * 0.5f)
+            .setEase(LeanTweenType.easeOutQuad)
+            .setOnComplete(() =>
+            {
+                LeanTween.scale(backgroundActivityImage, originalScale, tickFlashDuration * 0.5f)
+                    .setEase(LeanTweenType.easeInQuad)
+                    .setOnComplete(() =>
+                    {
+                        // Remettre a l'etat initial si necessaire
+                        if (!wasActive)
+                        {
+                            backgroundActivityImage.SetActive(false);
+                        }
+                    });
+            });
+
+        // Animation de flash sur l'Image component (si present)
+        Image bgImage = backgroundActivityImage.GetComponent<Image>();
+        if (bgImage != null)
+        {
+            Color originalColor = bgImage.color;
+            Color flashColor = new Color(originalColor.r, originalColor.g, originalColor.b, 1f);
+
+            Logger.LogInfo($"ActivityDisplayPanel: Starting flash animation from color {originalColor}", Logger.LogCategory.General);
+
+            LeanTween.value(backgroundActivityImage, 0f, 1f, tickFlashDuration)
+                .setEase(LeanTweenType.easeOutQuad)
+                .setOnUpdate((float val) =>
+                {
+                    if (bgImage != null)
+                    {
+                        float alpha = Mathf.Lerp(1f, originalColor.a, val);
+                        bgImage.color = new Color(originalColor.r, originalColor.g, originalColor.b, alpha);
+                    }
+                });
+        }
+        else
+        {
+            Logger.LogWarning("ActivityDisplayPanel: backgroundActivityImage has no Image component", Logger.LogCategory.General);
         }
     }
 
@@ -529,11 +593,16 @@ public class ActivityDisplayPanel : MonoBehaviour
 
     void OnDestroy()
     {
-        // Cancel any ongoing animation
+        // Cancel any ongoing animations
         if (currentAnimationId != -1)
         {
             LeanTween.cancel(currentAnimationId);
             currentAnimationId = -1;
+        }
+        if (progressBarAnimationId != -1)
+        {
+            LeanTween.cancel(progressBarAnimationId);
+            progressBarAnimationId = -1;
         }
 
         UnsubscribeFromActivityEvents();
@@ -585,5 +654,39 @@ public class ActivityDisplayPanel : MonoBehaviour
         {
             stopActivityButton.onClick.RemoveListener(StopCurrentActivity);
         }
+    }
+
+    /// <summary>
+    /// Anime la barre de progression vers une nouvelle valeur cible
+    /// </summary>
+    private void AnimateProgressBar(float targetProgress)
+    {
+        if (progressBarFill == null) return;
+
+        // Si la valeur est deja la meme, pas besoin d'animer
+        if (Mathf.Approximately(targetProgress, currentProgressBarFill)) return;
+
+        // Annuler l'animation precedente si elle existe
+        if (progressBarAnimationId != -1)
+        {
+            LeanTween.cancel(progressBarAnimationId);
+            progressBarAnimationId = -1;
+        }
+
+        // Animer vers la nouvelle valeur
+        progressBarAnimationId = LeanTween.value(gameObject, currentProgressBarFill, targetProgress, progressAnimationDuration)
+            .setEase(progressAnimationEase)
+            .setOnUpdate((float val) =>
+            {
+                if (progressBarFill != null)
+                {
+                    progressBarFill.fillAmount = val;
+                    currentProgressBarFill = val;
+                }
+            })
+            .setOnComplete(() =>
+            {
+                progressBarAnimationId = -1;
+            }).id;
     }
 }

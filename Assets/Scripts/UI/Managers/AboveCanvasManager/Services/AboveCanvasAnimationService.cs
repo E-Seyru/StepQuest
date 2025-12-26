@@ -615,4 +615,50 @@ public class AboveCanvasAnimationService
         combatAnimationTimerId = -1;
         combatPulseAnimationId = -1;
     }
+
+    /// <summary>
+    /// NOUVEAU: Anime le TravelPathContainer pour montrer une reussite d'activite
+    /// </summary>
+    public void FlashTravelPathContainer()
+    {
+        if (manager.TravelPathContainer == null) return;
+
+        GameObject containerObj = manager.TravelPathContainer.gameObject;
+        Vector3 originalScale = manager.TravelPathContainer.localScale;
+
+        // Annuler les animations precedentes
+        LeanTween.cancel(containerObj);
+
+        // Animation de pulse (scale up puis down)
+        LeanTween.scale(containerObj, originalScale * 1.1f, 0.15f)
+            .setEase(LeanTweenType.easeOutQuad)
+            .setOnComplete(() =>
+            {
+                LeanTween.scale(containerObj, originalScale, 0.15f)
+                    .setEase(LeanTweenType.easeInQuad);
+            });
+
+        // Animation de flash sur l'Image component (si present)
+        Image containerImage = manager.TravelPathContainer.GetComponent<Image>();
+        if (containerImage != null)
+        {
+            Color originalColor = containerImage.color;
+            Color brightColor = new Color(
+                Mathf.Min(originalColor.r * 1.3f, 1f),
+                Mathf.Min(originalColor.g * 1.3f, 1f),
+                Mathf.Min(originalColor.b * 1.3f, 1f),
+                originalColor.a
+            );
+
+            LeanTween.value(containerObj, 0f, 1f, 0.3f)
+                .setEase(LeanTweenType.easeOutQuad)
+                .setOnUpdate((float val) =>
+                {
+                    if (containerImage != null)
+                    {
+                        containerImage.color = Color.Lerp(brightColor, originalColor, val);
+                    }
+                });
+        }
+    }
 }
