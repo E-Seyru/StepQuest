@@ -159,7 +159,23 @@ public class AbilityActionPanel : MonoBehaviour
         // Determine which container to show based on ability weight
         int weight = currentAbility.Weight > 0 ? currentAbility.Weight : 1;
 
-        // Hide all containers first
+        // Clear and hide all icon containers first
+        if (abilityIcon_1x2 != null)
+        {
+            abilityIcon_1x2.sprite = null;
+            abilityIcon_1x2.color = Color.white;
+        }
+        if (abilityIcon_2x2 != null)
+        {
+            abilityIcon_2x2.sprite = null;
+            abilityIcon_2x2.color = Color.white;
+        }
+        if (abilityIcon_3x2 != null)
+        {
+            abilityIcon_3x2.sprite = null;
+            abilityIcon_3x2.color = Color.white;
+        }
+
         if (abilityIconContainer_1x2 != null) abilityIconContainer_1x2.SetActive(false);
         if (abilityIconContainer_2x2 != null) abilityIconContainer_2x2.SetActive(false);
         if (abilityIconContainer_3x2 != null) abilityIconContainer_3x2.SetActive(false);
