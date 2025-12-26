@@ -573,7 +573,7 @@ public class ConnectionManagerWindow : EditorWindow
         }
 
         AssetDatabase.SaveAssets();
-        Debug.Log(logMessage);
+        Logger.LogInfo(logMessage, Logger.LogCategory.EditorLog);
         ValidateConnections(); // Refresh validation
     }
 
@@ -606,7 +606,7 @@ public class ConnectionManagerWindow : EditorWindow
         EditorUtility.SetDirty(from);
         AssetDatabase.SaveAssets();
 
-        Debug.Log($"✅ Created UNIDIRECTIONAL connection: {from.DisplayName} → {to.DisplayName} (50 steps)");
+        Logger.LogInfo($"✅ Created UNIDIRECTIONAL connection: {from.DisplayName} → {to.DisplayName} (50 steps, Logger.LogCategory.EditorLog)");
         ValidateConnections(); // Refresh validation
     }
 
@@ -646,7 +646,7 @@ public class ConnectionManagerWindow : EditorWindow
             }
 
             AssetDatabase.SaveAssets();
-            Debug.Log(logMessage);
+            Logger.LogInfo(logMessage, Logger.LogCategory.EditorLog);
 
             // Reset form
             fromLocation = null;
@@ -658,7 +658,7 @@ public class ConnectionManagerWindow : EditorWindow
         }
         catch (Exception ex)
         {
-            Debug.LogError($"❌ Error creating connection: {ex.Message}");
+            Logger.LogError($"❌ Error creating connection: {ex.Message}", Logger.LogCategory.EditorLog);
             EditorUtility.DisplayDialog("Error", $"Failed to create connection:\n{ex.Message}", "OK");
         }
     }
@@ -669,7 +669,7 @@ public class ConnectionManagerWindow : EditorWindow
         // Could be enhanced with a dedicated edit dialog
         Selection.activeObject = location;
         EditorGUIUtility.PingObject(location);
-        Debug.Log($"📝 Edit connection {index} from {location.DisplayName} in Inspector");
+        Logger.LogInfo($"📝 Edit connection {index} from {location.DisplayName} in Inspector", Logger.LogCategory.EditorLog);
     }
 
     private void RemoveConnection(MapLocationDefinition location, int index)
@@ -691,7 +691,7 @@ public class ConnectionManagerWindow : EditorWindow
                 EditorUtility.SetDirty(location);
                 AssetDatabase.SaveAssets();
 
-                Debug.Log($"🗑️ Removed connection: {location.DisplayName} → {destinationName}");
+                Logger.LogInfo($"🗑️ Removed connection: {location.DisplayName} → {destinationName}", Logger.LogCategory.EditorLog);
                 ValidateConnections(); // Refresh validation
             }
         }

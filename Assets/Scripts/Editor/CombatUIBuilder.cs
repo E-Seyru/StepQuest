@@ -241,7 +241,7 @@ public class CombatUIBuilder : EditorWindow
         Selection.activeGameObject = combatPanelObj;
         EditorGUIUtility.PingObject(combatPanelObj);
 
-        Debug.Log("Combat UI created successfully! Don't forget to create and assign the Ability Prefab.");
+        Logger.LogInfo("Combat UI created successfully! Don't forget to create and assign the Ability Prefab.", Logger.LogCategory.EditorLog);
     }
 
     private GameObject CreateCharacterCard(string name, Transform parent, bool isPlayer)
@@ -552,8 +552,8 @@ public class CombatUIBuilder : EditorWindow
         Selection.activeObject = createdPrefab;
         EditorGUIUtility.PingObject(createdPrefab);
 
-        Debug.Log($"Ability prefab created at: {fullPath}");
-        Debug.Log("Now assign this prefab to the CombatAbilityDisplay components in your Combat UI!");
+        Logger.LogInfo($"Ability prefab created at: {fullPath}", Logger.LogCategory.EditorLog);
+        Logger.LogInfo("Now assign this prefab to the CombatAbilityDisplay components in your Combat UI!", Logger.LogCategory.EditorLog);
     }
 
     private GameObject CreateUIElement(string name, Transform parent)

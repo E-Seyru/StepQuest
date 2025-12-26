@@ -53,14 +53,14 @@ public class MapToggleButton : MonoBehaviour
         // Verification 1: Le PanelManager existe-t-il ?
         if (panelManager == null)
         {
-            Debug.LogWarning("MapToggleButton: PanelManager reference is null!");
+            Logger.LogWarning("MapToggleButton: PanelManager reference is null!", Logger.LogCategory.MapLog);
             return;
         }
 
         // Verification 2: Sommes-nous deja en train de traiter un clic ?
         if (isProcessingClick)
         {
-            Debug.Log("MapToggleButton: Clic ignore - traitement en cours");
+            Logger.LogInfo("MapToggleButton: Clic ignore - traitement en cours", Logger.LogCategory.MapLog);
             return;
         }
 
@@ -68,7 +68,7 @@ public class MapToggleButton : MonoBehaviour
         float currentTime = Time.time;
         if (currentTime - lastClickTime < clickCooldown)
         {
-            Debug.Log($"MapToggleButton: Clic ignore - cooldown actif ({clickCooldown}s)");
+            Logger.LogInfo($"MapToggleButton: Clic ignore - cooldown actif ({clickCooldown}s, Logger.LogCategory.MapLog)");
             return;
         }
 
@@ -92,19 +92,19 @@ public class MapToggleButton : MonoBehaviour
             if (panelManager.IsMapVisible)
             {
                 // La carte est visible, on revient au panel precedent
-                Debug.Log("MapToggleButton: Masquage de la carte");
+                Logger.LogInfo("MapToggleButton: Masquage de la carte", Logger.LogCategory.MapLog);
                 panelManager.HideMapAndReturnToPrevious();
             }
             else
             {
                 // La carte est cachee, on l'affiche
-                Debug.Log("MapToggleButton: Affichage de la carte");
+                Logger.LogInfo("MapToggleButton: Affichage de la carte", Logger.LogCategory.MapLog);
                 panelManager.ShowMap();
             }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"MapToggleButton: Erreur lors du traitement du clic - {e.Message}");
+            Logger.LogError($"MapToggleButton: Erreur lors du traitement du clic - {e.Message}", Logger.LogCategory.MapLog);
         }
         finally
         {

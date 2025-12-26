@@ -50,7 +50,7 @@ public class CombatSectionPanel : MonoBehaviour
     {
         if (location == null)
         {
-            Debug.LogWarning("CombatSectionPanel: Cannot display enemies for null location!");
+            Logger.LogWarning("CombatSectionPanel: Cannot display enemies for null location!", Logger.LogCategory.CombatLog);
             HideSection();
             return;
         }
@@ -89,7 +89,7 @@ public class CombatSectionPanel : MonoBehaviour
             CreateEnemyCards(enemies);
         }
 
-        Debug.Log($"CombatSectionPanel: Displayed {enemies.Count} enemies");
+        Logger.LogInfo($"CombatSectionPanel: Displayed {enemies.Count} enemies", Logger.LogCategory.CombatLog);
     }
 
     /// <summary>
@@ -142,19 +142,19 @@ public class CombatSectionPanel : MonoBehaviour
 
         if (enemiesContainer == null)
         {
-            Debug.LogError("CombatSectionPanel: EnemiesContainer n'est pas assigne !");
+            Logger.LogError("CombatSectionPanel: EnemiesContainer n'est pas assigne !", Logger.LogCategory.CombatLog);
             hasErrors = true;
         }
 
         if (enemyCardPrefab == null)
         {
-            Debug.LogError("CombatSectionPanel: EnemyCardPrefab n'est pas assigne !");
+            Logger.LogError("CombatSectionPanel: EnemyCardPrefab n'est pas assigne !", Logger.LogCategory.CombatLog);
             hasErrors = true;
         }
 
         if (hasErrors)
         {
-            Debug.LogError("CombatSectionPanel: Des references critiques manquent !");
+            Logger.LogError("CombatSectionPanel: Des references critiques manquent !", Logger.LogCategory.CombatLog);
         }
     }
 
@@ -165,7 +165,7 @@ public class CombatSectionPanel : MonoBehaviour
         // Verifier que GridLayoutGroup est present
         if (enemiesContainer.GetComponent<GridLayoutGroup>() == null)
         {
-            Debug.LogWarning("CombatSectionPanel: GridLayoutGroup manquant sur EnemiesContainer, ajoutez-le dans l'Inspector!");
+            Logger.LogWarning("CombatSectionPanel: GridLayoutGroup manquant sur EnemiesContainer, ajoutez-le dans l'Inspector!", Logger.LogCategory.CombatLog);
         }
     }
 
@@ -223,7 +223,7 @@ public class CombatSectionPanel : MonoBehaviour
         var enemyCard = cardObject.GetComponent<EnemyCard>();
         if (enemyCard == null)
         {
-            Debug.LogError("CombatSectionPanel: Le prefab ne contient pas de composant EnemyCard !");
+            Logger.LogError("CombatSectionPanel: Le prefab ne contient pas de composant EnemyCard !", Logger.LogCategory.CombatLog);
             return;
         }
 
@@ -237,7 +237,7 @@ public class CombatSectionPanel : MonoBehaviour
 
     private void OnEnemyCardClicked(EnemyDefinition enemy)
     {
-        Debug.Log($"CombatSectionPanel: Enemy card clicked for {enemy.GetDisplayName()}");
+        Logger.LogInfo($"CombatSectionPanel: Enemy card clicked for {enemy.GetDisplayName()}", Logger.LogCategory.CombatLog);
 
         // Propager l'evenement
         OnEnemySelected?.Invoke(enemy);

@@ -90,7 +90,7 @@ public class CombatUIWirer : EditorWindow
         // Check if already exists
         if (AssetDatabase.LoadAssetAtPath<GameObject>(fullPath) != null)
         {
-            Debug.Log("CombatAbilityUI prefab already exists at " + fullPath);
+            Logger.LogInfo("CombatAbilityUI prefab already exists at " + fullPath, Logger.LogCategory.EditorLog);
             return;
         }
 
@@ -137,7 +137,7 @@ public class CombatUIWirer : EditorWindow
         PrefabUtility.SaveAsPrefabAsset(prefabRoot, fullPath);
         DestroyImmediate(prefabRoot);
 
-        Debug.Log("Created CombatAbilityUI prefab at " + fullPath);
+        Logger.LogInfo("Created CombatAbilityUI prefab at " + fullPath, Logger.LogCategory.EditorLog);
     }
 
     private void AddScripts()
@@ -148,7 +148,7 @@ public class CombatUIWirer : EditorWindow
         if (combatPanel.GetComponent<CombatPanelUI>() == null)
         {
             Undo.AddComponent<CombatPanelUI>(combatPanel);
-            Debug.Log("Added CombatPanelUI to " + combatPanel.name);
+            Logger.LogInfo("Added CombatPanelUI to " + combatPanel.name, Logger.LogCategory.EditorLog);
         }
 
         // Find and add CombatAbilityDisplay to player abilities panel
@@ -159,7 +159,7 @@ public class CombatUIWirer : EditorWindow
             if (playerAbilities != null && playerAbilities.GetComponent<CombatAbilityDisplay>() == null)
             {
                 Undo.AddComponent<CombatAbilityDisplay>(playerAbilities.gameObject);
-                Debug.Log("Added CombatAbilityDisplay to PlayerPanel > EquippedAbilitiesPanel");
+                Logger.LogInfo("Added CombatAbilityDisplay to PlayerPanel > EquippedAbilitiesPanel", Logger.LogCategory.EditorLog);
             }
         }
 
@@ -171,7 +171,7 @@ public class CombatUIWirer : EditorWindow
             if (enemyAbilities != null && enemyAbilities.GetComponent<CombatAbilityDisplay>() == null)
             {
                 Undo.AddComponent<CombatAbilityDisplay>(enemyAbilities.gameObject);
-                Debug.Log("Added CombatAbilityDisplay to AIPanel > EquippedAbilitiesPanel");
+                Logger.LogInfo("Added CombatAbilityDisplay to AIPanel > EquippedAbilitiesPanel", Logger.LogCategory.EditorLog);
             }
         }
 
@@ -356,7 +356,7 @@ public class CombatUIWirer : EditorWindow
 
         so.ApplyModifiedProperties();
 
-        Debug.Log("Wired all references for CombatPanelUI!");
+        Logger.LogInfo("Wired all references for CombatPanelUI!", Logger.LogCategory.EditorLog);
         EditorUtility.SetDirty(panelUI);
     }
 
@@ -370,7 +370,7 @@ public class CombatUIWirer : EditorWindow
             SerializedObject displaySO = new SerializedObject(display);
             displaySO.FindProperty("abilityPrefab").objectReferenceValue = prefab;
             displaySO.ApplyModifiedProperties();
-            Debug.Log("Assigned ability prefab to " + display.gameObject.name);
+            Logger.LogInfo("Assigned ability prefab to " + display.gameObject.name, Logger.LogCategory.EditorLog);
         }
     }
 

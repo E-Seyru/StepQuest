@@ -38,13 +38,13 @@ public class HarvestingActivityCard : MonoBehaviour
     {
         if (variant == null)
         {
-            Debug.LogWarning("HarvestingActivityCard: Cannot setup with null variant!");
+            Logger.LogWarning("HarvestingActivityCard: Cannot setup with null variant!", Logger.LogCategory.ActivityLog);
             return;
         }
 
         if (variant.IsTimeBased)
         {
-            Debug.LogWarning($"HarvestingActivityCard: Variant '{variant.VariantName}' is time-based, not step-based!");
+            Logger.LogWarning($"HarvestingActivityCard: Variant '{variant.VariantName}' is time-based, not step-based!", Logger.LogCategory.ActivityLog);
             return;
         }
 
@@ -54,7 +54,7 @@ public class HarvestingActivityCard : MonoBehaviour
         SetupRequirements();
         CheckLevelRequirement();
 
-        Debug.Log($"HarvestingActivityCard: Setup completed for {variant.VariantName}");
+        Logger.LogInfo($"HarvestingActivityCard: Setup completed for {variant.VariantName}", Logger.LogCategory.ActivityLog);
     }
 
     /// <summary>
@@ -76,7 +76,7 @@ public class HarvestingActivityCard : MonoBehaviour
 
                 if (!hasRequiredLevel)
                 {
-                    Debug.Log($"HarvestingActivityCard: Level insufficient for {activityVariant.VariantName}. Required: {activityVariant.UnlockRequirement}, Player: {playerLevel}");
+                    Logger.LogInfo($"HarvestingActivityCard: Level insufficient for {activityVariant.VariantName}. Required: {activityVariant.UnlockRequirement}, Player: {playerLevel}", Logger.LogCategory.ActivityLog);
                 }
             }
         }
@@ -150,11 +150,11 @@ public class HarvestingActivityCard : MonoBehaviour
             // Vérifier le niveau - PAS d'animation si niveau insuffisant
             if (!hasRequiredLevel)
             {
-                Debug.Log($"HarvestingActivityCard: Level requirement not met for {activityVariant.VariantName}");
+                Logger.LogInfo($"HarvestingActivityCard: Level requirement not met for {activityVariant.VariantName}", Logger.LogCategory.ActivityLog);
                 return; // Pas d'animation, juste ignorer le clic
             }
 
-            Debug.Log($"HarvestingActivityCard: Card clicked for {activityVariant.VariantName}");
+            Logger.LogInfo($"HarvestingActivityCard: Card clicked for {activityVariant.VariantName}", Logger.LogCategory.ActivityLog);
             OnCardClicked?.Invoke(activityVariant);
         }
     }

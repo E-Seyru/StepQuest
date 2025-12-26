@@ -61,7 +61,7 @@ public class POIEditor : Editor
         // Selectionner le nouveau point pour faciliter son positionnement
         Selection.activeGameObject = startPoint;
 
-        Debug.Log($"Travel start point created for POI '{poi.LocationID}'");
+        Logger.LogInfo($"Travel start point created for POI '{poi.LocationID}'", Logger.LogCategory.EditorLog);
     }
 
     private void RemoveTravelStartPoint(POI poi)
@@ -83,7 +83,7 @@ public class POIEditor : Editor
             EditorUtility.SetDirty(poi);
             UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(poi.gameObject.scene);
 
-            Debug.Log($"Travel start point removed for POI '{poi.LocationID}'");
+            Logger.LogInfo($"Travel start point removed for POI '{poi.LocationID}'", Logger.LogCategory.EditorLog);
         }
     }
 }

@@ -52,7 +52,7 @@ public class EquipmentPanelUI : MonoBehaviour
 
         if (inventoryManager == null)
         {
-            Debug.LogError("EquipmentPanelUI: InventoryManager not found!");
+            Logger.LogError("EquipmentPanelUI: InventoryManager not found!", Logger.LogCategory.InventoryLog);
             return;
         }
 
@@ -65,7 +65,7 @@ public class EquipmentPanelUI : MonoBehaviour
         // Initial display refresh
         RefreshDisplay();
 
-        Debug.Log("EquipmentPanelUI: Initialized successfully");
+        Logger.LogInfo("EquipmentPanelUI: Initialized successfully", Logger.LogCategory.InventoryLog);
     }
 
     /// <summary>
@@ -121,7 +121,7 @@ public class EquipmentPanelUI : MonoBehaviour
         {
             if (!inventoryManager.RemoveItem("player", itemId, 1))
             {
-                Debug.LogError($"EquipmentPanelUI: Couldn't remove {itemId} from inventory");
+                Logger.LogError($"EquipmentPanelUI: Couldn't remove {itemId} from inventory", Logger.LogCategory.InventoryLog);
                 return false;
             }
         }
@@ -143,7 +143,7 @@ public class EquipmentPanelUI : MonoBehaviour
     {
         if (!equippedItems.ContainsKey(slotType))
         {
-            Debug.LogWarning($"EquipmentPanelUI: No item equipped in {slotType} slot");
+            Logger.LogWarning($"EquipmentPanelUI: No item equipped in {slotType} slot", Logger.LogCategory.InventoryLog);
             return false;
         }
 
@@ -154,7 +154,7 @@ public class EquipmentPanelUI : MonoBehaviour
         bool addedToInventory = inventoryManager.AddItem("player", itemId, 1);
         if (!addedToInventory)
         {
-            Debug.LogError($"EquipmentPanelUI: Failed to add item '{itemId}' back to inventory (inventory full?)");
+            Logger.LogError($"EquipmentPanelUI: Failed to add item '{itemId}' back to inventory (inventory full?)", Logger.LogCategory.InventoryLog);
             return false;
         }
 
@@ -173,7 +173,7 @@ public class EquipmentPanelUI : MonoBehaviour
         RefreshDisplay();
         SaveEquippedItems();
 
-        Debug.Log($"EquipmentPanelUI: Unequipped {itemDef?.GetDisplayName() ?? itemId} from {slotType} slot");
+        Logger.LogInfo($"EquipmentPanelUI: Unequipped {itemDef?.GetDisplayName() ?? itemId} from {slotType} slot", Logger.LogCategory.InventoryLog);
         return true;
     }
 
@@ -212,7 +212,7 @@ public class EquipmentPanelUI : MonoBehaviour
         }
         else
         {
-            Debug.Log($"EquipmentPanelUI: {slotType} slot is empty");
+            Logger.LogInfo($"EquipmentPanelUI: {slotType} slot is empty", Logger.LogCategory.InventoryLog);
         }
     }
 

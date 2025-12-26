@@ -67,7 +67,7 @@ public class VariantContainer : MonoBehaviour
         {
             if (enableDebugLogs)
             {
-                Debug.LogWarning("VariantContainer: Cannot show variants for null activity");
+                Logger.LogWarning("VariantContainer: Cannot show variants for null activity", Logger.LogCategory.ActivityLog);
             }
             return;
         }
@@ -89,7 +89,7 @@ public class VariantContainer : MonoBehaviour
 
         if (enableDebugLogs)
         {
-            Debug.Log($"VariantContainer: Found {variants.Count} variants for {activity.GetDisplayName()}");
+            Logger.LogInfo($"VariantContainer: Found {variants.Count} variants for {activity.GetDisplayName()}", Logger.LogCategory.ActivityLog);
         }
 
         // MODIFICATION : On appelle notre nouvelle méthode de gestion du pool.
@@ -162,7 +162,7 @@ public class VariantContainer : MonoBehaviour
     {
         if (variantIconPrefab == null || variantsContainer == null)
         {
-            Debug.LogError("VariantContainer: variantIconPrefab or variantsContainer is null!");
+            Logger.LogError("VariantContainer: variantIconPrefab or variantsContainer is null!", Logger.LogCategory.ActivityLog);
             return;
         }
 

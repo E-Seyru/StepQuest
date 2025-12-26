@@ -44,7 +44,7 @@ public class EnemyCard : MonoBehaviour
     {
         if (locEnemy == null || !locEnemy.IsValid())
         {
-            Debug.LogWarning("EnemyCard: Cannot setup with null or invalid LocationEnemy!");
+            Logger.LogWarning("EnemyCard: Cannot setup with null or invalid LocationEnemy!", Logger.LogCategory.CombatLog);
             return;
         }
 
@@ -56,7 +56,7 @@ public class EnemyCard : MonoBehaviour
         SetupRewardsInfo();
         UpdateCardState(canFight);
 
-        Debug.Log($"EnemyCard: Setup completed for {enemyDefinition.GetDisplayName()}");
+        Logger.LogInfo($"EnemyCard: Setup completed for {enemyDefinition.GetDisplayName()}", Logger.LogCategory.CombatLog);
     }
 
     /// <summary>
@@ -66,7 +66,7 @@ public class EnemyCard : MonoBehaviour
     {
         if (enemy == null)
         {
-            Debug.LogWarning("EnemyCard: Cannot setup with null enemy!");
+            Logger.LogWarning("EnemyCard: Cannot setup with null enemy!", Logger.LogCategory.CombatLog);
             return;
         }
 
@@ -78,7 +78,7 @@ public class EnemyCard : MonoBehaviour
         SetupRewardsInfo();
         UpdateCardState(canFight);
 
-        Debug.Log($"EnemyCard: Setup completed for {enemy.GetDisplayName()}");
+        Logger.LogInfo($"EnemyCard: Setup completed for {enemy.GetDisplayName()}", Logger.LogCategory.CombatLog);
     }
 
     /// <summary>
@@ -136,13 +136,13 @@ public class EnemyCard : MonoBehaviour
     {
         if (!canFight)
         {
-            Debug.Log($"EnemyCard: Cannot fight {enemyDefinition.GetDisplayName()} - requirements not met");
+            Logger.LogInfo($"EnemyCard: Cannot fight {enemyDefinition.GetDisplayName()} - requirements not met", Logger.LogCategory.CombatLog);
             return;
         }
 
         if (enemyDefinition != null)
         {
-            Debug.Log($"EnemyCard: Card clicked for {enemyDefinition.GetDisplayName()}");
+            Logger.LogInfo($"EnemyCard: Card clicked for {enemyDefinition.GetDisplayName()}", Logger.LogCategory.CombatLog);
             OnCardClicked?.Invoke(enemyDefinition);
         }
     }

@@ -49,7 +49,7 @@ public class SocialAvatarCard : MonoBehaviour
 
         UpdateCardDisplay();
 
-        Debug.Log($"SocialAvatarCard: Setup completed for {displayName}");
+        Logger.LogInfo($"SocialAvatarCard: Setup completed for {displayName}", Logger.LogCategory.DialogueLog);
     }
 
     /// <summary>
@@ -81,11 +81,11 @@ public class SocialAvatarCard : MonoBehaviour
     {
         if (!isAvailable)
         {
-            Debug.Log($"SocialAvatarCard: Cannot interact with {displayName} - not available");
+            Logger.LogInfo($"SocialAvatarCard: Cannot interact with {displayName} - not available", Logger.LogCategory.DialogueLog);
             return;
         }
 
-        Debug.Log($"SocialAvatarCard: Card clicked for {displayName}");
+        Logger.LogInfo($"SocialAvatarCard: Card clicked for {displayName}", Logger.LogCategory.DialogueLog);
         OnCardClicked?.Invoke(avatarId);
     }
 

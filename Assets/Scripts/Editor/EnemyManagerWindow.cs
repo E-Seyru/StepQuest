@@ -664,7 +664,7 @@ public class EnemyManagerWindow : EditorWindow
         Selection.activeObject = enemy;
         EditorGUIUtility.PingObject(enemy);
 
-        Debug.Log($"Created enemy: {enemy.EnemyName} at {assetPath}");
+        Logger.LogInfo($"Created enemy: {enemy.EnemyName} at {assetPath}", Logger.LogCategory.EditorLog);
     }
 
     private void DeleteEnemy(EnemyDefinition enemy)
@@ -684,7 +684,7 @@ public class EnemyManagerWindow : EditorWindow
             if (!string.IsNullOrEmpty(assetPath))
             {
                 AssetDatabase.DeleteAsset(assetPath);
-                Debug.Log($"Deleted enemy '{enemy.GetDisplayName()}' at {assetPath}");
+                Logger.LogInfo($"Deleted enemy '{enemy.GetDisplayName()}' at {assetPath}", Logger.LogCategory.EditorLog);
             }
 
             AssetDatabase.SaveAssets();

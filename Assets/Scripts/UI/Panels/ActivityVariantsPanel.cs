@@ -78,7 +78,7 @@ public class ActivityVariantsPanel : MonoBehaviour
         // Set reasonable cell size (you might need to adjust this based on your card design)
         gridLayout.cellSize = new Vector2(200f, 280f);
 
-        Debug.Log("ActivityVariantsPanel: Grid layout configured");
+        Logger.LogInfo("ActivityVariantsPanel: Grid layout configured", Logger.LogCategory.ActivityLog);
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ public class ActivityVariantsPanel : MonoBehaviour
     {
         if (activity == null)
         {
-            Debug.LogWarning("ActivityVariantsPanel: Cannot open with null activity!");
+            Logger.LogWarning("ActivityVariantsPanel: Cannot open with null activity!", Logger.LogCategory.ActivityLog);
             return;
         }
 
@@ -96,7 +96,7 @@ public class ActivityVariantsPanel : MonoBehaviour
         PopulateVariantCards();
         gameObject.SetActive(true);
 
-        Debug.Log($"ActivityVariantsPanel: Opened for {activity.GetDisplayName()}");
+        Logger.LogInfo($"ActivityVariantsPanel: Opened for {activity.GetDisplayName()}", Logger.LogCategory.ActivityLog);
     }
 
     /// <summary>
@@ -129,7 +129,7 @@ public class ActivityVariantsPanel : MonoBehaviour
             }
         }
 
-        Debug.Log($"ActivityVariantsPanel: Found {validVariants.Count} valid variants");
+        Logger.LogInfo($"ActivityVariantsPanel: Found {validVariants.Count} valid variants", Logger.LogCategory.ActivityLog);
 
         // Create card for each variant
         foreach (var variant in validVariants)
@@ -155,7 +155,7 @@ public class ActivityVariantsPanel : MonoBehaviour
 
         if (cardPrefab == null)
         {
-            Debug.LogError($"ActivityVariantsPanel: No prefab assigned for {(variant.IsTimeBased ? "crafting" : "harvesting")} card!");
+            Logger.LogError($"ActivityVariantsPanel: No prefab assigned for {(variant.IsTimeBased ? "crafting" : "harvesting", Logger.LogCategory.ActivityLog)} card!");
             return;
         }
 
@@ -173,7 +173,7 @@ public class ActivityVariantsPanel : MonoBehaviour
             SetupHarvestingCard(cardObj, variant);
         }
 
-        Debug.Log($"ActivityVariantsPanel: Created {(variant.IsTimeBased ? "crafting" : "harvesting")} card for {variant.VariantName}");
+        Logger.LogInfo($"ActivityVariantsPanel: Created {(variant.IsTimeBased ? "crafting" : "harvesting", Logger.LogCategory.ActivityLog)} card for {variant.VariantName}");
     }
 
     /// <summary>
@@ -184,7 +184,7 @@ public class ActivityVariantsPanel : MonoBehaviour
         CraftingActivityCard craftingCard = cardObj.GetComponent<CraftingActivityCard>();
         if (craftingCard == null)
         {
-            Debug.LogError("ActivityVariantsPanel: CraftingCardPrefab doesn't have CraftingActivityCard component!");
+            Logger.LogError("ActivityVariantsPanel: CraftingCardPrefab doesn't have CraftingActivityCard component!", Logger.LogCategory.ActivityLog);
             return;
         }
 
@@ -200,7 +200,7 @@ public class ActivityVariantsPanel : MonoBehaviour
         HarvestingActivityCard harvestingCard = cardObj.GetComponent<HarvestingActivityCard>();
         if (harvestingCard == null)
         {
-            Debug.LogError("ActivityVariantsPanel: HarvestingCardPrefab doesn't have HarvestingActivityCard component!");
+            Logger.LogError("ActivityVariantsPanel: HarvestingCardPrefab doesn't have HarvestingActivityCard component!", Logger.LogCategory.ActivityLog);
             return;
         }
 
@@ -213,7 +213,7 @@ public class ActivityVariantsPanel : MonoBehaviour
     /// </summary>
     private void OnVariantCardClicked(ActivityVariant variant)
     {
-        Debug.Log($"ActivityVariantsPanel: Variant selected: {variant.VariantName}");
+        Logger.LogInfo($"ActivityVariantsPanel: Variant selected: {variant.VariantName}", Logger.LogCategory.ActivityLog);
 
         // Start the activity via ActivityManager with automatic type detection
         if (ActivityManager.Instance != null && currentActivity != null)
@@ -226,22 +226,22 @@ public class ActivityVariantsPanel : MonoBehaviour
             // Check activity type and call the appropriate method
             if (variant.IsTimeBased)
             {
-                Debug.Log($"Starting time-based activity: {variant.GetDisplayName()}");
+                Logger.LogInfo($"Starting time-based activity: {variant.GetDisplayName()}", Logger.LogCategory.ActivityLog);
                 success = ActivityManager.Instance.StartTimedActivity(activityId, variantId);
             }
             else
             {
-                Debug.Log($"Starting step-based activity: {variant.GetDisplayName()}");
+                Logger.LogInfo($"Starting step-based activity: {variant.GetDisplayName()}", Logger.LogCategory.ActivityLog);
                 success = ActivityManager.Instance.StartActivity(activityId, variantId);
             }
 
             if (success)
             {
-                Debug.Log($"Successfully started activity: {variant.GetDisplayName()}");
+                Logger.LogInfo($"Successfully started activity: {variant.GetDisplayName()}", Logger.LogCategory.ActivityLog);
             }
             else
             {
-                Debug.LogWarning($"Failed to start activity: {variant.GetDisplayName()}");
+                Logger.LogWarning($"Failed to start activity: {variant.GetDisplayName()}", Logger.LogCategory.ActivityLog);
             }
         }
 
@@ -287,7 +287,7 @@ public class ActivityVariantsPanel : MonoBehaviour
     {
         gameObject.SetActive(false);
         ClearVariantCards();
-        Debug.Log("ActivityVariantsPanel: Panel closed");
+        Logger.LogInfo("ActivityVariantsPanel: Panel closed", Logger.LogCategory.ActivityLog);
     }
 
     void OnDestroy()

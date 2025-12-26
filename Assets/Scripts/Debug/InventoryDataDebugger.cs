@@ -64,11 +64,11 @@ public class InventoryDataDebugger : EditorWindow
 
     private void AnalyzeInventoryData()
     {
-        Debug.Log("=== ANALYSE DES DONNeES D'INVENTAIRE ===");
+        Logger.LogInfo("=== ANALYSE DES DONNeES D'INVENTAIRE ===", Logger.LogCategory.EditorLog);
 
         if (!Application.isPlaying)
         {
-            Debug.LogWarning("Lance le jeu en mode Play pour analyser l'inventaire !");
+            Logger.LogWarning("Lance le jeu en mode Play pour analyser l'inventaire !", Logger.LogCategory.EditorLog);
             EditorUtility.DisplayDialog("Mode Play requis",
                 "Tu dois etre en mode Play pour analyser l'inventaire.", "OK");
             return;
@@ -79,29 +79,29 @@ public class InventoryDataDebugger : EditorWindow
 
         if (inventoryManager == null)
         {
-            Debug.LogError("InventoryManager non trouve !");
+            Logger.LogError("InventoryManager non trouve !", Logger.LogCategory.EditorLog);
             return;
         }
 
         if (dataManager?.LocalDatabase == null)
         {
-            Debug.LogError("DataManager ou LocalDatabase non trouve !");
+            Logger.LogError("DataManager ou LocalDatabase non trouve !", Logger.LogCategory.EditorLog);
             return;
         }
 
         // Analyser les conteneurs
         var containers = dataManager.LocalDatabase.LoadAllInventoryContainers();
 
-        Debug.Log($"=== {containers.Count} CONTENEUR(S) TROUVe(S) ===");
+        Logger.LogInfo($"=== {containers.Count} CONTENEUR(S, Logger.LogCategory.EditorLog) TROUVe(S) ===");
 
         foreach (var containerData in containers)
         {
-            Debug.Log($"📦 Conteneur: {containerData.ContainerID} ({containerData.ContainerType})");
+            Logger.LogInfo($"📦 Conteneur: {containerData.ContainerID} ({containerData.ContainerType})", Logger.LogCategory.EditorLog);
 
             var container = containerData.ToInventoryContainer();
             var nonEmptySlots = container.GetNonEmptySlots();
 
-            Debug.Log($"   Slots utilises: {nonEmptySlots.Count}/{container.MaxSlots}");
+            Logger.LogInfo($"   Slots utilises: {nonEmptySlots.Count}/{container.MaxSlots}", Logger.LogCategory.EditorLog);
 
             foreach (var slot in nonEmptySlots)
             {
@@ -109,24 +109,24 @@ public class InventoryDataDebugger : EditorWindow
 
                 if (itemExists)
                 {
-                    Debug.Log($"   ✅ {slot.ItemID} x{slot.Quantity}");
+                    Logger.LogInfo($"   ✅ {slot.ItemID} x{slot.Quantity}", Logger.LogCategory.EditorLog);
                 }
                 else
                 {
-                    Debug.LogError($"   ❌ {slot.ItemID} x{slot.Quantity} - ITEM INTROUVABLE DANS LE REGISTRY !");
+                    Logger.LogError($"   ❌ {slot.ItemID} x{slot.Quantity} - ITEM INTROUVABLE DANS LE REGISTRY !", Logger.LogCategory.EditorLog);
 
                     // Chercher une variante avec une casse differente
                     string possibleMatch = FindItemWithDifferentCase(slot.ItemID, inventoryManager.GetItemRegistry());
                     if (!string.IsNullOrEmpty(possibleMatch))
                     {
-                        Debug.LogWarning($"      💡 Variante trouvee: '{possibleMatch}' (casse differente)");
+                        Logger.LogWarning($"      💡 Variante trouvee: '{possibleMatch}' (casse differente)", Logger.LogCategory.EditorLog);
                     }
                 }
             }
         }
 
         // Analyser le registry des items
-        Debug.Log("=== ITEMS DISPONIBLES DANS LE REGISTRY ===");
+        Logger.LogInfo("=== ITEMS DISPONIBLES DANS LE REGISTRY ===", Logger.LogCategory.EditorLog);
         var itemRegistry = inventoryManager.GetItemRegistry();
         if (itemRegistry?.AllItems != null)
         {
@@ -134,7 +134,7 @@ public class InventoryDataDebugger : EditorWindow
             {
                 if (item != null)
                 {
-                    Debug.Log($"📋 Registry: {item.ItemID} - {item.ItemName}");
+                    Logger.LogInfo($"📋 Registry: {item.ItemID} - {item.ItemName}", Logger.LogCategory.EditorLog);
                 }
             }
         }
@@ -142,11 +142,11 @@ public class InventoryDataDebugger : EditorWindow
 
     private void CleanCorruptedItems()
     {
-        Debug.Log("=== NETTOYAGE DES ITEMS CORROMPUS ===");
+        Logger.LogInfo("=== NETTOYAGE DES ITEMS CORROMPUS ===", Logger.LogCategory.EditorLog);
 
         if (!Application.isPlaying)
         {
-            Debug.LogWarning("Lance le jeu en mode Play !");
+            Logger.LogWarning("Lance le jeu en mode Play !", Logger.LogCategory.EditorLog);
             EditorUtility.DisplayDialog("Mode Play requis",
                 "Tu dois etre en mode Play pour nettoyer l'inventaire.", "OK");
             return;
@@ -157,7 +157,7 @@ public class InventoryDataDebugger : EditorWindow
 
         if (inventoryManager == null || dataManager?.LocalDatabase == null)
         {
-            Debug.LogError("Managers non trouves !");
+            Logger.LogError("Managers non trouves !", Logger.LogCategory.EditorLog);
             return;
         }
 
@@ -179,7 +179,7 @@ public class InventoryDataDebugger : EditorWindow
 
                     if (!itemExists)
                     {
-                        Debug.Log($"🗑️ Suppression de l'item corrompu: {slot.ItemID} x{slot.Quantity} du conteneur {container.ContainerID}");
+                        Logger.LogInfo($"🗑️ Suppression de l'item corrompu: {slot.ItemID} x{slot.Quantity} du conteneur {container.ContainerID}", Logger.LogCategory.EditorLog);
                         slot.Clear();
                         containerChanged = true;
                         cleanedCount++;
@@ -195,18 +195,18 @@ public class InventoryDataDebugger : EditorWindow
             }
         }
 
-        Debug.Log($"✅ Nettoyage termine ! {cleanedCount} item(s) corrompu(s) supprime(s)");
+        Logger.LogInfo($"✅ Nettoyage termine ! {cleanedCount} item(s, Logger.LogCategory.EditorLog) corrompu(s) supprime(s)");
         EditorUtility.DisplayDialog("Nettoyage termine",
             $"{cleanedCount} item(s) corrompu(s) ont ete supprimes de l'inventaire.", "OK");
     }
 
     private void MigrateItemIDs()
     {
-        Debug.Log("=== MIGRATION DES IDs VERS LA NOUVELLE CASSE ===");
+        Logger.LogInfo("=== MIGRATION DES IDs VERS LA NOUVELLE CASSE ===", Logger.LogCategory.EditorLog);
 
         if (!Application.isPlaying)
         {
-            Debug.LogWarning("Lance le jeu en mode Play !");
+            Logger.LogWarning("Lance le jeu en mode Play !", Logger.LogCategory.EditorLog);
             EditorUtility.DisplayDialog("Mode Play requis",
                 "Tu dois etre en mode Play pour migrer les IDs.", "OK");
             return;
@@ -217,7 +217,7 @@ public class InventoryDataDebugger : EditorWindow
 
         if (inventoryManager == null || dataManager?.LocalDatabase == null)
         {
-            Debug.LogError("Managers non trouves !");
+            Logger.LogError("Managers non trouves !", Logger.LogCategory.EditorLog);
             return;
         }
 
@@ -251,14 +251,14 @@ public class InventoryDataDebugger : EditorWindow
                     // Verifier que le nouvel ID existe dans le registry
                     if (inventoryManager.GetItemRegistry()?.HasItem(newId) == true)
                     {
-                        Debug.Log($"🔄 Migration: {oldId} → {newId} (x{slot.Quantity}) dans {container.ContainerID}");
+                        Logger.LogInfo($"🔄 Migration: {oldId} → {newId} (x{slot.Quantity}) dans {container.ContainerID}", Logger.LogCategory.EditorLog);
                         slot.ItemID = newId;
                         containerChanged = true;
                         migratedCount++;
                     }
                     else
                     {
-                        Debug.LogWarning($"⚠️ Impossible de migrer {oldId} → {newId} : le nouvel ID n'existe pas dans le registry");
+                        Logger.LogWarning($"⚠️ Impossible de migrer {oldId} → {newId} : le nouvel ID n'existe pas dans le registry", Logger.LogCategory.EditorLog);
                     }
                 }
             }
@@ -271,18 +271,18 @@ public class InventoryDataDebugger : EditorWindow
             }
         }
 
-        Debug.Log($"✅ Migration terminee ! {migratedCount} item(s) migre(s)");
+        Logger.LogInfo($"✅ Migration terminee ! {migratedCount} item(s, Logger.LogCategory.EditorLog) migre(s)");
         EditorUtility.DisplayDialog("Migration terminee",
             $"{migratedCount} item(s) ont ete migres vers les nouveaux IDs.", "OK");
     }
 
     private void ResetInventory()
     {
-        Debug.Log("=== RESET COMPLET DE L'INVENTAIRE ===");
+        Logger.LogInfo("=== RESET COMPLET DE L'INVENTAIRE ===", Logger.LogCategory.EditorLog);
 
         if (!Application.isPlaying)
         {
-            Debug.LogWarning("Lance le jeu en mode Play !");
+            Logger.LogWarning("Lance le jeu en mode Play !", Logger.LogCategory.EditorLog);
             EditorUtility.DisplayDialog("Mode Play requis",
                 "Tu dois etre en mode Play pour reset l'inventaire.", "OK");
             return;
@@ -293,7 +293,7 @@ public class InventoryDataDebugger : EditorWindow
 
         if (inventoryManager == null || dataManager?.LocalDatabase == null)
         {
-            Debug.LogError("Managers non trouves !");
+            Logger.LogError("Managers non trouves !", Logger.LogCategory.EditorLog);
             return;
         }
 
@@ -314,7 +314,7 @@ public class InventoryDataDebugger : EditorWindow
         // Forcer la sauvegarde
         inventoryManager.ForceSave();
 
-        Debug.Log("✅ Inventaire completement vide !");
+        Logger.LogInfo("✅ Inventaire completement vide !", Logger.LogCategory.EditorLog);
         EditorUtility.DisplayDialog("Reset termine",
             "L'inventaire a ete completement vide.", "OK");
     }

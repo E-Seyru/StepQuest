@@ -258,7 +258,7 @@ public class InventoryPanelUI : ContainerPanelUI
         }
         else
         {
-            Debug.LogError("InventoryManager not initialized!");
+            Logger.LogError("InventoryManager not initialized!", Logger.LogCategory.InventoryLog);
         }
     }
 }

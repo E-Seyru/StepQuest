@@ -174,7 +174,7 @@ public class PrefabScaleNormalizer : EditorWindow
             PrefabUtility.SaveAsPrefabAsset(prefabRoot, assetPath);
 
             EditorUtility.DisplayDialog("Success", $"Normalized {changeCount} transforms in {prefab.name}.", "OK");
-            Debug.Log($"[PrefabScaleNormalizer] Normalized {changeCount} transforms in {assetPath}");
+            Logger.LogInfo($"[PrefabScaleNormalizer] Normalized {changeCount} transforms in {assetPath}", Logger.LogCategory.EditorLog);
         }
         finally
         {
@@ -207,7 +207,7 @@ public class PrefabScaleNormalizer : EditorWindow
                         prefabCount++;
 
                         PrefabUtility.SaveAsPrefabAsset(prefabRoot, assetPath);
-                        Debug.Log($"[PrefabScaleNormalizer] Normalized {changes} transforms in {assetPath}");
+                        Logger.LogInfo($"[PrefabScaleNormalizer] Normalized {changes} transforms in {assetPath}", Logger.LogCategory.EditorLog);
                     }
                     finally
                     {

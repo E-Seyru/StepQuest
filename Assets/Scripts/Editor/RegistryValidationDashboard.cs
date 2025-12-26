@@ -392,7 +392,7 @@ public class RegistryValidationDashboard : EditorWindow
         ValidateActivities();
         ValidateCrossReferences();
 
-        Debug.Log($"Registry Validation Complete: {issues.Count} issue(s) found.");
+        Logger.LogInfo($"Registry Validation Complete: {issues.Count} issue(s, Logger.LogCategory.EditorLog) found.");
     }
 
     private void ValidateItemRegistry()

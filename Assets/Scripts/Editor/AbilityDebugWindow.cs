@@ -230,11 +230,11 @@ public class AbilityDebugWindow : EditorWindow
         if (AbilityManager.Instance != null)
         {
             AbilityManager.Instance.AddOwnedAbility(abilityId);
-            Debug.Log($"[AbilityDebug] Added ability: {abilityId}");
+            Logger.LogInfo($"[AbilityDebug] Added ability: {abilityId}", Logger.LogCategory.EditorLog);
         }
         else
         {
-            Debug.LogWarning("[AbilityDebug] AbilityManager not found!");
+            Logger.LogWarning("[AbilityDebug] AbilityManager not found!", Logger.LogCategory.EditorLog);
         }
     }
 
@@ -243,7 +243,7 @@ public class AbilityDebugWindow : EditorWindow
         if (AbilityManager.Instance != null)
         {
             AbilityManager.Instance.RemoveOwnedAbility(abilityId);
-            Debug.Log($"[AbilityDebug] Removed ability: {abilityId}");
+            Logger.LogInfo($"[AbilityDebug] Removed ability: {abilityId}", Logger.LogCategory.EditorLog);
         }
     }
 
@@ -253,11 +253,11 @@ public class AbilityDebugWindow : EditorWindow
         {
             if (AbilityManager.Instance.TryEquipAbility(abilityId))
             {
-                Debug.Log($"[AbilityDebug] Equipped ability: {abilityId}");
+                Logger.LogInfo($"[AbilityDebug] Equipped ability: {abilityId}", Logger.LogCategory.EditorLog);
             }
             else
             {
-                Debug.LogWarning($"[AbilityDebug] Could not equip ability: {abilityId} (weight limit?)");
+                Logger.LogWarning($"[AbilityDebug] Could not equip ability: {abilityId} (weight limit?, Logger.LogCategory.EditorLog)");
             }
         }
     }
@@ -267,7 +267,7 @@ public class AbilityDebugWindow : EditorWindow
         if (AbilityManager.Instance != null)
         {
             AbilityManager.Instance.TryUnequipAbility(abilityId);
-            Debug.Log($"[AbilityDebug] Unequipped ability: {abilityId}");
+            Logger.LogInfo($"[AbilityDebug] Unequipped ability: {abilityId}", Logger.LogCategory.EditorLog);
         }
     }
 
@@ -282,7 +282,7 @@ public class AbilityDebugWindow : EditorWindow
                 AddAbility(ability.AbilityID);
             }
         }
-        Debug.Log("[AbilityDebug] Added all abilities from registry");
+        Logger.LogInfo("[AbilityDebug] Added all abilities from registry", Logger.LogCategory.EditorLog);
     }
 
     private void ClearAllAbilities()
@@ -290,14 +290,14 @@ public class AbilityDebugWindow : EditorWindow
         if (AbilityManager.Instance != null)
         {
             AbilityManager.Instance.DebugClearAllAbilities();
-            Debug.Log("[AbilityDebug] Cleared all abilities");
+            Logger.LogInfo("[AbilityDebug] Cleared all abilities", Logger.LogCategory.EditorLog);
         }
         else if (DataManager.Instance?.PlayerData != null)
         {
             DataManager.Instance.PlayerData.OwnedAbilities = new List<string>();
             DataManager.Instance.PlayerData.EquippedAbilities = new List<string>();
             DataManager.Instance.SaveGame();
-            Debug.Log("[AbilityDebug] Cleared all abilities (via DataManager)");
+            Logger.LogInfo("[AbilityDebug] Cleared all abilities (via DataManager, Logger.LogCategory.EditorLog)");
         }
     }
 }

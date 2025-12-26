@@ -40,11 +40,11 @@ public class DraggedItemVisual : MonoBehaviour
         var itemDef = InventoryManager.Instance?.GetItemRegistry()?.GetItem(itemId);
         if (itemDef == null)
         {
-            Debug.LogError($"DraggedItemVisual: Item '{itemId}' not found in registry");
+            Logger.LogError($"DraggedItemVisual: Item '{itemId}' not found in registry", Logger.LogCategory.InventoryLog);
             return;
         }
 
-        // Configure l'icône
+        // Configure l'icï¿½ne
         if (itemIcon != null)
         {
             itemIcon.sprite = itemDef.ItemIcon;
@@ -65,7 +65,7 @@ public class DraggedItemVisual : MonoBehaviour
             }
         }
 
-        Debug.Log($"DraggedItemVisual: Setup for {quantity}x {itemDef.GetDisplayName()}");
+        Logger.LogInfo($"DraggedItemVisual: Setup for {quantity}x {itemDef.GetDisplayName()}", Logger.LogCategory.InventoryLog);
     }
 
     /// <summary>

@@ -247,7 +247,7 @@ public class DialoguePanelUI : MonoBehaviour
             _pendingRewardItems = new List<DialogueItemReward>(eventData.ItemsGranted);
         }
 
-        Debug.Log($"DialoguePanelUI: Stored pending reward - Ability: {_pendingRewardAbilityName ?? "none"}, Items: {_pendingRewardItems?.Count ?? 0}");
+        Logger.LogInfo($"DialoguePanelUI: Stored pending reward - Ability: {_pendingRewardAbilityName ?? "none"}, Items: {_pendingRewardItems?.Count ?? 0}", Logger.LogCategory.DialogueLog);
     }
 
     // === REWARD POPUP ===
@@ -256,7 +256,7 @@ public class DialoguePanelUI : MonoBehaviour
     {
         if (RewardPopupPanel.Instance == null)
         {
-            Debug.LogWarning("DialoguePanelUI: RewardPopupPanel not found, cannot show reward popup");
+            Logger.LogWarning("DialoguePanelUI: RewardPopupPanel not found, cannot show reward popup", Logger.LogCategory.DialogueLog);
             return;
         }
 
@@ -282,12 +282,12 @@ public class DialoguePanelUI : MonoBehaviour
         _pendingRewardAbilityName = null;
         _pendingRewardItems = null;
 
-        Debug.Log("DialoguePanelUI: Showing reward popup");
+        Logger.LogInfo("DialoguePanelUI: Showing reward popup", Logger.LogCategory.DialogueLog);
     }
 
     private void OnRewardPopupClosed()
     {
-        Debug.Log("DialoguePanelUI: Reward popup closed");
+        Logger.LogInfo("DialoguePanelUI: Reward popup closed", Logger.LogCategory.DialogueLog);
 
         // Unsubscribe
         if (RewardPopupPanel.Instance != null)
@@ -316,7 +316,7 @@ public class DialoguePanelUI : MonoBehaviour
 
         // Check if we should show a reward popup on this line
         bool hasReward = !string.IsNullOrEmpty(_pendingRewardAbility) || (_pendingRewardItems != null && _pendingRewardItems.Count > 0);
-        Debug.Log($"DialoguePanelUI: DisplayLine - ShowReward={line.ShowReward}, HasReward={hasReward}");
+        Logger.LogInfo($"DialoguePanelUI: DisplayLine - ShowReward={line.ShowReward}, HasReward={hasReward}", Logger.LogCategory.DialogueLog);
 
         if (line.ShowReward && hasReward)
         {
@@ -612,12 +612,12 @@ public class DialoguePanelUI : MonoBehaviour
 
     private void ShowPanel()
     {
-        Debug.Log($"DialoguePanelUI: ShowPanel called. dialoguePanel is {(dialoguePanel != null ? "assigned" : "NULL")}");
+        Logger.LogInfo($"DialoguePanelUI: ShowPanel called. dialoguePanel is {(dialoguePanel != null ? "assigned" : "NULL")}", Logger.LogCategory.DialogueLog);
 
         if (dialoguePanel != null)
             dialoguePanel.SetActive(true);
         else
-            Debug.LogError("DialoguePanelUI: dialoguePanel reference is not assigned in Inspector!");
+            Logger.LogError("DialoguePanelUI: dialoguePanel reference is not assigned in Inspector!", Logger.LogCategory.DialogueLog);
 
         gameObject.SetActive(true);
 

@@ -829,7 +829,7 @@ public class StatusEffectManagerWindow : EditorWindow
         if (statusEffectRegistry != null)
         {
             statusEffectRegistry.ValidateRegistry();
-            Debug.Log("StatusEffectRegistry validation triggered");
+            Logger.LogInfo("StatusEffectRegistry validation triggered", Logger.LogCategory.EditorLog);
         }
     }
 
@@ -848,7 +848,7 @@ public class StatusEffectManagerWindow : EditorWindow
         Selection.activeObject = registry;
         EditorGUIUtility.PingObject(registry);
 
-        Debug.Log($"Created StatusEffectRegistry at {assetPath}");
+        Logger.LogInfo($"Created StatusEffectRegistry at {assetPath}", Logger.LogCategory.EditorLog);
     }
 
     private void SaveStatusEffectAsset(StatusEffectDefinition effect)
@@ -871,7 +871,7 @@ public class StatusEffectManagerWindow : EditorWindow
         Selection.activeObject = effect;
         EditorGUIUtility.PingObject(effect);
 
-        Debug.Log($"Created status effect: {effect.EffectName} at {assetPath}");
+        Logger.LogInfo($"Created status effect: {effect.EffectName} at {assetPath}", Logger.LogCategory.EditorLog);
     }
 
     private List<StatusEffectDefinition> GetFilteredEffects()
@@ -932,7 +932,7 @@ public class StatusEffectManagerWindow : EditorWindow
             if (!string.IsNullOrEmpty(assetPath))
             {
                 AssetDatabase.DeleteAsset(assetPath);
-                Debug.Log($"Deleted status effect '{effect.GetDisplayName()}' at {assetPath}");
+                Logger.LogInfo($"Deleted status effect '{effect.GetDisplayName()}' at {assetPath}", Logger.LogCategory.EditorLog);
             }
 
             AssetDatabase.SaveAssets();

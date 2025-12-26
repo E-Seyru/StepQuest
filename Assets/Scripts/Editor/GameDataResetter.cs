@@ -216,14 +216,14 @@ public class GameDataResetter : EditorWindow
 
     private void PerformGameReset()
     {
-        Debug.Log(" === DeBUT DU RESET COMPLET DU JEU ===");
+        Logger.LogInfo(" === DeBUT DU RESET COMPLET DU JEU ===", Logger.LogCategory.EditorLog);
 
         try
         {
             var dataManager = DataManager.Instance;
             if (dataManager?.PlayerData == null)
             {
-                Debug.LogError(" DataManager non disponible !");
+                Logger.LogError(" DataManager non disponible !", Logger.LogCategory.EditorLog);
                 EditorUtility.DisplayDialog("Erreur", "DataManager non disponible !", "OK");
                 return;
             }
@@ -233,7 +233,7 @@ public class GameDataResetter : EditorWindow
             // 1. Reset des donnees de pas
             if (resetStepData)
             {
-                Debug.Log(" Reset des donnees de pas...");
+                Logger.LogInfo(" Reset des donnees de pas...", Logger.LogCategory.EditorLog);
                 playerData.TotalPlayerSteps = 0;
                 playerData.DailySteps = 0;
                 playerData.LastSyncEpochMs = 0;
@@ -247,7 +247,7 @@ public class GameDataResetter : EditorWindow
             // 2. Reset des donnees de voyage
             if (resetTravelData)
             {
-                Debug.Log(" Reset des donnees de voyage...");
+                Logger.LogInfo(" Reset des donnees de voyage...", Logger.LogCategory.EditorLog);
                 playerData.TravelDestinationId = null;
                 playerData.TravelStartSteps = 0;
                 playerData.TravelRequiredSteps = 0;
@@ -258,14 +258,14 @@ public class GameDataResetter : EditorWindow
             // 3. Reset des donnees d'activite
             if (resetActivityData)
             {
-                Debug.Log(" Reset des donnees d'activite...");
+                Logger.LogInfo(" Reset des donnees d'activite...", Logger.LogCategory.EditorLog);
                 playerData.StopActivity();
             }
 
             // 4. Reset des competences
             if (resetSkillsData)
             {
-                Debug.Log(" Reset des competences...");
+                Logger.LogInfo(" Reset des competences...", Logger.LogCategory.EditorLog);
                 playerData.Skills = new Dictionary<string, SkillData>();
                 playerData.SubSkills = new Dictionary<string, SkillData>();
             }
@@ -273,7 +273,7 @@ public class GameDataResetter : EditorWindow
             // 5. Reset de la localisation
             if (resetLocationData)
             {
-                Debug.Log(" Reset de la localisation...");
+                Logger.LogInfo(" Reset de la localisation...", Logger.LogCategory.EditorLog);
                 playerData.CurrentLocationId = "";
 
                 // Remettre le joueur au village de depart si possible
@@ -288,7 +288,7 @@ public class GameDataResetter : EditorWindow
             // 6. Reset de l'inventaire
             if (resetInventory)
             {
-                Debug.Log(" Reset de l'inventaire...");
+                Logger.LogInfo(" Reset de l'inventaire...", Logger.LogCategory.EditorLog);
                 var inventoryManager = InventoryManager.Instance;
                 if (inventoryManager != null)
                 {
@@ -307,18 +307,18 @@ public class GameDataResetter : EditorWindow
             // 7. Reset des donnees de base du joueur
             if (resetPlayerData)
             {
-                Debug.Log(" Reset des donnees de base...");
+                Logger.LogInfo(" Reset des donnees de base...", Logger.LogCategory.EditorLog);
                 playerData.Id = 1; // Garder l'ID a 1
             }
 
             // 8. Sauvegarder toutes les modifications
-            Debug.Log(" Sauvegarde des modifications...");
+            Logger.LogInfo(" Sauvegarde des modifications...", Logger.LogCategory.EditorLog);
             dataManager.SaveGame();
 
             // 9. Notifier les autres managers du reset si necessaire
             NotifyManagersOfReset();
 
-            Debug.Log(" === RESET COMPLET TERMINe ===");
+            Logger.LogInfo(" === RESET COMPLET TERMINe ===", Logger.LogCategory.EditorLog);
 
             EditorUtility.DisplayDialog("Reset termine !",
                 " Toutes les donnees selectionnees ont ete reinitialisees avec succes !\n\n" +
@@ -329,7 +329,7 @@ public class GameDataResetter : EditorWindow
         }
         catch (Exception ex)
         {
-            Debug.LogError($" Erreur pendant le reset : {ex.Message}");
+            Logger.LogError($" Erreur pendant le reset : {ex.Message}", Logger.LogCategory.EditorLog);
             EditorUtility.DisplayDialog("Erreur !",
                 $"Une erreur s'est produite pendant le reset :\n{ex.Message}", "Merde !");
         }
@@ -337,12 +337,12 @@ public class GameDataResetter : EditorWindow
 
     private void StopCurrentTravelOnly()
     {
-        Debug.Log(" Arrêt du voyage en cours uniquement...");
+        Logger.LogInfo(" Arrêt du voyage en cours uniquement...", Logger.LogCategory.EditorLog);
 
         var dataManager = DataManager.Instance;
         if (dataManager?.PlayerData == null)
         {
-            Debug.LogError("❌ DataManager non disponible !");
+            Logger.LogError("❌ DataManager non disponible !", Logger.LogCategory.EditorLog);
             return;
         }
 
@@ -350,7 +350,7 @@ public class GameDataResetter : EditorWindow
 
         if (!playerData.IsCurrentlyTraveling())
         {
-            Debug.Log(" Aucun voyage en cours a arrêter.");
+            Logger.LogInfo(" Aucun voyage en cours a arrêter.", Logger.LogCategory.EditorLog);
             EditorUtility.DisplayDialog("Info", "Aucun voyage en cours a arrêter.", "OK");
             return;
         }
@@ -364,18 +364,18 @@ public class GameDataResetter : EditorWindow
 
         dataManager.SaveGame();
 
-        Debug.Log(" Voyage arrête avec succes !");
+        Logger.LogInfo(" Voyage arrête avec succes !", Logger.LogCategory.EditorLog);
         EditorUtility.DisplayDialog("Voyage arrête", "Le voyage en cours a ete annule.", "OK");
     }
 
     private void StopCurrentActivityOnly()
     {
-        Debug.Log(" Arrêt de l'activite en cours uniquement...");
+        Logger.LogInfo(" Arrêt de l'activite en cours uniquement...", Logger.LogCategory.EditorLog);
 
         var dataManager = DataManager.Instance;
         if (dataManager?.PlayerData == null)
         {
-            Debug.LogError(" DataManager non disponible !");
+            Logger.LogError(" DataManager non disponible !", Logger.LogCategory.EditorLog);
             return;
         }
 
@@ -383,7 +383,7 @@ public class GameDataResetter : EditorWindow
 
         if (!playerData.HasActiveActivity())
         {
-            Debug.Log(" Aucune activite en cours a arrêter.");
+            Logger.LogInfo(" Aucune activite en cours a arrêter.", Logger.LogCategory.EditorLog);
             EditorUtility.DisplayDialog("Info", "Aucune activite en cours a arrêter.", "OK");
             return;
         }
@@ -392,7 +392,7 @@ public class GameDataResetter : EditorWindow
         playerData.StopActivity();
         dataManager.SaveGame();
 
-        Debug.Log(" Activite arrêtee avec succes !");
+        Logger.LogInfo(" Activite arrêtee avec succes !", Logger.LogCategory.EditorLog);
         EditorUtility.DisplayDialog("Activite arrêtee", "L'activite en cours a ete arrêtee.", "OK");
     }
 
@@ -405,14 +405,14 @@ public class GameDataResetter : EditorWindow
         if (mapManager != null)
         {
             // Le MapManager pourrait avoir besoin de se reinitialiser
-            Debug.Log(" Notification du reset au MapManager...");
+            Logger.LogInfo(" Notification du reset au MapManager...", Logger.LogCategory.EditorLog);
         }
 
         var activityManager = ActivityManager.Instance;
         if (activityManager != null)
         {
             // L'ActivityManager pourrait avoir besoin de se reinitialiser
-            Debug.Log(" Notification du reset a l'ActivityManager...");
+            Logger.LogInfo(" Notification du reset a l'ActivityManager...", Logger.LogCategory.EditorLog);
         }
 
         // Potentiellement notifier d'autres managers selon ton architecture

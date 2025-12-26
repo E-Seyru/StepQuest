@@ -136,7 +136,7 @@ public class CombatContentCreator : EditorWindow
         }
         else
         {
-            Debug.LogWarning("Poison status effect not found. Create it via WalkAndRPG/Combat/Status Effect Manager first.");
+            Logger.LogWarning("Poison status effect not found. Create it via WalkAndRPG/Combat/Status Effect Manager first.", Logger.LogCategory.EditorLog);
         }
 
         ability.AbilityColor = new Color(0.4f, 0.8f, 0.2f); // Yellow-green
@@ -280,12 +280,12 @@ public class CombatContentCreator : EditorWindow
         {
             EditorUtility.CopySerialized(ability, existing);
             EditorUtility.SetDirty(existing);
-            Debug.Log($"Updated existing ability: {assetPath}");
+            Logger.LogInfo($"Updated existing ability: {assetPath}", Logger.LogCategory.EditorLog);
         }
         else
         {
             AssetDatabase.CreateAsset(ability, assetPath);
-            Debug.Log($"Created new ability: {assetPath}");
+            Logger.LogInfo($"Created new ability: {assetPath}", Logger.LogCategory.EditorLog);
         }
 
         AssetDatabase.SaveAssets();
@@ -304,12 +304,12 @@ public class CombatContentCreator : EditorWindow
         {
             EditorUtility.CopySerialized(enemy, existing);
             EditorUtility.SetDirty(existing);
-            Debug.Log($"Updated existing enemy: {assetPath}");
+            Logger.LogInfo($"Updated existing enemy: {assetPath}", Logger.LogCategory.EditorLog);
         }
         else
         {
             AssetDatabase.CreateAsset(enemy, assetPath);
-            Debug.Log($"Created new enemy: {assetPath}");
+            Logger.LogInfo($"Created new enemy: {assetPath}", Logger.LogCategory.EditorLog);
         }
 
         AssetDatabase.SaveAssets();

@@ -187,8 +187,8 @@ public class ItemActionPanel : MonoBehaviour
         Vector2 canvasSize = canvasRect.rect.size;
 
         // DEBUG: Log all coordinates
-        Debug.LogWarning($"[ItemActionPanel] World: {slotWorldPosition}, Screen: {screenPosition}, Canvas Local: {animationOrigin}");
-        Debug.LogWarning($"[ItemActionPanel] Canvas size: {canvasSize}, Panel size: {panelSize}");
+        Logger.LogWarning($"[ItemActionPanel] World: {slotWorldPosition}, Screen: {screenPosition}, Canvas Local: {animationOrigin}", Logger.LogCategory.InventoryLog);
+        Logger.LogWarning($"[ItemActionPanel] Canvas size: {canvasSize}, Panel size: {panelSize}", Logger.LogCategory.InventoryLog);
 
         // Offset from the item (panel appears at top corner of the item)
         float offsetX = panelSize.x * 0.5f + 10f; // Half panel width + small gap
@@ -203,7 +203,7 @@ public class ItemActionPanel : MonoBehaviour
 
         bool placeOnRight = spaceOnRight >= spaceNeededOnRight;
 
-        Debug.LogWarning($"[ItemActionPanel] RightEdge: {rightEdge}, SpaceOnRight: {spaceOnRight}, SpaceNeeded: {spaceNeededOnRight}, PlaceOnRight: {placeOnRight}");
+        Logger.LogWarning($"[ItemActionPanel] RightEdge: {rightEdge}, SpaceOnRight: {spaceOnRight}, SpaceNeeded: {spaceNeededOnRight}, PlaceOnRight: {placeOnRight}", Logger.LogCategory.InventoryLog);
 
         if (placeOnRight)
         {
@@ -214,7 +214,7 @@ public class ItemActionPanel : MonoBehaviour
             finalPosition = new Vector2(animationOrigin.x - offsetX, animationOrigin.y + offsetY);
         }
 
-        Debug.LogWarning($"[ItemActionPanel] Final position: {finalPosition}");
+        Logger.LogWarning($"[ItemActionPanel] Final position: {finalPosition}", Logger.LogCategory.InventoryLog);
 
         // Clamp to stay within screen bounds
         float halfWidth = panelSize.x * 0.5f;

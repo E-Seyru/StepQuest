@@ -192,7 +192,7 @@ public class IconContainer : MonoBehaviour
         }
         else if (variantContainer == null)
         {
-            Debug.LogWarning($"IconContainer: VariantContainer reference not set in {gameObject.name}!");
+            Logger.LogWarning($"IconContainer: VariantContainer reference not set in {gameObject.name}!", Logger.LogCategory.ActivityLog);
         }
     }
 

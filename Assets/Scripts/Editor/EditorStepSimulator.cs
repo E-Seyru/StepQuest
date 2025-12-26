@@ -218,19 +218,19 @@ public class EditorStepSimulator : EditorWindow
     {
         if (!Application.isPlaying)
         {
-            Debug.LogWarning("Simulator: Lancez le jeu pour simuler les pas!");
+            Logger.LogWarning("Simulator: Lancez le jeu pour simuler les pas!", Logger.LogCategory.EditorLog);
             return false;
         }
 
         if (steps <= 0)
         {
-            Debug.LogWarning("Simulator: Nombre de pas doit etre positif!");
+            Logger.LogWarning("Simulator: Nombre de pas doit etre positif!", Logger.LogCategory.EditorLog);
             return false;
         }
 
         if (dataManager?.PlayerData == null)
         {
-            Debug.LogWarning("Simulator: DataManager ou PlayerData non trouve!");
+            Logger.LogWarning("Simulator: DataManager ou PlayerData non trouve!", Logger.LogCategory.EditorLog);
             return false;
         }
 
@@ -260,7 +260,7 @@ public class EditorStepSimulator : EditorWindow
             uiManager.ForceUIUpdate();
         }
 
-        Debug.Log($"Simulator: Ajoute {steps} pas. Total: {oldTotal} → {dataManager.PlayerData.TotalSteps}, Quotidien: {oldDaily} → {dataManager.PlayerData.DailySteps}");
+        Logger.LogInfo($"Simulator: Ajoute {steps} pas. Total: {oldTotal} → {dataManager.PlayerData.TotalSteps}, Quotidien: {oldDaily} → {dataManager.PlayerData.DailySteps}", Logger.LogCategory.EditorLog);
         return true;
     }
 
@@ -268,7 +268,7 @@ public class EditorStepSimulator : EditorWindow
     {
         if (!Application.isPlaying || dataManager?.PlayerData == null)
         {
-            Debug.LogWarning("Simulator: Impossible de simuler un nouveau jour!");
+            Logger.LogWarning("Simulator: Impossible de simuler un nouveau jour!", Logger.LogCategory.EditorLog);
             return;
         }
 
@@ -280,14 +280,14 @@ public class EditorStepSimulator : EditorWindow
         UpdateStatus();
         Repaint();
 
-        Debug.Log($"Simulator: Nouveau jour simule! Date: {tomorrow}");
+        Logger.LogInfo($"Simulator: Nouveau jour simule! Date: {tomorrow}", Logger.LogCategory.EditorLog);
     }
 
     void ResetDailySteps()
     {
         if (!Application.isPlaying || dataManager?.PlayerData == null)
         {
-            Debug.LogWarning("Simulator: Impossible de reset les pas quotidiens!");
+            Logger.LogWarning("Simulator: Impossible de reset les pas quotidiens!", Logger.LogCategory.EditorLog);
             return;
         }
 
@@ -297,14 +297,14 @@ public class EditorStepSimulator : EditorWindow
         UpdateStatus();
         Repaint();
 
-        Debug.Log("Simulator: Pas quotidiens remis a zero");
+        Logger.LogInfo("Simulator: Pas quotidiens remis a zero", Logger.LogCategory.EditorLog);
     }
 
     void ClearTravelState()
     {
         if (!Application.isPlaying || dataManager?.PlayerData == null)
         {
-            Debug.LogWarning("Simulator: Impossible de clear travel state!");
+            Logger.LogWarning("Simulator: Impossible de clear travel state!", Logger.LogCategory.EditorLog);
             return;
         }
 
@@ -316,14 +316,14 @@ public class EditorStepSimulator : EditorWindow
         UpdateStatus();
         Repaint();
 
-        Debug.Log("Simulator: Travel state cleared");
+        Logger.LogInfo("Simulator: Travel state cleared", Logger.LogCategory.EditorLog);
     }
 
     void ResetAllSteps()
     {
         if (!Application.isPlaying || dataManager?.PlayerData == null)
         {
-            Debug.LogWarning("Simulator: Impossible de reset tous les pas!");
+            Logger.LogWarning("Simulator: Impossible de reset tous les pas!", Logger.LogCategory.EditorLog);
             return;
         }
 
@@ -338,7 +338,7 @@ public class EditorStepSimulator : EditorWindow
         UpdateStatus();
         Repaint();
 
-        Debug.Log("Simulator: Tous les pas remis a zero");
+        Logger.LogInfo("Simulator: Tous les pas remis a zero", Logger.LogCategory.EditorLog);
     }
 }
 #endif

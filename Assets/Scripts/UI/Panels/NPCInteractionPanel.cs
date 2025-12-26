@@ -185,19 +185,19 @@ public class NPCInteractionPanel : MonoBehaviour
     {
         if (currentNPC == null)
         {
-            Debug.LogWarning("NPCInteractionPanel: currentNPC is null!");
+            Logger.LogWarning("NPCInteractionPanel: currentNPC is null!", Logger.LogCategory.DialogueLog);
             return;
         }
 
-        Debug.Log($"NPCInteractionPanel: Talk clicked for {currentNPC.GetDisplayName()}");
-        Debug.Log($"NPCInteractionPanel: NPC has {currentNPC.Dialogues?.Count ?? 0} dialogues assigned");
+        Logger.LogInfo($"NPCInteractionPanel: Talk clicked for {currentNPC.GetDisplayName()}", Logger.LogCategory.DialogueLog);
+        Logger.LogInfo($"NPCInteractionPanel: NPC has {currentNPC.Dialogues?.Count ?? 0} dialogues assigned", Logger.LogCategory.DialogueLog);
 
         // Start dialogue via DialogueManager
         if (DialogueManager.Instance != null)
         {
-            Debug.Log("NPCInteractionPanel: DialogueManager found, starting dialogue...");
+            Logger.LogInfo("NPCInteractionPanel: DialogueManager found, starting dialogue...", Logger.LogCategory.DialogueLog);
             bool started = DialogueManager.Instance.StartDialogue(currentNPC);
-            Debug.Log($"NPCInteractionPanel: StartDialogue returned {started}");
+            Logger.LogInfo($"NPCInteractionPanel: StartDialogue returned {started}", Logger.LogCategory.DialogueLog);
 
             if (started)
             {
@@ -207,12 +207,12 @@ public class NPCInteractionPanel : MonoBehaviour
             else
             {
                 // No dialogue available - could show a default message
-                Debug.LogWarning($"NPCInteractionPanel: No dialogue available for {currentNPC.GetDisplayName()}");
+                Logger.LogWarning($"NPCInteractionPanel: No dialogue available for {currentNPC.GetDisplayName()}", Logger.LogCategory.DialogueLog);
             }
         }
         else
         {
-            Debug.LogError("NPCInteractionPanel: DialogueManager.Instance is null!");
+            Logger.LogError("NPCInteractionPanel: DialogueManager.Instance is null!", Logger.LogCategory.DialogueLog);
         }
     }
 

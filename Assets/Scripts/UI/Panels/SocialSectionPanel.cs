@@ -76,7 +76,7 @@ public class SocialSectionPanel : MonoBehaviour
             }
         }
 
-        Debug.Log($"SocialSectionPanel: Displayed {npcs.Count} NPCs");
+        Logger.LogInfo($"SocialSectionPanel: Displayed {npcs.Count} NPCs", Logger.LogCategory.DialogueLog);
     }
 
     /// <summary>
@@ -129,19 +129,19 @@ public class SocialSectionPanel : MonoBehaviour
 
         if (socialActivitiesContainer == null)
         {
-            Debug.LogError("SocialSectionPanel: SocialActivitiesContainer n'est pas assigne !");
+            Logger.LogError("SocialSectionPanel: SocialActivitiesContainer n'est pas assigne !", Logger.LogCategory.DialogueLog);
             hasErrors = true;
         }
 
         if (socialAvatarPrefab == null)
         {
-            Debug.LogError("SocialSectionPanel: SocialAvatarPrefab n'est pas assigne !");
+            Logger.LogError("SocialSectionPanel: SocialAvatarPrefab n'est pas assigne !", Logger.LogCategory.DialogueLog);
             hasErrors = true;
         }
 
         if (hasErrors)
         {
-            Debug.LogError("SocialSectionPanel: Des references critiques manquent !");
+            Logger.LogError("SocialSectionPanel: Des references critiques manquent !", Logger.LogCategory.DialogueLog);
         }
     }
 
@@ -152,7 +152,7 @@ public class SocialSectionPanel : MonoBehaviour
         // Verifier que GridLayoutGroup est present
         if (socialActivitiesContainer.GetComponent<GridLayoutGroup>() == null)
         {
-            Debug.LogWarning("SocialSectionPanel: GridLayoutGroup manquant sur SocialActivitiesContainer, ajoutez-le dans l'Inspector!");
+            Logger.LogWarning("SocialSectionPanel: GridLayoutGroup manquant sur SocialActivitiesContainer, ajoutez-le dans l'Inspector!", Logger.LogCategory.DialogueLog);
         }
     }
 
@@ -201,7 +201,7 @@ public class SocialSectionPanel : MonoBehaviour
         var avatarCard = cardObject.GetComponent<SocialAvatarCard>();
         if (avatarCard == null)
         {
-            Debug.LogError("SocialSectionPanel: Le prefab ne contient pas de composant SocialAvatarCard !");
+            Logger.LogError("SocialSectionPanel: Le prefab ne contient pas de composant SocialAvatarCard !", Logger.LogCategory.DialogueLog);
             return;
         }
 
@@ -220,7 +220,7 @@ public class SocialSectionPanel : MonoBehaviour
 
     private void OnNPCAvatarCardClicked(string npcId)
     {
-        Debug.Log($"SocialSectionPanel: NPC avatar card clicked for {npcId}");
+        Logger.LogInfo($"SocialSectionPanel: NPC avatar card clicked for {npcId}", Logger.LogCategory.DialogueLog);
 
         // Retrouver le NPC correspondant
         var npc = currentNPCs.Find(n => n.NPCID == npcId);

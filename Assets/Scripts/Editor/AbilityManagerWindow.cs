@@ -774,7 +774,7 @@ public class AbilityManagerWindow : EditorWindow
         if (abilityRegistry != null)
         {
             abilityRegistry.ValidateRegistry();
-            Debug.Log("AbilityRegistry validation triggered");
+            Logger.LogInfo("AbilityRegistry validation triggered", Logger.LogCategory.EditorLog);
         }
     }
 
@@ -793,7 +793,7 @@ public class AbilityManagerWindow : EditorWindow
         Selection.activeObject = registry;
         EditorGUIUtility.PingObject(registry);
 
-        Debug.Log($"Created AbilityRegistry at {assetPath}");
+        Logger.LogInfo($"Created AbilityRegistry at {assetPath}", Logger.LogCategory.EditorLog);
     }
 
     private void SaveAbilityAsset(AbilityDefinition ability)
@@ -816,7 +816,7 @@ public class AbilityManagerWindow : EditorWindow
         Selection.activeObject = ability;
         EditorGUIUtility.PingObject(ability);
 
-        Debug.Log($"Created ability: {ability.AbilityName} at {assetPath}");
+        Logger.LogInfo($"Created ability: {ability.AbilityName} at {assetPath}", Logger.LogCategory.EditorLog);
     }
 
     private List<AbilityDefinition> GetFilteredAbilities()
@@ -889,7 +889,7 @@ public class AbilityManagerWindow : EditorWindow
             if (!string.IsNullOrEmpty(assetPath))
             {
                 AssetDatabase.DeleteAsset(assetPath);
-                Debug.Log($"Deleted ability '{ability.GetDisplayName()}' at {assetPath}");
+                Logger.LogInfo($"Deleted ability '{ability.GetDisplayName()}' at {assetPath}", Logger.LogCategory.EditorLog);
             }
 
             AssetDatabase.SaveAssets();

@@ -380,7 +380,7 @@ public class VariantIconContainer : MonoBehaviour
 
         if (enableDebugLogs && isLocked)
         {
-            Debug.Log($"Variant '{activityVariant.VariantName}' locked - Required: {requiredLevel}, Current: {mainActivityLevel}");
+            Logger.LogInfo($"Variant '{activityVariant.VariantName}' locked - Required: {requiredLevel}, Current: {mainActivityLevel}", Logger.LogCategory.ActivityLog);
         }
 
         return isLocked;

@@ -67,7 +67,7 @@ public class PlayerDataDebugger : EditorWindow
 
     private void DiagnosePlayerState()
     {
-        Debug.Log("=== DIAGNOSTIC COMPLET DE L'ETAT JOUEUR ===");
+        Logger.LogInfo("=== DIAGNOSTIC COMPLET DE L'ETAT JOUEUR ===", Logger.LogCategory.EditorLog);
 
         var dataManager = DataManager.Instance;
         var mapManager = MapManager.Instance;
@@ -75,64 +75,64 @@ public class PlayerDataDebugger : EditorWindow
 
         if (dataManager?.PlayerData == null)
         {
-            Debug.LogError("ERROR: DataManager ou PlayerData non disponible !");
+            Logger.LogError("ERROR: DataManager ou PlayerData non disponible !", Logger.LogCategory.EditorLog);
             return;
         }
 
         var playerData = dataManager.PlayerData;
 
-        Debug.Log("POSITION & VOYAGE:");
-        Debug.Log($"   CurrentLocationId: '{playerData.CurrentLocationId}'");
-        Debug.Log($"   TravelDestinationId: '{playerData.TravelDestinationId}' {(string.IsNullOrEmpty(playerData.TravelDestinationId) ? "(NULL - OK)" : "(NON-NULL - PROBLEME POTENTIEL)")}");
-        Debug.Log($"   TravelStartSteps: {playerData.TravelStartSteps}");
-        Debug.Log($"   TravelRequiredSteps: {playerData.TravelRequiredSteps}");
-        Debug.Log($"   IsCurrentlyTraveling(): {playerData.IsCurrentlyTraveling()} {(playerData.IsCurrentlyTraveling() ? "PROBLEME !" : "OK")}");
+        Logger.LogInfo("POSITION & VOYAGE:", Logger.LogCategory.EditorLog);
+        Logger.LogInfo($"   CurrentLocationId: '{playerData.CurrentLocationId}'", Logger.LogCategory.EditorLog);
+        Logger.LogInfo($"   TravelDestinationId: '{playerData.TravelDestinationId}' {(string.IsNullOrEmpty(playerData.TravelDestinationId) ? "(NULL - OK)" : "(NON-NULL - PROBLEME POTENTIEL)")}", Logger.LogCategory.EditorLog);
+        Logger.LogInfo($"   TravelStartSteps: {playerData.TravelStartSteps}", Logger.LogCategory.EditorLog);
+        Logger.LogInfo($"   TravelRequiredSteps: {playerData.TravelRequiredSteps}", Logger.LogCategory.EditorLog);
+        Logger.LogInfo($"   IsCurrentlyTraveling(): {playerData.IsCurrentlyTraveling()} {(playerData.IsCurrentlyTraveling() ? "PROBLEME !" : "OK")}", Logger.LogCategory.EditorLog);
 
         if (playerData.IsCurrentlyTraveling())
         {
             long progress = playerData.GetTravelProgress(playerData.TotalSteps);
-            Debug.Log($"   Progres voyage: {progress}/{playerData.TravelRequiredSteps} steps");
-            Debug.Log($"   Voyage termine?: {playerData.IsTravelComplete(playerData.TotalSteps)}");
+            Logger.LogInfo($"   Progres voyage: {progress}/{playerData.TravelRequiredSteps} steps", Logger.LogCategory.EditorLog);
+            Logger.LogInfo($"   Voyage termine?: {playerData.IsTravelComplete(playerData.TotalSteps)}", Logger.LogCategory.EditorLog);
         }
 
-        Debug.Log("ACTIVITE:");
-        Debug.Log($"   HasActiveActivity(): {playerData.HasActiveActivity()} {(playerData.HasActiveActivity() ? "Activite en cours" : "Pas d'activite")}");
+        Logger.LogInfo("ACTIVITE:", Logger.LogCategory.EditorLog);
+        Logger.LogInfo($"   HasActiveActivity(): {playerData.HasActiveActivity()} {(playerData.HasActiveActivity() ? "Activite en cours" : "Pas d'activite")}", Logger.LogCategory.EditorLog);
 
         if (playerData.HasActiveActivity())
         {
-            Debug.Log($"   Activite: {playerData.CurrentActivity.ActivityId}/{playerData.CurrentActivity.VariantId}");
-            Debug.Log($"   Location: {playerData.CurrentActivity.LocationId}");
-            Debug.Log($"   Steps accumules: {playerData.CurrentActivity.AccumulatedSteps}");
+            Logger.LogInfo($"   Activite: {playerData.CurrentActivity.ActivityId}/{playerData.CurrentActivity.VariantId}", Logger.LogCategory.EditorLog);
+            Logger.LogInfo($"   Location: {playerData.CurrentActivity.LocationId}", Logger.LogCategory.EditorLog);
+            Logger.LogInfo($"   Steps accumules: {playerData.CurrentActivity.AccumulatedSteps}", Logger.LogCategory.EditorLog);
         }
 
-        Debug.Log("CONDITIONS DE BLOCAGE:");
-        Debug.Log($"   CanStartActivity(): {activityManager?.CanStartActivity()} {(activityManager?.CanStartActivity() == false ? "BLOQUE !" : "OK")}");
+        Logger.LogInfo("CONDITIONS DE BLOCAGE:", Logger.LogCategory.EditorLog);
+        Logger.LogInfo($"   CanStartActivity(): {activityManager?.CanStartActivity()} {(activityManager?.CanStartActivity() == false ? "BLOQUE !" : "OK")}", Logger.LogCategory.EditorLog);
 
         if (mapManager?.CurrentLocation != null)
         {
             string currentLoc = mapManager.CurrentLocation.LocationID;
             bool canTravelToVillage = mapManager.CanTravelTo("Village");
-            Debug.Log($"   CanTravelTo('Village'): {canTravelToVillage} {(canTravelToVillage ? "OK" : "BLOQUE !")}");
+            Logger.LogInfo($"   CanTravelTo('Village'): {canTravelToVillage} {(canTravelToVillage ? "OK" : "BLOQUE !")}", Logger.LogCategory.EditorLog);
         }
 
-        Debug.Log("STATS GENERALES:");
-        Debug.Log($"   TotalSteps: {playerData.TotalSteps}");
-        Debug.Log($"   DailySteps: {playerData.DailySteps}");
-        Debug.Log($"   ID: {playerData.Id}");
+        Logger.LogInfo("STATS GENERALES:", Logger.LogCategory.EditorLog);
+        Logger.LogInfo($"   TotalSteps: {playerData.TotalSteps}", Logger.LogCategory.EditorLog);
+        Logger.LogInfo($"   DailySteps: {playerData.DailySteps}", Logger.LogCategory.EditorLog);
+        Logger.LogInfo($"   ID: {playerData.Id}", Logger.LogCategory.EditorLog);
 
-        Debug.Log("=== FIN DIAGNOSTIC ===");
+        Logger.LogInfo("=== FIN DIAGNOSTIC ===", Logger.LogCategory.EditorLog);
     }
 
     private void RepairTravelState()
     {
-        Debug.Log("=== REPARATION DE L'ETAT DE VOYAGE ===");
+        Logger.LogInfo("=== REPARATION DE L'ETAT DE VOYAGE ===", Logger.LogCategory.EditorLog);
 
         var dataManager = DataManager.Instance;
         var mapManager = MapManager.Instance;
 
         if (dataManager?.PlayerData == null)
         {
-            Debug.LogError("ERROR: DataManager non disponible !");
+            Logger.LogError("ERROR: DataManager non disponible !", Logger.LogCategory.EditorLog);
             return;
         }
 
@@ -140,7 +140,7 @@ public class PlayerDataDebugger : EditorWindow
 
         if (playerData.IsCurrentlyTraveling())
         {
-            Debug.Log("Etat de voyage detecte - Nettoyage...");
+            Logger.LogInfo("Etat de voyage detecte - Nettoyage...", Logger.LogCategory.EditorLog);
 
             string oldDest = playerData.TravelDestinationId;
             long oldStart = playerData.TravelStartSteps;
@@ -151,31 +151,31 @@ public class PlayerDataDebugger : EditorWindow
             playerData.TravelStartSteps = 0;
             playerData.TravelRequiredSteps = 0;
 
-            Debug.Log($"   FIXED: Supprime: Destination='{oldDest}', StartSteps={oldStart}, RequiredSteps={oldRequired}");
+            Logger.LogInfo($"   FIXED: Supprime: Destination='{oldDest}', StartSteps={oldStart}, RequiredSteps={oldRequired}", Logger.LogCategory.EditorLog);
 
             // Clear MapManager state too
             mapManager?.ClearTravelState();
 
-            Debug.Log("SUCCESS: Etat de voyage nettoye avec succes !");
+            Logger.LogInfo("SUCCESS: Etat de voyage nettoye avec succes !", Logger.LogCategory.EditorLog);
         }
         else
         {
-            Debug.Log("INFO: Aucun etat de voyage a reparer");
+            Logger.LogInfo("INFO: Aucun etat de voyage a reparer", Logger.LogCategory.EditorLog);
         }
 
-        Debug.Log("=== FIN REPARATION VOYAGE ===");
+        Logger.LogInfo("=== FIN REPARATION VOYAGE ===", Logger.LogCategory.EditorLog);
     }
 
     private void RepairActivityState()
     {
-        Debug.Log("=== REPARATION DE L'ETAT D'ACTIVITE ===");
+        Logger.LogInfo("=== REPARATION DE L'ETAT D'ACTIVITE ===", Logger.LogCategory.EditorLog);
 
         var dataManager = DataManager.Instance;
         var activityManager = ActivityManager.Instance;
 
         if (dataManager?.PlayerData == null)
         {
-            Debug.LogError("ERROR: DataManager non disponible !");
+            Logger.LogError("ERROR: DataManager non disponible !", Logger.LogCategory.EditorLog);
             return;
         }
 
@@ -183,48 +183,48 @@ public class PlayerDataDebugger : EditorWindow
 
         if (playerData.HasActiveActivity())
         {
-            Debug.Log("Activite active detectee - Arret...");
+            Logger.LogInfo("Activite active detectee - Arret...", Logger.LogCategory.EditorLog);
 
             string oldActivity = $"{playerData.CurrentActivity.ActivityId}/{playerData.CurrentActivity.VariantId}";
 
             playerData.StopActivity();
 
-            Debug.Log($"   FIXED: Arrete: {oldActivity}");
-            Debug.Log("SUCCESS: Etat d'activite nettoye avec succes !");
+            Logger.LogInfo($"   FIXED: Arrete: {oldActivity}", Logger.LogCategory.EditorLog);
+            Logger.LogInfo("SUCCESS: Etat d'activite nettoye avec succes !", Logger.LogCategory.EditorLog);
         }
         else
         {
-            Debug.Log("INFO: Aucune activite active a arreter");
+            Logger.LogInfo("INFO: Aucune activite active a arreter", Logger.LogCategory.EditorLog);
         }
 
-        Debug.Log("=== FIN REPARATION ACTIVITE ===");
+        Logger.LogInfo("=== FIN REPARATION ACTIVITE ===", Logger.LogCategory.EditorLog);
     }
 
     private void FullRepair()
     {
-        Debug.Log("=== REPARATION COMPLETE ===");
+        Logger.LogInfo("=== REPARATION COMPLETE ===", Logger.LogCategory.EditorLog);
 
         RepairTravelState();
         RepairActivityState();
         ForceSave();
 
-        Debug.Log("SUCCESS: REPARATION COMPLETE TERMINEE !");
-        Debug.Log("INFO: Teste maintenant sur ton telephone - tu devrais pouvoir voyager et faire des activites !");
+        Logger.LogInfo("SUCCESS: REPARATION COMPLETE TERMINEE !", Logger.LogCategory.EditorLog);
+        Logger.LogInfo("INFO: Teste maintenant sur ton telephone - tu devrais pouvoir voyager et faire des activites !", Logger.LogCategory.EditorLog);
     }
 
     private void ForceSave()
     {
-        Debug.Log("=== SAUVEGARDE FORCEE ===");
+        Logger.LogInfo("=== SAUVEGARDE FORCEE ===", Logger.LogCategory.EditorLog);
 
         var dataManager = DataManager.Instance;
         if (dataManager != null)
         {
             dataManager.ForceSave();
-            Debug.Log("SUCCESS: Sauvegarde reussie !");
+            Logger.LogInfo("SUCCESS: Sauvegarde reussie !", Logger.LogCategory.EditorLog);
         }
         else
         {
-            Debug.LogError("ERROR: DataManager non disponible !");
+            Logger.LogError("ERROR: DataManager non disponible !", Logger.LogCategory.EditorLog);
         }
     }
 

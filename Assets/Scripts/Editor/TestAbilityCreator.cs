@@ -99,7 +99,7 @@ public class TestAbilityCreator : EditorWindow
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log($"TestAbilityCreator: Created {created} test abilities in {abilityFolder}");
+        Logger.LogInfo($"TestAbilityCreator: Created {created} test abilities in {abilityFolder}", Logger.LogCategory.EditorLog);
         EditorUtility.DisplayDialog("Test Abilities Created",
             $"Created {created} test abilities:\n" +
             "- Burn Strike (applies Burn)\n" +
@@ -121,7 +121,7 @@ public class TestAbilityCreator : EditorWindow
         var existing = AssetDatabase.LoadAssetAtPath<AbilityDefinition>(path);
         if (existing != null)
         {
-            Debug.Log($"TestAbilityCreator: {fileName} already exists, skipping.");
+            Logger.LogInfo($"TestAbilityCreator: {fileName} already exists, skipping.", Logger.LogCategory.EditorLog);
             return 0;
         }
 
@@ -141,7 +141,7 @@ public class TestAbilityCreator : EditorWindow
         }
 
         AssetDatabase.CreateAsset(ability, path);
-        Debug.Log($"TestAbilityCreator: Created {fileName}");
+        Logger.LogInfo($"TestAbilityCreator: Created {fileName}", Logger.LogCategory.EditorLog);
         return 1;
     }
 }

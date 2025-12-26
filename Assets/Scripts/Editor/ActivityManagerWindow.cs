@@ -365,7 +365,7 @@ public class ActivityManagerWindow : EditorWindow
         Selection.activeObject = newActivity;
         EditorGUIUtility.PingObject(newActivity);
 
-        Debug.Log($"Created new activity: {activityName} (ID: {activityID}) with variant folder");
+        Logger.LogInfo($"Created new activity: {activityName} (ID: {activityID}, Logger.LogCategory.EditorLog) with variant folder");
         LoadRegistries(); // Refresh
     }
 
@@ -396,7 +396,7 @@ public class ActivityManagerWindow : EditorWindow
         Selection.activeObject = newVariant;
         EditorGUIUtility.PingObject(newVariant);
 
-        Debug.Log($"Created new variant: {variantName} for activity {parentActivity.GetDisplayName()} in folder {activityFolderPath}");
+        Logger.LogInfo($"Created new variant: {variantName} for activity {parentActivity.GetDisplayName()} in folder {activityFolderPath}", Logger.LogCategory.EditorLog);
     }
 
     /// <summary>
@@ -469,17 +469,17 @@ public class ActivityManagerWindow : EditorWindow
             Selection.activeObject = poiObject;
             EditorGUIUtility.PingObject(poiObject);
 
-            Debug.Log($"✅ Created new POI: {finalPOIName} with LocationID: {locationID} at position {newPosition}");
-            Debug.Log($"   └── Parent: {worldMapObject.name}");
-            Debug.Log($"   └── TravelStartPoint: {travelStartPoint.name}");
-            Debug.Log($"   └── Collider size: {collider.size}");
+            Logger.LogInfo($"✅ Created new POI: {finalPOIName} with LocationID: {locationID} at position {newPosition}", Logger.LogCategory.EditorLog);
+            Logger.LogInfo($"   └── Parent: {worldMapObject.name}", Logger.LogCategory.EditorLog);
+            Logger.LogInfo($"   └── TravelStartPoint: {travelStartPoint.name}", Logger.LogCategory.EditorLog);
+            Logger.LogInfo($"   └── Collider size: {collider.size}", Logger.LogCategory.EditorLog);
 
             // Refresh safely
             RefreshPOIListSafely();
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"❌ Error creating POI '{poiName}': {ex.Message}");
+            Logger.LogError($"❌ Error creating POI '{poiName}': {ex.Message}", Logger.LogCategory.EditorLog);
             EditorUtility.DisplayDialog("Erreur", $"Impossible de creer le POI:\n{ex.Message}", "OK");
         }
     }
@@ -495,15 +495,15 @@ public class ActivityManagerWindow : EditorWindow
             Vector2 spriteSize = spriteRenderer.sprite.bounds.size;
             collider.size = spriteSize;
 
-            Debug.Log($"   └── Collider size set to sprite size: {spriteSize}");
+            Logger.LogInfo($"   └── Collider size set to sprite size: {spriteSize}", Logger.LogCategory.EditorLog);
         }
         else
         {
             // Taille par defaut quand aucun sprite n'est assigne
             collider.size = Vector2.one;
 
-            Debug.Log($"   └── No sprite assigned, using default collider size: {Vector2.one}");
-            Debug.Log($"   └── Tip: Assign a sprite to the SpriteRenderer and call 'Fit Collider to Sprite' to auto-adjust");
+            Logger.LogInfo($"   └── No sprite assigned, using default collider size: {Vector2.one}", Logger.LogCategory.EditorLog);
+            Logger.LogInfo($"   └── Tip: Assign a sprite to the SpriteRenderer and call 'Fit Collider to Sprite' to auto-adjust", Logger.LogCategory.EditorLog);
         }
     }
 
@@ -521,11 +521,11 @@ public class ActivityManagerWindow : EditorWindow
         {
             SetColliderSizeToSprite(collider, spriteRenderer);
             EditorUtility.SetDirty(poi.gameObject);
-            Debug.Log($"Fitted collider to sprite for POI: {poi.gameObject.name}");
+            Logger.LogInfo($"Fitted collider to sprite for POI: {poi.gameObject.name}", Logger.LogCategory.EditorLog);
         }
         else
         {
-            Debug.LogWarning($"POI {poi.gameObject.name} missing SpriteRenderer or BoxCollider2D component");
+            Logger.LogWarning($"POI {poi.gameObject.name} missing SpriteRenderer or BoxCollider2D component", Logger.LogCategory.EditorLog);
         }
     }
 
@@ -538,7 +538,7 @@ public class ActivityManagerWindow : EditorWindow
         if (worldMapParent != null)
         {
             Vector3 worldMapCenter = worldMapParent.transform.position;
-            Debug.Log($"   └── Positioning POI at WorldMap center: {worldMapCenter}");
+            Logger.LogInfo($"   └── Positioning POI at WorldMap center: {worldMapCenter}", Logger.LogCategory.EditorLog);
             return worldMapCenter;
         }
 
@@ -547,7 +547,7 @@ public class ActivityManagerWindow : EditorWindow
         if (worldMap != null)
         {
             Vector3 worldMapCenter = worldMap.transform.position;
-            Debug.Log($"   └── Found WorldMap, using center: {worldMapCenter}");
+            Logger.LogInfo($"   └── Found WorldMap, using center: {worldMapCenter}", Logger.LogCategory.EditorLog);
             return worldMapCenter;
         }
 
@@ -560,17 +560,17 @@ public class ActivityManagerWindow : EditorWindow
                 Vector3 cameraPos = sceneView.camera.transform.position;
                 Vector3 cameraForward = sceneView.camera.transform.forward;
                 Vector3 sceneViewPosition = cameraPos + cameraForward * 10f;
-                Debug.Log($"   └── Using SceneView camera position: {sceneViewPosition}");
+                Logger.LogInfo($"   └── Using SceneView camera position: {sceneViewPosition}", Logger.LogCategory.EditorLog);
                 return sceneViewPosition;
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"Could not use SceneView camera position: {ex.Message}");
+                Logger.LogWarning($"Could not use SceneView camera position: {ex.Message}", Logger.LogCategory.EditorLog);
             }
         }
 
         // PRIORITe 4 : Position par defaut si rien d'autre ne fonctionne
-        Debug.Log($"   └── Using default position: Vector3.zero");
+        Logger.LogInfo($"   └── Using default position: Vector3.zero", Logger.LogCategory.EditorLog);
         return Vector3.zero;
     }
 
@@ -617,7 +617,7 @@ public class ActivityManagerWindow : EditorWindow
         }
         catch (System.Exception ex)
         {
-            Debug.LogWarning($"Warning during POI refresh: {ex.Message}");
+            Logger.LogWarning($"Warning during POI refresh: {ex.Message}", Logger.LogCategory.EditorLog);
         }
     }
 
@@ -631,7 +631,7 @@ public class ActivityManagerWindow : EditorWindow
 
         if (worldMapObject != null)
         {
-            Debug.Log($"Found existing WorldMap: {worldMapObject.name}");
+            Logger.LogInfo($"Found existing WorldMap: {worldMapObject.name}", Logger.LogCategory.EditorLog);
             return worldMapObject;
         }
 
@@ -644,7 +644,7 @@ public class ActivityManagerWindow : EditorWindow
         if (createWorldMap)
         {
             worldMapObject = new GameObject("WorldMap");
-            Debug.Log($"✅ Created new WorldMap GameObject");
+            Logger.LogInfo($"✅ Created new WorldMap GameObject", Logger.LogCategory.EditorLog);
             return worldMapObject;
         }
 
@@ -695,7 +695,7 @@ public class ActivityManagerWindow : EditorWindow
         SpriteRenderer travelRenderer = travelStartPoint.AddComponent<SpriteRenderer>();
         travelRenderer.color = new Color(0f, 1f, 1f, 0.5f); // Cyan translucide
 
-        Debug.Log($"   └── Created TravelStartPoint as child of {poiParent.name}");
+        Logger.LogInfo($"   └── Created TravelStartPoint as child of {poiParent.name}", Logger.LogCategory.EditorLog);
         return travelStartPoint;
     }
 
@@ -713,16 +713,16 @@ public class ActivityManagerWindow : EditorWindow
             if (field != null)
             {
                 field.SetValue(poiComponent, travelStartPoint);
-                Debug.Log($"   └── Assigned TravelStartPoint to POI component");
+                Logger.LogInfo($"   └── Assigned TravelStartPoint to POI component", Logger.LogCategory.EditorLog);
             }
             else
             {
-                Debug.LogWarning("Could not find travelPathStartPoint field in POI component. You may need to assign it manually.");
+                Logger.LogWarning("Could not find travelPathStartPoint field in POI component. You may need to assign it manually.", Logger.LogCategory.EditorLog);
             }
         }
         catch (System.Exception ex)
         {
-            Debug.LogWarning($"Failed to auto-assign TravelStartPoint: {ex.Message}. Please assign manually in the Inspector.");
+            Logger.LogWarning($"Failed to auto-assign TravelStartPoint: {ex.Message}. Please assign manually in the Inspector.", Logger.LogCategory.EditorLog);
         }
     }
 
@@ -775,7 +775,7 @@ public class ActivityManagerWindow : EditorWindow
         Selection.activeObject = newLocation;
         EditorGUIUtility.PingObject(newLocation);
 
-        Debug.Log($"Created new location: {displayName} (ID: {locationID})");
+        Logger.LogInfo($"Created new location: {displayName} (ID: {locationID}, Logger.LogCategory.EditorLog)");
         LoadRegistries(); // Refresh
     }
 
@@ -809,7 +809,7 @@ public class ActivityManagerWindow : EditorWindow
                 {
                     locationActivity.ActivityVariants.Add(variant);
                     assignedCount++;
-                    Debug.Log($"Auto-assigned existing variant '{variant.VariantName}' to activity '{activityID}'");
+                    Logger.LogInfo($"Auto-assigned existing variant '{variant.VariantName}' to activity '{activityID}'", Logger.LogCategory.EditorLog);
                 }
             }
         }
@@ -825,11 +825,11 @@ public class ActivityManagerWindow : EditorWindow
 
         if (assignedCount > 0)
         {
-            Debug.Log($"Successfully auto-assigned {assignedCount} existing variants to activity '{activityID}' and synchronized across all locations");
+            Logger.LogInfo($"Successfully auto-assigned {assignedCount} existing variants to activity '{activityID}' and synchronized across all locations", Logger.LogCategory.EditorLog);
         }
         else
         {
-            Debug.Log($"No existing variants found for activity '{activityID}'");
+            Logger.LogInfo($"No existing variants found for activity '{activityID}'", Logger.LogCategory.EditorLog);
         }
     }
     #endregion
@@ -1312,11 +1312,11 @@ public class ActivityManagerWindow : EditorWindow
         try
         {
             allPOIs = FindObjectsOfType<POI>();
-            Debug.Log($"ActivityManager: Found {allPOIs?.Length ?? 0} POIs in the current scene");
+            Logger.LogInfo($"ActivityManager: Found {allPOIs?.Length ?? 0} POIs in the current scene", Logger.LogCategory.EditorLog);
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"Error finding POIs in scene: {ex.Message}");
+            Logger.LogError($"Error finding POIs in scene: {ex.Message}", Logger.LogCategory.EditorLog);
             allPOIs = new POI[0]; // Array vide pour eviter les erreurs
         }
     }
@@ -1348,13 +1348,13 @@ public class ActivityManagerWindow : EditorWindow
                     }
                     else
                     {
-                        Debug.LogWarning($"Duplicate LocationID found: {location.LocationID}");
+                        Logger.LogWarning($"Duplicate LocationID found: {location.LocationID}", Logger.LogCategory.EditorLog);
                     }
                 }
             }
         }
 
-        Debug.Log($"LocationLookup initialized with {locationLookup.Count} locations");
+        Logger.LogInfo($"LocationLookup initialized with {locationLookup.Count} locations", Logger.LogCategory.EditorLog);
     }
 
     private POI[] FilterPOIs()
@@ -1406,7 +1406,7 @@ public class ActivityManagerWindow : EditorWindow
         location.AvailableActivities.Add(newLocationActivity);
 
         MarkLocationDirty(location);
-        Debug.Log($"Added activity '{activity.GetDisplayName()}' to location '{location.DisplayName}'");
+        Logger.LogInfo($"Added activity '{activity.GetDisplayName()}' to location '{location.DisplayName}'", Logger.LogCategory.EditorLog);
     }
 
     private void RemoveActivityFromLocation(MapLocationDefinition location, int index)
@@ -1417,7 +1417,7 @@ public class ActivityManagerWindow : EditorWindow
             location.AvailableActivities.RemoveAt(index);
 
             MarkLocationDirty(location);
-            Debug.Log($"Removed activity '{activityName}' from location '{location.DisplayName}'");
+            Logger.LogInfo($"Removed activity '{activityName}' from location '{location.DisplayName}'", Logger.LogCategory.EditorLog);
         }
     }
 
@@ -1441,7 +1441,7 @@ public class ActivityManagerWindow : EditorWindow
         SynchronizeVariantAcrossAllLocations(locationActivity.ActivityReference, variant, true);
 
         MarkLocationDirty(FindLocationContaining(locationActivity));
-        Debug.Log($"Added variant '{variant.VariantName}' to activity '{locationActivity.ActivityReference.GetDisplayName()}' and synchronized across all locations");
+        Logger.LogInfo($"Added variant '{variant.VariantName}' to activity '{locationActivity.ActivityReference.GetDisplayName()}' and synchronized across all locations", Logger.LogCategory.EditorLog);
     }
 
     private void RemoveVariantFromLocationActivity(LocationActivity locationActivity, int index)
@@ -1459,7 +1459,7 @@ public class ActivityManagerWindow : EditorWindow
             }
 
             MarkLocationDirty(FindLocationContaining(locationActivity));
-            Debug.Log($"Removed variant '{variantName}' from activity '{locationActivity.ActivityReference.GetDisplayName()}' and synchronized across all locations");
+            Logger.LogInfo($"Removed variant '{variantName}' from activity '{locationActivity.ActivityReference.GetDisplayName()}' and synchronized across all locations", Logger.LogCategory.EditorLog);
         }
     }
 
@@ -1518,13 +1518,13 @@ public class ActivityManagerWindow : EditorWindow
         if (activityRegistry != null)
         {
             activityRegistry.ValidateRegistry();
-            Debug.Log("ActivityRegistry validation triggered");
+            Logger.LogInfo("ActivityRegistry validation triggered", Logger.LogCategory.EditorLog);
         }
 
         if (locationRegistry != null)
         {
             locationRegistry.ValidateRegistry();
-            Debug.Log("LocationRegistry validation triggered");
+            Logger.LogInfo("LocationRegistry validation triggered", Logger.LogCategory.EditorLog);
         }
     }
 
@@ -1554,7 +1554,7 @@ public class ActivityManagerWindow : EditorWindow
             activityRegistry.ValidateRegistry();
         }
 
-        Debug.Log($"Added variant '{variant.VariantName}' to activity '{locationActivity.ActivityReference.GetDisplayName()}' and synchronized across all locations");
+        Logger.LogInfo($"Added variant '{variant.VariantName}' to activity '{locationActivity.ActivityReference.GetDisplayName()}' and synchronized across all locations", Logger.LogCategory.EditorLog);
     }
 
     private void RemoveVariantFromActivity(LocationActivity locationActivity, int index)
@@ -1579,7 +1579,7 @@ public class ActivityManagerWindow : EditorWindow
                 activityRegistry.ValidateRegistry();
             }
 
-            Debug.Log($"Removed variant '{variantName}' from activity '{locationActivity.ActivityReference.GetDisplayName()}' and synchronized across all locations");
+            Logger.LogInfo($"Removed variant '{variantName}' from activity '{locationActivity.ActivityReference.GetDisplayName()}' and synchronized across all locations", Logger.LogCategory.EditorLog);
         }
     }
 
@@ -1630,7 +1630,7 @@ public class ActivityManagerWindow : EditorWindow
         if (syncCount > 0)
         {
             AssetDatabase.SaveAssets();
-            Debug.Log($"Synchronized variant '{variant.VariantName}' across {syncCount} location activities");
+            Logger.LogInfo($"Synchronized variant '{variant.VariantName}' across {syncCount} location activities", Logger.LogCategory.EditorLog);
         }
     }
     #endregion

@@ -434,7 +434,7 @@ public class ItemManagerWindow : EditorWindow
         Selection.activeObject = newItem;
         EditorGUIUtility.PingObject(newItem);
 
-        Debug.Log($"Created new item: {newItemName} (ID: {itemID}) in {assetPath}");
+        Logger.LogInfo($"Created new item: {newItemName} (ID: {itemID}) in {assetPath}", Logger.LogCategory.EditorLog);
         LoadRegistry(); // Refresh
     }
 
@@ -497,7 +497,7 @@ public class ItemManagerWindow : EditorWindow
             if (!AssetDatabase.IsValidFolder(nextPath))
             {
                 AssetDatabase.CreateFolder(currentPath, pathParts[i]);
-                Debug.Log($"Created folder: {nextPath}");
+                Logger.LogInfo($"Created folder: {nextPath}", Logger.LogCategory.EditorLog);
             }
 
             currentPath = nextPath;
@@ -524,7 +524,7 @@ public class ItemManagerWindow : EditorWindow
         if (itemRegistry != null)
         {
             itemRegistry.ValidateRegistry();
-            Debug.Log("ItemRegistry validation triggered");
+            Logger.LogInfo("ItemRegistry validation triggered", Logger.LogCategory.EditorLog);
         }
     }
 
@@ -566,7 +566,7 @@ public class ItemManagerWindow : EditorWindow
                 itemRegistry.AllItems.Remove(item);
                 EditorUtility.SetDirty(itemRegistry);
                 AssetDatabase.SaveAssets();
-                Debug.Log($"Removed item '{item.GetDisplayName()}' from ItemRegistry");
+                Logger.LogInfo($"Removed item '{item.GetDisplayName()}' from ItemRegistry", Logger.LogCategory.EditorLog);
             }
         }
     }

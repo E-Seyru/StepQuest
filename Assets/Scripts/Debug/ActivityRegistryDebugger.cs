@@ -55,15 +55,15 @@ public class ActivityRegistryDebugger : EditorWindow
 
     private void AnalyzeRegistry()
     {
-        Debug.Log("=== ANALYSE DU REGISTRY ===");
+        Logger.LogInfo("=== ANALYSE DU REGISTRY ===", Logger.LogCategory.EditorLog);
 
         if (activityRegistry.AllActivities == null)
         {
-            Debug.LogError("AllActivities est null !");
+            Logger.LogError("AllActivities est null !", Logger.LogCategory.EditorLog);
             return;
         }
 
-        Debug.Log($"Nombre total d'activites : {activityRegistry.AllActivities.Count}");
+        Logger.LogInfo($"Nombre total d'activites : {activityRegistry.AllActivities.Count}", Logger.LogCategory.EditorLog);
 
         for (int i = 0; i < activityRegistry.AllActivities.Count; i++)
         {
@@ -71,18 +71,18 @@ public class ActivityRegistryDebugger : EditorWindow
 
             if (locationActivity == null)
             {
-                Debug.LogWarning($"LocationActivity[{i}] est null !");
+                Logger.LogWarning($"LocationActivity[{i}] est null !", Logger.LogCategory.EditorLog);
                 continue;
             }
 
             if (locationActivity.ActivityReference == null)
             {
-                Debug.LogWarning($"LocationActivity[{i}].ActivityReference est null !");
+                Logger.LogWarning($"LocationActivity[{i}].ActivityReference est null !", Logger.LogCategory.EditorLog);
                 continue;
             }
 
             var activityDef = locationActivity.ActivityReference;
-            Debug.Log($"Activite[{i}] : '{activityDef.ActivityID}' - '{activityDef.ActivityName}'");
+            Logger.LogInfo($"Activite[{i}] : '{activityDef.ActivityID}' - '{activityDef.ActivityName}'", Logger.LogCategory.EditorLog);
 
             if (locationActivity.ActivityVariants != null)
             {
@@ -92,7 +92,7 @@ public class ActivityRegistryDebugger : EditorWindow
 
                     if (variant == null)
                     {
-                        Debug.LogWarning($"  Variant[{j}] est null pour l'activite '{activityDef.ActivityID}' !");
+                        Logger.LogWarning($"  Variant[{j}] est null pour l'activite '{activityDef.ActivityID}' !", Logger.LogCategory.EditorLog);
                         continue;
                     }
 
@@ -100,24 +100,24 @@ public class ActivityRegistryDebugger : EditorWindow
                     string parentId = variant.GetParentActivityID();
                     string expectedId = activityDef.ActivityID;
 
-                    Debug.Log($"  Variant[{j}] : '{variant.VariantName}' - Parent: '{parentId}' (attendu: '{expectedId}')");
+                    Logger.LogInfo($"  Variant[{j}] : '{variant.VariantName}' - Parent: '{parentId}' (attendu: '{expectedId}', Logger.LogCategory.EditorLog)");
 
                     if (parentId != expectedId)
                     {
-                        Debug.LogError($"  ❌ PROBLeME : Le variant '{variant.VariantName}' a un ParentActivityID '{parentId}' " +
-                                     $"mais il est associe a l'activite '{expectedId}' !");
+                        Logger.LogError($"  ❌ PROBLeME : Le variant '{variant.VariantName}' a un ParentActivityID '{parentId}' " +
+                                     $"mais il est associe a l'activite '{expectedId}' !", Logger.LogCategory.EditorLog);
                     }
 
                     // Verifier les ressources
                     if (variant.PrimaryResource == null)
                     {
-                        Debug.LogWarning($"  ⚠️ Le variant '{variant.VariantName}' n'a pas de ressource primaire !");
+                        Logger.LogWarning($"  ⚠️ Le variant '{variant.VariantName}' n'a pas de ressource primaire !", Logger.LogCategory.EditorLog);
                     }
                 }
             }
             else
             {
-                Debug.LogWarning($"  L'activite '{activityDef.ActivityID}' n'a aucun variant !");
+                Logger.LogWarning($"  L'activite '{activityDef.ActivityID}' n'a aucun variant !", Logger.LogCategory.EditorLog);
             }
         }
 
@@ -127,7 +127,7 @@ public class ActivityRegistryDebugger : EditorWindow
 
     private void SearchForMiningReferences()
     {
-        Debug.Log("=== RECHERCHE DE ReFeRENCES a 'MINING' ===");
+        Logger.LogInfo("=== RECHERCHE DE ReFeRENCES a 'MINING' ===", Logger.LogCategory.EditorLog);
 
         // Chercher dans tous les ActivityVariant du projet
         string[] variantGuids = AssetDatabase.FindAssets("t:ActivityVariant");
@@ -143,8 +143,8 @@ public class ActivityRegistryDebugger : EditorWindow
 
                 if (parentId.Contains("Mining") || parentId.Contains("mining"))
                 {
-                    Debug.LogError($"❌ TROUVe : Le variant '{variant.VariantName}' dans '{path}' " +
-                                 $"reference '{parentId}' qui contient 'Mining' !");
+                    Logger.LogError($"❌ TROUVe : Le variant '{variant.VariantName}' dans '{path}' " +
+                                 $"reference '{parentId}' qui contient 'Mining' !", Logger.LogCategory.EditorLog);
                 }
             }
         }
@@ -161,8 +161,8 @@ public class ActivityRegistryDebugger : EditorWindow
             {
                 if (activity.ActivityID.Contains("Mining") || activity.ActivityID.Contains("mining"))
                 {
-                    Debug.LogError($"❌ TROUVe : L'activite '{activity.ActivityName}' dans '{path}' " +
-                                 $"a un ID '{activity.ActivityID}' qui contient 'Mining' !");
+                    Logger.LogError($"❌ TROUVe : L'activite '{activity.ActivityName}' dans '{path}' " +
+                                 $"a un ID '{activity.ActivityID}' qui contient 'Mining' !", Logger.LogCategory.EditorLog);
                 }
             }
         }
@@ -170,7 +170,7 @@ public class ActivityRegistryDebugger : EditorWindow
 
     private void CleanNullReferences()
     {
-        Debug.Log("=== NETTOYAGE DES ReFeRENCES NULLES ===");
+        Logger.LogInfo("=== NETTOYAGE DES ReFeRENCES NULLES ===", Logger.LogCategory.EditorLog);
 
         bool hasChanges = false;
 
@@ -180,7 +180,7 @@ public class ActivityRegistryDebugger : EditorWindow
             if (activityRegistry.AllActivities[i] == null ||
                 activityRegistry.AllActivities[i].ActivityReference == null)
             {
-                Debug.Log($"Suppression de LocationActivity[{i}] (null)");
+                Logger.LogInfo($"Suppression de LocationActivity[{i}] (null, Logger.LogCategory.EditorLog)");
                 activityRegistry.AllActivities.RemoveAt(i);
                 hasChanges = true;
             }
@@ -195,7 +195,7 @@ public class ActivityRegistryDebugger : EditorWindow
                 {
                     if (locationActivity.ActivityVariants[i] == null)
                     {
-                        Debug.Log($"Suppression de variant null dans '{locationActivity.ActivityReference.ActivityID}'");
+                        Logger.LogInfo($"Suppression de variant null dans '{locationActivity.ActivityReference.ActivityID}'", Logger.LogCategory.EditorLog);
                         locationActivity.ActivityVariants.RemoveAt(i);
                         hasChanges = true;
                     }
@@ -207,17 +207,17 @@ public class ActivityRegistryDebugger : EditorWindow
         {
             EditorUtility.SetDirty(activityRegistry);
             AssetDatabase.SaveAssets();
-            Debug.Log("✅ Nettoyage termine. Registry sauvegarde.");
+            Logger.LogInfo("✅ Nettoyage termine. Registry sauvegarde.", Logger.LogCategory.EditorLog);
         }
         else
         {
-            Debug.Log("Aucune reference nulle trouvee.");
+            Logger.LogInfo("Aucune reference nulle trouvee.", Logger.LogCategory.EditorLog);
         }
     }
 
     private void RebuildCache()
     {
-        Debug.Log("=== RECONSTRUCTION DU CACHE ===");
+        Logger.LogInfo("=== RECONSTRUCTION DU CACHE ===", Logger.LogCategory.EditorLog);
 
         activityRegistry.RefreshCache();
         activityRegistry.ValidateRegistry();
@@ -225,7 +225,7 @@ public class ActivityRegistryDebugger : EditorWindow
         EditorUtility.SetDirty(activityRegistry);
         AssetDatabase.SaveAssets();
 
-        Debug.Log("✅ Cache reconstruit et registry valide.");
+        Logger.LogInfo("✅ Cache reconstruit et registry valide.", Logger.LogCategory.EditorLog);
     }
 
     private void DisplayRegistryContents()

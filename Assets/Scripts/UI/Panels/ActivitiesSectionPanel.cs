@@ -48,7 +48,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
     {
         if (activities == null)
         {
-            Debug.LogWarning("ActivitiesSectionPanel: Cannot display null activities list!");
+            Logger.LogWarning("ActivitiesSectionPanel: Cannot display null activities list!", Logger.LogCategory.ActivityLog);
             return;
         }
 
@@ -71,7 +71,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
             CreateActivityCards(activities);
         }
 
-        Debug.Log($"ActivitiesSectionPanel: Displayed {activities.Count} activities");
+        Logger.LogInfo($"ActivitiesSectionPanel: Displayed {activities.Count} activities", Logger.LogCategory.ActivityLog);
     }
 
     /// <summary>
@@ -109,19 +109,19 @@ public class ActivitiesSectionPanel : MonoBehaviour
 
         if (activitiesContainer == null)
         {
-            Debug.LogError("ActivitiesSectionPanel: ActivitiesContainer n'est pas assigne !");
+            Logger.LogError("ActivitiesSectionPanel: ActivitiesContainer n'est pas assigne !", Logger.LogCategory.ActivityLog);
             hasErrors = true;
         }
 
         if (primaryActivityCardPrefab == null)
         {
-            Debug.LogError("ActivitiesSectionPanel: PrimaryActivityCardPrefab n'est pas assigne !");
+            Logger.LogError("ActivitiesSectionPanel: PrimaryActivityCardPrefab n'est pas assigne !", Logger.LogCategory.ActivityLog);
             hasErrors = true;
         }
 
         if (hasErrors)
         {
-            Debug.LogError("ActivitiesSectionPanel: Des references critiques manquent ! Le panel peut ne pas fonctionner correctement.");
+            Logger.LogError("ActivitiesSectionPanel: Des references critiques manquent ! Le panel peut ne pas fonctionner correctement.", Logger.LogCategory.ActivityLog);
         }
     }
 
@@ -135,7 +135,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
         // Verifier que GridLayoutGroup est present
         if (activitiesContainer.GetComponent<GridLayoutGroup>() == null)
         {
-            Debug.LogWarning("ActivitiesSectionPanel: GridLayoutGroup manquant sur ActivitiesContainer, ajoutez-le dans l'Inspector!");
+            Logger.LogWarning("ActivitiesSectionPanel: GridLayoutGroup manquant sur ActivitiesContainer, ajoutez-le dans l'Inspector!", Logger.LogCategory.ActivityLog);
         }
     }
 
@@ -217,7 +217,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
         var activityCard = cardObject.GetComponent<PrimaryActivityCard>();
         if (activityCard == null)
         {
-            Debug.LogError($"ActivitiesSectionPanel: Le prefab ne contient pas de composant PrimaryActivityCard !");
+            Logger.LogError($"ActivitiesSectionPanel: Le prefab ne contient pas de composant PrimaryActivityCard !", Logger.LogCategory.ActivityLog);
             return;
         }
 
@@ -234,7 +234,7 @@ public class ActivitiesSectionPanel : MonoBehaviour
     /// </summary>
     private void OnActivityCardClicked(ActivityDefinition activity)
     {
-        Debug.Log($"ActivitiesSectionPanel: Activity card clicked for {activity.GetDisplayName()}");
+        Logger.LogInfo($"ActivitiesSectionPanel: Activity card clicked for {activity.GetDisplayName()}", Logger.LogCategory.ActivityLog);
 
         // Propager l'evenement
         OnActivitySelected?.Invoke(activity);

@@ -33,13 +33,13 @@ public class PrimaryActivityCard : MonoBehaviour
     {
         if (activity == null)
         {
-            Debug.LogWarning("PrimaryActivityCard: Cannot setup with null activity!");
+            Logger.LogWarning("PrimaryActivityCard: Cannot setup with null activity!", Logger.LogCategory.ActivityLog);
             return;
         }
 
         if (!activity.IsValidActivity())
         {
-            Debug.LogWarning($"PrimaryActivityCard: Activity '{activity.name}' is not valid!");
+            Logger.LogWarning($"PrimaryActivityCard: Activity '{activity.name}' is not valid!", Logger.LogCategory.ActivityLog);
             return;
         }
 
@@ -47,7 +47,7 @@ public class PrimaryActivityCard : MonoBehaviour
 
         SetupBasicInfo();
 
-        Debug.Log($"PrimaryActivityCard: Setup completed for {activity.GetDisplayName()}");
+        Logger.LogInfo($"PrimaryActivityCard: Setup completed for {activity.GetDisplayName()}", Logger.LogCategory.ActivityLog);
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ public class PrimaryActivityCard : MonoBehaviour
     {
         if (activityDefinition != null)
         {
-            Debug.Log($"PrimaryActivityCard: Card clicked for {activityDefinition.GetDisplayName()}");
+            Logger.LogInfo($"PrimaryActivityCard: Card clicked for {activityDefinition.GetDisplayName()}", Logger.LogCategory.ActivityLog);
             OnCardClicked?.Invoke(activityDefinition);
         }
     }

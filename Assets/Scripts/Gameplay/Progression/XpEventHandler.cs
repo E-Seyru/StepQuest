@@ -317,7 +317,7 @@ public class XpEventHandler : MonoBehaviour
     {
         if (!ValidateXpSystem())
         {
-            Debug.LogError("XpManager not found!");
+            Logger.LogError("XpManager not found!", Logger.LogCategory.XpLog);
             return;
         }
 
@@ -338,7 +338,7 @@ public class XpEventHandler : MonoBehaviour
         var testEvent = new ActivityTickEvent(testActivity, testVariant, 5); // 5 ticks
         OnActivityTick(testEvent);
 
-        Debug.Log("Test XP event processed! Check console for results.");
+        Logger.LogInfo("Test XP event processed! Check console for results.", Logger.LogCategory.XpLog);
     }
 
     /// <summary>
@@ -349,11 +349,11 @@ public class XpEventHandler : MonoBehaviour
     {
         if (!ValidateXpSystem())
         {
-            Debug.LogError("XpManager not found!");
+            Logger.LogError("XpManager not found!", Logger.LogCategory.XpLog);
             return;
         }
 
-        Debug.Log("Testing multiple XP events...");
+        Logger.LogInfo("Testing multiple XP events...", Logger.LogCategory.XpLog);
 
         // Test Mining
         TestSingleActivity("Mining Iron", "Mining", 12, 6, false, 3);
@@ -364,7 +364,7 @@ public class XpEventHandler : MonoBehaviour
         // Test Gathering
         TestSingleActivity("Gathering Wood", "Gathering", 8, 4, false, 7);
 
-        Debug.Log("Multiple XP events test completed!");
+        Logger.LogInfo("Multiple XP events test completed!", Logger.LogCategory.XpLog);
     }
 
     private void TestSingleActivity(string variantName, string activityId, int mainXP, int subXP, bool isTimeBased, int ticks)

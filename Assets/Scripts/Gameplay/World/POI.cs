@@ -390,17 +390,17 @@ public class POI : MonoBehaviour, IPointerClickHandler
         // Validation des parametres d'animation
         if (clickScaleAmount < 1.0f)
         {
-            Debug.LogWarning($"POI ({LocationID}): clickScaleAmount should be >= 1.0 for a growing effect");
+            Logger.LogWarning($"POI ({LocationID}): clickScaleAmount should be >= 1.0 for a growing effect", Logger.LogCategory.MapLog);
         }
 
         if (clickAnimationDuration <= 0f)
         {
-            Debug.LogWarning($"POI ({LocationID}): clickAnimationDuration should be > 0");
+            Logger.LogWarning($"POI ({LocationID}): clickAnimationDuration should be > 0", Logger.LogCategory.MapLog);
         }
 
         if (string.IsNullOrEmpty(locationDetailsPanelName))
         {
-            Debug.LogWarning($"POI ({LocationID}): locationDetailsPanelName is not set!");
+            Logger.LogWarning($"POI ({LocationID}): locationDetailsPanelName is not set!", Logger.LogCategory.MapLog);
         }
     }
 

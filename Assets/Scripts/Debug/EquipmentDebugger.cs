@@ -46,52 +46,52 @@ public class EquipmentDebugger : MonoBehaviour
     [ContextMenu("Debug Equipment Issue")]
     public void DebugEquipmentIssue()
     {
-        Debug.Log("=== DEBUGGING EQUIPMENT ISSUE ===");
+        Logger.LogInfo("=== DEBUGGING EQUIPMENT ISSUE ===", Logger.LogCategory.EditorLog);
 
         var inventoryManager = InventoryManager.Instance;
         if (inventoryManager == null)
         {
-            Debug.LogError("InventoryManager introuvable!");
+            Logger.LogError("InventoryManager introuvable!", Logger.LogCategory.EditorLog);
             return;
         }
 
         var playerContainer = inventoryManager.GetContainer("player");
         if (playerContainer == null)
         {
-            Debug.LogError("Conteneur 'player' introuvable!");
+            Logger.LogError("Conteneur 'player' introuvable!", Logger.LogCategory.EditorLog);
             return;
         }
 
         var itemRegistry = inventoryManager.GetItemRegistry();
         if (itemRegistry == null)
         {
-            Debug.LogError("ItemRegistry introuvable!");
+            Logger.LogError("ItemRegistry introuvable!", Logger.LogCategory.EditorLog);
             return;
         }
 
-        Debug.Log("--- CONTENU DE L'INVENTAIRE JOUEUR ---");
+        Logger.LogInfo("--- CONTENU DE L'INVENTAIRE JOUEUR ---", Logger.LogCategory.EditorLog);
         var nonEmptySlots = playerContainer.GetNonEmptySlots();
         foreach (var slot in nonEmptySlots)
         {
-            Debug.Log($"Slot: '{slot.ItemID}' x{slot.Quantity}");
+            Logger.LogInfo($"Slot: '{slot.ItemID}' x{slot.Quantity}", Logger.LogCategory.EditorLog);
 
             // Verifier si l'item existe dans le registry
             var itemDef = itemRegistry.GetItem(slot.ItemID);
             if (itemDef != null)
             {
-                Debug.Log($"  [OK] Item trouve dans registry: {itemDef.ItemName} (Type: {itemDef.Type})");
+                Logger.LogInfo($"  [OK] Item trouve dans registry: {itemDef.ItemName} (Type: {itemDef.Type}, Logger.LogCategory.EditorLog)");
                 if (itemDef.IsEquipment())
                 {
-                    Debug.Log($"  [EQUIP] C'est un equipement pour slot: {itemDef.EquipmentSlot}");
+                    Logger.LogInfo($"  [EQUIP] C'est un equipement pour slot: {itemDef.EquipmentSlot}", Logger.LogCategory.EditorLog);
                 }
             }
             else
             {
-                Debug.LogError($"  [ERROR] Item '{slot.ItemID}' INTROUVABLE dans le registry!");
+                Logger.LogError($"  [ERROR] Item '{slot.ItemID}' INTROUVABLE dans le registry!", Logger.LogCategory.EditorLog);
             }
         }
 
-        Debug.Log("--- RECHERCHE DE L'EPEE DE FER ---");
+        Logger.LogInfo("--- RECHERCHE DE L'EPEE DE FER ---", Logger.LogCategory.EditorLog);
         string[] possibleIDs = {
             "epee_de_fer",
             "Epee de fer",
@@ -106,26 +106,26 @@ public class EquipmentDebugger : MonoBehaviour
             var itemDef = itemRegistry.GetItem(id);
             if (itemDef != null)
             {
-                Debug.Log($"[OK] Registry contient: '{id}' -> {itemDef.ItemName}");
+                Logger.LogInfo($"[OK] Registry contient: '{id}' -> {itemDef.ItemName}", Logger.LogCategory.EditorLog);
             }
             else
             {
-                Debug.Log($"[NO] Registry ne contient pas: '{id}'");
+                Logger.LogInfo($"[NO] Registry ne contient pas: '{id}'", Logger.LogCategory.EditorLog);
             }
 
             // Test de l'inventaire
             bool hasInInventory = playerContainer.HasItem(id);
-            Debug.Log($"Inventaire contient '{id}': {hasInInventory}");
+            Logger.LogInfo($"Inventaire contient '{id}': {hasInInventory}", Logger.LogCategory.EditorLog);
         }
 
-        Debug.Log("--- TOUS LES ITEMS DU REGISTRY ---");
+        Logger.LogInfo("--- TOUS LES ITEMS DU REGISTRY ---", Logger.LogCategory.EditorLog);
         if (itemRegistry.AllItems != null)
         {
             foreach (var item in itemRegistry.AllItems)
             {
                 if (item != null)
                 {
-                    Debug.Log($"Registry: '{item.ItemID}' -> {item.ItemName} (Type: {item.Type})");
+                    Logger.LogInfo($"Registry: '{item.ItemID}' -> {item.ItemName} (Type: {item.Type}, Logger.LogCategory.EditorLog)");
                 }
             }
         }
@@ -139,7 +139,7 @@ public class EquipmentDebugger : MonoBehaviour
 
         // Essayer avec l'ID exact du ScriptableObject
         bool success = inventoryManager.AddItem("player", "epee_de_fer", 1);
-        Debug.Log($"Ajout force 'epee_de_fer': {success}");
+        Logger.LogInfo($"Ajout force 'epee_de_fer': {success}", Logger.LogCategory.EditorLog);
     }
 
     [ContextMenu("Try Equip Epee")]
@@ -148,11 +148,11 @@ public class EquipmentDebugger : MonoBehaviour
         var equipmentPanel = EquipmentPanelUI.Instance;
         if (equipmentPanel == null)
         {
-            Debug.LogError("EquipmentPanelUI introuvable!");
+            Logger.LogError("EquipmentPanelUI introuvable!", Logger.LogCategory.EditorLog);
             return;
         }
 
         bool success = equipmentPanel.TryEquipItem("epee_de_fer");
-        Debug.Log($"Tentative d'equipement: {success}");
+        Logger.LogInfo($"Tentative d'equipement: {success}", Logger.LogCategory.EditorLog);
     }
 }

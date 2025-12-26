@@ -58,13 +58,13 @@ public class CraftingActivityCard : MonoBehaviour
     {
         if (variant == null)
         {
-            Debug.LogWarning("CraftingActivityCard: Cannot setup with null variant!");
+            Logger.LogWarning("CraftingActivityCard: Cannot setup with null variant!", Logger.LogCategory.ActivityLog);
             return;
         }
 
         if (!variant.IsTimeBased)
         {
-            Debug.LogWarning($"CraftingActivityCard: Variant '{variant.VariantName}' is not time-based!");
+            Logger.LogWarning($"CraftingActivityCard: Variant '{variant.VariantName}' is not time-based!", Logger.LogCategory.ActivityLog);
             return;
         }
 
@@ -76,7 +76,7 @@ public class CraftingActivityCard : MonoBehaviour
         CheckIngredientsAvailability();
         CheckLevelRequirement();
 
-        Debug.Log($"CraftingActivityCard: Setup completed for {variant.VariantName}");
+        Logger.LogInfo($"CraftingActivityCard: Setup completed for {variant.VariantName}", Logger.LogCategory.ActivityLog);
     }
 
     /// <summary>
@@ -111,8 +111,8 @@ public class CraftingActivityCard : MonoBehaviour
         }
 
         UpdateVisualState();
-        UpdateLevelTextColor(); // Mettre à jour la couleur du texte de niveau
-        UpdateIngredientsTextColors(); // Mettre à jour les couleurs des ingrédients
+        UpdateLevelTextColor(); // Mettre ï¿½ jour la couleur du texte de niveau
+        UpdateIngredientsTextColors(); // Mettre ï¿½ jour les couleurs des ingrï¿½dients
     }
 
     /// <summary>
@@ -124,7 +124,7 @@ public class CraftingActivityCard : MonoBehaviour
 
         if (activityVariant != null && activityVariant.UnlockRequirement > 0)
         {
-            // Obtenir le niveau de la compétence principale
+            // Obtenir le niveau de la compï¿½tence principale
             string mainSkillId = activityVariant.GetMainSkillId();
 
             if (!string.IsNullOrEmpty(mainSkillId) && XpManager.Instance != null)
@@ -134,7 +134,7 @@ public class CraftingActivityCard : MonoBehaviour
 
                 if (!hasRequiredLevel)
                 {
-                    Debug.Log($"CraftingActivityCard: Level insufficient for {activityVariant.VariantName}. Required: {activityVariant.UnlockRequirement}, Player: {playerLevel}");
+                    Logger.LogInfo($"CraftingActivityCard: Level insufficient for {activityVariant.VariantName}. Required: {activityVariant.UnlockRequirement}, Player: {playerLevel}", Logger.LogCategory.ActivityLog);
                 }
             }
         }
@@ -147,7 +147,7 @@ public class CraftingActivityCard : MonoBehaviour
     /// </summary>
     private void UpdateVisualState()
     {
-        // Priorité : Niveau > Ressources
+        // Prioritï¿½ : Niveau > Ressources
         // Si pas le bon niveau -> overlay gris seulement
         // Sinon si pas assez de ressources -> overlay rouge seulement
         // Sinon aucun overlay
@@ -163,7 +163,7 @@ public class CraftingActivityCard : MonoBehaviour
             redOverlay.SetActive(hasRequiredLevel && !hasEnoughIngredients);
         }
 
-        // Mettre à jour les couleurs des textes
+        // Mettre ï¿½ jour les couleurs des textes
         UpdateLevelTextColor();
         UpdateIngredientsTextColors();
     }
@@ -248,7 +248,7 @@ public class CraftingActivityCard : MonoBehaviour
 
         if (activityVariant.RequiredMaterials == null || activityVariant.RequiredQuantities == null)
         {
-            Debug.Log($"CraftingActivityCard: No ingredients for {activityVariant.VariantName}");
+            Logger.LogInfo($"CraftingActivityCard: No ingredients for {activityVariant.VariantName}", Logger.LogCategory.ActivityLog);
             return;
         }
 
@@ -265,7 +265,7 @@ public class CraftingActivityCard : MonoBehaviour
             }
         }
 
-        Debug.Log($"CraftingActivityCard: Created {instantiatedIngredients.Count} ingredient slots");
+        Logger.LogInfo($"CraftingActivityCard: Created {instantiatedIngredients.Count} ingredient slots", Logger.LogCategory.ActivityLog);
     }
 
     /// <summary>
@@ -275,7 +275,7 @@ public class CraftingActivityCard : MonoBehaviour
     {
         if (ingredientPrefab == null || ingredientsContainer == null)
         {
-            Debug.LogWarning("CraftingActivityCard: IngredientPrefab or IngredientsContainer not assigned!");
+            Logger.LogWarning("CraftingActivityCard: IngredientPrefab or IngredientsContainer not assigned!", Logger.LogCategory.ActivityLog);
             return;
         }
 
@@ -295,7 +295,7 @@ public class CraftingActivityCard : MonoBehaviour
         {
             quantityText.text = $"x{quantity}";
 
-            // Stocker la référence au material pour la vérification des couleurs
+            // Stocker la rï¿½fï¿½rence au material pour la vï¿½rification des couleurs
             var ingredientData = ingredientSlot.GetComponent<IngredientSlotData>();
             if (ingredientData == null)
             {
@@ -306,7 +306,7 @@ public class CraftingActivityCard : MonoBehaviour
             ingredientData.QuantityText = quantityText;
         }
 
-        Debug.Log($"CraftingActivityCard: Created ingredient slot for {material.GetDisplayName()} x{quantity}");
+        Logger.LogInfo($"CraftingActivityCard: Created ingredient slot for {material.GetDisplayName()} x{quantity}", Logger.LogCategory.ActivityLog);
     }
 
     /// <summary>
@@ -331,22 +331,22 @@ public class CraftingActivityCard : MonoBehaviour
     {
         if (activityVariant != null)
         {
-            // Vérifier d'abord le niveau - PAS d'animation si niveau insuffisant
+            // Vï¿½rifier d'abord le niveau - PAS d'animation si niveau insuffisant
             if (!hasRequiredLevel)
             {
-                Debug.Log($"CraftingActivityCard: Level requirement not met for {activityVariant.VariantName}");
+                Logger.LogInfo($"CraftingActivityCard: Level requirement not met for {activityVariant.VariantName}", Logger.LogCategory.ActivityLog);
                 return; // Pas d'animation, juste ignorer le clic
             }
 
-            // Puis vérifier les ressources - Animation seulement pour les ressources manquantes
+            // Puis vï¿½rifier les ressources - Animation seulement pour les ressources manquantes
             if (!hasEnoughIngredients)
             {
-                Debug.Log($"CraftingActivityCard: Not enough ingredients for {activityVariant.VariantName}, shaking card");
+                Logger.LogInfo($"CraftingActivityCard: Not enough ingredients for {activityVariant.VariantName}, shaking card", Logger.LogCategory.ActivityLog);
                 StartCoroutine(ShakeAnimation());
                 return;
             }
 
-            Debug.Log($"CraftingActivityCard: Card clicked for {activityVariant.VariantName}");
+            Logger.LogInfo($"CraftingActivityCard: Card clicked for {activityVariant.VariantName}", Logger.LogCategory.ActivityLog);
             OnCardClicked?.Invoke(activityVariant);
         }
     }
@@ -385,7 +385,7 @@ public class CraftingActivityCard : MonoBehaviour
     }
 
     /// <summary>
-    /// Mettre à jour la couleur du texte de niveau
+    /// Mettre ï¿½ jour la couleur du texte de niveau
     /// </summary>
     private void UpdateLevelTextColor()
     {
@@ -394,7 +394,7 @@ public class CraftingActivityCard : MonoBehaviour
             levelRequiredText.color = hasRequiredLevel ? Color.white : Color.red;
         }
 
-        // Mettre à jour la couleur du background du niveau
+        // Mettre ï¿½ jour la couleur du background du niveau
         if (levelBackground != null)
         {
             levelBackground.color = hasRequiredLevel ? normalLevelBackgroundColor : insufficientLevelBackgroundColor;
@@ -402,7 +402,7 @@ public class CraftingActivityCard : MonoBehaviour
     }
 
     /// <summary>
-    /// Mettre à jour les couleurs des textes d'ingrédients
+    /// Mettre ï¿½ jour les couleurs des textes d'ingrï¿½dients
     /// </summary>
     private void UpdateIngredientsTextColors()
     {
@@ -418,12 +418,12 @@ public class CraftingActivityCard : MonoBehaviour
             var ingredientData = ingredientSlot.GetComponent<IngredientSlotData>();
             if (ingredientData == null || ingredientData.Material == null || ingredientData.QuantityText == null) continue;
 
-            // Vérifier si on a assez de cette ressource
+            // Vï¿½rifier si on a assez de cette ressource
             var container = inventoryManager.GetContainer("player");
             int availableQuantity = container?.GetItemQuantity(ingredientData.Material.ItemID) ?? 0;
             bool hasEnoughOfThisIngredient = availableQuantity >= ingredientData.RequiredQuantity;
 
-            // Mettre à jour la couleur
+            // Mettre ï¿½ jour la couleur
             ingredientData.QuantityText.color = hasEnoughOfThisIngredient ? Color.white : Color.red;
         }
     }
@@ -435,7 +435,7 @@ public class CraftingActivityCard : MonoBehaviour
 }
 
 /// <summary>
-/// Composant helper pour stocker les données d'un slot d'ingrédient
+/// Composant helper pour stocker les donnï¿½es d'un slot d'ingrï¿½dient
 /// </summary>
 public class IngredientSlotData : MonoBehaviour
 {

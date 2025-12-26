@@ -38,7 +38,7 @@ public class StatusEffectCreator : EditorWindow
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log("StatusEffectCreator: Created 6 test status effect assets in " + folderPath);
+        Logger.LogInfo("StatusEffectCreator: Created 6 test status effect assets in " + folderPath, Logger.LogCategory.EditorLog);
         EditorUtility.DisplayDialog("Status Effects Created",
             "Created 6 test status effect assets:\n" +
             "- Poison\n" +
@@ -185,12 +185,12 @@ public class StatusEffectCreator : EditorWindow
         var existing = AssetDatabase.LoadAssetAtPath<StatusEffectDefinition>(path);
         if (existing != null)
         {
-            Debug.Log($"StatusEffectCreator: {fileName} already exists, skipping.");
+            Logger.LogInfo($"StatusEffectCreator: {fileName} already exists, skipping.", Logger.LogCategory.EditorLog);
             return;
         }
 
         AssetDatabase.CreateAsset(effect, path);
-        Debug.Log($"StatusEffectCreator: Created {fileName}");
+        Logger.LogInfo($"StatusEffectCreator: Created {fileName}", Logger.LogCategory.EditorLog);
     }
 
     [MenuItem("WalkAndRPG/Combat/Create Status Effect Registry")]
@@ -215,7 +215,7 @@ public class StatusEffectCreator : EditorWindow
         var existing = AssetDatabase.LoadAssetAtPath<StatusEffectRegistry>(path);
         if (existing != null)
         {
-            Debug.Log("StatusEffectCreator: Registry already exists at " + path);
+            Logger.LogInfo("StatusEffectCreator: Registry already exists at " + path, Logger.LogCategory.EditorLog);
             Selection.activeObject = existing;
             return;
         }
@@ -224,8 +224,8 @@ public class StatusEffectCreator : EditorWindow
         AssetDatabase.CreateAsset(registry, path);
         AssetDatabase.SaveAssets();
 
-        Debug.Log("StatusEffectCreator: Created StatusEffectRegistry at " + path);
-        Debug.Log("Don't forget to add your StatusEffectDefinition assets to the registry!");
+        Logger.LogInfo("StatusEffectCreator: Created StatusEffectRegistry at " + path, Logger.LogCategory.EditorLog);
+        Logger.LogInfo("Don't forget to add your StatusEffectDefinition assets to the registry!", Logger.LogCategory.EditorLog);
 
         Selection.activeObject = registry;
         EditorGUIUtility.PingObject(registry);

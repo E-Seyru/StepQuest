@@ -363,10 +363,10 @@ public class NPCManagerWindow : EditorWindow
         Selection.activeObject = npc;
         EditorGUIUtility.PingObject(npc);
 
-        Debug.Log($"Created NPC: {npc.NPCName} at {assetPath}");
+        Logger.LogInfo($"Created NPC: {npc.NPCName} at {assetPath}", Logger.LogCategory.EditorLog);
         if (newNPCLocations.Count > 0)
         {
-            Debug.Log($"  Assigned to: {string.Join(", ", newNPCLocations.Select(l => l.DisplayName))}");
+            Logger.LogInfo($"  Assigned to: {string.Join(", ", newNPCLocations.Select(l => l.DisplayName))}", Logger.LogCategory.EditorLog);
         }
 
         ResetCreateNPCForm();
@@ -538,7 +538,7 @@ public class NPCManagerWindow : EditorWindow
 
         if (location.AvailableNPCs.Contains(npc))
         {
-            Debug.Log($"NPC '{npc.GetDisplayName()}' already at '{location.DisplayName}'");
+            Logger.LogInfo($"NPC '{npc.GetDisplayName()}' already at '{location.DisplayName}'", Logger.LogCategory.EditorLog);
             return;
         }
 
@@ -546,7 +546,7 @@ public class NPCManagerWindow : EditorWindow
         EditorUtility.SetDirty(location);
         AssetDatabase.SaveAssets();
 
-        Debug.Log($"Added NPC '{npc.GetDisplayName()}' to '{location.DisplayName}'");
+        Logger.LogInfo($"Added NPC '{npc.GetDisplayName()}' to '{location.DisplayName}'", Logger.LogCategory.EditorLog);
     }
 
     private void RemoveNPCFromLocation(NPCDefinition npc, MapLocationDefinition location)
@@ -557,7 +557,7 @@ public class NPCManagerWindow : EditorWindow
         {
             EditorUtility.SetDirty(location);
             AssetDatabase.SaveAssets();
-            Debug.Log($"Removed NPC '{npc.GetDisplayName()}' from '{location.DisplayName}'");
+            Logger.LogInfo($"Removed NPC '{npc.GetDisplayName()}' from '{location.DisplayName}'", Logger.LogCategory.EditorLog);
         }
     }
     #endregion
@@ -694,7 +694,7 @@ public class NPCManagerWindow : EditorWindow
         EditorUtility.SetDirty(npcRegistry);
         AssetDatabase.SaveAssets();
 
-        Debug.Log($"Synced NPCRegistry with {npcRegistry.AllNPCs.Count} NPCs");
+        Logger.LogInfo($"Synced NPCRegistry with {npcRegistry.AllNPCs.Count} NPCs", Logger.LogCategory.EditorLog);
     }
 
     private void CreateNPCRegistry()
@@ -718,7 +718,7 @@ public class NPCManagerWindow : EditorWindow
         Selection.activeObject = registry;
         EditorGUIUtility.PingObject(registry);
 
-        Debug.Log($"Created NPCRegistry at {assetPath} with {registry.AllNPCs.Count} NPCs");
+        Logger.LogInfo($"Created NPCRegistry at {assetPath} with {registry.AllNPCs.Count} NPCs", Logger.LogCategory.EditorLog);
     }
     #endregion
 
@@ -853,7 +853,7 @@ public class NPCManagerWindow : EditorWindow
             if (!string.IsNullOrEmpty(assetPath))
             {
                 AssetDatabase.DeleteAsset(assetPath);
-                Debug.Log($"Deleted NPC '{npc.GetDisplayName()}' at {assetPath}");
+                Logger.LogInfo($"Deleted NPC '{npc.GetDisplayName()}' at {assetPath}", Logger.LogCategory.EditorLog);
             }
 
             AssetDatabase.SaveAssets();

@@ -21,7 +21,7 @@ public class SampleDialogueCreator : EditorWindow
         NPCDefinition homelessChild = FindNPC("homeless_child");
         if (homelessChild == null)
         {
-            Debug.LogWarning("SampleDialogueCreator: Could not find Homeless_Child NPC. Creating dialogues without NPC assignment.");
+            Logger.LogWarning("SampleDialogueCreator: Could not find Homeless_Child NPC. Creating dialogues without NPC assignment.", Logger.LogCategory.EditorLog);
         }
 
         // Create dialogue folder
@@ -60,7 +60,7 @@ public class SampleDialogueCreator : EditorWindow
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log("SampleDialogueCreator: Created ThrowRock ability and 5 dialogues for Homeless_Child");
+        Logger.LogInfo("SampleDialogueCreator: Created ThrowRock ability and 5 dialogues for Homeless_Child", Logger.LogCategory.EditorLog);
         EditorUtility.DisplayDialog("Homeless Child Content Created",
             "Created:\n\n" +
             "ABILITY:\n" +
@@ -81,15 +81,15 @@ public class SampleDialogueCreator : EditorWindow
         var playerData = DataManager.Instance?.PlayerData;
         if (playerData == null)
         {
-            Debug.LogWarning("Cannot reset flags: PlayerData not available (game not running?)");
+            Logger.LogWarning("Cannot reset flags: PlayerData not available (game not running?)", Logger.LogCategory.EditorLog);
             return;
         }
 
         // Log current values before reset
-        Debug.Log($"Before reset - HC_HasMet: {playerData.GetDialogueFlag("HC_HasMet")}, " +
+        Logger.LogInfo($"Before reset - HC_HasMet: {playerData.GetDialogueFlag("HC_HasMet")}, " +
                   $"HC_TalkedTwice: {playerData.GetDialogueFlag("HC_TalkedTwice")}, " +
                   $"HC_PlayedRocks: {playerData.GetDialogueFlag("HC_PlayedRocks")}, " +
-                  $"Relationship: {playerData.GetNPCRelationship("homeless_child")}");
+                  $"Relationship: {playerData.GetNPCRelationship("homeless_child")}", Logger.LogCategory.EditorLog);
 
         // Reset dialogue flags (directly modify the dictionary for consistency)
         var dialogueFlags = playerData.DialogueFlags;
@@ -104,10 +104,10 @@ public class SampleDialogueCreator : EditorWindow
         playerData.NPCRelationships = relationships;
 
         // Log values after reset (before save)
-        Debug.Log($"After reset - HC_HasMet: {playerData.GetDialogueFlag("HC_HasMet")}, " +
+        Logger.LogInfo($"After reset - HC_HasMet: {playerData.GetDialogueFlag("HC_HasMet")}, " +
                   $"HC_TalkedTwice: {playerData.GetDialogueFlag("HC_TalkedTwice")}, " +
                   $"HC_PlayedRocks: {playerData.GetDialogueFlag("HC_PlayedRocks")}, " +
-                  $"Relationship: {playerData.GetNPCRelationship("homeless_child")}");
+                  $"Relationship: {playerData.GetNPCRelationship("homeless_child")}", Logger.LogCategory.EditorLog);
 
         // Remove ThrowRock ability if owned (directly from PlayerData)
         bool abilityRemoved = false;
@@ -129,7 +129,7 @@ public class SampleDialogueCreator : EditorWindow
 
         DataManager.Instance.SaveGame();
 
-        Debug.Log("Reset all Homeless Child dialogue flags, relationship, and ability");
+        Logger.LogInfo("Reset all Homeless Child dialogue flags, relationship, and ability", Logger.LogCategory.EditorLog);
         EditorUtility.DisplayDialog("Flags Reset",
             "Reset the following:\n" +
             "• HC_HasMet = false\n" +
@@ -153,7 +153,7 @@ public class SampleDialogueCreator : EditorWindow
         var existing = AssetDatabase.LoadAssetAtPath<AbilityDefinition>(path);
         if (existing != null)
         {
-            Debug.Log("ThrowRock ability already exists, updating it");
+            Logger.LogInfo("ThrowRock ability already exists, updating it", Logger.LogCategory.EditorLog);
             // Update existing
             existing.AbilityID = "throw_rock";
             existing.AbilityName = "Lancer de Pierre";
@@ -199,7 +199,7 @@ public class SampleDialogueCreator : EditorWindow
         ability.DeveloperNotes = "Obtained from Homeless Child after playing rocks together";
 
         AssetDatabase.CreateAsset(ability, path);
-        Debug.Log($"Created ThrowRock ability at {path}");
+        Logger.LogInfo($"Created ThrowRock ability at {path}", Logger.LogCategory.EditorLog);
         return ability;
     }
 
@@ -209,7 +209,7 @@ public class SampleDialogueCreator : EditorWindow
         string[] guids = AssetDatabase.FindAssets("t:AbilityRegistry");
         if (guids.Length == 0)
         {
-            Debug.LogWarning("No AbilityRegistry found. Please manually add ThrowRock to the registry.");
+            Logger.LogWarning("No AbilityRegistry found. Please manually add ThrowRock to the registry.", Logger.LogCategory.EditorLog);
             return;
         }
 
@@ -236,7 +236,7 @@ public class SampleDialogueCreator : EditorWindow
             }
 
             EditorUtility.SetDirty(registry);
-            Debug.Log("Registered ThrowRock ability in AbilityRegistry");
+            Logger.LogInfo("Registered ThrowRock ability in AbilityRegistry", Logger.LogCategory.EditorLog);
         }
     }
 

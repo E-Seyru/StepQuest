@@ -468,7 +468,7 @@ public class AbilityRegistry : ScriptableObject
         RefreshCache();
         ValidateRegistry();
 
-        Debug.Log($"AbilityRegistry: Auto-populated with {foundAbilities.Count} ability(ies)");
+        Logger.LogInfo($"AbilityRegistry: Auto-populated with {foundAbilities.Count} ability(ies, Logger.LogCategory.DataLog)");
     }
 #endif
 }

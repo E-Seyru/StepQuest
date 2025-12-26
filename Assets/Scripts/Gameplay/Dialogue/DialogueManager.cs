@@ -293,8 +293,8 @@ public class DialogueManager : MonoBehaviour
         _currentLineIndex = 0;
         _isDialogueActive = true;
 
-        Debug.Log($"DialogueManager: Starting dialogue '{dialogue.DialogueID}' with {dialogue.LineCount} lines");
-        Debug.Log($"DialogueManager: DialoguePanelUI.Instance is {(DialoguePanelUI.Instance != null ? "available" : "NULL")}");
+        Logger.LogInfo($"DialogueManager: Starting dialogue '{dialogue.DialogueID}' with {dialogue.LineCount} lines", Logger.LogCategory.DialogueLog);
+        Logger.LogInfo($"DialogueManager: DialoguePanelUI.Instance is {(DialoguePanelUI.Instance != null ? "available" : "NULL")}", Logger.LogCategory.DialogueLog);
 
         // Publish start event
         EventBus.Publish(new DialogueStartedEvent(npc.NPCID, dialogue.DialogueID, npc, dialogue));

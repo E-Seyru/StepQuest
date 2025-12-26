@@ -421,7 +421,7 @@ public class StatusEffectRegistry : ScriptableObject
         RefreshCache();
         ValidateRegistry();
 
-        Debug.Log($"StatusEffectRegistry: Auto-populated with {foundEffects.Count} status effect(s)");
+        Logger.LogInfo($"StatusEffectRegistry: Auto-populated with {foundEffects.Count} status effect(s, Logger.LogCategory.DataLog)");
     }
 #endif
 }

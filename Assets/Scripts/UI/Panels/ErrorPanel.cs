@@ -151,7 +151,7 @@ public class ErrorPanel : MonoBehaviour
         Camera mainCamera = Camera.main;
         if (mainCamera == null)
         {
-            Debug.LogWarning("ErrorPanel: Main camera not found!");
+            Logger.LogWarning("ErrorPanel: Main camera not found!", Logger.LogCategory.UILog);
             rectTransform.anchoredPosition = new Vector2(0f, 200f);
             return;
         }

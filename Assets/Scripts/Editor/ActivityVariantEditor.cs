@@ -359,7 +359,7 @@ public class ActivityVariantEditor : EditorWindow
 
         if (variantsNeedingXP.Length == 0)
         {
-            Debug.Log("No variants need XP setup");
+            Logger.LogInfo("No variants need XP setup", Logger.LogCategory.EditorLog);
             return;
         }
 
@@ -385,7 +385,7 @@ public class ActivityVariantEditor : EditorWindow
         }
 
         AssetDatabase.SaveAssets();
-        Debug.Log($"Auto-setup XP values for {variantsNeedingXP.Length} variants");
+        Logger.LogInfo($"Auto-setup XP values for {variantsNeedingXP.Length} variants", Logger.LogCategory.EditorLog);
     }
 }
 #endif
