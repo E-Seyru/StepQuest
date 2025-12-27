@@ -1,4 +1,4 @@
-﻿// Filepath: Assets/Scripts/Data/Registry/LocationRegistry.cs
+// Filepath: Assets/Scripts/Data/Registry/LocationRegistry.cs
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;

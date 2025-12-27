@@ -12,22 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fe739f195ecfa34486eb79525bef063, type: 3}
   m_Name: Village_01
   m_EditorClassIdentifier: 
-  LocationID: Village_01
+  LocationID: village_01
   DisplayName: Village
   Description: Un village tout ce qu'il y a de plus simple.
   LongDescription: 
   LocationImage: {fileID: 21300000, guid: fdab1595d7737174c9ddf42942aed38b, type: 3}
   LocationThemeColor: {r: 1, g: 1, b: 1, a: 1}
   Connections:
-  - DestinationLocationID: Foret_01
+  - DestinationLocationID: foret_01
     StepCost: 50
     IsAvailable: 1
     Requirements: 
-  - DestinationLocationID: Mine_01
+  - DestinationLocationID: mine_01
     StepCost: 50
     IsAvailable: 1
     Requirements: 
-  - DestinationLocationID: Cabane de pecheur
+  - DestinationLocationID: cabane_de_pecheur
     StepCost: 50
     IsAvailable: 1
     Requirements: 

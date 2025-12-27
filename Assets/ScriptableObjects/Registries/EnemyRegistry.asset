@@ -15,4 +15,6 @@ MonoBehaviour:
   AllEnemies: []
   enableFallbackSearch: 1
   logMissingEnemies: 0
-  ValidationStatus: Click 'Validate Registry' to check for issues
+  ValidationStatus: 'Issues found:
+
+    - Auto-cleaned 1 null references'

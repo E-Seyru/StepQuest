@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 641a3dc1ecc234641919c977f1ece986, type: 3}
   m_Name: NewAbility
   m_EditorClassIdentifier: Assembly-CSharp::AbilityDefinition
-  AbilityID: Roartrrr
+  AbilityID: roartrrr
   AbilityName: Yeaaaah
   Description: 'An OP ability that you shouldn''t own at all. It does a lot. '
   AbilityIcon: {fileID: -6727031897348285576, guid: e81d69008d85cca40acbdf3f58c42946, type: 3}

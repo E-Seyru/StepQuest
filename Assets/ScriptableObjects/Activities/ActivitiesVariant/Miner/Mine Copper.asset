@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99ddbeafac29af94ba225d9cc62cd345, type: 3}
   m_Name: Mine Copper
   m_EditorClassIdentifier: 
-  VariantName: Miner du cuivre
-  VariantDescription: 
-  ParentActivityID: Miner
+  VariantName: miner_du_cuivre
+  VariantDescription:
+  ParentActivityID: miner
   AutoDetectParent: 1
   IsTimeBased: 0
   PrimaryResource: {fileID: 11400000, guid: a5c99481bcee114448801f2fb8d80b89, type: 2}

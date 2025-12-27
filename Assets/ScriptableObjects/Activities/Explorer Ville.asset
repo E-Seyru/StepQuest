@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e6cc2a70a59166438cdd7fff9273abf, type: 3}
   m_Name: Explorer Ville
   m_EditorClassIdentifier: 
-  ActivityID: Explorer Ville
+  ActivityID: explorer_ville
   ActivityName: Explorer Ville
   BaseDescription: "Explorer pourrait vous permettre d'en d\xE9couvrir plus sur ce
     lieu..."

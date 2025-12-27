@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99ddbeafac29af94ba225d9cc62cd345, type: 3}
   m_Name: Couper du Saule
   m_EditorClassIdentifier: 
-  VariantName: Couper du Saule
+  VariantName: couper_du_saule
   VariantDescription: Vous coupez du Saule
-  ParentActivityID: Bucheron
+  ParentActivityID: bucheron
   AutoDetectParent: 0
   IsTimeBased: 0
   PrimaryResource: {fileID: 11400000, guid: a7f41c6b5db499343b196e57c1a26619, type: 2}

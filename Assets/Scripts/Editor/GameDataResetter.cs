@@ -29,6 +29,9 @@ public class GameDataResetter : EditorWindow
     private bool resetActivityData = true;
     private bool resetSkillsData = true;
     private bool resetLocationData = true;
+    private bool resetAbilities = true;
+    private bool resetNPCData = true;
+    private bool resetDialogueFlags = true;
 
     void OnGUI()
     {
@@ -128,6 +131,20 @@ public class GameDataResetter : EditorWindow
             EditorGUILayout.LabelField($" Inventaire: {inventoryManager.GetDebugInfo()}");
         }
 
+        // Abilities (aperçu)
+        var ownedAbilities = playerData.OwnedAbilities;
+        var equippedAbilities = playerData.EquippedAbilities;
+        EditorGUILayout.LabelField($" Abilities: {ownedAbilities.Count} possedee(s), {equippedAbilities.Count} equipee(s)");
+
+        // NPC Data (aperçu)
+        var discoveredNPCs = playerData.DiscoveredNPCs;
+        var npcRelationships = playerData.NPCRelationships;
+        EditorGUILayout.LabelField($" NPCs: {discoveredNPCs.Count} decouvert(s), {npcRelationships.Count} relation(s)");
+
+        // Dialogue flags (aperçu)
+        var dialogueFlags = playerData.DialogueFlags;
+        EditorGUILayout.LabelField($" Dialogue: {dialogueFlags.Count} flag(s)");
+
         EditorGUILayout.EndVertical();
     }
 
@@ -149,6 +166,9 @@ public class GameDataResetter : EditorWindow
             resetSkillsData = EditorGUILayout.ToggleLeft(" Competences et XP", resetSkillsData);
             resetLocationData = EditorGUILayout.ToggleLeft(" Localisation actuelle", resetLocationData);
             resetInventory = EditorGUILayout.ToggleLeft(" Inventaire complet", resetInventory);
+            resetAbilities = EditorGUILayout.ToggleLeft(" Abilities (possedees et equipees)", resetAbilities);
+            resetNPCData = EditorGUILayout.ToggleLeft(" Donnees NPC (decouverts et relations)", resetNPCData);
+            resetDialogueFlags = EditorGUILayout.ToggleLeft(" Flags de dialogue", resetDialogueFlags);
 
             EditorGUILayout.EndVertical();
         }
@@ -157,7 +177,8 @@ public class GameDataResetter : EditorWindow
             EditorGUILayout.HelpBox("Mode rapide : Tout sera reinitialise", MessageType.Info);
             // En mode rapide, tout est selectionne
             resetPlayerData = resetInventory = resetStepData = resetTravelData =
-            resetActivityData = resetSkillsData = resetLocationData = true;
+            resetActivityData = resetSkillsData = resetLocationData =
+            resetAbilities = resetNPCData = resetDialogueFlags = true;
         }
     }
 
@@ -253,6 +274,7 @@ public class GameDataResetter : EditorWindow
                 playerData.TravelRequiredSteps = 0;
                 playerData.TravelFinalDestinationId = null;
                 playerData.TravelOriginLocationId = null;
+                playerData.IsMultiSegmentTravel = false;
             }
 
             // 3. Reset des donnees d'activite
@@ -281,7 +303,7 @@ public class GameDataResetter : EditorWindow
                 if (mapManager != null)
                 {
                     // Essayer de remettre au village de depart
-                    playerData.CurrentLocationId = "Village_01"; // Ajuste selon ton jeu
+                    playerData.CurrentLocationId = "village_01"; // snake_case ID
                 }
             }
 
@@ -304,18 +326,48 @@ public class GameDataResetter : EditorWindow
                 }
             }
 
-            // 7. Reset des donnees de base du joueur
+            // 7. Reset des abilities
+            if (resetAbilities)
+            {
+                Logger.LogInfo(" Reset des abilities...", Logger.LogCategory.EditorLog);
+                playerData.OwnedAbilities = new List<string>();
+                playerData.EquippedAbilities = new List<string>();
+
+                // Notifier AbilityManager si present
+                var abilityManager = AbilityManager.Instance;
+                if (abilityManager != null)
+                {
+                    Logger.LogInfo(" Notification du reset a l'AbilityManager...", Logger.LogCategory.EditorLog);
+                }
+            }
+
+            // 8. Reset des donnees NPC
+            if (resetNPCData)
+            {
+                Logger.LogInfo(" Reset des donnees NPC...", Logger.LogCategory.EditorLog);
+                playerData.DiscoveredNPCs = new List<string>();
+                playerData.NPCRelationships = new Dictionary<string, int>();
+            }
+
+            // 9. Reset des flags de dialogue
+            if (resetDialogueFlags)
+            {
+                Logger.LogInfo(" Reset des flags de dialogue...", Logger.LogCategory.EditorLog);
+                playerData.DialogueFlags = new Dictionary<string, bool>();
+            }
+
+            // 10. Reset des donnees de base du joueur
             if (resetPlayerData)
             {
                 Logger.LogInfo(" Reset des donnees de base...", Logger.LogCategory.EditorLog);
                 playerData.Id = 1; // Garder l'ID a 1
             }
 
-            // 8. Sauvegarder toutes les modifications
+            // 11. Sauvegarder toutes les modifications
             Logger.LogInfo(" Sauvegarde des modifications...", Logger.LogCategory.EditorLog);
             dataManager.SaveGame();
 
-            // 9. Notifier les autres managers du reset si necessaire
+            // 12. Notifier les autres managers du reset si necessaire
             NotifyManagersOfReset();
 
             Logger.LogInfo(" === RESET COMPLET TERMINe ===", Logger.LogCategory.EditorLog);

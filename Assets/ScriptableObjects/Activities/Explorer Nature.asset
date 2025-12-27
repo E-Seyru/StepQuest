@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e6cc2a70a59166438cdd7fff9273abf, type: 3}
   m_Name: Explorer Nature
   m_EditorClassIdentifier: 
-  ActivityID: Explorer Nature
+  ActivityID: explorer_nature
   ActivityName: Explorer Nature
   BaseDescription: "Peut-\xEAtre que partir en exploration dans ces contr\xE9es pourrait
     vous permettre de r\xE9cup\xE9rer de belles choses"

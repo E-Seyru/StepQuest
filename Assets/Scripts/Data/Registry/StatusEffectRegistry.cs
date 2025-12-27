@@ -35,6 +35,7 @@ public class StatusEffectRegistry : ScriptableObject
     private Dictionary<string, StatusEffectDefinition> effectLookup;
     private Dictionary<StatusEffectType, List<StatusEffectDefinition>> effectsByType;
     private HashSet<string> loggedMissingEffects = new HashSet<string>();
+    private const int MaxLoggedMissing = 100;
 
     // === INITIALIZATION ===
 
@@ -96,8 +97,8 @@ public class StatusEffectRegistry : ScriptableObject
             }
         }
 
-        // Log once per missing effect
-        if (logMissingEffects && !loggedMissingEffects.Contains(effectId))
+        // Log once per missing effect (with cache limit to prevent unbounded growth)
+        if (logMissingEffects && !loggedMissingEffects.Contains(effectId) && loggedMissingEffects.Count < MaxLoggedMissing)
         {
             Logger.LogWarning($"StatusEffectRegistry: Effect '{effectId}' not found in registry", Logger.LogCategory.General);
             loggedMissingEffects.Add(effectId);

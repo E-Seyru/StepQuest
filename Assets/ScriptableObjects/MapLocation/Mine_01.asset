@@ -12,18 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fe739f195ecfa34486eb79525bef063, type: 3}
   m_Name: Mine_01
   m_EditorClassIdentifier: 
-  LocationID: Mine_01
+  LocationID: mine_01
   DisplayName: Mine
   Description: Une mine, tout ce qu'il y a de plus banal...
   LongDescription: 
   LocationImage: {fileID: 21300000, guid: c650daaf21ffc2d48bcb28785b54c2ea, type: 3}
   LocationThemeColor: {r: 1, g: 1, b: 1, a: 1}
   Connections:
-  - DestinationLocationID: Village_01
+  - DestinationLocationID: village_01
     StepCost: 50
     IsAvailable: 1
     Requirements: 
-  - DestinationLocationID: Cabane de pecheur
+  - DestinationLocationID: cabane_de_pecheur
     StepCost: 50
     IsAvailable: 1
     Requirements: 

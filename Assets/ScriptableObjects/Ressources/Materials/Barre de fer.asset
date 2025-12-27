@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9be207c3a5ca57c478fb1cdbdb145352, type: 3}
   m_Name: Barre de fer
   m_EditorClassIdentifier: 
-  ItemID: Barre de fer
+  ItemID: barre_de_fer
   ItemName: Barre de fer
   Description: "Une barre de fer, forg\xE9e de vos mains. Mat\xE9riau de base pour
     la fabrication d'armes et d'armures. "

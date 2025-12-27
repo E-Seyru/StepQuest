@@ -23,6 +23,7 @@ public class EnemyRegistry : ScriptableObject
     // Cache for fast lookup
     private Dictionary<string, EnemyDefinition> enemyLookup;
     private HashSet<string> loggedMissingEnemies = new HashSet<string>();
+    private const int MaxLoggedMissing = 100;
 
     /// <summary>
     /// Get enemy by ID (fast lookup via cache)
@@ -54,7 +55,8 @@ public class EnemyRegistry : ScriptableObject
             }
         }
 
-        if (logMissingEnemies && !loggedMissingEnemies.Contains(enemyId))
+        // Log once per missing enemy (with cache limit to prevent unbounded growth)
+        if (logMissingEnemies && !loggedMissingEnemies.Contains(enemyId) && loggedMissingEnemies.Count < MaxLoggedMissing)
         {
             Logger.LogWarning($"EnemyRegistry: Enemy '{enemyId}' not found in registry", Logger.LogCategory.General);
             loggedMissingEnemies.Add(enemyId);

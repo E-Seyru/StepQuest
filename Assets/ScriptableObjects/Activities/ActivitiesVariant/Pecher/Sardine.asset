@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99ddbeafac29af94ba225d9cc62cd345, type: 3}
   m_Name: Sardine
   m_EditorClassIdentifier: 
-  VariantName: Sardine
+  VariantName: sardine
   VariantDescription: "Vous p\xEAchez la sardine. "
-  ParentActivityID: Pecher
+  ParentActivityID: pecher
   AutoDetectParent: 1
   IsTimeBased: 0
   PrimaryResource: {fileID: 11400000, guid: 8e99212fc1cc6bb4b90c41ed119f6ad9, type: 2}

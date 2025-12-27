@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e6cc2a70a59166438cdd7fff9273abf, type: 3}
   m_Name: Recolter
   m_EditorClassIdentifier: 
-  ActivityID: Recolter
+  ActivityID: recolter
   ActivityName: Recolter
   BaseDescription: "Vous prenez du temps pour r\xE9colter les ressources avoisinantes..."
   ActivityIcon: {fileID: 21300000, guid: e370af108fbede9458676bdaad4edc6f, type: 3}

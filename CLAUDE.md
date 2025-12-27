@@ -197,11 +197,11 @@ NPCs can be placed at locations and interacted with by players.
 - NPCs: `Assets/ScriptableObjects/NPCs/`
 - Registries: Root of respective folders or `Assets/ScriptableObjects/Registries/`
 
-**Current Test Content:**
-- Locations: Village_01, Mine_01, Foret_01, Cabane de pecheur
-- Enemies: Slime, Goblin, Wolf
-- Abilities: BasicAttack, Heal, PoisonStrike, VenomStrike, Bite, Howl
-- Status Effects: Poison, Burn, Stun, Regeneration, AttackUp, DefenseDown
+**Current Test Content (all IDs use snake_case):**
+- Locations: village_01, mine_01, foret_01, cabane_de_pecheur
+- Enemies: slime, goblin, wolf
+- Abilities: basic_attack, heal, poison_strike, venom_strike, wolf_bite, wolf_howl
+- Status Effects: poison, burn, stun, regeneration, attack_up, defense_down
 
 ## Development Notes
 

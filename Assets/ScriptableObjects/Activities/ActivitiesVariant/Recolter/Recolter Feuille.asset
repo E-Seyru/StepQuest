@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99ddbeafac29af94ba225d9cc62cd345, type: 3}
   m_Name: Recolter Feuille
   m_EditorClassIdentifier: 
-  VariantName: Recolter Feuille
+  VariantName: recolter_feuille
   VariantDescription: "Vous cherchez sp\xE9cifiquement des feuilles simples"
-  ParentActivityID: Recolter
+  ParentActivityID: recolter
   AutoDetectParent: 1
   PrimaryResource: {fileID: 11400000, guid: 9ccf0198cb561b848a03eb636893bdb6, type: 2}
   SecondaryResources: []

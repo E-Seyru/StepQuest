@@ -35,6 +35,7 @@ public class AbilityRegistry : ScriptableObject
     private Dictionary<string, AbilityDefinition> abilityLookup;
     private Dictionary<AbilityEffectType, List<AbilityDefinition>> abilitiesByEffectType;
     private HashSet<string> loggedMissingAbilities = new HashSet<string>();
+    private const int MaxLoggedMissing = 100;
 
     // === INITIALIZATION ===
 
@@ -96,8 +97,8 @@ public class AbilityRegistry : ScriptableObject
             }
         }
 
-        // Log once per missing ability
-        if (logMissingAbilities && !loggedMissingAbilities.Contains(abilityId))
+        // Log once per missing ability (with cache limit to prevent unbounded growth)
+        if (logMissingAbilities && !loggedMissingAbilities.Contains(abilityId) && loggedMissingAbilities.Count < MaxLoggedMissing)
         {
             Logger.LogWarning($"AbilityRegistry: Ability '{abilityId}' not found in registry", Logger.LogCategory.General);
             loggedMissingAbilities.Add(abilityId);

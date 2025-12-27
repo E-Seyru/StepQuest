@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9be207c3a5ca57c478fb1cdbdb145352, type: 3}
   m_Name: Charbon
   m_EditorClassIdentifier: 
-  ItemID: Charbon
+  ItemID: charbon
   ItemName: Charbon
   Description: Du charbon
   ItemIcon: {fileID: 21300000, guid: b3618b73aaeecb44cac6f804b4849d49, type: 3}

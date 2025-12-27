@@ -80,7 +80,7 @@ public static class GameConstants
     // ============================================
 
     /// <summary>Default starting location for new players</summary>
-    public const string DefaultStartingLocationId = "Foret_01";
+    public const string DefaultStartingLocationId = "foret_01";
 
     // ============================================
     // INVENTORY CONTAINERS

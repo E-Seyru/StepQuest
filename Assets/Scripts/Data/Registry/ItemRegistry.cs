@@ -23,6 +23,7 @@ public class ItemRegistry : ScriptableObject
     // Cache for fast lookup
     private Dictionary<string, ItemDefinition> itemLookup;
     private HashSet<string> loggedMissingItems = new HashSet<string>(); // Pour eviter le spam de logs
+    private const int MaxLoggedMissing = 100;
 
     /// <summary>
     /// Get item by ID (fast lookup via cache) - ROBUST VERSION
@@ -56,8 +57,8 @@ public class ItemRegistry : ScriptableObject
             }
         }
 
-        // Log une seule fois par item manquant
-        if (logMissingItems && !loggedMissingItems.Contains(itemId))
+        // Log une seule fois par item manquant (with cache limit to prevent unbounded growth)
+        if (logMissingItems && !loggedMissingItems.Contains(itemId) && loggedMissingItems.Count < MaxLoggedMissing)
         {
             Logger.LogWarning($"ItemRegistry: Item '{itemId}' not found in registry", Logger.LogCategory.InventoryLog);
             loggedMissingItems.Add(itemId);

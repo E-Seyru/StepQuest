@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99ddbeafac29af94ba225d9cc62cd345, type: 3}
   m_Name: Barre de fer
   m_EditorClassIdentifier: 
-  VariantName: 'Barre de fer '
-  VariantDescription: "Vous affinez le metal avec ma\xEEtrise. "
-  ParentActivityID: Forger
+  VariantName: barre_de_fer
+  VariantDescription: Vous affinez le metal avec maitrise.
+  ParentActivityID: forger
   AutoDetectParent: 1
   IsTimeBased: 1
   PrimaryResource: {fileID: 11400000, guid: 0574effa80feb8141bf4c1dec5f305ee, type: 2}

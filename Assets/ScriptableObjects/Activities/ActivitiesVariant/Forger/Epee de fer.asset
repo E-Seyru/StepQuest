@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99ddbeafac29af94ba225d9cc62cd345, type: 3}
   m_Name: Epee de fer
   m_EditorClassIdentifier: 
-  VariantName: Epee de fer
+  VariantName: epee_de_fer
   VariantDescription: Une epee faite de fer
-  ParentActivityID: Forger
+  ParentActivityID: forger
   AutoDetectParent: 1
   IsTimeBased: 1
   PrimaryResource: {fileID: 11400000, guid: 7b116284b7357db4fa88394e7c1dd5c3, type: 2}

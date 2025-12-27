@@ -23,6 +23,7 @@ public class NPCRegistry : ScriptableObject
     // Cache for fast lookup
     private Dictionary<string, NPCDefinition> npcLookup;
     private HashSet<string> loggedMissingNPCs = new HashSet<string>();
+    private const int MaxLoggedMissing = 100;
 
     /// <summary>
     /// Get NPC by ID (fast lookup via cache)
@@ -54,7 +55,8 @@ public class NPCRegistry : ScriptableObject
             }
         }
 
-        if (logMissingNPCs && !loggedMissingNPCs.Contains(npcId))
+        // Log once per missing NPC (with cache limit to prevent unbounded growth)
+        if (logMissingNPCs && !loggedMissingNPCs.Contains(npcId) && loggedMissingNPCs.Count < MaxLoggedMissing)
         {
             Logger.LogWarning($"NPCRegistry: NPC '{npcId}' not found in registry", Logger.LogCategory.General);
             loggedMissingNPCs.Add(npcId);
