@@ -77,7 +77,14 @@ public class RecordingAPIStepCounter : MonoBehaviour
             return;
         }
         Logger.LogInfo("RecordingAPIStepCounter: Requesting activity recognition permission via plugin.", Logger.LogCategory.StepLog);
-        stepPluginClass.CallStatic("requestActivityRecognitionPermission");
+        try
+        {
+            stepPluginClass.CallStatic("requestActivityRecognitionPermission");
+        }
+        catch (AndroidJavaException ex)
+        {
+            Logger.LogError($"RecordingAPIStepCounter: Failed to request permission: {ex.Message}", Logger.LogCategory.StepLog);
+        }
 #endif
     }
 
@@ -92,12 +99,21 @@ public class RecordingAPIStepCounter : MonoBehaviour
             return false;
         }
 
-        bool hasPermission = stepPluginClass.CallStatic<bool>("hasActivityRecognitionPermission");
+        bool hasPermission = false;
+        try
+        {
+            hasPermission = stepPluginClass.CallStatic<bool>("hasActivityRecognitionPermission");
+        }
+        catch (AndroidJavaException ex)
+        {
+            Logger.LogError($"RecordingAPIStepCounter: Failed to check permission: {ex.Message}", Logger.LogCategory.StepLog);
+            return false;
+        }
 
         permissionCheckCounter++;
         if (hasPermission != lastPermissionResult || permissionCheckCounter >= LOG_FREQUENCY)
         {
-          
+
             lastPermissionResult = hasPermission;
         }
 
@@ -127,9 +143,15 @@ public class RecordingAPIStepCounter : MonoBehaviour
             return;
         }
 
-      
-        stepPluginClass.CallStatic("subscribeToRecordingAPI");
-        isSubscribedToApi = true;
+        try
+        {
+            stepPluginClass.CallStatic("subscribeToRecordingAPI");
+            isSubscribedToApi = true;
+        }
+        catch (AndroidJavaException ex)
+        {
+            Logger.LogError($"RecordingAPIStepCounter: Failed to subscribe to recording API: {ex.Message}", Logger.LogCategory.StepLog);
+        }
 #endif
     }
 
@@ -168,7 +190,16 @@ public class RecordingAPIStepCounter : MonoBehaviour
         }
 
         Logger.LogInfo($"RecordingAPIStepCounter: Requesting readStepsForTimeRange from plugin for GetDeltaSinceFromAPI (from: {LocalDatabase.GetReadableDateFromEpoch(fromEpochMs)}, to: {LocalDatabase.GetReadableDateFromEpoch(toEpochMs)}).", Logger.LogCategory.StepLog);
-        stepPluginClass.CallStatic("readStepsForTimeRange", fromEpochMs, toEpochMs);
+        try
+        {
+            stepPluginClass.CallStatic("readStepsForTimeRange", fromEpochMs, toEpochMs);
+        }
+        catch (AndroidJavaException ex)
+        {
+            Logger.LogError($"RecordingAPIStepCounter: Failed to read steps for time range: {ex.Message}", Logger.LogCategory.StepLog);
+            onResultCallback?.Invoke(-1);
+            yield break;
+        }
 
         int attempts = 0;
         long lastResult = -1;
@@ -178,7 +209,15 @@ public class RecordingAPIStepCounter : MonoBehaviour
         {
             yield return new WaitForSeconds(BASE_API_WAIT_TIME * (attempts + 1));
 
-            currentResult = stepPluginClass.CallStatic<long>("getStoredStepsForCustomRange");
+            try
+            {
+                currentResult = stepPluginClass.CallStatic<long>("getStoredStepsForCustomRange");
+            }
+            catch (AndroidJavaException ex)
+            {
+                Logger.LogError($"RecordingAPIStepCounter: Failed to get stored steps: {ex.Message}", Logger.LogCategory.StepLog);
+                currentResult = -1;
+            }
             Logger.LogInfo($"RecordingAPIStepCounter: API read attempt {attempts + 1}/{MAX_API_READ_ATTEMPTS}, value: {currentResult}", Logger.LogCategory.StepLog);
 
             if (currentResult >= 0 && (currentResult == lastResult || attempts >= MAX_API_READ_ATTEMPTS - 1))
@@ -311,8 +350,14 @@ public class RecordingAPIStepCounter : MonoBehaviour
             Logger.LogWarning("RecordingAPIStepCounter: StartDirectSensorListener - plugin not ready or no permission.", Logger.LogCategory.StepLog);
             return;
         }
-        
-        stepPluginClass.CallStatic("startDirectStepCounterListener");
+        try
+        {
+            stepPluginClass.CallStatic("startDirectStepCounterListener");
+        }
+        catch (AndroidJavaException ex)
+        {
+            Logger.LogError($"RecordingAPIStepCounter: Failed to start direct sensor listener: {ex.Message}", Logger.LogCategory.StepLog);
+        }
 #endif
     }
 
@@ -328,8 +373,14 @@ public class RecordingAPIStepCounter : MonoBehaviour
             Logger.LogWarning("RecordingAPIStepCounter: StopDirectSensorListener - plugin class not initialized.", Logger.LogCategory.StepLog);
             return;
         }
-      
-        stepPluginClass.CallStatic("stopDirectStepCounterListener");
+        try
+        {
+            stepPluginClass.CallStatic("stopDirectStepCounterListener");
+        }
+        catch (AndroidJavaException ex)
+        {
+            Logger.LogError($"RecordingAPIStepCounter: Failed to stop direct sensor listener: {ex.Message}", Logger.LogCategory.StepLog);
+        }
 #endif
     }
 
@@ -344,7 +395,15 @@ public class RecordingAPIStepCounter : MonoBehaviour
         {
             return -1;
         }
-        return stepPluginClass.CallStatic<long>("getCurrentRawSensorSteps");
+        try
+        {
+            return stepPluginClass.CallStatic<long>("getCurrentRawSensorSteps");
+        }
+        catch (AndroidJavaException ex)
+        {
+            Logger.LogError($"RecordingAPIStepCounter: Failed to get current raw sensor steps: {ex.Message}", Logger.LogCategory.StepLog);
+            return -1;
+        }
 #endif
     }
 
@@ -361,7 +420,15 @@ public class RecordingAPIStepCounter : MonoBehaviour
         {
             return -1;
         }
-        return stepPluginClass.CallStatic<long>("getTimeSinceLastSensorEventMs");
+        try
+        {
+            return stepPluginClass.CallStatic<long>("getTimeSinceLastSensorEventMs");
+        }
+        catch (AndroidJavaException ex)
+        {
+            Logger.LogError($"RecordingAPIStepCounter: Failed to get time since last sensor event: {ex.Message}", Logger.LogCategory.StepLog);
+            return -1;
+        }
 #endif
     }
 
@@ -378,7 +445,14 @@ public class RecordingAPIStepCounter : MonoBehaviour
             return;
         }
 
-        stepPluginClass.CallStatic("flushSensorEvents");
+        try
+        {
+            stepPluginClass.CallStatic("flushSensorEvents");
+        }
+        catch (AndroidJavaException ex)
+        {
+            Logger.LogError($"RecordingAPIStepCounter: Failed to flush sensor events: {ex.Message}", Logger.LogCategory.StepLog);
+        }
 #endif
     }
 
@@ -398,7 +472,14 @@ public class RecordingAPIStepCounter : MonoBehaviour
             return;
         }
 
-        stepPluginClass.CallStatic("refreshSensorListener");
+        try
+        {
+            stepPluginClass.CallStatic("refreshSensorListener");
+        }
+        catch (AndroidJavaException ex)
+        {
+            Logger.LogError($"RecordingAPIStepCounter: Failed to refresh sensor listener: {ex.Message}", Logger.LogCategory.StepLog);
+        }
 #endif
     }
 }

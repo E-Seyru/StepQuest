@@ -17,10 +17,15 @@ public class POIPathRenderer : MonoBehaviour
     [SerializeField] private bool updateOnStart = true;
     [SerializeField] private bool showDebugInfo = false;
 
+    [Header("References")]
+    [Tooltip("Parent GameObject containing all POIs. If not assigned, will use FindObjectsOfType (slower).")]
+    [SerializeField] private Transform poisParent;
+
     // References
     private MapManager mapManager;
     private LocationRegistry locationRegistry;
     private LineRenderer[] pathLines;
+    private POI[] cachedPOIs;
 
     void Start()
     {
@@ -60,17 +65,28 @@ public class POIPathRenderer : MonoBehaviour
         // Nettoyer les anciennes lignes
         ClearExistingPaths();
 
-        // Trouver tous les POIs
-        POI[] allPOIs = FindObjectsOfType<POI>();
+        // Trouver tous les POIs - use cached reference if available
+        if (cachedPOIs == null || cachedPOIs.Length == 0)
+        {
+            if (poisParent != null)
+            {
+                cachedPOIs = poisParent.GetComponentsInChildren<POI>(true);
+            }
+            else
+            {
+                cachedPOIs = FindObjectsOfType<POI>();
+            }
+        }
+
         if (showDebugInfo)
         {
-            Logger.LogInfo($"POIPathRenderer: Found {allPOIs.Length} POIs", Logger.LogCategory.MapLog);
+            Logger.LogInfo($"POIPathRenderer: Found {cachedPOIs.Length} POIs", Logger.LogCategory.MapLog);
         }
 
         // Creer les lignes entre POIs connectes
-        CreatePathsBetweenPOIs(allPOIs);
+        CreatePathsBetweenPOIs(cachedPOIs);
 
-        Logger.LogInfo($"POIPathRenderer: Generated paths for {allPOIs.Length} POIs", Logger.LogCategory.MapLog);
+        Logger.LogInfo($"POIPathRenderer: Generated paths for {cachedPOIs.Length} POIs", Logger.LogCategory.MapLog);
     }
 
     /// <summary>
@@ -139,8 +155,8 @@ public class POIPathRenderer : MonoBehaviour
         float segmentLength = dashLength + gapLength;
         int segmentCount = Mathf.CeilToInt(totalDistance / segmentLength);
 
-        // Trouver tous les POIs pour verifier les collisions
-        POI[] allPOIs = FindObjectsOfType<POI>();
+        // Use cached POIs for collision checks
+        POI[] allPOIs = cachedPOIs ?? System.Array.Empty<POI>();
 
         for (int i = 0; i < segmentCount; i++)
         {

@@ -50,6 +50,28 @@ public class NPCInteractionPanel : MonoBehaviour
 
     void OnDestroy()
     {
+        // Cleanup button listeners
+        if (talkButton != null)
+        {
+            talkButton.onClick.RemoveListener(OnTalkClicked);
+        }
+        if (giftButton != null)
+        {
+            giftButton.onClick.RemoveListener(OnGiftClicked);
+        }
+        if (closeButton != null)
+        {
+            closeButton.onClick.RemoveListener(Hide);
+        }
+        if (backgroundOverlay != null)
+        {
+            var bgButton = backgroundOverlay.GetComponent<Button>();
+            if (bgButton != null)
+            {
+                bgButton.onClick.RemoveListener(Hide);
+            }
+        }
+
         if (Instance == this)
         {
             Instance = null;

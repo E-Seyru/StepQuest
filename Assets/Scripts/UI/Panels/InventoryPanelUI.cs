@@ -74,6 +74,16 @@ public class InventoryPanelUI : ContainerPanelUI
     {
         base.OnDestroy();
 
+        // Cleanup tab button listeners
+        if (itemsTabButton != null)
+        {
+            itemsTabButton.onClick.RemoveListener(OnItemsTabClicked);
+        }
+        if (abilitiesTabButton != null)
+        {
+            abilitiesTabButton.onClick.RemoveListener(OnAbilitiesTabClicked);
+        }
+
         if (AbilityManager.Instance != null)
         {
             AbilityManager.Instance.OnOwnedAbilitiesChanged -= OnOwnedAbilitiesChanged;
@@ -114,7 +124,7 @@ public class InventoryPanelUI : ContainerPanelUI
     {
         if (itemsTabButton != null)
         {
-            itemsTabButton.onClick.AddListener(() => SwitchToTab(InventoryTab.Items));
+            itemsTabButton.onClick.AddListener(OnItemsTabClicked);
             var text = itemsTabButton.GetComponentInChildren<TextMeshProUGUI>();
             if (text != null) itemsTabTextOriginalColor = text.color;
             var image = itemsTabButton.GetComponent<Image>();
@@ -123,13 +133,16 @@ public class InventoryPanelUI : ContainerPanelUI
 
         if (abilitiesTabButton != null)
         {
-            abilitiesTabButton.onClick.AddListener(() => SwitchToTab(InventoryTab.Abilities));
+            abilitiesTabButton.onClick.AddListener(OnAbilitiesTabClicked);
             var text = abilitiesTabButton.GetComponentInChildren<TextMeshProUGUI>();
             if (text != null) abilitiesTabTextOriginalColor = text.color;
             var image = abilitiesTabButton.GetComponent<Image>();
             if (image != null) abilitiesTabButtonOriginalColor = image.color;
         }
     }
+
+    private void OnItemsTabClicked() => SwitchToTab(InventoryTab.Items);
+    private void OnAbilitiesTabClicked() => SwitchToTab(InventoryTab.Abilities);
 
     public void SwitchToTab(InventoryTab tab)
     {

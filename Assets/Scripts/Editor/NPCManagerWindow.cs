@@ -220,7 +220,7 @@ public class NPCManagerWindow : EditorWindow
         EditorGUILayout.LabelField("Locations:", EditorStyles.miniLabel, GUILayout.Width(60));
         if (locations.Count > 0)
         {
-            string locationNames = string.Join(", ", locations.Select(l => l.DisplayName));
+            string locationNames = string.Join(", ", locations.Select(l => l?.DisplayName ?? "(null)"));
             EditorGUILayout.LabelField(locationNames, EditorStyles.miniLabel);
         }
         else

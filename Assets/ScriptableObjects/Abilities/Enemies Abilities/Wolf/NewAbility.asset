@@ -22,7 +22,7 @@ MonoBehaviour:
     Value: 20
     StatusEffect: {fileID: 0}
     StatusEffectStacks: 0
-    TargetsSelf: 0
+    TargetsSelf: 1
   - Type: 1
     Value: 20
     StatusEffect: {fileID: 0}
@@ -37,7 +37,7 @@ MonoBehaviour:
     Value: 0
     StatusEffect: {fileID: 11400000, guid: 6a4cde8056e9fe4448d7335bbbe34e4f, type: 2}
     StatusEffectStacks: 5
-    TargetsSelf: 0
+    TargetsSelf: 1
   - Type: 3
     Value: 0
     StatusEffect: {fileID: 11400000, guid: 1a61e01ae292e0d49ad05af08b61139a, type: 2}

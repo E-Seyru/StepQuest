@@ -165,7 +165,7 @@ public class ItemManagerWindow : EditorWindow
         EditorGUILayout.BeginHorizontal();
 
         // Icon preview
-        if (item.ItemIcon != null)
+        if (item.ItemIcon != null && item.ItemIcon.texture != null)
         {
             Rect iconRect = EditorGUILayout.GetControlRect(GUILayout.Width(32), GUILayout.Height(32));
             EditorGUI.DrawPreviewTexture(iconRect, item.ItemIcon.texture);
@@ -543,10 +543,11 @@ public class ItemManagerWindow : EditorWindow
         // Filter by search
         if (!string.IsNullOrEmpty(searchFilter))
         {
+            string searchLower = searchFilter.ToLower();
             items = items.Where(i =>
-                i.GetDisplayName().ToLower().Contains(searchFilter.ToLower()) ||
-                i.ItemID.ToLower().Contains(searchFilter.ToLower()) ||
-                i.Description.ToLower().Contains(searchFilter.ToLower()));
+                (i.GetDisplayName()?.ToLower().Contains(searchLower) ?? false) ||
+                (i.ItemID?.ToLower().Contains(searchLower) ?? false) ||
+                (i.Description?.ToLower().Contains(searchLower) ?? false));
         }
 
         return items.OrderBy(i => i.Type).ThenBy(i => i.GetDisplayName()).ToList();

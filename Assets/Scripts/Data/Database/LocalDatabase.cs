@@ -237,7 +237,7 @@ public class LocalDatabase
                 _connection.Execute("ALTER TABLE PlayerData ADD COLUMN DailySteps INTEGER DEFAULT 0");
                 _connection.Execute("ALTER TABLE PlayerData ADD COLUMN LastDailyResetDate TEXT DEFAULT ''");
                 string todayDate = DateTime.Now.ToString("yyyy-MM-dd");
-                _connection.Execute($"UPDATE PlayerData SET LastDailyResetDate = '{todayDate}'");
+                _connection.Execute("UPDATE PlayerData SET LastDailyResetDate = ?", todayDate);
                 _connection.Execute("UPDATE DatabaseVersion SET Version = 3");
 
                 currentVersion = 3;

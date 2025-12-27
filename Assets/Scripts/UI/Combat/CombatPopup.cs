@@ -23,6 +23,13 @@ public class CombatPopup : MonoBehaviour
 
     public void Setup(float popupAmount, RectTransform characterImage)
     {
+        if (popupText == null)
+        {
+            Logger.LogError("CombatPopup: popupText is not assigned!", Logger.LogCategory.General);
+            Destroy(gameObject);
+            return;
+        }
+
         // Set initial values - round to integer
         popupText.text = Mathf.RoundToInt(popupAmount).ToString();
 

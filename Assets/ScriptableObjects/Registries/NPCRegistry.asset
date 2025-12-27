@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4dc05b6b3c8d834c9ab56fdee50a4c6, type: 3}
+  m_Name: NPCRegistry
+  m_EditorClassIdentifier: Assembly-CSharp::NPCRegistry
+  AllNPCs:
+  - {fileID: 11400000, guid: 581fbbf6fce5e3749bdfeecbff6c1517, type: 2}
+  enableFallbackSearch: 1
+  logMissingNPCs: 0
+  ValidationStatus: Click 'Validate Registry' to check for issues

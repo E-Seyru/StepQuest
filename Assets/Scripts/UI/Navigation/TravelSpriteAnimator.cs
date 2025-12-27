@@ -27,6 +27,10 @@ public class TravelSpriteAnimator : MonoBehaviour
     [SerializeField] private Color debugPathColor = Color.yellow;
     [SerializeField] private bool enablePathfindingDebug = true;
 
+    [Header("References")]
+    [Tooltip("Reference to the WorldMap GameObject. If not assigned, will try to find it by name.")]
+    [SerializeField] private GameObject worldMapObject;
+
     // NOUVEAU : Cache des positions POI pour eviter les recherches repetees
     private Dictionary<string, Vector3> poiPositionsCache = new Dictionary<string, Vector3>();
     private bool isCacheInitialized = false;
@@ -141,11 +145,14 @@ public class TravelSpriteAnimator : MonoBehaviour
     {
         Logger.LogInfo("TravelSpriteAnimator: Initializing POI positions cache...", Logger.LogCategory.MapLog);
 
-        // Chercher le GameObject "WorldMap" dans la scene
-        GameObject worldMapObject = GameObject.Find("WorldMap");
+        // Use serialized reference, fallback to Find if not assigned
         if (worldMapObject == null)
         {
-            Logger.LogError("TravelSpriteAnimator: WorldMap GameObject not found! Cannot cache POI positions.", Logger.LogCategory.MapLog);
+            worldMapObject = GameObject.Find("WorldMap");
+        }
+        if (worldMapObject == null)
+        {
+            Logger.LogError("TravelSpriteAnimator: WorldMap GameObject not found! Assign it in the Inspector or ensure it exists in scene.", Logger.LogCategory.MapLog);
             return;
         }
 

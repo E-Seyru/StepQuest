@@ -119,4 +119,12 @@ public class PrimaryActivityCard : MonoBehaviour
             // e.g., change background color, add border, etc.
         }
     }
+
+    private void OnDestroy()
+    {
+        if (cardButton != null)
+        {
+            cardButton.onClick.RemoveListener(OnCardButtonClicked);
+        }
+    }
 }

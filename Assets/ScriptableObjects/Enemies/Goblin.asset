@@ -24,11 +24,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7104522b238f0fe4dbd8f4fa446cc3b5, type: 2}
   - {fileID: 11400000, guid: b7c28f128f678494d84bcc52ae74adda, type: 2}
   ExperienceReward: 15
-  LootTable:
-  - Item: {fileID: 0}
-    MinQuantity: 1
-    MaxQuantity: 1
-    DropChance: 0
+  LootTable: []
   VictoryTitle: Goblin Slain!
   VictoryDescription: The goblin falls with a screech.
   DeveloperNotes: 

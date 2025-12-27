@@ -205,6 +205,13 @@ NPCs can be placed at locations and interacted with by players.
 
 ## Development Notes
 
+### Thread Safety Considerations
+`DataManager.SaveGameAsync()` runs saves on a background thread. The current implementation creates a JSON snapshot of PlayerData before saving, which is safe. However, be aware:
+- `DataManager.Instance.PlayerData` is publicly accessible and could be read/modified while a save is in progress
+- Dictionary properties in PlayerData (Skills, SubSkills, etc.) deserialize from JSON on each access - concurrent access could cause issues
+- Most gameplay code runs on Unity's main thread, so this is currently not a problem in practice
+- If adding more async operations in the future, consider using the existing `playerDataLock` consistently
+
 ### Editor vs Device Behavior
 The codebase uses `#if UNITY_EDITOR` extensively. StepManager has completely different paths:
 - Editor: Polls DataManager for step changes (set by EditorStepSimulator)

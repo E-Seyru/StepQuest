@@ -66,12 +66,13 @@ public class HarvestingActivityCard : MonoBehaviour
 
         if (activityVariant != null && activityVariant.UnlockRequirement > 0)
         {
-            // Obtenir le niveau de la compétence principale
+            // Obtenir le niveau de la compï¿½tence principale
             string mainSkillId = activityVariant.GetMainSkillId();
 
             if (!string.IsNullOrEmpty(mainSkillId) && XpManager.Instance != null)
             {
-                int playerLevel = XpManager.Instance.GetPlayerSkill(mainSkillId).Level;
+                var skill = XpManager.Instance.GetPlayerSkill(mainSkillId);
+                int playerLevel = skill?.Level ?? 0;
                 hasRequiredLevel = playerLevel >= activityVariant.UnlockRequirement;
 
                 if (!hasRequiredLevel)
@@ -82,7 +83,7 @@ public class HarvestingActivityCard : MonoBehaviour
         }
 
         UpdateVisualState();
-        UpdateLevelTextColor(); // Mettre à jour la couleur du texte de niveau
+        UpdateLevelTextColor(); // Mettre ï¿½ jour la couleur du texte de niveau
     }
 
     /// <summary>
@@ -147,7 +148,7 @@ public class HarvestingActivityCard : MonoBehaviour
     {
         if (activityVariant != null)
         {
-            // Vérifier le niveau - PAS d'animation si niveau insuffisant
+            // Vï¿½rifier le niveau - PAS d'animation si niveau insuffisant
             if (!hasRequiredLevel)
             {
                 Logger.LogInfo($"HarvestingActivityCard: Level requirement not met for {activityVariant.VariantName}", Logger.LogCategory.ActivityLog);
@@ -176,13 +177,21 @@ public class HarvestingActivityCard : MonoBehaviour
     }
 
     /// <summary>
-    /// Mettre à jour la couleur du texte de niveau
+    /// Mettre ï¿½ jour la couleur du texte de niveau
     /// </summary>
     private void UpdateLevelTextColor()
     {
         if (levelRequiredText != null)
         {
             levelRequiredText.color = hasRequiredLevel ? Color.white : Color.red;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (cardButton != null)
+        {
+            cardButton.onClick.RemoveListener(OnCardButtonClicked);
         }
     }
 }

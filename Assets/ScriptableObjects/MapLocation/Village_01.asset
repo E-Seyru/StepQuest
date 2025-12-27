@@ -52,7 +52,6 @@ MonoBehaviour:
     LocationSpecificIcon: {fileID: 0}
   AvailableEnemies: []
   AvailableNPCs:
-  - {fileID: 0}
   - {fileID: 11400000, guid: 581fbbf6fce5e3749bdfeecbff6c1517, type: 2}
   LocationIcon: {fileID: 21300000, guid: 4ad214f54463ee74dbe67a30f0b45aaa, type: 3}
   POIColor: {r: 1, g: 1, b: 1, a: 1}
