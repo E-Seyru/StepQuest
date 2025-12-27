@@ -65,6 +65,12 @@ public class AbilityActionPanel : MonoBehaviour
     [Tooltip("Color for Shield effect badges")]
     [SerializeField] private Color shieldColor = new Color(0.3f, 0.6f, 0.9f);
 
+    [Header("Target Indicator Colors")]
+    [Tooltip("Badge color for effects targeting self (friendly)")]
+    [SerializeField] private Color selfTargetColor = new Color(0.2f, 0.8f, 0.2f); // Green
+    [Tooltip("Badge color for effects targeting enemy (hostile)")]
+    [SerializeField] private Color enemyTargetColor = new Color(0.8f, 0.2f, 0.2f); // Red
+
     [Header("Status Effect Type Colors")]
     [Tooltip("Color for Poison status effect badges")]
     [SerializeField] private Color poisonColor = new Color(0.5f, 0.8f, 0.2f);
@@ -498,15 +504,15 @@ public class AbilityActionPanel : MonoBehaviour
             switch (effect.Type)
             {
                 case AbilityEffectType.Damage:
-                    CreateStatGridItem(damageIcon, effect.Value.ToString("F0"));
+                    CreateStatGridItem(damageIcon, effect.Value.ToString("F0"), effect.TargetsSelf);
                     break;
 
                 case AbilityEffectType.Heal:
-                    CreateStatGridItem(healIcon, effect.Value.ToString("F0"));
+                    CreateStatGridItem(healIcon, effect.Value.ToString("F0"), effect.TargetsSelf);
                     break;
 
                 case AbilityEffectType.Shield:
-                    CreateStatGridItem(shieldIcon, effect.Value.ToString("F0"));
+                    CreateStatGridItem(shieldIcon, effect.Value.ToString("F0"), effect.TargetsSelf);
                     break;
 
                 case AbilityEffectType.StatusEffect:
@@ -514,7 +520,7 @@ public class AbilityActionPanel : MonoBehaviour
                     {
                         Sprite icon = effect.StatusEffect.EffectIcon;
                         string value = effect.StatusEffectStacks.ToString();
-                        CreateStatGridItem(icon, value);
+                        CreateStatGridItem(icon, value, effect.TargetsSelf);
                     }
                     break;
             }
@@ -524,7 +530,10 @@ public class AbilityActionPanel : MonoBehaviour
     /// <summary>
     /// Create a single stat grid item showing icon + value
     /// </summary>
-    private void CreateStatGridItem(Sprite icon, string value)
+    /// <param name="icon">The icon sprite to display</param>
+    /// <param name="value">The value text to display</param>
+    /// <param name="targetsSelf">True if effect targets self (green badge), false if targets enemy (red badge)</param>
+    private void CreateStatGridItem(Sprite icon, string value, bool targetsSelf)
     {
         if (statGridItemPrefab == null)
         {
@@ -581,6 +590,12 @@ public class AbilityActionPanel : MonoBehaviour
                     textRect.sizeDelta = Vector2.zero;
                     textRect.anchoredPosition = Vector2.zero;
                 }
+            }
+
+            // Set the badge background color based on target
+            if (statGridItemComponent.ValueBadgeBackground != null)
+            {
+                statGridItemComponent.ValueBadgeBackground.color = targetsSelf ? selfTargetColor : enemyTargetColor;
             }
         }
         else

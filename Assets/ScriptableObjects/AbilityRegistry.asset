@@ -13,20 +13,39 @@ MonoBehaviour:
   m_Name: AbilityRegistry
   m_EditorClassIdentifier: Assembly-CSharp::AbilityRegistry
   AllAbilities:
+  - {fileID: 11400000, guid: b92e95905f59bf049afcae5156a6ad73, type: 2}
   - {fileID: 11400000, guid: 7104522b238f0fe4dbd8f4fa446cc3b5, type: 2}
+  - {fileID: 11400000, guid: 2186a8f51f760a745a18d781066d626b, type: 2}
+  - {fileID: 11400000, guid: 5f9e04659287191459b14200569d81e3, type: 2}
   - {fileID: 11400000, guid: a09602b08f09a1741944acddf79fcce3, type: 2}
   - {fileID: 11400000, guid: f07eb8b98ef14d2478b8606a660c0839, type: 2}
+  - {fileID: 11400000, guid: a78339070a148a84980bfbe434a5ff4c, type: 2}
   - {fileID: 11400000, guid: 129996eab3816d542939cb004345146c, type: 2}
   - {fileID: 11400000, guid: b7c28f128f678494d84bcc52ae74adda, type: 2}
-  - {fileID: 11400000, guid: 6cbfbb990018c014bbd05601093a7d3b, type: 2}
+  - {fileID: 11400000, guid: 1d78564e91438b5469d06de8104cfba8, type: 2}
+  - {fileID: 11400000, guid: 514a9cc0e1a6f7841ab5efb5d28bdc26, type: 2}
   - {fileID: 11400000, guid: c0b83bcd936dbf847b9e24b04d2e7a29, type: 2}
+  - {fileID: 11400000, guid: 6cbfbb990018c014bbd05601093a7d3b, type: 2}
   enableFallbackSearch: 1
   logMissingAbilities: 0
   ValidationStatus: '! Issues found:
 
-    - Ability ''BasicAttack'' failed validation
+    - Ability ''armor_break'' missing icon
 
     -
-    Ability ''Heal'' failed validation
+    Ability ''BasicAttack'' failed validation
+
+    - Ability ''battle_cry'' missing
+    icon
+
+    - Ability ''burn_strike'' missing icon
+
+    - Ability ''Heal'' failed
+    validation
+
+    - Ability ''regenerate'' missing icon
+
+    - Ability ''stunning_blow''
+    missing icon
 
     - Ability ''venom_strike'' missing icon'

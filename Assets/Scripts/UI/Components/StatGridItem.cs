@@ -18,6 +18,9 @@ public class StatGridItem : MonoBehaviour
     [Tooltip("The TextMeshProUGUI component that displays the stat value")]
     [SerializeField] private TextMeshProUGUI valueText;
 
+    [Tooltip("The Image component for the value badge background (for target color coding)")]
+    [SerializeField] private Image valueBadgeBackground;
+
     /// <summary>
     /// Get the icon Image component
     /// </summary>
@@ -27,6 +30,11 @@ public class StatGridItem : MonoBehaviour
     /// Get the value text component
     /// </summary>
     public TextMeshProUGUI ValueText => valueText;
+
+    /// <summary>
+    /// Get the value badge background Image component
+    /// </summary>
+    public Image ValueBadgeBackground => valueBadgeBackground;
 
     /// <summary>
     /// Set the stat display (icon sprite + value text)
