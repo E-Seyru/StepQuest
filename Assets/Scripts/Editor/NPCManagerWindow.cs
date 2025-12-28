@@ -339,12 +339,13 @@ public class NPCManagerWindow : EditorWindow
         string assetPath = AssetDatabase.GenerateUniqueAssetPath($"{folder}/{npc.NPCName}.asset");
         AssetDatabase.CreateAsset(npc, assetPath);
 
-        // Add to locations
+        // Add to locations (using LocationNPC wrapper)
         foreach (var location in newNPCLocations)
         {
-            if (location != null && !location.AvailableNPCs.Contains(npc))
+            if (location != null && !LocationContainsNPC(location, npc))
             {
-                location.AvailableNPCs.Add(npc);
+                var locationNPC = new LocationNPC { NPCReference = npc, IsAvailable = true };
+                location.AvailableNPCs.Add(locationNPC);
                 EditorUtility.SetDirty(location);
             }
         }
@@ -371,6 +372,12 @@ public class NPCManagerWindow : EditorWindow
 
         ResetCreateNPCForm();
         selectedTab = 0; // Go back to list
+    }
+
+    private bool LocationContainsNPC(MapLocationDefinition location, NPCDefinition npc)
+    {
+        if (location?.AvailableNPCs == null || npc == null) return false;
+        return location.AvailableNPCs.Any(ln => ln?.NPCReference == npc);
     }
 
     private void ResetCreateNPCForm()
@@ -463,13 +470,15 @@ public class NPCManagerWindow : EditorWindow
             }
             else
             {
-                foreach (var npc in npcsAtLocation)
+                foreach (var locationNpc in npcsAtLocation)
                 {
+                    if (locationNpc?.NPCReference == null) continue;
+
                     EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField($"  {npc.GetDisplayName()}", GUILayout.Width(150));
+                    EditorGUILayout.LabelField($"  {locationNpc.GetDisplayName()}", GUILayout.Width(150));
                     if (GUILayout.Button("Remove", GUILayout.Width(60)))
                     {
-                        RemoveNPCFromLocation(npc, selectedLocationForAssignment);
+                        RemoveNPCFromLocation(locationNpc.NPCReference, selectedLocationForAssignment);
                     }
                     EditorGUILayout.EndHorizontal();
                 }
@@ -536,13 +545,14 @@ public class NPCManagerWindow : EditorWindow
     {
         if (npc == null || location == null) return;
 
-        if (location.AvailableNPCs.Contains(npc))
+        if (LocationContainsNPC(location, npc))
         {
             Logger.LogInfo($"NPC '{npc.GetDisplayName()}' already at '{location.DisplayName}'", Logger.LogCategory.EditorLog);
             return;
         }
 
-        location.AvailableNPCs.Add(npc);
+        var locationNPC = new LocationNPC { NPCReference = npc, IsAvailable = true };
+        location.AvailableNPCs.Add(locationNPC);
         EditorUtility.SetDirty(location);
         AssetDatabase.SaveAssets();
 
@@ -553,7 +563,8 @@ public class NPCManagerWindow : EditorWindow
     {
         if (npc == null || location == null) return;
 
-        if (location.AvailableNPCs.Remove(npc))
+        var toRemove = location.AvailableNPCs.FirstOrDefault(ln => ln?.NPCReference == npc);
+        if (toRemove != null && location.AvailableNPCs.Remove(toRemove))
         {
             EditorUtility.SetDirty(location);
             AssetDatabase.SaveAssets();
@@ -808,7 +819,7 @@ public class NPCManagerWindow : EditorWindow
 
         foreach (var location in locationRegistry.AllLocations.Where(l => l != null))
         {
-            if (location.AvailableNPCs != null && location.AvailableNPCs.Contains(npc))
+            if (LocationContainsNPC(location, npc))
             {
                 locations.Add(location);
             }
@@ -833,7 +844,8 @@ public class NPCManagerWindow : EditorWindow
             {
                 foreach (var location in locationRegistry.AllLocations.Where(l => l != null))
                 {
-                    if (location.AvailableNPCs.Remove(npc))
+                    var toRemove = location.AvailableNPCs.FirstOrDefault(ln => ln?.NPCReference == npc);
+                    if (toRemove != null && location.AvailableNPCs.Remove(toRemove))
                     {
                         EditorUtility.SetDirty(location);
                     }

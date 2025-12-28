@@ -1,5 +1,6 @@
 // Purpose: Panel section for displaying available enemies in a grid layout
 // Filepath: Assets/Scripts/UI/Panels/CombatSectionPanel.cs
+using ExplorationEvents;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -39,6 +40,19 @@ public class CombatSectionPanel : MonoBehaviour
         {
             noEnemiesText.gameObject.SetActive(false);
         }
+
+        // Subscribe to discovery events to refresh when enemies are discovered
+        EventBus.Subscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
+    }
+
+    void OnEnable()
+    {
+        EventBus.Subscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
+    }
+
+    void OnDisable()
+    {
+        EventBus.Unsubscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
     }
 
     #region Public Methods
@@ -74,8 +88,11 @@ public class CombatSectionPanel : MonoBehaviour
         // Nettoyer les cartes existantes
         RecycleEnemyCards();
 
+        // Count visible enemies (non-hidden or already discovered)
+        int visibleCount = GetVisibleEnemyCount(enemies);
+
         // Update content (tab system controls visibility)
-        if (enemies.Count == 0)
+        if (visibleCount == 0)
         {
             ShowNoEnemiesMessage();
         }
@@ -85,11 +102,11 @@ public class CombatSectionPanel : MonoBehaviour
             {
                 noEnemiesText.gameObject.SetActive(false);
             }
-            UpdateSectionTitle(enemies.Count);
+            UpdateSectionTitle(visibleCount);
             CreateEnemyCards(enemies);
         }
 
-        Logger.LogInfo($"CombatSectionPanel: Displayed {enemies.Count} enemies", Logger.LogCategory.CombatLog);
+        Logger.LogInfo($"CombatSectionPanel: Displayed {visibleCount} enemies (total: {enemies.Count})", Logger.LogCategory.CombatLog);
     }
 
     /// <summary>
@@ -202,6 +219,12 @@ public class CombatSectionPanel : MonoBehaviour
         {
             if (locEnemy == null || !locEnemy.IsValid()) continue;
 
+            // Skip hidden enemies that haven't been discovered yet
+            if (locEnemy.IsHidden && !IsEnemyDiscovered(locEnemy))
+            {
+                continue;
+            }
+
             GameObject cardObject = GetPooledEnemyCard();
             if (cardObject.transform.parent != enemiesContainer)
             {
@@ -245,6 +268,78 @@ public class CombatSectionPanel : MonoBehaviour
 
     #endregion
 
+    #region Private Methods - Discovery Check
+
+    /// <summary>
+    /// Count enemies that should be visible (non-hidden or already discovered)
+    /// </summary>
+    private int GetVisibleEnemyCount(List<LocationEnemy> enemies)
+    {
+        if (enemies == null) return 0;
+
+        int count = 0;
+        foreach (var locEnemy in enemies)
+        {
+            if (locEnemy == null || !locEnemy.IsValid()) continue;
+
+            // Count if not hidden, or if hidden but discovered
+            if (!locEnemy.IsHidden || IsEnemyDiscovered(locEnemy))
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /// <summary>
+    /// Check if a hidden enemy has been discovered at the current location
+    /// </summary>
+    private bool IsEnemyDiscovered(LocationEnemy locEnemy)
+    {
+        if (locEnemy == null || locEnemy.EnemyReference == null) return false;
+
+        // Need to get the current location ID to check discoveries
+        // Get it from MapManager
+        string locationId = MapManager.Instance?.CurrentLocation?.LocationID;
+        if (string.IsNullOrEmpty(locationId)) return false;
+
+        string discoveryId = locEnemy.GetDiscoveryID();
+
+        // Check via ExplorationManager if available
+        if (ExplorationManager.Instance != null)
+        {
+            return ExplorationManager.Instance.IsDiscoveredAtLocation(locationId, discoveryId);
+        }
+
+        // Fallback to direct PlayerData check
+        if (DataManager.Instance?.PlayerData != null)
+        {
+            return DataManager.Instance.PlayerData.HasDiscoveredAtLocation(locationId, discoveryId);
+        }
+
+        return false;
+    }
+
+    #endregion
+
+    #region Private Methods - Event Handlers
+
+    /// <summary>
+    /// Handle discovery events - refresh display if an enemy was discovered
+    /// </summary>
+    private void OnExplorationDiscovery(ExplorationDiscoveryEvent evt)
+    {
+        // Only refresh if an enemy was discovered
+        if (evt.DiscoveryType == DiscoverableType.Enemy)
+        {
+            // Refresh the display with current enemies
+            DisplayEnemies(currentEnemies);
+            Logger.LogInfo($"CombatSectionPanel: Refreshed after enemy discovery: {evt.DisplayName}", Logger.LogCategory.CombatLog);
+        }
+    }
+
+    #endregion
+
     #region Private Methods - Object Pooling
 
     private void RecycleEnemyCards()
@@ -284,6 +379,9 @@ public class CombatSectionPanel : MonoBehaviour
 
     void OnDestroy()
     {
+        // Unsubscribe from events
+        EventBus.Unsubscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
+
         foreach (var card in instantiatedEnemyCards)
         {
             if (card != null)

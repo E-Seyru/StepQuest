@@ -32,7 +32,7 @@ MonoBehaviour:
     IsAvailable: 1
     Requirements: 
   AvailableActivities:
-  - ActivityReference: {fileID: 11400000, guid: 532a5328dda68b043a940ed8f06964ff, type: 2}
+  - ActivityReference: {fileID: 11400000, guid: 8f875fd1e58da0e47b143f3567d84689, type: 2}
     LocationSpecificName: 
     LocationDescription: 
     ActivityVariants:
@@ -52,7 +52,12 @@ MonoBehaviour:
     LocationSpecificIcon: {fileID: 0}
   AvailableEnemies: []
   AvailableNPCs:
-  - {fileID: 11400000, guid: 581fbbf6fce5e3749bdfeecbff6c1517, type: 2}
+  - NPCReference: {fileID: 11400000, guid: 581fbbf6fce5e3749bdfeecbff6c1517, type: 2}
+    IsAvailable: 1
+    Requirements: 
+    IsHidden: 1
+    Rarity: 0
+    BonusXPOverride: -9
   LocationIcon: {fileID: 21300000, guid: 4ad214f54463ee74dbe67a30f0b45aaa, type: 3}
   POIColor: {r: 1, g: 1, b: 1, a: 1}
   IsAccessible: 1

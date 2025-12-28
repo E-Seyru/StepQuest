@@ -28,20 +28,6 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
-  - ActivityReference: {fileID: 11400000, guid: 532a5328dda68b043a940ed8f06964ff, type: 2}
-    LocationSpecificName: 
-    LocationDescription: 
-    ActivityVariants: []
-    IsAvailable: 1
-    SpecialRequirements: 
-    LocationSpecificIcon: {fileID: 0}
-  - ActivityReference: {fileID: 11400000, guid: c8dfdc7bab46dd646b25182c230e2149, type: 2}
-    LocationSpecificName: 
-    LocationDescription: 
-    ActivityVariants: []
-    IsAvailable: 1
-    SpecialRequirements: 
-    LocationSpecificIcon: {fileID: 0}
   - ActivityReference: {fileID: 11400000, guid: 43a05e7a60d120b4fb921b61737299b4, type: 2}
     LocationSpecificName: 
     LocationDescription: 
@@ -57,6 +43,13 @@ MonoBehaviour:
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
   - ActivityReference: {fileID: 11400000, guid: eb2b652fee07d2549ad8e0d153690f5f, type: 2}
+    LocationSpecificName: 
+    LocationDescription: 
+    ActivityVariants: []
+    IsAvailable: 1
+    SpecialRequirements: 
+    LocationSpecificIcon: {fileID: 0}
+  - ActivityReference: {fileID: 11400000, guid: 8f875fd1e58da0e47b143f3567d84689, type: 2}
     LocationSpecificName: 
     LocationDescription: 
     ActivityVariants: []

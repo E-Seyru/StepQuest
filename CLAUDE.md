@@ -25,6 +25,7 @@ All managers use `Instance` singleton pattern and are initialized at game start:
 - **AbilityManager** (`Assets/Scripts/Gameplay/Player/AbilityManager.cs`) - Manages player's owned and equipped abilities with weight-based limits
 - **XpManager** (`Assets/Scripts/Gameplay/Progression/XpManager.cs`) - Handles skill/subskill XP progression and level-up mechanics
 - **NPCManager** (`Assets/Scripts/Gameplay/NPC/NPCManager.cs`) - Manages NPC discovery and interactions
+- **ExplorationManager** (`Assets/Scripts/Gameplay/Exploration/ExplorationManager.cs`) - Handles exploration activities, discovery rolls, and progress tracking
 
 ### Event System
 The codebase uses a custom **EventBus** (`Assets/Scripts/Core/Events/EventBus.cs`) for decoupled communication:
@@ -47,6 +48,7 @@ Event types are defined in `Assets/Scripts/Core/Events/GameEvents.cs` under name
 - `CombatEvents` - Combat flow, abilities, health, status effects
 - `AbilityEvents` - Ability acquisition and equipment
 - `NPCEvents` - NPC discovery and interaction events
+- `ExplorationEvents` - Discovery events for hidden content
 
 ### Data Layer
 
@@ -238,6 +240,7 @@ Custom editor tools in `Assets/Scripts/Editor/`:
 - `RegistryValidationDashboard` - Validate all registries
 - `ConnectionManagerWindow` - Manage location connections
 - `NPCManagerWindow` - Manage NPCs with bidirectional location sync
+- `ExplorationManagerWindow` - Configure hidden content and test discoveries at runtime
 
 ### Debug Tools
 Debug scripts in `Assets/Scripts/Debug/`:
@@ -275,3 +278,68 @@ Open project in Unity and use standard Unity build workflow:
 - Add more content (abilities, enemies, locations, NPCs)
 - UI polish for ability equipment in InventoryPanel
 - Looped/offline combat simulation
+
+### Exploration System (Implemented)
+Step-based activity for discovering hidden content at locations.
+
+**Core Components:**
+- **ExplorationManager** - Singleton handling discovery logic, rolls, and progress tracking
+- **ExplorationPanelUI** - Shows discoverable content, progress, and discovery chances
+- **DiscoverableItemUI** - Individual item display with rarity colors and discovery status
+- **ExplorationManagerWindow** - Editor tool for configuring and testing discoveries
+
+**Discovery System:**
+- **5 Rarity Tiers**: Common, Uncommon, Rare, Epic, Legendary
+- Each rarity has base discovery chance (configured in `GameConstants`)
+- Discovery chance modified by player's Exploration skill level (+2% per level, capped at +100%)
+- Bonus XP awarded on discovery, scaling with rarity
+
+**Discoverable Content Types (DiscoverableType enum):**
+- `Enemy` - Hidden monsters that appear after discovery
+- `NPC` - Hidden characters revealed through exploration
+- `Activity` - Hidden activities (special gathering spots, etc.)
+- `Dungeon` - Sub-areas within the location (placeholder for future)
+
+**Location Integration:**
+- `LocationEnemy.IsHidden`, `LocationEnemy.Rarity` - Enemy discovery settings
+- `LocationNPC.IsHidden`, `LocationNPC.Rarity` - NPC discovery settings
+- `LocationActivity.IsHidden`, `LocationActivity.Rarity` - Activity discovery settings
+- All have `GetDiscoveryID()`, `GetDiscoveryBonusXP()`, `GetBaseDiscoveryChance()` methods
+
+**PlayerData Discovery Tracking:**
+- `PlayerData.LocationDiscoveries` - Dictionary<string, HashSet<string>> tracking discoveries per location
+- Methods: `HasDiscoveredAtLocation()`, `AddDiscoveryAtLocation()`, `GetDiscoveryCountAtLocation()`, `ClearDiscoveriesAtLocation()`
+
+**Events (ExplorationEvents namespace):**
+- `ExplorationStartedEvent` - When exploration begins at a location
+- `ExplorationTickEvent` - Each exploration tick
+- `ExplorationEndedEvent` - When exploration stops
+- `ExplorationDiscoveryEvent` - When something is discovered (triggers UI refresh)
+- `ExplorationProgressChangedEvent` - When discovery count changes
+
+**UI Behavior:**
+- Hidden content filtered from display until discovered
+- `CombatSectionPanel`, `SocialSectionPanel`, `LocationDetailsPanel` subscribe to `ExplorationDiscoveryEvent`
+- Panels refresh automatically when relevant content is discovered
+
+### Activity Panels Refactoring (Next Task)
+The current `ActivityVariantsPanel` will be replaced with specialized panels per activity type:
+
+**Planned Panels:**
+1. **MerchantPanel** - For buying/selling with NPCs (merchant-type activities)
+2. **ExplorationOverviewPanel** - For exploration activities (already have `ExplorationPanelUI`)
+3. **GatheringPanel** - For step-based harvesting activities (mining, woodcutting, fishing)
+4. **CraftingPanel** - For time-based crafting activities (forging, cooking)
+
+**Design Considerations:**
+- Each panel tailored to its activity type's unique UI needs
+- `LocationDetailsPanel.OnActivitySelected()` routes to appropriate panel based on `ActivityType`
+- Current `ActivityVariantsPanel` logic to be distributed across new panels
+
+### Expedition System (Future - Not Yet Designed)
+Long-distance step-based activity with tiered goals and rewards. Concept notes:
+- Large step requirements (e.g., 2k / 10k / 25k steps)
+- Fixed rewards at tier completion + random rewards along the way
+- Permanent stat bonuses as incentive for first completion
+- Possibly guarded by monsters at higher tiers
+- Needs more design work to make it engaging (avoid "boring progress bar" feel)

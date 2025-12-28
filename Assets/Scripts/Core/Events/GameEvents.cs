@@ -803,3 +803,137 @@ namespace DialogueEvents
         }
     }
 }
+
+/// <summary>
+/// Evenements lies au systeme d'exploration
+/// </summary>
+namespace ExplorationEvents
+{
+    /// <summary>
+    /// Publie quand une exploration commence
+    /// </summary>
+    public class ExplorationStartedEvent : EventBusEvent
+    {
+        public string LocationId { get; }
+        public MapLocationDefinition Location { get; }
+
+        public ExplorationStartedEvent(string locationId, MapLocationDefinition location)
+        {
+            LocationId = locationId;
+            Location = location;
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} - Exploration started at '{LocationId}'";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand une exploration progresse (tick)
+    /// </summary>
+    public class ExplorationTickEvent : EventBusEvent
+    {
+        public string LocationId { get; }
+        public int CurrentTick { get; }
+        public int TotalTicks { get; }
+        public float Progress { get; }
+
+        public ExplorationTickEvent(string locationId, int currentTick, int totalTicks)
+        {
+            LocationId = locationId;
+            CurrentTick = currentTick;
+            TotalTicks = totalTicks;
+            Progress = totalTicks > 0 ? (float)currentTick / totalTicks : 0f;
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} - Exploration tick {CurrentTick}/{TotalTicks} ({Progress:P0}) at '{LocationId}'";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand quelque chose est decouvert pendant l'exploration
+    /// </summary>
+    public class ExplorationDiscoveryEvent : EventBusEvent
+    {
+        public string LocationId { get; }
+        public string DiscoveryId { get; }
+        public DiscoverableType DiscoveryType { get; }
+        public DiscoveryRarity Rarity { get; }
+        public int BonusXP { get; }
+        public string DisplayName { get; }
+
+        public ExplorationDiscoveryEvent(string locationId, string discoveryId, DiscoverableType type,
+            DiscoveryRarity rarity, int bonusXP, string displayName)
+        {
+            LocationId = locationId;
+            DiscoveryId = discoveryId;
+            DiscoveryType = type;
+            Rarity = rarity;
+            BonusXP = bonusXP;
+            DisplayName = displayName;
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} - Discovered {DiscoveryType} '{DisplayName}' ({Rarity}) at '{LocationId}' [+{BonusXP} XP]";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand une exploration se termine
+    /// </summary>
+    public class ExplorationEndedEvent : EventBusEvent
+    {
+        public string LocationId { get; }
+        public int TotalTicks { get; }
+        public int DiscoveriesCount { get; }
+        public int TotalXPGained { get; }
+        public bool Completed { get; } // true if ended naturally, false if cancelled
+
+        public ExplorationEndedEvent(string locationId, int totalTicks, int discoveriesCount,
+            int totalXPGained, bool completed = true)
+        {
+            LocationId = locationId;
+            TotalTicks = totalTicks;
+            DiscoveriesCount = discoveriesCount;
+            TotalXPGained = totalXPGained;
+            Completed = completed;
+        }
+
+        public override string ToString()
+        {
+            var status = Completed ? "completed" : "cancelled";
+            return $"{base.ToString()} - Exploration {status} at '{LocationId}': {DiscoveriesCount} discoveries, {TotalXPGained} XP";
+        }
+    }
+
+    /// <summary>
+    /// Publie quand le progres d'exploration d'une location change
+    /// </summary>
+    public class ExplorationProgressChangedEvent : EventBusEvent
+    {
+        public string LocationId { get; }
+        public int DiscoveredCount { get; }
+        public int TotalDiscoverable { get; }
+        public float Progress { get; }
+        public bool IsFullyExplored { get; }
+
+        public ExplorationProgressChangedEvent(string locationId, int discoveredCount, int totalDiscoverable)
+        {
+            LocationId = locationId;
+            DiscoveredCount = discoveredCount;
+            TotalDiscoverable = totalDiscoverable;
+            Progress = totalDiscoverable > 0 ? (float)discoveredCount / totalDiscoverable : 0f;
+            IsFullyExplored = discoveredCount >= totalDiscoverable && totalDiscoverable > 0;
+        }
+
+        public override string ToString()
+        {
+            var status = IsFullyExplored ? " (Fully Explored!)" : "";
+            return $"{base.ToString()} - Location '{LocationId}' exploration: {DiscoveredCount}/{TotalDiscoverable}{status}";
+        }
+    }
+}

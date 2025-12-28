@@ -4,6 +4,16 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+/// <summary>
+/// Defines the type of activity and how it should be processed
+/// </summary>
+public enum ActivityType
+{
+    Harvesting,   // Step-based, produces resources (mining, woodcutting, fishing)
+    Crafting,     // Time-based, consumes materials to produce items
+    Exploration   // Step-based, discovers hidden content at locations
+}
+
 [CreateAssetMenu(fileName = "NewActivity", menuName = "WalkAndRPG/Activity Definition")]
 public class ActivityDefinition : ScriptableObject
 {
@@ -12,6 +22,10 @@ public class ActivityDefinition : ScriptableObject
     public string ActivityName;
     [TextArea(2, 4)]
     public string BaseDescription;
+
+    [Header("Activity Type")]
+    [Tooltip("Determines how this activity is processed and which UI to show")]
+    public ActivityType Type = ActivityType.Harvesting;
 
     [Header("Visual")]
     public Sprite ActivityIcon;
@@ -63,6 +77,30 @@ public class ActivityDefinition : ScriptableObject
     public bool IsValid()
     {
         return IsValidActivity();
+    }
+
+    /// <summary>
+    /// Check if this is an exploration activity
+    /// </summary>
+    public bool IsExploration()
+    {
+        return Type == ActivityType.Exploration;
+    }
+
+    /// <summary>
+    /// Check if this is a crafting activity
+    /// </summary>
+    public bool IsCrafting()
+    {
+        return Type == ActivityType.Crafting;
+    }
+
+    /// <summary>
+    /// Check if this is a harvesting activity
+    /// </summary>
+    public bool IsHarvesting()
+    {
+        return Type == ActivityType.Harvesting;
     }
 
     /// <summary>

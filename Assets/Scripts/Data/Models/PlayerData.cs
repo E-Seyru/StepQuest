@@ -377,6 +377,50 @@ public class PlayerData
     // Discovered NPCs (JSON serialise - List<npcId>)
     private string _discoveredNPCsJson;
 
+    // === SYSTEME D'EXPLORATION ===
+
+    // Discoveries per location (JSON serialise - Dictionary<locationId, List<discoveryId>>)
+    private string _locationDiscoveriesJson;
+    [Column("LocationDiscoveriesJson")]
+    public string LocationDiscoveriesJson
+    {
+        get { return _locationDiscoveriesJson; }
+        set { _locationDiscoveriesJson = value; }
+    }
+
+    // Propriete pour acceder aux decouvertes par location
+    [Ignore]
+    public Dictionary<string, List<string>> LocationDiscoveries
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_locationDiscoveriesJson))
+                return new Dictionary<string, List<string>>();
+
+            try
+            {
+                return JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(_locationDiscoveriesJson);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error deserializing LocationDiscoveries: {ex.Message}", Logger.LogCategory.General);
+                return new Dictionary<string, List<string>>();
+            }
+        }
+        set
+        {
+            try
+            {
+                _locationDiscoveriesJson = value != null ? JsonConvert.SerializeObject(value) : null;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlayerData: Error serializing LocationDiscoveries: {ex.Message}", Logger.LogCategory.General);
+                _locationDiscoveriesJson = null;
+            }
+        }
+    }
+
     // === SYSTEME DE DIALOGUE ===
 
     // Dialogue flags (JSON serialise - Dictionary<flagName, bool>)
@@ -540,6 +584,9 @@ public class PlayerData
         // NPC System
         _discoveredNPCsJson = null;
 
+        // Exploration System
+        _locationDiscoveriesJson = null;
+
         // Dialogue System
         _dialogueFlagsJson = null;
         _npcRelationshipsJson = null;
@@ -692,6 +739,93 @@ public class PlayerData
     {
         var discovered = DiscoveredNPCs;
         return discovered.Contains(npcId);
+    }
+
+    // === METHODES D'EXPLORATION ===
+
+    /// <summary>
+    /// Check if something has been discovered at a specific location
+    /// </summary>
+    public bool HasDiscoveredAtLocation(string locationId, string discoveryId)
+    {
+        if (string.IsNullOrEmpty(locationId) || string.IsNullOrEmpty(discoveryId)) return false;
+
+        var discoveries = LocationDiscoveries;
+        if (discoveries.TryGetValue(locationId, out var locationList))
+        {
+            return locationList.Contains(discoveryId);
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Add a discovery at a specific location
+    /// </summary>
+    public bool AddDiscoveryAtLocation(string locationId, string discoveryId)
+    {
+        if (string.IsNullOrEmpty(locationId) || string.IsNullOrEmpty(discoveryId)) return false;
+
+        var discoveries = LocationDiscoveries;
+
+        if (!discoveries.ContainsKey(locationId))
+        {
+            discoveries[locationId] = new List<string>();
+        }
+
+        if (discoveries[locationId].Contains(discoveryId))
+        {
+            return false; // Already discovered
+        }
+
+        discoveries[locationId].Add(discoveryId);
+        LocationDiscoveries = discoveries;
+        return true;
+    }
+
+    /// <summary>
+    /// Get all discoveries at a specific location
+    /// </summary>
+    public List<string> GetDiscoveriesAtLocation(string locationId)
+    {
+        if (string.IsNullOrEmpty(locationId)) return new List<string>();
+
+        var discoveries = LocationDiscoveries;
+        if (discoveries.TryGetValue(locationId, out var locationList))
+        {
+            return new List<string>(locationList);
+        }
+        return new List<string>();
+    }
+
+    /// <summary>
+    /// Get the count of discoveries at a specific location
+    /// </summary>
+    public int GetDiscoveryCountAtLocation(string locationId)
+    {
+        return GetDiscoveriesAtLocation(locationId).Count;
+    }
+
+    /// <summary>
+    /// Clear all discoveries at a specific location
+    /// </summary>
+    public void ClearDiscoveriesAtLocation(string locationId)
+    {
+        if (string.IsNullOrEmpty(locationId)) return;
+
+        var discoveries = LocationDiscoveries;
+        if (discoveries.ContainsKey(locationId))
+        {
+            discoveries.Remove(locationId);
+            LocationDiscoveries = discoveries;
+        }
+    }
+
+    /// <summary>
+    /// Clear all exploration discoveries
+    /// </summary>
+    public void ClearAllDiscoveries()
+    {
+        LocationDiscoveries = new Dictionary<string, List<string>>();
     }
 
     // === METHODES DE DIALOGUE ===

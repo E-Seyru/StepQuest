@@ -15,6 +15,7 @@ MonoBehaviour:
   ActivityID: bucheron
   ActivityName: Couper du bois
   BaseDescription: Couper des arbres...
+  Type: 0
   ActivityIcon: {fileID: 21300000, guid: 7226ddbce19797445b27b7c0e176990f, type: 3}
   ActivityColor: {r: 1, g: 1, b: 1, a: 1}
   IsAvailable: 1

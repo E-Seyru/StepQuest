@@ -2,6 +2,19 @@
 // Filepath: Assets/Scripts/Core/GameConstants.cs
 
 /// <summary>
+/// Rarity levels for discoverable content (enemies, NPCs, dungeons, etc.)
+/// Higher rarity = lower discovery chance, higher bonus XP
+/// </summary>
+public enum DiscoveryRarity
+{
+    Common,     // ~8% base chance per tick
+    Uncommon,   // ~4% base chance per tick
+    Rare,       // ~2% base chance per tick
+    Epic,       // ~0.8% base chance per tick
+    Legendary   // ~0.3% base chance per tick
+}
+
+/// <summary>
 /// Centralized constants for the entire game.
 /// Modify values here instead of hunting through multiple files.
 /// </summary>
@@ -101,4 +114,76 @@ public static class GameConstants
 
     /// <summary>Number of taps required for debug actions</summary>
     public const int DebugRequiredTaps = 5;
+
+    // ============================================
+    // EXPLORATION & DISCOVERY
+    // ============================================
+
+    /// <summary>Base discovery chance per tick for Common rarity (0-1)</summary>
+    public const float DiscoveryChanceCommon = 0.08f;
+
+    /// <summary>Base discovery chance per tick for Uncommon rarity (0-1)</summary>
+    public const float DiscoveryChanceUncommon = 0.04f;
+
+    /// <summary>Base discovery chance per tick for Rare rarity (0-1)</summary>
+    public const float DiscoveryChanceRare = 0.02f;
+
+    /// <summary>Base discovery chance per tick for Epic rarity (0-1)</summary>
+    public const float DiscoveryChanceEpic = 0.008f;
+
+    /// <summary>Base discovery chance per tick for Legendary rarity (0-1)</summary>
+    public const float DiscoveryChanceLegendary = 0.003f;
+
+    /// <summary>Bonus XP multiplier for Common discovery</summary>
+    public const int DiscoveryXPCommon = 10;
+
+    /// <summary>Bonus XP multiplier for Uncommon discovery</summary>
+    public const int DiscoveryXPUncommon = 25;
+
+    /// <summary>Bonus XP multiplier for Rare discovery</summary>
+    public const int DiscoveryXPRare = 50;
+
+    /// <summary>Bonus XP multiplier for Epic discovery</summary>
+    public const int DiscoveryXPEpic = 150;
+
+    /// <summary>Bonus XP multiplier for Legendary discovery</summary>
+    public const int DiscoveryXPLegendary = 500;
+
+    /// <summary>Base XP gained per exploration tick</summary>
+    public const int ExplorationBaseXPPerTick = 5;
+
+    /// <summary>Steps required per exploration tick</summary>
+    public const int ExplorationStepsPerTick = 50;
+
+    /// <summary>
+    /// Get base discovery chance for a given rarity
+    /// </summary>
+    public static float GetBaseDiscoveryChance(DiscoveryRarity rarity)
+    {
+        return rarity switch
+        {
+            DiscoveryRarity.Common => DiscoveryChanceCommon,
+            DiscoveryRarity.Uncommon => DiscoveryChanceUncommon,
+            DiscoveryRarity.Rare => DiscoveryChanceRare,
+            DiscoveryRarity.Epic => DiscoveryChanceEpic,
+            DiscoveryRarity.Legendary => DiscoveryChanceLegendary,
+            _ => DiscoveryChanceCommon
+        };
+    }
+
+    /// <summary>
+    /// Get bonus XP for discovering content of a given rarity
+    /// </summary>
+    public static int GetDiscoveryBonusXP(DiscoveryRarity rarity)
+    {
+        return rarity switch
+        {
+            DiscoveryRarity.Common => DiscoveryXPCommon,
+            DiscoveryRarity.Uncommon => DiscoveryXPUncommon,
+            DiscoveryRarity.Rare => DiscoveryXPRare,
+            DiscoveryRarity.Epic => DiscoveryXPEpic,
+            DiscoveryRarity.Legendary => DiscoveryXPLegendary,
+            _ => DiscoveryXPCommon
+        };
+    }
 }

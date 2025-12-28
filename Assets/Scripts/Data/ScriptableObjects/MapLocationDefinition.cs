@@ -43,7 +43,7 @@ public class MapLocationDefinition : ScriptableObject
 
     [Header("Social")]
     [Tooltip("NPCs that can be interacted with at this location")]
-    public List<NPCDefinition> AvailableNPCs = new List<NPCDefinition>();
+    public List<LocationNPC> AvailableNPCs = new List<LocationNPC>();
 
     [Header("Visual")]
     [Tooltip("Icon for POI representation on map")]
@@ -183,27 +183,47 @@ public class MapLocationDefinition : ScriptableObject
     // === NPC METHODS ===
 
     /// <summary>
-    /// Get all valid NPCs available at this location
+    /// Get all valid LocationNPC entries at this location
     /// </summary>
-    public List<NPCDefinition> GetAvailableNPCs()
+    public List<LocationNPC> GetAvailableNPCs()
     {
         if (AvailableNPCs == null)
-            return new List<NPCDefinition>();
+            return new List<LocationNPC>();
 
-        return AvailableNPCs.Where(npc => npc != null && npc.IsValid() && npc.IsActive).ToList();
+        return AvailableNPCs.Where(npc => npc != null && npc.IsValid() && npc.IsActive()).ToList();
     }
 
     /// <summary>
-    /// Get NPC by ID
+    /// Get all valid NPCDefinitions at this location (convenience method)
     /// </summary>
-    public NPCDefinition GetNPCById(string npcId)
+    public List<NPCDefinition> GetAvailableNPCDefinitions()
+    {
+        return GetAvailableNPCs()
+            .Where(npc => npc.NPCReference != null)
+            .Select(npc => npc.NPCReference)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Get LocationNPC by NPC ID
+    /// </summary>
+    public LocationNPC GetNPCById(string npcId)
     {
         if (AvailableNPCs == null || string.IsNullOrEmpty(npcId))
             return null;
 
         return AvailableNPCs.FirstOrDefault(npc =>
             npc != null &&
-            npc.NPCID == npcId);
+            npc.NPCReference != null &&
+            npc.NPCReference.NPCID == npcId);
+    }
+
+    /// <summary>
+    /// Get NPCDefinition by ID (convenience method)
+    /// </summary>
+    public NPCDefinition GetNPCDefinitionById(string npcId)
+    {
+        return GetNPCById(npcId)?.NPCReference;
     }
 
     /// <summary>
@@ -401,6 +421,16 @@ public class LocationEnemy
     [TextArea(1, 2)]
     public string Requirements;
 
+    [Header("Discovery Settings")]
+    [Tooltip("If true, this enemy must be discovered through exploration before it can be fought")]
+    public bool IsHidden = false;
+
+    [Tooltip("Rarity affects discovery chance and bonus XP when found")]
+    public DiscoveryRarity Rarity = DiscoveryRarity.Common;
+
+    [Tooltip("Override bonus XP for discovering this enemy (0 = use default from rarity)")]
+    public int BonusXPOverride = 0;
+
     /// <summary>
     /// Get display name for this enemy
     /// </summary>
@@ -425,5 +455,108 @@ public class LocationEnemy
         if (!IsValid()) return false;
         // TODO: Check player level/requirements when progression system is added
         return true;
+    }
+
+    /// <summary>
+    /// Get the unique ID for tracking discovery (uses enemy ID)
+    /// </summary>
+    public string GetDiscoveryID()
+    {
+        return EnemyReference?.EnemyID ?? "";
+    }
+
+    /// <summary>
+    /// Get the bonus XP awarded when this enemy is discovered
+    /// </summary>
+    public int GetDiscoveryBonusXP()
+    {
+        if (BonusXPOverride > 0)
+            return BonusXPOverride;
+        return GameConstants.GetDiscoveryBonusXP(Rarity);
+    }
+
+    /// <summary>
+    /// Get the base discovery chance for this enemy
+    /// </summary>
+    public float GetBaseDiscoveryChance()
+    {
+        return GameConstants.GetBaseDiscoveryChance(Rarity);
+    }
+}
+
+/// <summary>
+/// Represents an NPC available at a location for interaction
+/// </summary>
+[System.Serializable]
+public class LocationNPC
+{
+    [Tooltip("Reference to the NPC definition")]
+    public NPCDefinition NPCReference;
+
+    [Tooltip("Is this NPC currently available to interact with?")]
+    public bool IsAvailable = true;
+
+    [Tooltip("Special requirements or description")]
+    [TextArea(1, 2)]
+    public string Requirements;
+
+    [Header("Discovery Settings")]
+    [Tooltip("If true, this NPC must be discovered through exploration before they can be interacted with")]
+    public bool IsHidden = false;
+
+    [Tooltip("Rarity affects discovery chance and bonus XP when found")]
+    public DiscoveryRarity Rarity = DiscoveryRarity.Common;
+
+    [Tooltip("Override bonus XP for discovering this NPC (0 = use default from rarity)")]
+    public int BonusXPOverride = 0;
+
+    /// <summary>
+    /// Get display name for this NPC
+    /// </summary>
+    public string GetDisplayName()
+    {
+        return NPCReference?.GetDisplayName() ?? "Unknown NPC";
+    }
+
+    /// <summary>
+    /// Check if this NPC entry is valid
+    /// </summary>
+    public bool IsValid()
+    {
+        return NPCReference != null && NPCReference.IsValid() && IsAvailable;
+    }
+
+    /// <summary>
+    /// Check if this NPC is active (wrapper for NPCDefinition.IsActive)
+    /// </summary>
+    public bool IsActive()
+    {
+        return NPCReference != null && NPCReference.IsActive;
+    }
+
+    /// <summary>
+    /// Get the unique ID for tracking discovery (uses NPC ID)
+    /// </summary>
+    public string GetDiscoveryID()
+    {
+        return NPCReference?.NPCID ?? "";
+    }
+
+    /// <summary>
+    /// Get the bonus XP awarded when this NPC is discovered
+    /// </summary>
+    public int GetDiscoveryBonusXP()
+    {
+        if (BonusXPOverride > 0)
+            return BonusXPOverride;
+        return GameConstants.GetDiscoveryBonusXP(Rarity);
+    }
+
+    /// <summary>
+    /// Get the base discovery chance for this NPC
+    /// </summary>
+    public float GetBaseDiscoveryChance()
+    {
+        return GameConstants.GetBaseDiscoveryChance(Rarity);
     }
 }

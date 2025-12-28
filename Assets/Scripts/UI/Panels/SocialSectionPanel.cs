@@ -1,5 +1,6 @@
 // Purpose: Panel section for displaying NPCs and social content in a grid layout
 // Filepath: Assets/Scripts/UI/Panels/SocialSectionPanel.cs
+using ExplorationEvents;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -23,7 +24,7 @@ public class SocialSectionPanel : MonoBehaviour
     private List<GameObject> instantiatedSocialActivityCards = new List<GameObject>();
 
     // Current data
-    private List<NPCDefinition> currentNPCs = new List<NPCDefinition>();
+    private List<LocationNPC> currentNPCs = new List<LocationNPC>();
 
     // Events
     public System.Action<NPCDefinition> OnNPCSelected;
@@ -38,6 +39,19 @@ public class SocialSectionPanel : MonoBehaviour
         {
             noSocialActivitiesText.gameObject.SetActive(false);
         }
+
+        // Subscribe to discovery events to refresh when NPCs are discovered
+        EventBus.Subscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
+    }
+
+    void OnEnable()
+    {
+        EventBus.Subscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
+    }
+
+    void OnDisable()
+    {
+        EventBus.Unsubscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
     }
 
     #region Public Methods
@@ -45,11 +59,11 @@ public class SocialSectionPanel : MonoBehaviour
     /// <summary>
     /// Affiche les NPCs disponibles a cet emplacement
     /// </summary>
-    public void DisplayNPCs(List<NPCDefinition> npcs)
+    public void DisplayNPCs(List<LocationNPC> npcs)
     {
         if (npcs == null)
         {
-            npcs = new List<NPCDefinition>();
+            npcs = new List<LocationNPC>();
         }
 
         currentNPCs = npcs;
@@ -57,10 +71,13 @@ public class SocialSectionPanel : MonoBehaviour
         // Nettoyer les cartes existantes
         RecycleSocialActivityCards();
 
-        // Update content (tab system controls visibility)
-        UpdateSectionTitle(npcs.Count);
+        // Count visible NPCs (non-hidden or already discovered)
+        int visibleCount = GetVisibleNPCCount(npcs);
 
-        if (npcs.Count > 0)
+        // Update content (tab system controls visibility)
+        UpdateSectionTitle(visibleCount);
+
+        if (visibleCount > 0)
         {
             CreateNPCCards(npcs);
             if (noSocialActivitiesText != null)
@@ -76,7 +93,7 @@ public class SocialSectionPanel : MonoBehaviour
             }
         }
 
-        Logger.LogInfo($"SocialSectionPanel: Displayed {npcs.Count} NPCs", Logger.LogCategory.DialogueLog);
+        Logger.LogInfo($"SocialSectionPanel: Displayed {visibleCount} NPCs (total: {npcs.Count})", Logger.LogCategory.DialogueLog);
     }
 
     /// <summary>
@@ -172,13 +189,22 @@ public class SocialSectionPanel : MonoBehaviour
 
     #region Private Methods - NPC Cards Management
 
-    private void CreateNPCCards(List<NPCDefinition> npcs)
+    private void CreateNPCCards(List<LocationNPC> npcs)
     {
         if (socialActivitiesContainer == null || socialAvatarPrefab == null) return;
 
-        foreach (var npc in npcs)
+        foreach (var locationNpc in npcs)
         {
-            if (npc == null || !npc.IsValid()) continue;
+            if (locationNpc == null || !locationNpc.IsValid()) continue;
+
+            var npcDef = locationNpc.NPCReference;
+            if (npcDef == null) continue;
+
+            // Skip hidden NPCs that haven't been discovered yet
+            if (locationNpc.IsHidden && !IsNPCDiscovered(locationNpc))
+            {
+                continue;
+            }
 
             GameObject cardObject = GetPooledSocialActivityCard();
             if (cardObject.transform.parent != socialActivitiesContainer)
@@ -187,7 +213,7 @@ public class SocialSectionPanel : MonoBehaviour
             }
 
             instantiatedSocialActivityCards.Add(cardObject);
-            SetupNPCCard(cardObject, npc);
+            SetupNPCCard(cardObject, npcDef);
         }
 
         // Forcer la mise a jour du layout
@@ -223,11 +249,83 @@ public class SocialSectionPanel : MonoBehaviour
         Logger.LogInfo($"SocialSectionPanel: NPC avatar card clicked for {npcId}", Logger.LogCategory.DialogueLog);
 
         // Retrouver le NPC correspondant
-        var npc = currentNPCs.Find(n => n.NPCID == npcId);
-        if (npc != null)
+        var locationNpc = currentNPCs.Find(n => n.NPCReference != null && n.NPCReference.NPCID == npcId);
+        if (locationNpc != null && locationNpc.NPCReference != null)
         {
-            // Propager l'evenement
-            OnNPCSelected?.Invoke(npc);
+            // Propager l'evenement avec le NPCDefinition
+            OnNPCSelected?.Invoke(locationNpc.NPCReference);
+        }
+    }
+
+    #endregion
+
+    #region Private Methods - Discovery Check
+
+    /// <summary>
+    /// Count NPCs that should be visible (non-hidden or already discovered)
+    /// </summary>
+    private int GetVisibleNPCCount(List<LocationNPC> npcs)
+    {
+        if (npcs == null) return 0;
+
+        int count = 0;
+        foreach (var locationNpc in npcs)
+        {
+            if (locationNpc == null || !locationNpc.IsValid()) continue;
+
+            // Count if not hidden, or if hidden but discovered
+            if (!locationNpc.IsHidden || IsNPCDiscovered(locationNpc))
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /// <summary>
+    /// Check if a hidden NPC has been discovered at the current location
+    /// </summary>
+    private bool IsNPCDiscovered(LocationNPC locationNpc)
+    {
+        if (locationNpc == null || locationNpc.NPCReference == null) return false;
+
+        // Need to get the current location ID to check discoveries
+        // Get it from MapManager
+        string locationId = MapManager.Instance?.CurrentLocation?.LocationID;
+        if (string.IsNullOrEmpty(locationId)) return false;
+
+        string discoveryId = locationNpc.GetDiscoveryID();
+
+        // Check via ExplorationManager if available
+        if (ExplorationManager.Instance != null)
+        {
+            return ExplorationManager.Instance.IsDiscoveredAtLocation(locationId, discoveryId);
+        }
+
+        // Fallback to direct PlayerData check
+        if (DataManager.Instance?.PlayerData != null)
+        {
+            return DataManager.Instance.PlayerData.HasDiscoveredAtLocation(locationId, discoveryId);
+        }
+
+        return false;
+    }
+
+    #endregion
+
+    #region Private Methods - Event Handlers
+
+    /// <summary>
+    /// Handle discovery events - refresh display if an NPC was discovered
+    /// </summary>
+    private void OnExplorationDiscovery(ExplorationDiscoveryEvent evt)
+    {
+        // Only refresh if an NPC was discovered at the current location
+        if (evt.DiscoveryType == DiscoverableType.NPC)
+        {
+            // Refresh the display with current NPCs
+            DisplayNPCs(currentNPCs);
+            Logger.LogInfo($"SocialSectionPanel: Refreshed after NPC discovery: {evt.DisplayName}", Logger.LogCategory.DialogueLog);
         }
     }
 
@@ -272,6 +370,9 @@ public class SocialSectionPanel : MonoBehaviour
 
     void OnDestroy()
     {
+        // Unsubscribe from events
+        EventBus.Unsubscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
+
         foreach (var card in instantiatedSocialActivityCards)
         {
             if (card != null)

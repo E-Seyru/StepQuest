@@ -32,6 +32,16 @@ public class LocationActivity
     [Tooltip("Location-specific icon (optional - uses ActivityReference.ActivityIcon if null)")]
     public Sprite LocationSpecificIcon;
 
+    [Header("Discovery Settings")]
+    [Tooltip("If true, this activity must be discovered through exploration before it becomes available")]
+    public bool IsHidden = false;
+
+    [Tooltip("Rarity affects discovery chance and bonus XP when found")]
+    public DiscoveryRarity Rarity = DiscoveryRarity.Common;
+
+    [Tooltip("Override bonus XP for discovering this activity (0 = use default from rarity)")]
+    public int BonusXPOverride = 0;
+
     /// <summary>
     /// Get the activity ID from the ActivityReference
     /// </summary>
@@ -186,7 +196,13 @@ public class LocationActivity
             return false;
         }
 
-        // Check if we have at least one valid variant
+        // Exploration activities don't need variants - they discover content instead of producing resources
+        if (ActivityReference.IsExploration())
+        {
+            return true;
+        }
+
+        // For non-exploration activities, check if we have at least one valid variant
         if (ActivityVariants == null || ActivityVariants.Count == 0)
         {
             Logger.LogError($"LocationActivity '{ActivityId}': No activity variants assigned!", Logger.LogCategory.General);
@@ -236,4 +252,34 @@ public class LocationActivity
 
         return info;
     }
+
+    #region Discovery Methods
+
+    /// <summary>
+    /// Get the unique discovery ID for this activity at this location
+    /// </summary>
+    public string GetDiscoveryID()
+    {
+        return ActivityReference?.ActivityID ?? "";
+    }
+
+    /// <summary>
+    /// Get the bonus XP awarded when this activity is discovered
+    /// </summary>
+    public int GetDiscoveryBonusXP()
+    {
+        if (BonusXPOverride > 0)
+            return BonusXPOverride;
+        return GameConstants.GetDiscoveryBonusXP(Rarity);
+    }
+
+    /// <summary>
+    /// Get the base discovery chance for this activity
+    /// </summary>
+    public float GetBaseDiscoveryChance()
+    {
+        return GameConstants.GetBaseDiscoveryChance(Rarity);
+    }
+
+    #endregion
 }

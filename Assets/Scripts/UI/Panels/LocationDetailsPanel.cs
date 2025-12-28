@@ -1,5 +1,6 @@
 ﻿// Panel d'affichage des details d'une location
 // Chemin: Assets/Scripts/UI/Panels/LocationDetailsPanel.cs
+using ExplorationEvents;
 using MapEvents; // NOUVEAU: Import pour EventBus
 using System.Collections;
 using System.Collections.Generic;
@@ -148,6 +149,7 @@ public class LocationDetailsPanel : MonoBehaviour
         EventBus.Subscribe<TravelCompletedEvent>(OnTravelCompleted);
         EventBus.Subscribe<TravelStartedEvent>(OnTravelStarted);
         EventBus.Subscribe<TravelProgressEvent>(OnTravelProgress);
+        EventBus.Subscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
 
         Logger.LogInfo("LocationDetailsPanel: Subscribed to EventBus events", Logger.LogCategory.General);
     }
@@ -185,6 +187,7 @@ public class LocationDetailsPanel : MonoBehaviour
         EventBus.Unsubscribe<TravelCompletedEvent>(OnTravelCompleted);
         EventBus.Unsubscribe<TravelStartedEvent>(OnTravelStarted);
         EventBus.Unsubscribe<TravelProgressEvent>(OnTravelProgress);
+        EventBus.Unsubscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
 
         // Desabonnement des panels delegates
         if (activitiesSectionPanel != null)
@@ -296,6 +299,20 @@ public class LocationDetailsPanel : MonoBehaviour
         {
             // Mise a jour seulement de la section info pour eviter de tout recalculer
             UpdateInfoSection();
+        }
+    }
+
+    private void OnExplorationDiscovery(ExplorationDiscoveryEvent eventData)
+    {
+        // Refresh activities section when an activity is discovered
+        if (eventData.DiscoveryType == DiscoverableType.Activity)
+        {
+            Logger.LogInfo($"LocationDetailsPanel: Activity discovered - {eventData.DisplayName}, refreshing activities section", Logger.LogCategory.General);
+
+            if (gameObject.activeInHierarchy && !isAnimating)
+            {
+                UpdateActivitiesSection();
+            }
         }
     }
 
@@ -509,6 +526,7 @@ public class LocationDetailsPanel : MonoBehaviour
 
     /// <summary>
     /// Convertit les LocationActivity en ActivityDefinition
+    /// Filters out hidden activities that haven't been discovered yet
     /// </summary>
     private List<ActivityDefinition> ConvertToActivityDefinitions(List<LocationActivity> locationActivities)
     {
@@ -518,6 +536,12 @@ public class LocationDetailsPanel : MonoBehaviour
         {
             if (locationActivity != null && locationActivity.ActivityReference != null)
             {
+                // Skip hidden activities that haven't been discovered yet
+                if (locationActivity.IsHidden && !IsActivityDiscovered(locationActivity))
+                {
+                    continue;
+                }
+
                 activityDefinitions.Add(locationActivity.ActivityReference);
             }
         }
@@ -526,30 +550,91 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
+    /// Check if a hidden activity has been discovered at the current location
+    /// </summary>
+    private bool IsActivityDiscovered(LocationActivity locationActivity)
+    {
+        if (locationActivity == null || locationActivity.ActivityReference == null) return false;
+        if (currentLocation == null) return false;
+
+        string locationId = currentLocation.LocationID;
+        string discoveryId = locationActivity.GetDiscoveryID();
+
+        // Check via ExplorationManager if available
+        if (ExplorationManager.Instance != null)
+        {
+            return ExplorationManager.Instance.IsDiscoveredAtLocation(locationId, discoveryId);
+        }
+
+        // Fallback to direct PlayerData check
+        if (DataManager.Instance?.PlayerData != null)
+        {
+            return DataManager.Instance.PlayerData.HasDiscoveredAtLocation(locationId, discoveryId);
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Gere la selection d'une activite depuis le ActivitiesSectionPanel
     /// </summary>
     private void OnActivitySelected(ActivityDefinition activityDefinition)
     {
-        Logger.LogInfo($"LocationDetailsPanel: Activity selected - {activityDefinition.GetDisplayName()}", Logger.LogCategory.General);
+        Logger.LogInfo($"LocationDetailsPanel: Activity selected - {activityDefinition.GetDisplayName()} (Type: {activityDefinition.Type})", Logger.LogCategory.General);
 
         // Retrouver la LocationActivity correspondante dans la location courante
         var locationActivity = FindLocationActivityByDefinition(activityDefinition);
 
-        if (locationActivity != null)
+        if (locationActivity == null)
         {
-            // Ouvrir le panel de variantes d'activite
-            if (ActivityVariantsPanel.Instance != null)
-            {
-                ActivityVariantsPanel.Instance.OpenWithActivity(locationActivity);
-            }
-            else
-            {
-                Logger.LogWarning("LocationDetailsPanel: ActivityVariantsPanel introuvable !", Logger.LogCategory.General);
-            }
+            Logger.LogError($"LocationDetailsPanel: Impossible de retrouver la LocationActivity pour {activityDefinition.GetDisplayName()}", Logger.LogCategory.General);
+            return;
+        }
+
+        // Branch based on activity type
+        if (activityDefinition.IsExploration())
+        {
+            // Open exploration panel for exploration activities
+            OpenExplorationPanel(locationActivity);
         }
         else
         {
-            Logger.LogError($"LocationDetailsPanel: Impossible de retrouver la LocationActivity pour {activityDefinition.GetDisplayName()}", Logger.LogCategory.General);
+            // Open variants panel for harvesting/crafting activities
+            OpenActivityVariantsPanel(locationActivity);
+        }
+    }
+
+    /// <summary>
+    /// Opens the exploration panel for exploration-type activities
+    /// </summary>
+    private void OpenExplorationPanel(LocationActivity locationActivity)
+    {
+        // TODO: Open ExplorationPanelUI when it's created
+        // For now, log that we need to create this panel
+        Logger.LogInfo($"LocationDetailsPanel: Opening exploration for {locationActivity.GetDisplayName()} at {currentLocation.DisplayName}", Logger.LogCategory.General);
+
+        if (ExplorationPanelUI.Instance != null)
+        {
+            ExplorationPanelUI.Instance.OpenWithLocation(currentLocation, locationActivity);
+        }
+        else
+        {
+            Logger.LogWarning("LocationDetailsPanel: ExplorationPanelUI introuvable ! Creation en attente.", Logger.LogCategory.General);
+        }
+    }
+
+    /// <summary>
+    /// Opens the activity variants panel for harvesting/crafting activities
+    /// </summary>
+    private void OpenActivityVariantsPanel(LocationActivity locationActivity)
+    {
+        if (ActivityVariantsPanel.Instance != null)
+        {
+            ActivityVariantsPanel.Instance.OpenWithActivity(locationActivity);
+        }
+        else
+        {
+            Logger.LogWarning("LocationDetailsPanel: ActivityVariantsPanel introuvable !", Logger.LogCategory.General);
         }
     }
 
