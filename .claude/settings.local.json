@@ -13,7 +13,8 @@
       "Bash(git push:*)",
       "Bash(ls -la \"c:\\\\Users\\\\wilhe\\\\OneDrive\\\\Desktop\\\\Projets Unit\\\\StepQuest\\\\Assets\\\\Scripts\\\\Data\\\\ScriptableObjects\"\" | grep -E \"^-)",
       "Bash(^d \")",
-      "Bash(powershell.exe -ExecutionPolicy Bypass -File .ReplaceDebugLogs.ps1)"
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File .ReplaceDebugLogs.ps1)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

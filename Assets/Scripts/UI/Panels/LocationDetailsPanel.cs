@@ -591,16 +591,32 @@ public class LocationDetailsPanel : MonoBehaviour
             return;
         }
 
-        // Branch based on activity type
-        if (activityDefinition.IsExploration())
+        // Route based on activity type
+        switch (activityDefinition.Type)
         {
-            // Open exploration panel for exploration activities
-            OpenExplorationPanel(locationActivity);
-        }
-        else
-        {
-            // Open variants panel for harvesting/crafting activities
-            OpenActivityVariantsPanel(locationActivity);
+            case ActivityType.Harvesting:
+                OpenGatheringPanel(locationActivity);
+                break;
+
+            case ActivityType.Crafting:
+                OpenCraftingPanel(locationActivity);
+                break;
+
+            case ActivityType.Exploration:
+                OpenExplorationPanel(locationActivity);
+                break;
+
+            case ActivityType.Merchant:
+                OpenMerchantPanel(locationActivity);
+                break;
+
+            case ActivityType.Bank:
+                OpenBankPanel(locationActivity);
+                break;
+
+            default:
+                Logger.LogWarning($"LocationDetailsPanel: Unknown activity type {activityDefinition.Type}", Logger.LogCategory.General);
+                break;
         }
     }
 
@@ -624,17 +640,56 @@ public class LocationDetailsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Opens the activity variants panel for harvesting/crafting activities
+    /// Opens the gathering panel for step-based harvesting activities
     /// </summary>
-    private void OpenActivityVariantsPanel(LocationActivity locationActivity)
+    private void OpenGatheringPanel(LocationActivity locationActivity)
     {
-        if (ActivityVariantsPanel.Instance != null)
+        if (GatheringPanel.Instance != null)
         {
-            ActivityVariantsPanel.Instance.OpenWithActivity(locationActivity);
+            GatheringPanel.Instance.OpenWithActivity(locationActivity);
         }
         else
         {
-            Logger.LogWarning("LocationDetailsPanel: ActivityVariantsPanel introuvable !", Logger.LogCategory.General);
+            Logger.LogWarning("LocationDetailsPanel: GatheringPanel introuvable !", Logger.LogCategory.General);
+        }
+    }
+
+    /// <summary>
+    /// Opens the crafting panel for time-based crafting activities
+    /// </summary>
+    private void OpenCraftingPanel(LocationActivity locationActivity)
+    {
+        if (CraftingPanel.Instance != null)
+        {
+            CraftingPanel.Instance.OpenWithActivity(locationActivity);
+        }
+        else
+        {
+            Logger.LogWarning("LocationDetailsPanel: CraftingPanel introuvable !", Logger.LogCategory.General);
+        }
+    }
+
+    /// <summary>
+    /// Opens the merchant panel for buy/sell activities
+    /// </summary>
+    private void OpenMerchantPanel(LocationActivity locationActivity)
+    {
+        // MerchantPanel not yet implemented - log warning
+        Logger.LogWarning($"LocationDetailsPanel: MerchantPanel not yet implemented for {locationActivity.GetDisplayName()}", Logger.LogCategory.General);
+    }
+
+    /// <summary>
+    /// Opens the bank panel for storage activities
+    /// </summary>
+    private void OpenBankPanel(LocationActivity locationActivity)
+    {
+        if (BankPanel.Instance != null)
+        {
+            BankPanel.Instance.OpenWithActivity(locationActivity);
+        }
+        else
+        {
+            Logger.LogWarning("LocationDetailsPanel: BankPanel introuvable !", Logger.LogCategory.General);
         }
     }
 

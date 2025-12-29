@@ -11,7 +11,9 @@ public enum ActivityType
 {
     Harvesting,   // Step-based, produces resources (mining, woodcutting, fishing)
     Crafting,     // Time-based, consumes materials to produce items
-    Exploration   // Step-based, discovers hidden content at locations
+    Exploration,  // Step-based, discovers hidden content at locations
+    Merchant,     // Buy/sell with NPCs
+    Bank          // Storage at bank locations
 }
 
 [CreateAssetMenu(fileName = "NewActivity", menuName = "WalkAndRPG/Activity Definition")]
@@ -101,6 +103,22 @@ public class ActivityDefinition : ScriptableObject
     public bool IsHarvesting()
     {
         return Type == ActivityType.Harvesting;
+    }
+
+    /// <summary>
+    /// Check if this is a merchant activity
+    /// </summary>
+    public bool IsMerchant()
+    {
+        return Type == ActivityType.Merchant;
+    }
+
+    /// <summary>
+    /// Check if this is a bank activity
+    /// </summary>
+    public bool IsBank()
+    {
+        return Type == ActivityType.Bank;
     }
 
     /// <summary>

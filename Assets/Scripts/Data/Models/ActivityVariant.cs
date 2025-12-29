@@ -22,6 +22,10 @@ public class ActivityVariant : ScriptableObject
     [Tooltip("Is this a time-based activity (crafting) or step-based activity (gathering)?")]
     public bool IsTimeBased = false;
 
+    [Header("Category (for UI grouping)")]
+    [Tooltip("Category for grouping in panels (e.g., 'Bars', 'Weapons', 'Armor'). Leave empty for no category.")]
+    public string Category = "";
+
     [Header("Results/Products")]
     public ItemDefinition PrimaryResource;
     public ItemDefinition[] SecondaryResources;

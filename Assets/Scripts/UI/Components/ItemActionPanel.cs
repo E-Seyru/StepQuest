@@ -439,7 +439,7 @@ public class ItemActionPanel : MonoBehaviour
     private bool HasOtherContainerOpen()
     {
         // Check si la banque est ouverte
-        if (BankPanelUI.Instance != null && BankPanelUI.Instance.gameObject.activeInHierarchy)
+        if (BankPanel.Instance != null && BankPanel.Instance.gameObject.activeInHierarchy)
             return true;
 
         // TODO: Check autres containers (shop, trade, etc.)
@@ -451,7 +451,7 @@ public class ItemActionPanel : MonoBehaviour
     /// </summary>
     private string GetTransferTargetName()
     {
-        if (BankPanelUI.Instance != null && BankPanelUI.Instance.gameObject.activeInHierarchy)
+        if (BankPanel.Instance != null && BankPanel.Instance.gameObject.activeInHierarchy)
             return "Banque";
 
         // TODO: Autres containers
@@ -601,7 +601,7 @@ public class ItemActionPanel : MonoBehaviour
         {
             case UniversalSlotUI.SlotContext.PlayerInventory:
                 // Si la banque est ouverte, transferer vers la banque
-                if (BankPanelUI.Instance != null && BankPanelUI.Instance.gameObject.activeInHierarchy)
+                if (BankPanel.Instance != null && BankPanel.Instance.gameObject.activeInHierarchy)
                     return "bank";
                 break;
 
