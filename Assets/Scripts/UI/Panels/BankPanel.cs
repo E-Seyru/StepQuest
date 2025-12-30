@@ -28,9 +28,12 @@ public class BankPanel : MonoBehaviour
     [SerializeField] private Button depositAllButton;
     [SerializeField] private Button withdrawAllButton;
 
-    [Header("UI References - Filter Sidebar")]
-    [SerializeField] private Button filterAllButton;
-    [SerializeField] private Button filterNoneButton;
+    [Header("UI References - Filter Toggle Button")]
+    [SerializeField] private Button filterToggleAllButton;
+    [SerializeField] private TextMeshProUGUI filterToggleButtonText;
+    [SerializeField] private Image filterToggleButtonIcon;
+    [SerializeField] private Sprite showAllIcon;
+    [SerializeField] private Sprite hideAllIcon;
 
     [Header("UI References - Filter Type Buttons")]
     [SerializeField] private Button filterEquipmentButton;
@@ -91,11 +94,8 @@ public class BankPanel : MonoBehaviour
         if (withdrawAllButton != null)
             withdrawAllButton.onClick.AddListener(WithdrawAll);
 
-        if (filterAllButton != null)
-            filterAllButton.onClick.AddListener(ShowAllItems);
-
-        if (filterNoneButton != null)
-            filterNoneButton.onClick.AddListener(ShowNoItems);
+        if (filterToggleAllButton != null)
+            filterToggleAllButton.onClick.AddListener(ToggleShowAll);
 
         // Setup individual filter buttons
         SetupFilterButton(filterEquipmentButton, ItemType.Equipment);
@@ -418,29 +418,27 @@ public class BankPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Show all items (clear filters)
+    /// Toggle between showing all items and hiding all items
     /// </summary>
-    private void ShowAllItems()
+    private void ToggleShowAll()
     {
-        showAllItems = true;
-        activeFilters.Clear();
+        if (showAllItems)
+        {
+            // Currently showing all, switch to hide all
+            showAllItems = false;
+            activeFilters.Clear();
+            Logger.LogInfo("BankPanel: Hiding all items", Logger.LogCategory.InventoryLog);
+        }
+        else
+        {
+            // Currently hiding or filtering, switch to show all
+            showAllItems = true;
+            activeFilters.Clear();
+            Logger.LogInfo("BankPanel: Showing all items", Logger.LogCategory.InventoryLog);
+        }
+
         UpdateFilterVisuals();
         RefreshBankSlots();
-
-        Logger.LogInfo("BankPanel: Showing all items", Logger.LogCategory.InventoryLog);
-    }
-
-    /// <summary>
-    /// Show no items (hide all)
-    /// </summary>
-    private void ShowNoItems()
-    {
-        showAllItems = false;
-        activeFilters.Clear();
-        UpdateFilterVisuals();
-        RefreshBankSlots();
-
-        Logger.LogInfo("BankPanel: Showing no items", Logger.LogCategory.InventoryLog);
     }
 
     /// <summary>
@@ -448,19 +446,49 @@ public class BankPanel : MonoBehaviour
     /// </summary>
     private void UpdateFilterVisuals()
     {
-        // Update All button
-        UpdateButtonVisual(filterAllButton, showAllItems);
-
-        // Update None button
-        UpdateButtonVisual(filterNoneButton, !showAllItems && activeFilters.Count == 0);
+        // Update toggle button icon and text based on current state
+        UpdateToggleButtonVisual();
 
         // Update individual filter buttons
-        UpdateButtonVisual(filterEquipmentButton, activeFilters.Contains(ItemType.Equipment));
-        UpdateButtonVisual(filterMaterialButton, activeFilters.Contains(ItemType.Material));
-        UpdateButtonVisual(filterConsumableButton, activeFilters.Contains(ItemType.Consumable));
-        UpdateButtonVisual(filterToolButton, activeFilters.Contains(ItemType.Usable));
-        UpdateButtonVisual(filterQuestButton, activeFilters.Contains(ItemType.Quest));
-        UpdateButtonVisual(filterMiscButton, activeFilters.Contains(ItemType.Miscellaneous));
+        // When showAllItems is true, all buttons should appear active (enabled)
+        // When showAllItems is false, only buttons in activeFilters should appear active
+        UpdateButtonVisual(filterEquipmentButton, showAllItems || activeFilters.Contains(ItemType.Equipment));
+        UpdateButtonVisual(filterMaterialButton, showAllItems || activeFilters.Contains(ItemType.Material));
+        UpdateButtonVisual(filterConsumableButton, showAllItems || activeFilters.Contains(ItemType.Consumable));
+        UpdateButtonVisual(filterToolButton, showAllItems || activeFilters.Contains(ItemType.Usable));
+        UpdateButtonVisual(filterQuestButton, showAllItems || activeFilters.Contains(ItemType.Quest));
+        UpdateButtonVisual(filterMiscButton, showAllItems || activeFilters.Contains(ItemType.Miscellaneous));
+    }
+
+    /// <summary>
+    /// Update the toggle button's icon and text based on current state
+    /// </summary>
+    private void UpdateToggleButtonVisual()
+    {
+        if (showAllItems)
+        {
+            // Currently showing all - button should show "Hide All" option
+            if (filterToggleButtonIcon != null && hideAllIcon != null)
+            {
+                filterToggleButtonIcon.sprite = hideAllIcon;
+            }
+            if (filterToggleButtonText != null)
+            {
+                filterToggleButtonText.text = "Tout cacher";
+            }
+        }
+        else
+        {
+            // Currently hiding - button should show "Show All" option
+            if (filterToggleButtonIcon != null && showAllIcon != null)
+            {
+                filterToggleButtonIcon.sprite = showAllIcon;
+            }
+            if (filterToggleButtonText != null)
+            {
+                filterToggleButtonText.text = "Tout afficher";
+            }
+        }
     }
 
     /// <summary>
@@ -592,10 +620,7 @@ public class BankPanel : MonoBehaviour
         if (withdrawAllButton != null)
             withdrawAllButton.onClick.RemoveListener(WithdrawAll);
 
-        if (filterAllButton != null)
-            filterAllButton.onClick.RemoveListener(ShowAllItems);
-
-        if (filterNoneButton != null)
-            filterNoneButton.onClick.RemoveListener(ShowNoItems);
+        if (filterToggleAllButton != null)
+            filterToggleAllButton.onClick.RemoveListener(ToggleShowAll);
     }
 }

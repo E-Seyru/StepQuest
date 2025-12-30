@@ -235,16 +235,16 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: GeneratedImageDecember292025-10_29AM 1_2
+      name: parure
       rect:
         serializedVersion: 2
         x: 1719
-        y: 1353
+        y: 1352
         width: 922
         height: 142
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      border: {x: 168, y: 48, z: 167, w: 44}
       customData: 
       outline: []
       physicsShape: []
@@ -811,7 +811,6 @@ TextureImporter:
       GeneratedImageDecember292025-10_29AM 1_17: 1951848074257942196
       GeneratedImageDecember292025-10_29AM 1_18: 1782514385570287157
       GeneratedImageDecember292025-10_29AM 1_19: -1401670937629007248
-      GeneratedImageDecember292025-10_29AM 1_2: 2805278194553258346
       GeneratedImageDecember292025-10_29AM 1_20: 6236679736186337297
       GeneratedImageDecember292025-10_29AM 1_21: -694962398943853002
       GeneratedImageDecember292025-10_29AM 1_22: 1602511332480803171
@@ -825,6 +824,7 @@ TextureImporter:
       GeneratedImageDecember292025-10_29AM 1_8: -4123499396593845483
       GeneratedImageDecember292025-10_29AM 1_9: -2704978114228671472
       MoneyCount: -8016866634115521926
+      parure: 2805278194553258346
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
