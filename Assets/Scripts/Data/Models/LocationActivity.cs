@@ -196,8 +196,8 @@ public class LocationActivity
             return false;
         }
 
-        // Exploration activities don't need variants - they discover content instead of producing resources
-        if (ActivityReference.IsExploration())
+        // Exploration, Bank, and Merchant activities don't need variants
+        if (ActivityReference.IsExploration() || ActivityReference.IsBank() || ActivityReference.IsMerchant())
         {
             return true;
         }

@@ -631,6 +631,7 @@ public class LocationDetailsPanel : MonoBehaviour
 
         if (ExplorationPanelUI.Instance != null)
         {
+            SlideOutActivitiesSection();
             ExplorationPanelUI.Instance.OpenWithLocation(currentLocation, locationActivity);
         }
         else
@@ -646,6 +647,7 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         if (GatheringPanel.Instance != null)
         {
+            SlideOutActivitiesSection();
             GatheringPanel.Instance.OpenWithActivity(locationActivity);
         }
         else
@@ -661,6 +663,7 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         if (CraftingPanel.Instance != null)
         {
+            SlideOutActivitiesSection();
             CraftingPanel.Instance.OpenWithActivity(locationActivity);
         }
         else
@@ -675,6 +678,7 @@ public class LocationDetailsPanel : MonoBehaviour
     private void OpenMerchantPanel(LocationActivity locationActivity)
     {
         // MerchantPanel not yet implemented - log warning
+        // When implemented: SlideOutActivitiesSection();
         Logger.LogWarning($"LocationDetailsPanel: MerchantPanel not yet implemented for {locationActivity.GetDisplayName()}", Logger.LogCategory.General);
     }
 
@@ -685,11 +689,34 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         if (BankPanel.Instance != null)
         {
+            SlideOutActivitiesSection();
             BankPanel.Instance.OpenWithActivity(locationActivity);
         }
         else
         {
             Logger.LogWarning("LocationDetailsPanel: BankPanel introuvable !", Logger.LogCategory.General);
+        }
+    }
+
+    /// <summary>
+    /// Slides the activities section panel out of view
+    /// </summary>
+    private void SlideOutActivitiesSection()
+    {
+        if (activitiesSectionPanel != null)
+        {
+            activitiesSectionPanel.SlideOut();
+        }
+    }
+
+    /// <summary>
+    /// Slides the activities section panel back into view
+    /// </summary>
+    public void SlideInActivitiesSection()
+    {
+        if (activitiesSectionPanel != null)
+        {
+            activitiesSectionPanel.SlideIn();
         }
     }
 

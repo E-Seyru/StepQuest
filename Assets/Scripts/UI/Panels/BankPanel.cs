@@ -1,6 +1,5 @@
 // Purpose: Panel for bank storage activity with player inventory and bank sections
 // Filepath: Assets/Scripts/UI/Panels/BankPanel.cs
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -30,10 +29,16 @@ public class BankPanel : MonoBehaviour
     [SerializeField] private Button withdrawAllButton;
 
     [Header("UI References - Filter Sidebar")]
-    [SerializeField] private Transform filterContainer;
     [SerializeField] private Button filterAllButton;
     [SerializeField] private Button filterNoneButton;
-    [SerializeField] private GameObject filterButtonPrefab;
+
+    [Header("UI References - Filter Type Buttons")]
+    [SerializeField] private Button filterEquipmentButton;
+    [SerializeField] private Button filterMaterialButton;
+    [SerializeField] private Button filterConsumableButton;
+    [SerializeField] private Button filterToolButton;
+    [SerializeField] private Button filterQuestButton;
+    [SerializeField] private Button filterMiscButton;
 
     [Header("UI References - Footer")]
     [SerializeField] private Button leaveButton;
@@ -50,7 +55,6 @@ public class BankPanel : MonoBehaviour
     private InventoryManager inventoryManager;
     private List<UniversalSlotUI> playerSlotUIs = new List<UniversalSlotUI>();
     private List<UniversalSlotUI> bankSlotUIs = new List<UniversalSlotUI>();
-    private List<GameObject> filterButtons = new List<GameObject>();
     private HashSet<ItemType> activeFilters = new HashSet<ItemType>();
     private bool showAllItems = true;
 
@@ -93,8 +97,13 @@ public class BankPanel : MonoBehaviour
         if (filterNoneButton != null)
             filterNoneButton.onClick.AddListener(ShowNoItems);
 
-        // Create filter buttons
-        CreateFilterButtons();
+        // Setup individual filter buttons
+        SetupFilterButton(filterEquipmentButton, ItemType.Equipment);
+        SetupFilterButton(filterMaterialButton, ItemType.Material);
+        SetupFilterButton(filterConsumableButton, ItemType.Consumable);
+        SetupFilterButton(filterToolButton, ItemType.Usable);
+        SetupFilterButton(filterQuestButton, ItemType.Quest);
+        SetupFilterButton(filterMiscButton, ItemType.Miscellaneous);
 
         // Start hidden
         gameObject.SetActive(false);
@@ -131,6 +140,12 @@ public class BankPanel : MonoBehaviour
 
         currentActivity = activity;
 
+        // Ensure we have InventoryManager reference
+        if (inventoryManager == null)
+        {
+            inventoryManager = InventoryManager.Instance;
+        }
+
         // Reset filter state
         showAllItems = true;
         activeFilters.Clear();
@@ -152,6 +167,13 @@ public class BankPanel : MonoBehaviour
     {
         gameObject.SetActive(false);
         ClearSlotUIs();
+
+        // Slide activities section back in
+        if (ActivitiesSectionPanel.Instance != null)
+        {
+            ActivitiesSectionPanel.Instance.SlideIn();
+        }
+
         Logger.LogInfo("BankPanel: Panel closed", Logger.LogCategory.InventoryLog);
     }
 
@@ -177,7 +199,27 @@ public class BankPanel : MonoBehaviour
     {
         ClearSlotUIs();
 
-        if (inventoryManager == null || slotPrefab == null) return;
+        if (inventoryManager == null)
+        {
+            Logger.LogError("BankPanel: InventoryManager is null!", Logger.LogCategory.InventoryLog);
+            return;
+        }
+
+        if (slotPrefab == null)
+        {
+            Logger.LogError("BankPanel: slotPrefab is null! Assign it in inspector.", Logger.LogCategory.InventoryLog);
+            return;
+        }
+
+        if (playerSlotsContainer == null)
+        {
+            Logger.LogError("BankPanel: playerSlotsContainer is null! Assign it in inspector.", Logger.LogCategory.InventoryLog);
+        }
+
+        if (bankSlotsContainer == null)
+        {
+            Logger.LogError("BankPanel: bankSlotsContainer is null! Assign it in inspector.", Logger.LogCategory.InventoryLog);
+        }
 
         // Create player inventory slots
         var playerContainer = inventoryManager.GetContainer(GameConstants.ContainerIdPlayer);
@@ -245,56 +287,13 @@ public class BankPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Create filter buttons for each item type
+    /// Setup a filter button for a specific item type
     /// </summary>
-    private void CreateFilterButtons()
+    private void SetupFilterButton(Button button, ItemType itemType)
     {
-        if (filterContainer == null || filterButtonPrefab == null) return;
+        if (button == null) return;
 
-        // Clear existing filter buttons
-        foreach (var btn in filterButtons)
-        {
-            if (btn != null) Destroy(btn);
-        }
-        filterButtons.Clear();
-
-        // Create button for each item type
-        foreach (ItemType itemType in Enum.GetValues(typeof(ItemType)))
-        {
-            GameObject btnObj = Instantiate(filterButtonPrefab, filterContainer);
-            filterButtons.Add(btnObj);
-
-            // Setup button text
-            TextMeshProUGUI btnText = btnObj.GetComponentInChildren<TextMeshProUGUI>();
-            if (btnText != null)
-            {
-                btnText.text = GetItemTypeDisplayName(itemType);
-            }
-
-            // Setup button click
-            Button btn = btnObj.GetComponent<Button>();
-            if (btn != null)
-            {
-                ItemType capturedType = itemType;
-                btn.onClick.AddListener(() => ToggleFilter(capturedType));
-            }
-        }
-    }
-
-    /// <summary>
-    /// Get display name for item type
-    /// </summary>
-    private string GetItemTypeDisplayName(ItemType itemType)
-    {
-        switch (itemType)
-        {
-            case ItemType.Material: return "Materiaux";
-            case ItemType.Consumable: return "Consommables";
-            case ItemType.Equipment: return "Equipement";
-            case ItemType.Quest: return "Quete";
-            case ItemType.Currency: return "Monnaie";
-            default: return itemType.ToString();
-        }
+        button.onClick.AddListener(() => ToggleFilter(itemType));
     }
 
     #endregion
@@ -450,38 +449,31 @@ public class BankPanel : MonoBehaviour
     private void UpdateFilterVisuals()
     {
         // Update All button
-        if (filterAllButton != null)
-        {
-            var img = filterAllButton.GetComponent<Image>();
-            if (img != null)
-            {
-                img.color = showAllItems ? activeFilterColor : inactiveFilterColor;
-            }
-        }
+        UpdateButtonVisual(filterAllButton, showAllItems);
 
         // Update None button
-        if (filterNoneButton != null)
-        {
-            var img = filterNoneButton.GetComponent<Image>();
-            if (img != null)
-            {
-                img.color = (!showAllItems && activeFilters.Count == 0) ? activeFilterColor : inactiveFilterColor;
-            }
-        }
+        UpdateButtonVisual(filterNoneButton, !showAllItems && activeFilters.Count == 0);
 
-        // Update item type filter buttons
-        var itemTypes = Enum.GetValues(typeof(ItemType)).Cast<ItemType>().ToArray();
-        for (int i = 0; i < filterButtons.Count && i < itemTypes.Length; i++)
-        {
-            var btnObj = filterButtons[i];
-            if (btnObj == null) continue;
+        // Update individual filter buttons
+        UpdateButtonVisual(filterEquipmentButton, activeFilters.Contains(ItemType.Equipment));
+        UpdateButtonVisual(filterMaterialButton, activeFilters.Contains(ItemType.Material));
+        UpdateButtonVisual(filterConsumableButton, activeFilters.Contains(ItemType.Consumable));
+        UpdateButtonVisual(filterToolButton, activeFilters.Contains(ItemType.Usable));
+        UpdateButtonVisual(filterQuestButton, activeFilters.Contains(ItemType.Quest));
+        UpdateButtonVisual(filterMiscButton, activeFilters.Contains(ItemType.Miscellaneous));
+    }
 
-            var img = btnObj.GetComponent<Image>();
-            if (img != null)
-            {
-                bool isActive = activeFilters.Contains(itemTypes[i]);
-                img.color = isActive ? activeFilterColor : inactiveFilterColor;
-            }
+    /// <summary>
+    /// Update a single button's visual state
+    /// </summary>
+    private void UpdateButtonVisual(Button button, bool isActive)
+    {
+        if (button == null) return;
+
+        var img = button.GetComponent<Image>();
+        if (img != null)
+        {
+            img.color = isActive ? activeFilterColor : inactiveFilterColor;
         }
     }
 

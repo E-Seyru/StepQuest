@@ -107,6 +107,13 @@ public class ExplorationPanelUI : MonoBehaviour
     {
         gameObject.SetActive(false);
         ClearInstantiatedItems();
+
+        // Slide activities section back in
+        if (ActivitiesSectionPanel.Instance != null)
+        {
+            ActivitiesSectionPanel.Instance.SlideIn();
+        }
+
         Logger.LogInfo("ExplorationPanelUI: Panel closed", Logger.LogCategory.ActivityLog);
     }
 

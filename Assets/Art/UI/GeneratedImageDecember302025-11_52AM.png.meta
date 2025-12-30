@@ -1,0 +1,470 @@
+fileFormatVersion: 2
+guid: 6ddbd75fb0de42b4e89e7cd1b243fe9d
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -5324502561893876331
+    second: GeneratedImageDecember302025-11_52AM_0
+  - first:
+      213: 8870865243484321777
+    second: GeneratedImageDecember302025-11_52AM_1
+  - first:
+      213: -9139379319257869928
+    second: GeneratedImageDecember302025-11_52AM_2
+  - first:
+      213: 7915625964539006187
+    second: GeneratedImageDecember302025-11_52AM_3
+  - first:
+      213: 692678198436036403
+    second: GeneratedImageDecember302025-11_52AM_4
+  - first:
+      213: 76393406854094151
+    second: GeneratedImageDecember302025-11_52AM_5
+  - first:
+      213: 3974714124615075271
+    second: GeneratedImageDecember302025-11_52AM_6
+  - first:
+      213: 1508863928382814256
+    second: GeneratedImageDecember302025-11_52AM_7
+  - first:
+      213: -7514120153800961189
+    second: GeneratedImageDecember302025-11_52AM_8
+  - first:
+      213: 2201582937624897125
+    second: GeneratedImageDecember302025-11_52AM_9
+  - first:
+      213: -2660921439704300326
+    second: GeneratedImageDecember302025-11_52AM_10
+  - first:
+      213: 903916452248590857
+    second: GeneratedImageDecember302025-11_52AM_11
+  - first:
+      213: 8860876236258115006
+    second: GeneratedImageDecember302025-11_52AM_12
+  - first:
+      213: -3343493363752874518
+    second: GeneratedImageDecember302025-11_52AM_13
+  - first:
+      213: 3281651730392246457
+    second: GeneratedImageDecember302025-11_52AM_14
+  - first:
+      213: -1094447422471601719
+    second: GeneratedImageDecember302025-11_52AM_15
+  - first:
+      213: -7549624522670365228
+    second: GeneratedImageDecember302025-11_52AM_16
+  - first:
+      213: 8013075940501364382
+    second: GeneratedImageDecember302025-11_52AM_17
+  - first:
+      213: 1500226904082494570
+    second: GeneratedImageDecember302025-11_52AM_18
+  - first:
+      213: 6214488293436288283
+    second: GeneratedImageDecember302025-11_52AM_19
+  - first:
+      213: 3332240688743721317
+    second: GeneratedImageDecember302025-11_52AM_20
+  - first:
+      213: -4437110371228679791
+    second: GeneratedImageDecember302025-11_52AM_21
+  - first:
+      213: -621428281654449590
+    second: GeneratedImageDecember302025-11_52AM_22
+  - first:
+      213: 8283510451864000215
+    second: GeneratedImageDecember302025-11_52AM_23
+  - first:
+      213: -3715583077143775240
+    second: GeneratedImageDecember302025-11_52AM_24
+  - first:
+      213: 1310731266002313386
+    second: GeneratedImageDecember302025-11_52AM_25
+  - first:
+      213: -4110752250549020396
+    second: GeneratedImageDecember302025-11_52AM_26
+  - first:
+      213: -8338888328158523552
+    second: GeneratedImageDecember302025-11_52AM_27
+  - first:
+      213: 4267235426003496936
+    second: GeneratedImageDecember302025-11_52AM_28
+  - first:
+      213: 790247146709589922
+    second: GeneratedImageDecember302025-11_52AM_29
+  - first:
+      213: 7212372161220180000
+    second: GeneratedImageDecember302025-11_52AM_30
+  - first:
+      213: 5936847996135536479
+    second: GeneratedImageDecember302025-11_52AM_31
+  - first:
+      213: 8403240247059230692
+    second: GeneratedImageDecember302025-11_52AM_32
+  - first:
+      213: 3172384218655961013
+    second: GeneratedImageDecember302025-11_52AM_33
+  - first:
+      213: 2913106009012736332
+    second: GeneratedImageDecember302025-11_52AM_34
+  - first:
+      213: -8673528621902708027
+    second: GeneratedImageDecember302025-11_52AM_35
+  - first:
+      213: -8869189778692187413
+    second: GeneratedImageDecember302025-11_52AM_36
+  - first:
+      213: -1301509244066142483
+    second: GeneratedImageDecember302025-11_52AM_37
+  - first:
+      213: 2463277677796659511
+    second: GeneratedImageDecember302025-11_52AM_38
+  - first:
+      213: -6336813903182736693
+    second: GeneratedImageDecember302025-11_52AM_39
+  - first:
+      213: -5868725001010863043
+    second: GeneratedImageDecember302025-11_52AM_40
+  - first:
+      213: -2395453951799556902
+    second: GeneratedImageDecember302025-11_52AM_41
+  - first:
+      213: 807705450590627383
+    second: GeneratedImageDecember302025-11_52AM_42
+  - first:
+      213: -6362691712307099537
+    second: GeneratedImageDecember302025-11_52AM_43
+  - first:
+      213: 4232657595980178236
+    second: GeneratedImageDecember302025-11_52AM_44
+  - first:
+      213: -2548731590622058701
+    second: GeneratedImageDecember302025-11_52AM_45
+  - first:
+      213: -4830980517391780471
+    second: GeneratedImageDecember302025-11_52AM_46
+  - first:
+      213: -1651174347083188562
+    second: GeneratedImageDecember302025-11_52AM_47
+  - first:
+      213: 8438637018152707058
+    second: GeneratedImageDecember302025-11_52AM_48
+  - first:
+      213: 732064753056710454
+    second: GeneratedImageDecember302025-11_52AM_49
+  - first:
+      213: -1561282857890081691
+    second: GeneratedImageDecember302025-11_52AM_50
+  - first:
+      213: -1233513048175451664
+    second: GeneratedImageDecember302025-11_52AM_51
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Weapons_Armor
+      rect:
+        serializedVersion: 2
+        x: 65
+        y: 1370
+        width: 600
+        height: 600
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 59d78a061219b16b0800000000000000
+      internalID: -5324502561893876331
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Material
+      rect:
+        serializedVersion: 2
+        x: 730
+        y: 1369
+        width: 600
+        height: 600
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1f7fd3860f4ab1b70800000000000000
+      internalID: 8870865243484321777
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Consumable
+      rect:
+        serializedVersion: 2
+        x: 1381
+        y: 1374
+        width: 553
+        height: 600
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: becc43f30e3f9dd60800000000000000
+      internalID: 7915625964539006187
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Tool
+      rect:
+        serializedVersion: 2
+        x: 100
+        y: 415
+        width: 600
+        height: 600
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5bf2b0c83a2960c20800000000000000
+      internalID: 3172384218655961013
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Quest
+      rect:
+        serializedVersion: 2
+        x: 750
+        y: 411
+        width: 600
+        height: 600
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c41924c1b7e6d6820800000000000000
+      internalID: 2913106009012736332
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GeneratedImageDecember302025-11_52AM_36
+      rect:
+        serializedVersion: 2
+        x: 1520
+        y: 451
+        width: 74
+        height: 54
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bead68323ee4ae480800000000000000
+      internalID: -8869189778692187413
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: d5ddd6a9b393dbb4e992e0578bece4b7
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Consumable: 7915625964539006187
+      GeneratedImageDecember302025-11_52AM_10: -2660921439704300326
+      GeneratedImageDecember302025-11_52AM_11: 903916452248590857
+      GeneratedImageDecember302025-11_52AM_12: 8860876236258115006
+      GeneratedImageDecember302025-11_52AM_13: -3343493363752874518
+      GeneratedImageDecember302025-11_52AM_14: 3281651730392246457
+      GeneratedImageDecember302025-11_52AM_15: -1094447422471601719
+      GeneratedImageDecember302025-11_52AM_16: -7549624522670365228
+      GeneratedImageDecember302025-11_52AM_17: 8013075940501364382
+      GeneratedImageDecember302025-11_52AM_18: 1500226904082494570
+      GeneratedImageDecember302025-11_52AM_19: 6214488293436288283
+      GeneratedImageDecember302025-11_52AM_2: -9139379319257869928
+      GeneratedImageDecember302025-11_52AM_20: 3332240688743721317
+      GeneratedImageDecember302025-11_52AM_21: -4437110371228679791
+      GeneratedImageDecember302025-11_52AM_22: -621428281654449590
+      GeneratedImageDecember302025-11_52AM_23: 8283510451864000215
+      GeneratedImageDecember302025-11_52AM_24: -3715583077143775240
+      GeneratedImageDecember302025-11_52AM_25: 1310731266002313386
+      GeneratedImageDecember302025-11_52AM_26: -4110752250549020396
+      GeneratedImageDecember302025-11_52AM_27: -8338888328158523552
+      GeneratedImageDecember302025-11_52AM_28: 4267235426003496936
+      GeneratedImageDecember302025-11_52AM_29: 790247146709589922
+      GeneratedImageDecember302025-11_52AM_30: 7212372161220180000
+      GeneratedImageDecember302025-11_52AM_31: 5936847996135536479
+      GeneratedImageDecember302025-11_52AM_32: 8403240247059230692
+      GeneratedImageDecember302025-11_52AM_35: -8673528621902708027
+      GeneratedImageDecember302025-11_52AM_36: -8869189778692187413
+      GeneratedImageDecember302025-11_52AM_37: -1301509244066142483
+      GeneratedImageDecember302025-11_52AM_38: 2463277677796659511
+      GeneratedImageDecember302025-11_52AM_39: -6336813903182736693
+      GeneratedImageDecember302025-11_52AM_4: 692678198436036403
+      GeneratedImageDecember302025-11_52AM_40: -5868725001010863043
+      GeneratedImageDecember302025-11_52AM_41: -2395453951799556902
+      GeneratedImageDecember302025-11_52AM_42: 807705450590627383
+      GeneratedImageDecember302025-11_52AM_43: -6362691712307099537
+      GeneratedImageDecember302025-11_52AM_44: 4232657595980178236
+      GeneratedImageDecember302025-11_52AM_45: -2548731590622058701
+      GeneratedImageDecember302025-11_52AM_46: -4830980517391780471
+      GeneratedImageDecember302025-11_52AM_47: -1651174347083188562
+      GeneratedImageDecember302025-11_52AM_48: 8438637018152707058
+      GeneratedImageDecember302025-11_52AM_49: 732064753056710454
+      GeneratedImageDecember302025-11_52AM_5: 76393406854094151
+      GeneratedImageDecember302025-11_52AM_50: -1561282857890081691
+      GeneratedImageDecember302025-11_52AM_51: -1233513048175451664
+      GeneratedImageDecember302025-11_52AM_6: 3974714124615075271
+      GeneratedImageDecember302025-11_52AM_7: 1508863928382814256
+      GeneratedImageDecember302025-11_52AM_8: -7514120153800961189
+      GeneratedImageDecember302025-11_52AM_9: 2201582937624897125
+      Material: 8870865243484321777
+      Quest: 2913106009012736332
+      Tool: 3172384218655961013
+      Weapons_Armor: -5324502561893876331
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

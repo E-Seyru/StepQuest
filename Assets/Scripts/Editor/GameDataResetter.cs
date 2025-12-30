@@ -232,6 +232,18 @@ public class GameDataResetter : EditorWindow
         }
         GUI.backgroundColor = Color.white;
 
+        EditorGUILayout.Space();
+
+        // Debug buttons
+        EditorGUILayout.LabelField(" Actions de debug:", EditorStyles.boldLabel);
+
+        GUI.backgroundColor = Color.green;
+        if (GUILayout.Button(" Remplir l'inventaire avec des items"))
+        {
+            FillInventoryWithItems();
+        }
+        GUI.backgroundColor = Color.white;
+
         GUI.enabled = true;
     }
 
@@ -446,6 +458,59 @@ public class GameDataResetter : EditorWindow
 
         Logger.LogInfo(" Activite arrêtee avec succes !", Logger.LogCategory.EditorLog);
         EditorUtility.DisplayDialog("Activite arrêtee", "L'activite en cours a ete arrêtee.", "OK");
+    }
+
+    private void FillInventoryWithItems()
+    {
+        Logger.LogInfo(" Remplissage de l'inventaire...", Logger.LogCategory.EditorLog);
+
+        var inventoryManager = InventoryManager.Instance;
+        if (inventoryManager == null)
+        {
+            Logger.LogError(" InventoryManager non disponible !", Logger.LogCategory.EditorLog);
+            EditorUtility.DisplayDialog("Erreur", "InventoryManager non disponible !", "OK");
+            return;
+        }
+
+        var itemRegistry = inventoryManager.GetItemRegistry();
+        if (itemRegistry == null)
+        {
+            Logger.LogError(" ItemRegistry non disponible !", Logger.LogCategory.EditorLog);
+            EditorUtility.DisplayDialog("Erreur", "ItemRegistry non disponible !", "OK");
+            return;
+        }
+
+        // Get all items from registry
+        var allItems = itemRegistry.GetAllValidItems();
+        if (allItems == null || allItems.Count == 0)
+        {
+            Logger.LogWarning(" Aucun item trouve dans le registre !", Logger.LogCategory.EditorLog);
+            EditorUtility.DisplayDialog("Attention", "Aucun item trouve dans le registre !", "OK");
+            return;
+        }
+
+        int addedCount = 0;
+        foreach (var item in allItems)
+        {
+            if (item == null || string.IsNullOrEmpty(item.ItemID)) continue;
+
+            // Add random quantity between 5 and 20
+            int quantity = UnityEngine.Random.Range(5, 21);
+            bool success = inventoryManager.AddItem("player", item.ItemID, quantity);
+
+            if (success)
+            {
+                addedCount++;
+                Logger.LogInfo($" Ajoute: {quantity}x {item.GetDisplayName()}", Logger.LogCategory.EditorLog);
+            }
+        }
+
+        // Force save
+        inventoryManager.ForceSave();
+
+        Logger.LogInfo($" Inventaire rempli avec {addedCount} types d'items !", Logger.LogCategory.EditorLog);
+        EditorUtility.DisplayDialog("Inventaire rempli !",
+            $"{addedCount} types d'items ont ete ajoutes a l'inventaire.", "Super !");
     }
 
     private void NotifyManagersOfReset()

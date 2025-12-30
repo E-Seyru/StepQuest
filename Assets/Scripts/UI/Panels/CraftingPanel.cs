@@ -146,6 +146,13 @@ public class CraftingPanel : MonoBehaviour
         ClearVariantCards();
         ClearTabs();
         variantsByCategory.Clear();
+
+        // Slide activities section back in
+        if (ActivitiesSectionPanel.Instance != null)
+        {
+            ActivitiesSectionPanel.Instance.SlideIn();
+        }
+
         Logger.LogInfo("CraftingPanel: Panel closed", Logger.LogCategory.ActivityLog);
     }
 

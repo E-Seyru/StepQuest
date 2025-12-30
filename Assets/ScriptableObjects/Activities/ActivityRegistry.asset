@@ -74,6 +74,16 @@ MonoBehaviour:
     IsHidden: 0
     Rarity: 0
     BonusXPOverride: 0
+  - ActivityReference: {fileID: 11400000, guid: 4fc760abb6227a640984185abdcde12d, type: 2}
+    LocationSpecificName: 
+    LocationDescription: 
+    ActivityVariants: []
+    IsAvailable: 1
+    SpecialRequirements: 
+    LocationSpecificIcon: {fileID: 0}
+    IsHidden: 0
+    Rarity: 0
+    BonusXPOverride: 0
   enableFallbackSearch: 1
   logMissingVariants: 0
   ValidationStatus: "\u2705 Registry is valid! (7 activities)"

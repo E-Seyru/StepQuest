@@ -14,6 +14,10 @@ public class ActivitiesSectionPanel : MonoBehaviour
     [SerializeField] private GameObject primaryActivityCardPrefab; // Le prefab PrimaryActivityCard
     [SerializeField] private TextMeshProUGUI noActivitiesText;
 
+    [Header("Slide Animation Settings")]
+    [SerializeField] private float slideAnimationDuration = 0.3f;
+    [SerializeField] private LeanTweenType slideEaseType = LeanTweenType.easeInOutQuad;
+
     // Pool d'objets pour optimiser les performances
     private Queue<GameObject> activityCardPool = new Queue<GameObject>();
     private List<GameObject> instantiatedActivityCards = new List<GameObject>();
@@ -21,11 +25,43 @@ public class ActivitiesSectionPanel : MonoBehaviour
     // Current data
     private List<ActivityDefinition> currentActivities = new List<ActivityDefinition>();
 
+    // Animation state
+    private RectTransform rectTransform;
+    private float originalYPosition;
+    private float hiddenYPosition;
+    private bool isHidden = false;
+    private int currentTween = -1;
+
+    // Singleton
+    public static ActivitiesSectionPanel Instance { get; private set; }
+
     // Events
     public System.Action<ActivityDefinition> OnActivitySelected;
 
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+    }
+
     void Start()
     {
+        // Get RectTransform and store original position
+        rectTransform = GetComponent<RectTransform>();
+        if (rectTransform != null)
+        {
+            originalYPosition = rectTransform.anchoredPosition.y;
+            // Calculate hidden position (slide down off screen)
+            hiddenYPosition = originalYPosition - rectTransform.rect.height - 100f;
+        }
+
         // Valider les references
         ValidateReferences();
 
@@ -94,6 +130,70 @@ public class ActivitiesSectionPanel : MonoBehaviour
         {
             activitiesSection.SetActive(visible);
         }
+    }
+
+    /// <summary>
+    /// Slide the panel down out of view (when opening an activity)
+    /// </summary>
+    public void SlideOut()
+    {
+        if (rectTransform == null || isHidden) return;
+
+        // Cancel any existing tween
+        if (currentTween >= 0)
+        {
+            LeanTween.cancel(currentTween);
+        }
+
+        isHidden = true;
+
+        currentTween = LeanTween.moveY(rectTransform, hiddenYPosition, slideAnimationDuration)
+            .setEase(slideEaseType)
+            .setOnComplete(() => currentTween = -1)
+            .id;
+
+        Logger.LogInfo("ActivitiesSectionPanel: Sliding out", Logger.LogCategory.ActivityLog);
+    }
+
+    /// <summary>
+    /// Slide the panel back into view (when closing an activity)
+    /// </summary>
+    public void SlideIn()
+    {
+        if (rectTransform == null || !isHidden) return;
+
+        // Cancel any existing tween
+        if (currentTween >= 0)
+        {
+            LeanTween.cancel(currentTween);
+        }
+
+        isHidden = false;
+
+        currentTween = LeanTween.moveY(rectTransform, originalYPosition, slideAnimationDuration)
+            .setEase(slideEaseType)
+            .setOnComplete(() => currentTween = -1)
+            .id;
+
+        Logger.LogInfo("ActivitiesSectionPanel: Sliding in", Logger.LogCategory.ActivityLog);
+    }
+
+    /// <summary>
+    /// Immediately reset to original position (no animation)
+    /// </summary>
+    public void ResetPosition()
+    {
+        if (rectTransform == null) return;
+
+        // Cancel any existing tween
+        if (currentTween >= 0)
+        {
+            LeanTween.cancel(currentTween);
+            currentTween = -1;
+        }
+
+        rectTransform.anchoredPosition = new Vector2(rectTransform.anchoredPosition.x, originalYPosition);
+        isHidden = false;
     }
 
     #endregion

@@ -111,6 +111,13 @@ public class GatheringPanel : MonoBehaviour
     {
         gameObject.SetActive(false);
         ClearVariantCards();
+
+        // Slide activities section back in
+        if (ActivitiesSectionPanel.Instance != null)
+        {
+            ActivitiesSectionPanel.Instance.SlideIn();
+        }
+
         Logger.LogInfo("GatheringPanel: Panel closed", Logger.LogCategory.ActivityLog);
     }
 
