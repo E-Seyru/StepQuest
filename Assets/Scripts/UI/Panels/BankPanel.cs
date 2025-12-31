@@ -150,12 +150,12 @@ public class BankPanel : MonoBehaviour
         showAllItems = true;
         activeFilters.Clear();
 
+        // Activate panel and setup content
+        gameObject.SetActive(true);
         UpdateTitle();
         CreateSlotUIs();
         RefreshDisplay();
         UpdateFilterVisuals();
-
-        gameObject.SetActive(true);
 
         Logger.LogInfo($"BankPanel: Opened for {activity.GetDisplayName()}", Logger.LogCategory.InventoryLog);
     }
@@ -165,7 +165,6 @@ public class BankPanel : MonoBehaviour
     /// </summary>
     public void ClosePanel()
     {
-        gameObject.SetActive(false);
         ClearSlotUIs();
 
         // Slide activities section back in
@@ -173,6 +172,8 @@ public class BankPanel : MonoBehaviour
         {
             ActivitiesSectionPanel.Instance.SlideIn();
         }
+
+        gameObject.SetActive(false);
 
         Logger.LogInfo("BankPanel: Panel closed", Logger.LogCategory.InventoryLog);
     }
