@@ -7,6 +7,20 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
+/// Decoration pair for an activity type
+/// </summary>
+[Serializable]
+public class ActivityDecoration
+{
+    [Tooltip("The activity this decoration is for")]
+    public ActivityDefinition Activity;
+    [Tooltip("Decoration displayed below the cards")]
+    public GameObject DecorationBelow;
+    [Tooltip("Decoration displayed above the cards")]
+    public GameObject DecorationAbove;
+}
+
+/// <summary>
 /// Panel that displays harvesting activity variants in a grid layout.
 /// Used for step-based activities like mining, woodcutting, and fishing.
 /// </summary>
@@ -17,14 +31,19 @@ public class GatheringPanel : MonoBehaviour
     [SerializeField] private ScrollRect scrollView;
     [SerializeField] private Transform cardsContainer;
     [SerializeField] private Button closeButton;
+    [SerializeField] private CanvasGroup backgroundCanvasGroup;
 
     [Header("Card Prefab")]
     [SerializeField] private GameObject harvestingCardPrefab;
+
+    [Header("Decorations")]
+    [SerializeField] private List<ActivityDecoration> activityDecorations = new List<ActivityDecoration>();
 
     [Header("Slide Animation Settings")]
     [SerializeField] private float slideAnimationDuration = 0.3f;
     [SerializeField] private LeanTweenType slideEaseType = LeanTweenType.easeOutBack;
     [SerializeField] private float slideOffset = 500f;
+    [SerializeField] private float backgroundFadeDuration = 0.2f;
 
     // Current state
     private LocationActivity currentActivity;
@@ -34,6 +53,7 @@ public class GatheringPanel : MonoBehaviour
     private RectTransform rectTransform;
     private Vector2 originalPosition;
     private int currentTween = -1;
+    private int backgroundTween = -1;
 
     // Events
     public static event Action<ActivityVariant> OnVariantSelected;
@@ -90,6 +110,7 @@ public class GatheringPanel : MonoBehaviour
 
         currentActivity = activity;
         UpdateTitle();
+        UpdateDecorations();
         PopulateVariantCards();
         gameObject.SetActive(true);
 
@@ -128,6 +149,14 @@ public class GatheringPanel : MonoBehaviour
         // Cancel any existing tween
         CancelCurrentTween();
 
+        // Activate and fade in background immediately
+        if (backgroundCanvasGroup != null)
+        {
+            backgroundCanvasGroup.gameObject.SetActive(true);
+            backgroundCanvasGroup.alpha = 0f;
+            FadeInBackground();
+        }
+
         // Start from below the screen
         rectTransform.anchoredPosition = new Vector2(originalPosition.x, originalPosition.y - slideOffset);
 
@@ -152,7 +181,17 @@ public class GatheringPanel : MonoBehaviour
         // Cancel any existing tween
         CancelCurrentTween();
 
-        // Animate down
+        // Fade out background while sliding out
+        FadeOutBackground(() =>
+        {
+            // Deactivate background when fade is complete
+            if (backgroundCanvasGroup != null)
+            {
+                backgroundCanvasGroup.gameObject.SetActive(false);
+            }
+        });
+
+        // Animate down simultaneously
         float targetY = originalPosition.y - slideOffset;
         currentTween = LeanTween.moveY(rectTransform, targetY, slideAnimationDuration)
             .setEase(LeanTweenType.easeInBack)
@@ -161,6 +200,44 @@ public class GatheringPanel : MonoBehaviour
                 currentTween = -1;
                 // Reset position for next open
                 rectTransform.anchoredPosition = originalPosition;
+                onComplete?.Invoke();
+            })
+            .id;
+    }
+
+    /// <summary>
+    /// Fade in the background
+    /// </summary>
+    private void FadeInBackground()
+    {
+        if (backgroundCanvasGroup == null) return;
+
+        CancelBackgroundTween();
+
+        backgroundTween = LeanTween.alphaCanvas(backgroundCanvasGroup, 1f, backgroundFadeDuration)
+            .setEase(LeanTweenType.easeOutQuad)
+            .setOnComplete(() => backgroundTween = -1)
+            .id;
+    }
+
+    /// <summary>
+    /// Fade out the background
+    /// </summary>
+    private void FadeOutBackground(Action onComplete = null)
+    {
+        if (backgroundCanvasGroup == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        CancelBackgroundTween();
+
+        backgroundTween = LeanTween.alphaCanvas(backgroundCanvasGroup, 0f, backgroundFadeDuration)
+            .setEase(LeanTweenType.easeInQuad)
+            .setOnComplete(() =>
+            {
+                backgroundTween = -1;
                 onComplete?.Invoke();
             })
             .id;
@@ -178,6 +255,18 @@ public class GatheringPanel : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Cancel background tween
+    /// </summary>
+    private void CancelBackgroundTween()
+    {
+        if (backgroundTween >= 0)
+        {
+            LeanTween.cancel(backgroundTween);
+            backgroundTween = -1;
+        }
+    }
+
     #endregion
 
     #region Private Methods
@@ -191,6 +280,40 @@ public class GatheringPanel : MonoBehaviour
         {
             titleText.text = currentActivity.GetDisplayName();
         }
+    }
+
+    /// <summary>
+    /// Update decorations based on current activity
+    /// </summary>
+    private void UpdateDecorations()
+    {
+        if (currentActivity == null) return;
+
+        // Hide all decorations first
+        foreach (var decoration in activityDecorations)
+        {
+            if (decoration.DecorationBelow != null)
+                decoration.DecorationBelow.SetActive(false);
+            if (decoration.DecorationAbove != null)
+                decoration.DecorationAbove.SetActive(false);
+        }
+
+        // Show decorations for current activity
+        foreach (var decoration in activityDecorations)
+        {
+            if (decoration.Activity != null && decoration.Activity == currentActivity.ActivityReference)
+            {
+                if (decoration.DecorationBelow != null)
+                    decoration.DecorationBelow.SetActive(true);
+                if (decoration.DecorationAbove != null)
+                    decoration.DecorationAbove.SetActive(true);
+
+                Logger.LogInfo($"GatheringPanel: Showing decorations for {decoration.Activity.GetDisplayName()}", Logger.LogCategory.ActivityLog);
+                return;
+            }
+        }
+
+        Logger.LogInfo($"GatheringPanel: No decorations found for {currentActivity.GetDisplayName()}", Logger.LogCategory.ActivityLog);
     }
 
     /// <summary>
@@ -323,6 +446,7 @@ public class GatheringPanel : MonoBehaviour
     void OnDestroy()
     {
         CancelCurrentTween();
+        CancelBackgroundTween();
         ClearVariantCards();
 
         if (closeButton != null)
