@@ -102,10 +102,17 @@ public class HarvestingActivityCard : MonoBehaviour
     /// </summary>
     private void SetupBasicInfo()
     {
-        // Title
+        // Title - show resource name instead of activity name
         if (titleText != null)
         {
-            titleText.text = activityVariant.GetDisplayName();
+            if (activityVariant.PrimaryResource != null)
+            {
+                titleText.text = activityVariant.PrimaryResource.GetDisplayName();
+            }
+            else
+            {
+                titleText.text = activityVariant.GetDisplayName();
+            }
         }
 
         // Icon
@@ -124,7 +131,7 @@ public class HarvestingActivityCard : MonoBehaviour
         if (levelRequiredText != null)
         {
             int level = activityVariant.UnlockRequirement > 0 ? activityVariant.UnlockRequirement : 1;
-            levelRequiredText.text = $"Lvl : {level}";
+            levelRequiredText.text = $"Niv : {level}";
         }
 
         // Steps requirement
@@ -132,7 +139,7 @@ public class HarvestingActivityCard : MonoBehaviour
         {
             if (activityVariant.ActionCost > 0)
             {
-                stepsRequiredText.text = $"{activityVariant.ActionCost} pas";
+                stepsRequiredText.text = $"{activityVariant.ActionCost}";
             }
             else
             {

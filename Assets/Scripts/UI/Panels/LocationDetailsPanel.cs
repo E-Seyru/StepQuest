@@ -631,7 +631,6 @@ public class LocationDetailsPanel : MonoBehaviour
 
         if (ExplorationPanelUI.Instance != null)
         {
-            SlideOutActivitiesSection();
             ExplorationPanelUI.Instance.OpenWithLocation(currentLocation, locationActivity);
         }
         else
@@ -647,7 +646,6 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         if (GatheringPanel.Instance != null)
         {
-            SlideOutActivitiesSection();
             GatheringPanel.Instance.OpenWithActivity(locationActivity);
         }
         else
@@ -663,7 +661,6 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         if (CraftingPanel.Instance != null)
         {
-            SlideOutActivitiesSection();
             CraftingPanel.Instance.OpenWithActivity(locationActivity);
         }
         else

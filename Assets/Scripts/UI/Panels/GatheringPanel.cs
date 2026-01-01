@@ -21,9 +21,19 @@ public class GatheringPanel : MonoBehaviour
     [Header("Card Prefab")]
     [SerializeField] private GameObject harvestingCardPrefab;
 
+    [Header("Slide Animation Settings")]
+    [SerializeField] private float slideAnimationDuration = 0.3f;
+    [SerializeField] private LeanTweenType slideEaseType = LeanTweenType.easeOutBack;
+    [SerializeField] private float slideOffset = 500f;
+
     // Current state
     private LocationActivity currentActivity;
     private List<GameObject> instantiatedCards = new List<GameObject>();
+
+    // Animation state
+    private RectTransform rectTransform;
+    private Vector2 originalPosition;
+    private int currentTween = -1;
 
     // Events
     public static event Action<ActivityVariant> OnVariantSelected;
@@ -42,6 +52,9 @@ public class GatheringPanel : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+
+        // Cache RectTransform
+        rectTransform = GetComponent<RectTransform>();
     }
 
     void Start()
@@ -52,35 +65,14 @@ public class GatheringPanel : MonoBehaviour
             closeButton.onClick.AddListener(ClosePanel);
         }
 
-        // Setup grid layout for cards container
-        SetupGridLayout();
+        // Store original position
+        if (rectTransform != null)
+        {
+            originalPosition = rectTransform.anchoredPosition;
+        }
 
         // Start hidden
         gameObject.SetActive(false);
-    }
-
-    /// <summary>
-    /// Setup the grid layout for the cards container
-    /// </summary>
-    private void SetupGridLayout()
-    {
-        if (cardsContainer == null) return;
-
-        // Add GridLayoutGroup if not present
-        GridLayoutGroup gridLayout = cardsContainer.GetComponent<GridLayoutGroup>();
-        if (gridLayout == null)
-        {
-            gridLayout = cardsContainer.gameObject.AddComponent<GridLayoutGroup>();
-        }
-
-        // Configure grid layout
-        gridLayout.childAlignment = TextAnchor.UpperCenter;
-        gridLayout.constraint = GridLayoutGroup.Constraint.Flexible;
-        gridLayout.spacing = new Vector2(30f, 30f);
-        gridLayout.padding = new RectOffset(30, 30, 30, 30);
-        gridLayout.cellSize = new Vector2(200f, 280f);
-
-        Logger.LogInfo("GatheringPanel: Grid layout configured", Logger.LogCategory.ActivityLog);
     }
 
     #region Public Methods
@@ -101,6 +93,9 @@ public class GatheringPanel : MonoBehaviour
         PopulateVariantCards();
         gameObject.SetActive(true);
 
+        // Animate slide in from bottom
+        AnimateSlideIn();
+
         Logger.LogInfo($"GatheringPanel: Opened for {activity.GetDisplayName()}", Logger.LogCategory.ActivityLog);
     }
 
@@ -109,16 +104,78 @@ public class GatheringPanel : MonoBehaviour
     /// </summary>
     public void ClosePanel()
     {
-        gameObject.SetActive(false);
-        ClearVariantCards();
-
-        // Slide activities section back in
-        if (ActivitiesSectionPanel.Instance != null)
+        // Animate slide out then deactivate
+        AnimateSlideOut(() =>
         {
-            ActivitiesSectionPanel.Instance.SlideIn();
-        }
+            gameObject.SetActive(false);
+            ClearVariantCards();
+        });
 
         Logger.LogInfo("GatheringPanel: Panel closed", Logger.LogCategory.ActivityLog);
+    }
+
+    #endregion
+
+    #region Animation Methods
+
+    /// <summary>
+    /// Animate panel sliding in from bottom
+    /// </summary>
+    private void AnimateSlideIn()
+    {
+        if (rectTransform == null) return;
+
+        // Cancel any existing tween
+        CancelCurrentTween();
+
+        // Start from below the screen
+        rectTransform.anchoredPosition = new Vector2(originalPosition.x, originalPosition.y - slideOffset);
+
+        // Animate to original position
+        currentTween = LeanTween.moveY(rectTransform, originalPosition.y, slideAnimationDuration)
+            .setEase(slideEaseType)
+            .setOnComplete(() => currentTween = -1)
+            .id;
+    }
+
+    /// <summary>
+    /// Animate panel sliding out to bottom
+    /// </summary>
+    private void AnimateSlideOut(Action onComplete = null)
+    {
+        if (rectTransform == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        // Cancel any existing tween
+        CancelCurrentTween();
+
+        // Animate down
+        float targetY = originalPosition.y - slideOffset;
+        currentTween = LeanTween.moveY(rectTransform, targetY, slideAnimationDuration)
+            .setEase(LeanTweenType.easeInBack)
+            .setOnComplete(() =>
+            {
+                currentTween = -1;
+                // Reset position for next open
+                rectTransform.anchoredPosition = originalPosition;
+                onComplete?.Invoke();
+            })
+            .id;
+    }
+
+    /// <summary>
+    /// Cancel any running tween
+    /// </summary>
+    private void CancelCurrentTween()
+    {
+        if (currentTween >= 0)
+        {
+            LeanTween.cancel(currentTween);
+            currentTween = -1;
+        }
     }
 
     #endregion
@@ -265,6 +322,7 @@ public class GatheringPanel : MonoBehaviour
 
     void OnDestroy()
     {
+        CancelCurrentTween();
         ClearVariantCards();
 
         if (closeButton != null)
