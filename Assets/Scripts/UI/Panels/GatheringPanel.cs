@@ -1,5 +1,6 @@
 // Purpose: Panel for step-based harvesting activities (mining, woodcutting, fishing)
 // Filepath: Assets/Scripts/UI/Panels/GatheringPanel.cs
+using ActivityEvents;
 using System;
 using System.Collections.Generic;
 using TMPro;
@@ -44,6 +45,7 @@ public class GatheringPanel : MonoBehaviour
     [SerializeField] private LeanTweenType slideEaseType = LeanTweenType.easeOutBack;
     [SerializeField] private float slideOffset = 500f;
     [SerializeField] private float backgroundFadeDuration = 0.2f;
+    [SerializeField] private float fadeOutDuration = 0.15f;
 
     // Current state
     private LocationActivity currentActivity;
@@ -54,6 +56,8 @@ public class GatheringPanel : MonoBehaviour
     private Vector2 originalPosition;
     private int currentTween = -1;
     private int backgroundTween = -1;
+    private int panelFadeTween = -1;
+    private CanvasGroup panelCanvasGroup;
 
     // Events
     public static event Action<ActivityVariant> OnVariantSelected;
@@ -90,6 +94,16 @@ public class GatheringPanel : MonoBehaviour
         {
             originalPosition = rectTransform.anchoredPosition;
         }
+
+        // Get or add CanvasGroup for fade animations
+        panelCanvasGroup = GetComponent<CanvasGroup>();
+        if (panelCanvasGroup == null)
+        {
+            panelCanvasGroup = gameObject.AddComponent<CanvasGroup>();
+        }
+
+        // Subscribe to activity events - fade out when activity starts
+        EventBus.Subscribe<ActivityStartedEvent>(OnActivityStarted);
 
         // Start hidden
         gameObject.SetActive(false);
@@ -407,22 +421,23 @@ public class GatheringPanel : MonoBehaviour
             if (success)
             {
                 Logger.LogInfo($"Successfully started harvesting activity: {variant.GetDisplayName()}", Logger.LogCategory.ActivityLog);
+                // Panel will be closed via ActivityStartedEvent -> FadeOutAndClose()
             }
             else
             {
                 Logger.LogWarning($"Failed to start harvesting activity: {variant.GetDisplayName()}", Logger.LogCategory.ActivityLog);
+                // Close panel with slide animation if activity failed to start
+                ClosePanel();
             }
         }
         else
         {
             Logger.LogError($"GatheringPanel: ActivityManager.Instance is null: {ActivityManager.Instance == null}, currentActivity is null: {currentActivity == null}", Logger.LogCategory.ActivityLog);
+            ClosePanel();
         }
 
         // Notify listeners
         OnVariantSelected?.Invoke(variant);
-
-        // Close panel
-        ClosePanel();
     }
 
     /// <summary>
@@ -449,11 +464,103 @@ public class GatheringPanel : MonoBehaviour
 
     #endregion
 
+    #region Activity Event Handlers
+
+    /// <summary>
+    /// Called when an activity starts - fade out immediately
+    /// </summary>
+    private void OnActivityStarted(ActivityStartedEvent eventData)
+    {
+        if (!gameObject.activeInHierarchy) return;
+
+        FadeOutAndClose();
+    }
+
+    /// <summary>
+    /// Fade out the panel (no movement, just alpha fade)
+    /// </summary>
+    private void FadeOutAndClose()
+    {
+        // Cancel any existing tweens (including slide animations)
+        CancelCurrentTween();
+        CancelBackgroundTween();
+        CancelPanelFadeTween();
+
+        // Stop any position movement immediately - freeze in place
+        if (rectTransform != null)
+        {
+            LeanTween.cancel(rectTransform);
+        }
+
+        // Fade out background
+        if (backgroundCanvasGroup != null)
+        {
+            backgroundTween = LeanTween.alphaCanvas(backgroundCanvasGroup, 0f, fadeOutDuration)
+                .setEase(LeanTweenType.easeOutQuad)
+                .setOnComplete(() =>
+                {
+                    backgroundTween = -1;
+                    if (backgroundCanvasGroup != null)
+                    {
+                        backgroundCanvasGroup.alpha = 1f;
+                        backgroundCanvasGroup.gameObject.SetActive(false);
+                    }
+                })
+                .id;
+        }
+
+        // Fade out panel (alpha only, no movement)
+        if (panelCanvasGroup != null)
+        {
+            panelFadeTween = LeanTween.alphaCanvas(panelCanvasGroup, 0f, fadeOutDuration)
+                .setEase(LeanTweenType.easeOutQuad)
+                .setOnComplete(() =>
+                {
+                    panelFadeTween = -1;
+                    // Reset alpha and position, then deactivate
+                    if (panelCanvasGroup != null)
+                        panelCanvasGroup.alpha = 1f;
+                    if (rectTransform != null)
+                        rectTransform.anchoredPosition = originalPosition;
+                    gameObject.SetActive(false);
+                    ClearVariantCards();
+                })
+                .id;
+        }
+        else
+        {
+            if (rectTransform != null)
+                rectTransform.anchoredPosition = originalPosition;
+            gameObject.SetActive(false);
+            ClearVariantCards();
+        }
+
+        Logger.LogInfo("GatheringPanel: Fading out after activity started", Logger.LogCategory.ActivityLog);
+    }
+
+    /// <summary>
+    /// Cancel panel fade tween
+    /// </summary>
+    private void CancelPanelFadeTween()
+    {
+        if (panelFadeTween >= 0)
+        {
+            LeanTween.cancel(panelFadeTween);
+            panelFadeTween = -1;
+        }
+    }
+
+    #endregion
+
     void OnDestroy()
     {
         CancelCurrentTween();
         CancelBackgroundTween();
+        CancelPanelFadeTween();
         ClearVariantCards();
+
+        // Unsubscribe from events
+        EventBus.Unsubscribe<ActivityStartedEvent>(OnActivityStarted);
 
         if (closeButton != null)
         {

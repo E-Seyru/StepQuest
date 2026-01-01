@@ -1,5 +1,6 @@
 // Purpose: Panel for time-based crafting activities with optional category tabs
 // Filepath: Assets/Scripts/UI/Panels/CraftingPanel.cs
+using ActivityEvents;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,12 +29,19 @@ public class CraftingPanel : MonoBehaviour
     [Header("Card Prefab")]
     [SerializeField] private GameObject craftingCardPrefab;
 
+    [Header("Fade Animation")]
+    [SerializeField] private float fadeOutDuration = 0.15f;
+
     // Current state
     private LocationActivity currentActivity;
     private List<GameObject> instantiatedCards = new List<GameObject>();
     private List<GameObject> instantiatedTabs = new List<GameObject>();
     private Dictionary<string, List<ActivityVariant>> variantsByCategory = new Dictionary<string, List<ActivityVariant>>();
     private string currentCategory = null; // null means show all
+
+    // Animation state
+    private CanvasGroup panelCanvasGroup;
+    private int panelFadeTween = -1;
 
     // Events
     public static event Action<ActivityVariant> OnVariantSelected;
@@ -64,6 +72,16 @@ public class CraftingPanel : MonoBehaviour
 
         // Setup grid layout for cards container
         SetupGridLayout();
+
+        // Get or add CanvasGroup for fade animations
+        panelCanvasGroup = GetComponent<CanvasGroup>();
+        if (panelCanvasGroup == null)
+        {
+            panelCanvasGroup = gameObject.AddComponent<CanvasGroup>();
+        }
+
+        // Subscribe to activity events - fade out when activity starts
+        EventBus.Subscribe<ActivityStartedEvent>(OnActivityStarted);
 
         // Start hidden
         gameObject.SetActive(false);
@@ -396,18 +414,22 @@ public class CraftingPanel : MonoBehaviour
             if (success)
             {
                 Logger.LogInfo($"Successfully started crafting activity: {variant.GetDisplayName()}", Logger.LogCategory.ActivityLog);
+                // Panel will be closed via ActivityStartedEvent -> FadeOutAndClose()
             }
             else
             {
                 Logger.LogWarning($"Failed to start crafting activity: {variant.GetDisplayName()}", Logger.LogCategory.ActivityLog);
+                // Close panel if activity failed to start
+                ClosePanel();
             }
+        }
+        else
+        {
+            ClosePanel();
         }
 
         // Notify listeners
         OnVariantSelected?.Invoke(variant);
-
-        // Close panel
-        ClosePanel();
     }
 
     /// <summary>
@@ -482,10 +504,73 @@ public class CraftingPanel : MonoBehaviour
 
     #endregion
 
+    #region Activity Event Handlers
+
+    /// <summary>
+    /// Called when an activity starts - fade out immediately
+    /// </summary>
+    private void OnActivityStarted(ActivityStartedEvent eventData)
+    {
+        if (!gameObject.activeInHierarchy) return;
+
+        FadeOutAndClose();
+    }
+
+    /// <summary>
+    /// Fade out the entire panel and close it
+    /// </summary>
+    private void FadeOutAndClose()
+    {
+        CancelPanelFadeTween();
+
+        if (panelCanvasGroup != null)
+        {
+            panelFadeTween = LeanTween.alphaCanvas(panelCanvasGroup, 0f, fadeOutDuration)
+                .setEase(LeanTweenType.easeOutQuad)
+                .setOnComplete(() =>
+                {
+                    panelFadeTween = -1;
+                    // Reset and deactivate
+                    if (panelCanvasGroup != null)
+                        panelCanvasGroup.alpha = 1f;
+                    gameObject.SetActive(false);
+                    ClearVariantCards();
+                    ClearTabs();
+                })
+                .id;
+        }
+        else
+        {
+            gameObject.SetActive(false);
+            ClearVariantCards();
+            ClearTabs();
+        }
+
+        Logger.LogInfo("CraftingPanel: Fading out after activity started", Logger.LogCategory.ActivityLog);
+    }
+
+    /// <summary>
+    /// Cancel panel fade tween
+    /// </summary>
+    private void CancelPanelFadeTween()
+    {
+        if (panelFadeTween >= 0)
+        {
+            LeanTween.cancel(panelFadeTween);
+            panelFadeTween = -1;
+        }
+    }
+
+    #endregion
+
     void OnDestroy()
     {
+        CancelPanelFadeTween();
         ClearVariantCards();
         ClearTabs();
+
+        // Unsubscribe from events
+        EventBus.Unsubscribe<ActivityStartedEvent>(OnActivityStarted);
 
         if (closeButton != null)
         {
