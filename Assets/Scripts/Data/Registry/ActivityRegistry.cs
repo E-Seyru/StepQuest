@@ -11,6 +11,10 @@ public class ActivityRegistry : ScriptableObject
     [Tooltip("Drag all your LocationActivity assets here")]
     public List<LocationActivity> AllActivities = new List<LocationActivity>();
 
+    [Header("Location Registry Reference")]
+    [Tooltip("Reference to LocationRegistry to also index location-specific variants")]
+    [SerializeField] private LocationRegistry locationRegistry;
+
     [Header("Robustness Settings")]
     [SerializeField] private bool enableFallbackSearch = true;
     [SerializeField] private bool logMissingVariants = false; // Desactive par defaut pour eviter le spam
@@ -163,6 +167,7 @@ public class ActivityRegistry : ScriptableObject
 
     /// <summary>
     /// Initialize lookup cache - ROBUST VERSION qui ignore les nulls silencieusement
+    /// Also indexes variants from all locations via LocationRegistry
     /// </summary>
     private void InitializeLookupCache()
     {
@@ -171,36 +176,69 @@ public class ActivityRegistry : ScriptableObject
         activityLookup = new Dictionary<string, LocationActivity>();
         variantLookup = new Dictionary<string, ActivityVariant>();
 
-        if (AllActivities == null) return;
-
-        foreach (var activity in AllActivities.Where(a => a?.ActivityReference != null))
+        // Index variants from AllActivities (legacy support)
+        if (AllActivities != null)
         {
-            var activityRef = activity.ActivityReference;
-
-            // Add to activity lookup
-            if (!string.IsNullOrEmpty(activityRef.ActivityID))
+            foreach (var activity in AllActivities.Where(a => a?.ActivityReference != null))
             {
-                if (!activityLookup.ContainsKey(activityRef.ActivityID))
+                IndexLocationActivity(activity);
+            }
+        }
+
+        // IMPORTANT: Also index variants from all locations in LocationRegistry
+        // This ensures location-specific variants are findable
+        if (locationRegistry != null && locationRegistry.AllLocations != null)
+        {
+            foreach (var location in locationRegistry.AllLocations.Where(l => l != null))
+            {
+                if (location.AvailableActivities != null)
                 {
-                    activityLookup[activityRef.ActivityID] = activity;
+                    foreach (var activity in location.AvailableActivities.Where(a => a?.ActivityReference != null))
+                    {
+                        IndexLocationActivity(activity);
+                    }
                 }
             }
+            Logger.LogInfo($"ActivityRegistry: Cache initialized with {activityLookup.Count} activities and {variantLookup.Count} variants (including location-specific)", Logger.LogCategory.ActivityLog);
+        }
+        else
+        {
+            Logger.LogWarning("ActivityRegistry: LocationRegistry not assigned - location-specific variants will not be indexed!", Logger.LogCategory.ActivityLog);
+        }
+    }
 
-            // Add variants to lookup - IGNORE silencieusement les nulls
-            if (activity.ActivityVariants != null)
+    /// <summary>
+    /// Index a LocationActivity and its variants into the cache
+    /// </summary>
+    private void IndexLocationActivity(LocationActivity activity)
+    {
+        if (activity?.ActivityReference == null) return;
+
+        var activityRef = activity.ActivityReference;
+
+        // Add to activity lookup
+        if (!string.IsNullOrEmpty(activityRef.ActivityID))
+        {
+            if (!activityLookup.ContainsKey(activityRef.ActivityID))
             {
-                foreach (var variant in activity.ActivityVariants.Where(v => v != null))
-                {
-                    if (!string.IsNullOrEmpty(variant.VariantName))
-                    {
-                        // Use variant name as ID (normalized)
-                        string variantId = variant.VariantName.ToLower().Replace(" ", "_");
-                        string lookupKey = $"{activityRef.ActivityID}_{variantId}";
+                activityLookup[activityRef.ActivityID] = activity;
+            }
+        }
 
-                        if (!variantLookup.ContainsKey(lookupKey))
-                        {
-                            variantLookup[lookupKey] = variant;
-                        }
+        // Add variants to lookup - IGNORE silencieusement les nulls
+        if (activity.ActivityVariants != null)
+        {
+            foreach (var variant in activity.ActivityVariants.Where(v => v != null))
+            {
+                if (!string.IsNullOrEmpty(variant.VariantName))
+                {
+                    // Use variant name as ID (normalized) - use GenerateVariantId for consistency
+                    string variantId = GenerateVariantId(variant.VariantName);
+                    string lookupKey = $"{activityRef.ActivityID}_{variantId}";
+
+                    if (!variantLookup.ContainsKey(lookupKey))
+                    {
+                        variantLookup[lookupKey] = variant;
                     }
                 }
             }

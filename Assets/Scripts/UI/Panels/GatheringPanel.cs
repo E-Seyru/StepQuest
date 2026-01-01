@@ -400,6 +400,8 @@ public class GatheringPanel : MonoBehaviour
             string activityId = currentActivity.ActivityId;
             string variantId = ActivityRegistry.GenerateVariantId(variant.VariantName);
 
+            Logger.LogInfo($"GatheringPanel: Starting activity with activityId='{activityId}', variantId='{variantId}'", Logger.LogCategory.ActivityLog);
+
             bool success = ActivityManager.Instance.StartActivity(activityId, variantId);
 
             if (success)
@@ -410,6 +412,10 @@ public class GatheringPanel : MonoBehaviour
             {
                 Logger.LogWarning($"Failed to start harvesting activity: {variant.GetDisplayName()}", Logger.LogCategory.ActivityLog);
             }
+        }
+        else
+        {
+            Logger.LogError($"GatheringPanel: ActivityManager.Instance is null: {ActivityManager.Instance == null}, currentActivity is null: {currentActivity == null}", Logger.LogCategory.ActivityLog);
         }
 
         // Notify listeners

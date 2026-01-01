@@ -1,5 +1,6 @@
 // Purpose: Panel section for displaying primary activities in a grid layout
 // Filepath: Assets/Scripts/UI/Panels/ActivitiesSectionPanel.cs
+using ActivityEvents;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -73,6 +74,10 @@ public class ActivitiesSectionPanel : MonoBehaviour
         {
             noActivitiesText.gameObject.SetActive(false);
         }
+
+        // Subscribe to activity events to auto-hide when activity starts
+        EventBus.Subscribe<ActivityStartedEvent>(OnActivityStarted);
+        EventBus.Subscribe<ActivityStoppedEvent>(OnActivityStopped);
     }
 
     #region Public Methods
@@ -384,10 +389,34 @@ public class ActivitiesSectionPanel : MonoBehaviour
 
     #endregion
 
+    #region Activity Event Handlers
+
+    /// <summary>
+    /// Called when an activity starts - slide out to hide
+    /// </summary>
+    private void OnActivityStarted(ActivityStartedEvent eventData)
+    {
+        SlideOut();
+    }
+
+    /// <summary>
+    /// Called when an activity stops - slide back in
+    /// </summary>
+    private void OnActivityStopped(ActivityStoppedEvent eventData)
+    {
+        SlideIn();
+    }
+
+    #endregion
+
     #region Unity Events
 
     void OnDestroy()
     {
+        // Unsubscribe from activity events
+        EventBus.Unsubscribe<ActivityStartedEvent>(OnActivityStarted);
+        EventBus.Unsubscribe<ActivityStoppedEvent>(OnActivityStopped);
+
         // Nettoyer tous les evenements pour eviter les fuites memoire
         foreach (var card in instantiatedActivityCards)
         {
