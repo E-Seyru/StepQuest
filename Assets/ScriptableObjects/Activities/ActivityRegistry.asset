@@ -84,6 +84,7 @@ MonoBehaviour:
     IsHidden: 0
     Rarity: 0
     BonusXPOverride: 0
+  locationRegistry: {fileID: 11400000, guid: 23e4b64ed9c11514e9eea83cc31309c1, type: 2}
   enableFallbackSearch: 1
   logMissingVariants: 0
   ValidationStatus: "\u2705 Registry is valid! (7 activities)"
