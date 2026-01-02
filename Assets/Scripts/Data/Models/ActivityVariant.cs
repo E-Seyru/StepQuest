@@ -67,14 +67,18 @@ public class ActivityVariant : ScriptableObject
 
     /// <summary>
     /// Obtenir l'ID de la competence principale base sur ParentActivityID si MainSkillId n'est pas defini
+    /// Normalise en minuscules pour correspondre aux ActivityID
     /// </summary>
     public string GetMainSkillId()
     {
         if (!string.IsNullOrEmpty(MainSkillId))
-            return MainSkillId;
+            return MainSkillId.ToLower();
 
         // Fallback sur ParentActivityID si MainSkillId n'est pas defini
-        return !string.IsNullOrEmpty(ParentActivityID) ? ParentActivityID : "Unknown";
+        if (!string.IsNullOrEmpty(ParentActivityID))
+            return ParentActivityID.ToLower();
+
+        return "unknown";
     }
 
     /// <summary>
@@ -344,8 +348,8 @@ public class ActivityVariant : ScriptableObject
             if (folderName == "ActivitiesVariant" || folderName == "Activities" || folderName == "ScriptableObjects")
                 continue;
 
-            // MODIFIE: Garder exactement le nom du dossier sans transformation
-            ParentActivityID = folderName;
+            // Normaliser en minuscules pour correspondre aux ActivityID (qui sont en snake_case minuscules)
+            ParentActivityID = folderName.ToLower();
             break;
         }
 

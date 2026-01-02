@@ -22,7 +22,7 @@ public class IconContainer : MonoBehaviour
     [Header("Visual Settings")]
     [SerializeField] private Color maxLevelColor = Color.yellow;
     [SerializeField] private Sprite defaultIcon;
-    [SerializeField] private Sprite unknownActivityIcon; // NOUVEAU : Icône "?" pour activites non decouvertes
+    [SerializeField] private Sprite unknownActivityIcon; // NOUVEAU : Icï¿½ne "?" pour activites non decouvertes
 
     // Data
     private ActivityDefinition activityDefinition;
@@ -75,7 +75,7 @@ public class IconContainer : MonoBehaviour
     #region Public Methods
 
     /// <summary>
-    /// Initialiser l'icône avec une ActivityDefinition
+    /// Initialiser l'icï¿½ne avec une ActivityDefinition
     /// </summary>
     public void Initialize(ActivityDefinition activity)
     {
@@ -95,17 +95,32 @@ public class IconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Actualiser l'affichage (niveau, progression, icône)
+    /// Actualiser l'affichage (niveau, progression, icï¿½ne)
     /// </summary>
     public void RefreshDisplay()
     {
-        if (string.IsNullOrEmpty(mainSkillId) || XpManager.Instance == null)
+        if (string.IsNullOrEmpty(mainSkillId))
+        {
+            Logger.LogWarning($"IconContainer.RefreshDisplay: mainSkillId is empty for {gameObject.name}", Logger.LogCategory.General);
             return;
+        }
+
+        if (XpManager.Instance == null)
+        {
+            Logger.LogWarning($"IconContainer.RefreshDisplay: XpManager.Instance is null", Logger.LogCategory.General);
+            return;
+        }
 
         // Obtenir les donnees de competence actuelles
         var skillData = XpManager.Instance.GetPlayerSkill(mainSkillId);
 
-        // NOUVEAU : Mettre a jour l'icône en cas de decouverte
+        // Debug: Log skill data changes
+        if (skillData.Level != lastLevel || !Mathf.Approximately(GetProgressToNextLevel(skillData), lastProgressValue))
+        {
+            Logger.LogInfo($"IconContainer: {mainSkillId} - Level {skillData.Level}, XP {skillData.Experience}, Progress {GetProgressToNextLevel(skillData):P0}", Logger.LogCategory.General);
+        }
+
+        // NOUVEAU : Mettre a jour l'icï¿½ne en cas de decouverte
         UpdateIconDisplay();
 
         // Mettre a jour le niveau
@@ -181,7 +196,7 @@ public class IconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Gestion du clic sur l'icône d'activite
+    /// Gestion du clic sur l'icï¿½ne d'activite
     /// </summary>
     private void OnIconClicked()
     {
@@ -203,7 +218,7 @@ public class IconContainer : MonoBehaviour
     {
         if (activityDefinition == null) return;
 
-        // Configurer l'icône principale
+        // Configurer l'icï¿½ne principale
         if (skillIcon != null)
         {
             // MODIFIe : Verifier si l'activite a ete decouverte
@@ -261,7 +276,7 @@ public class IconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Obtenir l'icône a afficher (normale ou "?" si pas decouverte)
+    /// Obtenir l'icï¿½ne a afficher (normale ou "?" si pas decouverte)
     /// </summary>
     private Sprite GetDisplayIcon()
     {
@@ -271,7 +286,7 @@ public class IconContainer : MonoBehaviour
             return unknownActivityIcon; // Afficher le "?"
         }
 
-        // Activite decouverte : afficher l'icône normale
+        // Activite decouverte : afficher l'icï¿½ne normale
         return GetActivityIcon();
     }
 
@@ -292,7 +307,7 @@ public class IconContainer : MonoBehaviour
     }
 
     /// <summary>
-    /// Mettre a jour l'icône affichee selon l'etat de decouverte
+    /// Mettre a jour l'icï¿½ne affichee selon l'etat de decouverte
     /// </summary>
     private void UpdateIconDisplay()
     {
@@ -315,40 +330,38 @@ public class IconContainer : MonoBehaviour
 
     /// <summary>
     /// Obtenir la competence principale associee a cette activite
-    /// MODIFIe : Normaliser l'ID pour eviter les problemes avec les espaces
+    /// Normalise en minuscules pour correspondre aux skill IDs stockes
     /// </summary>
     private string GetMainSkillForActivity(string activityId)
     {
         if (string.IsNullOrEmpty(activityId))
             return "";
 
-        // Normaliser l'ID comme dans VariantIconContainer
-        string normalizedId = activityId.Trim().Replace(" ", "_");
-
-        return normalizedId;
+        // Normaliser: minuscules et espaces -> underscores
+        return activityId.Trim().Replace(" ", "_").ToLower();
     }
 
     /// <summary>
-    /// Obtenir l'icône de l'activite
+    /// Obtenir l'icï¿½ne de l'activite
     /// </summary>
     private Sprite GetActivityIcon()
     {
-        // Si l'ActivityDefinition a une icône, l'utiliser
+        // Si l'ActivityDefinition a une icï¿½ne, l'utiliser
         if (activityDefinition != null && activityDefinition.ActivityIcon != null)
         {
             return activityDefinition.ActivityIcon;
         }
 
-        // Sinon, essayer de charger une icône basee sur l'ID
+        // Sinon, essayer de charger une icï¿½ne basee sur l'ID
         return LoadIconByActivityId(activityId);
     }
 
     /// <summary>
-    /// Charger une icône basee sur l'ID d'activite
+    /// Charger une icï¿½ne basee sur l'ID d'activite
     /// </summary>
     private Sprite LoadIconByActivityId(string activityId)
     {
-        // Chercher dans un dossier d'icônes (adaptez le chemin selon votre projet)
+        // Chercher dans un dossier d'icï¿½nes (adaptez le chemin selon votre projet)
         string iconPath = $"UI/Icons/Activities/{activityId}";
         return Resources.Load<Sprite>(iconPath);
     }

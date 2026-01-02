@@ -17,7 +17,9 @@ MonoBehaviour:
     LocationSpecificName: 
     LocationDescription: 
     ActivityVariants:
+    - {fileID: 11400000, guid: dc01671088edba0408b08f89e340575a, type: 2}
     - {fileID: 11400000, guid: f0db528d21c209946bcca374ef7e854b, type: 2}
+    - {fileID: 11400000, guid: dbf12e9328200124baa9d75bd64120d1, type: 2}
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
@@ -27,7 +29,9 @@ MonoBehaviour:
   - ActivityReference: {fileID: 11400000, guid: a79269812d94d284187a6db556306590, type: 2}
     LocationSpecificName: 
     LocationDescription: 
-    ActivityVariants: []
+    ActivityVariants:
+    - {fileID: 11400000, guid: 4836f717eb356b0469090ca876179639, type: 2}
+    - {fileID: 11400000, guid: b1b80dcf20b5fef43a4d53fae3690b65, type: 2}
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
@@ -37,7 +41,9 @@ MonoBehaviour:
   - ActivityReference: {fileID: 11400000, guid: 43a05e7a60d120b4fb921b61737299b4, type: 2}
     LocationSpecificName: 
     LocationDescription: 
-    ActivityVariants: []
+    ActivityVariants:
+    - {fileID: 11400000, guid: 8d24f99cec025a441a4f7e0ee04e74eb, type: 2}
+    - {fileID: 11400000, guid: fdf977eaf0083b641a6b7d9a3c7e828b, type: 2}
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
@@ -47,7 +53,10 @@ MonoBehaviour:
   - ActivityReference: {fileID: 11400000, guid: 54ca123aa9fa9684daee276a5dade847, type: 2}
     LocationSpecificName: 
     LocationDescription: 
-    ActivityVariants: []
+    ActivityVariants:
+    - {fileID: 11400000, guid: 8a1fd8c0c9c5aba45b26888c39f548d4, type: 2}
+    - {fileID: 11400000, guid: 21241f0aa725f1a4794218d1c81006f5, type: 2}
+    - {fileID: 11400000, guid: 08d9f1f269bfd4f4a88a3d0a15c2dc15, type: 2}
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
@@ -57,7 +66,8 @@ MonoBehaviour:
   - ActivityReference: {fileID: 11400000, guid: eb2b652fee07d2549ad8e0d153690f5f, type: 2}
     LocationSpecificName: 
     LocationDescription: 
-    ActivityVariants: []
+    ActivityVariants:
+    - {fileID: 11400000, guid: b22852ac23cd23643894944697bfda82, type: 2}
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}

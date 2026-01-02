@@ -16,6 +16,7 @@ MonoBehaviour:
   ActivityName: Pecher
   BaseDescription: Vous vous installez avec votre canne a peche, a l'affut de chaque
     mouvement du flotteur.
+  Type: 0
   ActivityIcon: {fileID: 21300000, guid: 0921fa0a214334749bdab0eb896e0717, type: 3}
   ActivityColor: {r: 1, g: 1, b: 1, a: 1}
   IsAvailable: 1

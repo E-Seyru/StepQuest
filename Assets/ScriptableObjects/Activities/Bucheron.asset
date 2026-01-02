@@ -22,5 +22,7 @@ MonoBehaviour:
   UnlockRequirement: 0
   AutoFindVariants: 1
   discoveredVariants:
+  - {fileID: 11400000, guid: dc01671088edba0408b08f89e340575a, type: 2}
   - {fileID: 11400000, guid: f0db528d21c209946bcca374ef7e854b, type: 2}
+  - {fileID: 11400000, guid: dbf12e9328200124baa9d75bd64120d1, type: 2}
   DeveloperNotes: 
