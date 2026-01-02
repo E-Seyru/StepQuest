@@ -1,0 +1,1066 @@
+fileFormatVersion: 2
+guid: 040af5d85cba5324d9c701fc89ce0d36
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1299858343955802881
+    second: Generated Image January 02, 2026 - 8_42PM_0
+  - first:
+      213: -6404527579925773202
+    second: Generated Image January 02, 2026 - 8_42PM_1
+  - first:
+      213: 2714758657819709122
+    second: Generated Image January 02, 2026 - 8_42PM_2
+  - first:
+      213: -6027709082782072194
+    second: Generated Image January 02, 2026 - 8_42PM_3
+  - first:
+      213: -5774704717477337945
+    second: Generated Image January 02, 2026 - 8_42PM_4
+  - first:
+      213: -5109347027874007901
+    second: Generated Image January 02, 2026 - 8_42PM_5
+  - first:
+      213: 2534431461566502691
+    second: Generated Image January 02, 2026 - 8_42PM_6
+  - first:
+      213: 797570081227797345
+    second: Generated Image January 02, 2026 - 8_42PM_7
+  - first:
+      213: -4133261485670838576
+    second: Generated Image January 02, 2026 - 8_42PM_8
+  - first:
+      213: 2125177171757715149
+    second: Generated Image January 02, 2026 - 8_42PM_9
+  - first:
+      213: 8238991233614334421
+    second: Generated Image January 02, 2026 - 8_42PM_10
+  - first:
+      213: 3724355409007585445
+    second: Generated Image January 02, 2026 - 8_42PM_11
+  - first:
+      213: 8843375197811885675
+    second: Generated Image January 02, 2026 - 8_42PM_12
+  - first:
+      213: 9043312281948413617
+    second: Generated Image January 02, 2026 - 8_42PM_13
+  - first:
+      213: 5250535138077114162
+    second: Generated Image January 02, 2026 - 8_42PM_14
+  - first:
+      213: 1388734902329677014
+    second: Generated Image January 02, 2026 - 8_42PM_15
+  - first:
+      213: -3239786738161870315
+    second: Generated Image January 02, 2026 - 8_42PM_16
+  - first:
+      213: -4229929457310721568
+    second: Generated Image January 02, 2026 - 8_42PM_17
+  - first:
+      213: 7574035969560480299
+    second: Generated Image January 02, 2026 - 8_42PM_18
+  - first:
+      213: 1713257684674745670
+    second: Generated Image January 02, 2026 - 8_42PM_19
+  - first:
+      213: 4211929816006174540
+    second: Generated Image January 02, 2026 - 8_42PM_20
+  - first:
+      213: 5945751503416472338
+    second: Generated Image January 02, 2026 - 8_42PM_21
+  - first:
+      213: 2823413946501050058
+    second: Generated Image January 02, 2026 - 8_42PM_22
+  - first:
+      213: 8316300568371702904
+    second: Generated Image January 02, 2026 - 8_42PM_23
+  - first:
+      213: 6331741043435796643
+    second: Generated Image January 02, 2026 - 8_42PM_24
+  - first:
+      213: -8459802291251013873
+    second: Generated Image January 02, 2026 - 8_42PM_25
+  - first:
+      213: -8212564443398203469
+    second: Generated Image January 02, 2026 - 8_42PM_26
+  - first:
+      213: -783714642092929856
+    second: Generated Image January 02, 2026 - 8_42PM_27
+  - first:
+      213: 9078274218183568341
+    second: Generated Image January 02, 2026 - 8_42PM_28
+  - first:
+      213: -2433377956791765278
+    second: Generated Image January 02, 2026 - 8_42PM_29
+  - first:
+      213: 5048119897993684064
+    second: Generated Image January 02, 2026 - 8_42PM_30
+  - first:
+      213: 5545543835364208457
+    second: Generated Image January 02, 2026 - 8_42PM_31
+  - first:
+      213: 5874156526427076111
+    second: Generated Image January 02, 2026 - 8_42PM_32
+  - first:
+      213: -8005223707167091308
+    second: Generated Image January 02, 2026 - 8_42PM_33
+  - first:
+      213: -8251547617833349044
+    second: Generated Image January 02, 2026 - 8_42PM_34
+  - first:
+      213: -4435955782659781358
+    second: Generated Image January 02, 2026 - 8_42PM_35
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_0
+      rect:
+        serializedVersion: 2
+        x: 37
+        y: 1360
+        width: 607
+        height: 166
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 10b20d1e6460a0210800000000000000
+      internalID: 1299858343955802881
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_1
+      rect:
+        serializedVersion: 2
+        x: 705
+        y: 1357
+        width: 619
+        height: 172
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e640554491c8e17a0800000000000000
+      internalID: -6404527579925773202
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_2
+      rect:
+        serializedVersion: 2
+        x: 1389
+        y: 1368
+        width: 620
+        height: 151
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2ce824aad92cca520800000000000000
+      internalID: 2714758657819709122
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_3
+      rect:
+        serializedVersion: 2
+        x: 2079
+        y: 1360
+        width: 605
+        height: 166
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e72016f7686495ca0800000000000000
+      internalID: -6027709082782072194
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_4
+      rect:
+        serializedVersion: 2
+        x: 37
+        y: 1157
+        width: 607
+        height: 165
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7a4adf7b7a02cdfa0800000000000000
+      internalID: -5774704717477337945
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_5
+      rect:
+        serializedVersion: 2
+        x: 704
+        y: 1157
+        width: 620
+        height: 164
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3a43f59d2f3f719b0800000000000000
+      internalID: -5109347027874007901
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_6
+      rect:
+        serializedVersion: 2
+        x: 1389
+        y: 1159
+        width: 622
+        height: 161
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 327de3e7cfb1c2320800000000000000
+      internalID: 2534431461566502691
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_7
+      rect:
+        serializedVersion: 2
+        x: 2076
+        y: 1153
+        width: 612
+        height: 173
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 163ff0f53c9811b00800000000000000
+      internalID: 797570081227797345
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_8
+      rect:
+        serializedVersion: 2
+        x: 42
+        y: 835
+        width: 286
+        height: 282
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0de49c6e394b3a6c0800000000000000
+      internalID: -4133261485670838576
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_9
+      rect:
+        serializedVersion: 2
+        x: 377
+        y: 835
+        width: 287
+        height: 281
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dce4367c0652e7d10800000000000000
+      internalID: 2125177171757715149
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_10
+      rect:
+        serializedVersion: 2
+        x: 713
+        y: 835
+        width: 286
+        height: 281
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5d9c32bffd6c65270800000000000000
+      internalID: 8238991233614334421
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_11
+      rect:
+        serializedVersion: 2
+        x: 1048
+        y: 835
+        width: 287
+        height: 282
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5a8a33313819fa330800000000000000
+      internalID: 3724355409007585445
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_12
+      rect:
+        serializedVersion: 2
+        x: 1384
+        y: 835
+        width: 287
+        height: 282
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b66c31163eaf9ba70800000000000000
+      internalID: 8843375197811885675
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_13
+      rect:
+        serializedVersion: 2
+        x: 1721
+        y: 835
+        width: 286
+        height: 282
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1be567e5b9c408d70800000000000000
+      internalID: 9043312281948413617
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_14
+      rect:
+        serializedVersion: 2
+        x: 2066
+        y: 835
+        width: 288
+        height: 281
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 23ffac9b3e5add840800000000000000
+      internalID: 5250535138077114162
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_15
+      rect:
+        serializedVersion: 2
+        x: 2404
+        y: 835
+        width: 283
+        height: 282
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d41c8c2907c54310800000000000000
+      internalID: 1388734902329677014
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_16
+      rect:
+        serializedVersion: 2
+        x: 52
+        y: 560
+        width: 234
+        height: 233
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 51a17d37027f903d0800000000000000
+      internalID: -3239786738161870315
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_17
+      rect:
+        serializedVersion: 2
+        x: 392
+        y: 561
+        width: 236
+        height: 232
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0e99808d1954c45c0800000000000000
+      internalID: -4229929457310721568
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_18
+      rect:
+        serializedVersion: 2
+        x: 732
+        y: 561
+        width: 236
+        height: 232
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b2a0fa9d5916c1960800000000000000
+      internalID: 7574035969560480299
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_19
+      rect:
+        serializedVersion: 2
+        x: 1072
+        y: 561
+        width: 237
+        height: 232
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6451fb779c6b6c710800000000000000
+      internalID: 1713257684674745670
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_20
+      rect:
+        serializedVersion: 2
+        x: 1397
+        y: 561
+        width: 249
+        height: 232
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c47ace51ad7c37a30800000000000000
+      internalID: 4211929816006174540
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_21
+      rect:
+        serializedVersion: 2
+        x: 1754
+        y: 561
+        width: 236
+        height: 232
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 21332eb8d7d838250800000000000000
+      internalID: 5945751503416472338
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_22
+      rect:
+        serializedVersion: 2
+        x: 2107
+        y: 561
+        width: 236
+        height: 232
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ace24177608ce2720800000000000000
+      internalID: 2823413946501050058
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_23
+      rect:
+        serializedVersion: 2
+        x: 2440
+        y: 561
+        width: 237
+        height: 232
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 87cac272e4f696370800000000000000
+      internalID: 8316300568371702904
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_24
+      rect:
+        serializedVersion: 2
+        x: 52
+        y: 288
+        width: 234
+        height: 234
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3a870c79eecded750800000000000000
+      internalID: 6331741043435796643
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_25
+      rect:
+        serializedVersion: 2
+        x: 392
+        y: 288
+        width: 236
+        height: 234
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f0792f753aeb89a80800000000000000
+      internalID: -8459802291251013873
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_26
+      rect:
+        serializedVersion: 2
+        x: 732
+        y: 288
+        width: 236
+        height: 234
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b71f38962c170e80800000000000000
+      internalID: -8212564443398203469
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_27
+      rect:
+        serializedVersion: 2
+        x: 1072
+        y: 288
+        width: 236
+        height: 234
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0cc47c07fafaf15f0800000000000000
+      internalID: -783714642092929856
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_28
+      rect:
+        serializedVersion: 2
+        x: 1397
+        y: 288
+        width: 249
+        height: 234
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5db2b6c7d428cfd70800000000000000
+      internalID: 9078274218183568341
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_29
+      rect:
+        serializedVersion: 2
+        x: 1754
+        y: 288
+        width: 235
+        height: 234
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2e6392114a7ea3ed0800000000000000
+      internalID: -2433377956791765278
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_30
+      rect:
+        serializedVersion: 2
+        x: 2107
+        y: 288
+        width: 236
+        height: 234
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 064ae771d468e0640800000000000000
+      internalID: 5048119897993684064
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_31
+      rect:
+        serializedVersion: 2
+        x: 2440
+        y: 288
+        width: 238
+        height: 234
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 94fad399cbab5fc40800000000000000
+      internalID: 5545543835364208457
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_32
+      rect:
+        serializedVersion: 2
+        x: 69
+        y: 44
+        width: 201
+        height: 202
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f067ab8fc32358150800000000000000
+      internalID: 5874156526427076111
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_33
+      rect:
+        serializedVersion: 2
+        x: 391
+        y: 83
+        width: 675
+        height: 125
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 49515caa37bb7e090800000000000000
+      internalID: -8005223707167091308
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_34
+      rect:
+        serializedVersion: 2
+        x: 1188
+        y: 41
+        width: 565
+        height: 209
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c4092dff82d9c7d80800000000000000
+      internalID: -8251547617833349044
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Generated Image January 02, 2026 - 8_42PM_35
+      rect:
+        serializedVersion: 2
+        x: 1870
+        y: 42
+        width: 267
+        height: 205
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 21d4937e7b15072c0800000000000000
+      internalID: -4435955782659781358
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Generated Image January 02, 2026 - 8_42PM_0: 1299858343955802881
+      Generated Image January 02, 2026 - 8_42PM_1: -6404527579925773202
+      Generated Image January 02, 2026 - 8_42PM_10: 8238991233614334421
+      Generated Image January 02, 2026 - 8_42PM_11: 3724355409007585445
+      Generated Image January 02, 2026 - 8_42PM_12: 8843375197811885675
+      Generated Image January 02, 2026 - 8_42PM_13: 9043312281948413617
+      Generated Image January 02, 2026 - 8_42PM_14: 5250535138077114162
+      Generated Image January 02, 2026 - 8_42PM_15: 1388734902329677014
+      Generated Image January 02, 2026 - 8_42PM_16: -3239786738161870315
+      Generated Image January 02, 2026 - 8_42PM_17: -4229929457310721568
+      Generated Image January 02, 2026 - 8_42PM_18: 7574035969560480299
+      Generated Image January 02, 2026 - 8_42PM_19: 1713257684674745670
+      Generated Image January 02, 2026 - 8_42PM_2: 2714758657819709122
+      Generated Image January 02, 2026 - 8_42PM_20: 4211929816006174540
+      Generated Image January 02, 2026 - 8_42PM_21: 5945751503416472338
+      Generated Image January 02, 2026 - 8_42PM_22: 2823413946501050058
+      Generated Image January 02, 2026 - 8_42PM_23: 8316300568371702904
+      Generated Image January 02, 2026 - 8_42PM_24: 6331741043435796643
+      Generated Image January 02, 2026 - 8_42PM_25: -8459802291251013873
+      Generated Image January 02, 2026 - 8_42PM_26: -8212564443398203469
+      Generated Image January 02, 2026 - 8_42PM_27: -783714642092929856
+      Generated Image January 02, 2026 - 8_42PM_28: 9078274218183568341
+      Generated Image January 02, 2026 - 8_42PM_29: -2433377956791765278
+      Generated Image January 02, 2026 - 8_42PM_3: -6027709082782072194
+      Generated Image January 02, 2026 - 8_42PM_30: 5048119897993684064
+      Generated Image January 02, 2026 - 8_42PM_31: 5545543835364208457
+      Generated Image January 02, 2026 - 8_42PM_32: 5874156526427076111
+      Generated Image January 02, 2026 - 8_42PM_33: -8005223707167091308
+      Generated Image January 02, 2026 - 8_42PM_34: -8251547617833349044
+      Generated Image January 02, 2026 - 8_42PM_35: -4435955782659781358
+      Generated Image January 02, 2026 - 8_42PM_4: -5774704717477337945
+      Generated Image January 02, 2026 - 8_42PM_5: -5109347027874007901
+      Generated Image January 02, 2026 - 8_42PM_6: 2534431461566502691
+      Generated Image January 02, 2026 - 8_42PM_7: 797570081227797345
+      Generated Image January 02, 2026 - 8_42PM_8: -4133261485670838576
+      Generated Image January 02, 2026 - 8_42PM_9: 2125177171757715149
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

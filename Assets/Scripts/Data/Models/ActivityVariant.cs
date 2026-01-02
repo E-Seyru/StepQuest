@@ -23,7 +23,7 @@ public class ActivityVariant : ScriptableObject
     public bool IsTimeBased = false;
 
     [Header("Category (for UI grouping)")]
-    [Tooltip("Category for grouping in panels (e.g., 'Bars', 'Weapons', 'Armor'). Leave empty for no category.")]
+    [Tooltip("Category for grouping in panels (e.g., 'Bars', 'Weapons', 'Armor'). Must match a CategoryID in CategoryRegistry.")]
     public string Category = "";
 
     [Header("Results/Products")]

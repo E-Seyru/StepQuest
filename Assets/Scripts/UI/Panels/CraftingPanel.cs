@@ -22,9 +22,12 @@ public class CraftingPanel : MonoBehaviour
 
     [Header("Tabs")]
     [SerializeField] private Transform tabsContainer;
-    [SerializeField] private GameObject tabButtonPrefab;
+    [SerializeField] private GameObject tabButtonPrefab; // Must have CategoryTabButton component
+    [SerializeField] private CategoryRegistry categoryRegistry; // For sorting tabs by SortOrder and icon lookup
     [SerializeField] private Color activeTabColor = Color.white;
     [SerializeField] private Color inactiveTabColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+    [SerializeField] private Sprite allTabIcon; // Icon for the "All" tab
+    [SerializeField] private Sprite defaultCategoryIcon; // Fallback icon when category not found in registry
 
     [Header("Card Prefab")]
     [SerializeField] private GameObject craftingCardPrefab;
@@ -35,7 +38,7 @@ public class CraftingPanel : MonoBehaviour
     // Current state
     private LocationActivity currentActivity;
     private List<GameObject> instantiatedCards = new List<GameObject>();
-    private List<GameObject> instantiatedTabs = new List<GameObject>();
+    private List<CategoryTabButton> instantiatedTabs = new List<CategoryTabButton>();
     private Dictionary<string, List<ActivityVariant>> variantsByCategory = new Dictionary<string, List<ActivityVariant>>();
     private string currentCategory = null; // null means show all
 
@@ -236,39 +239,84 @@ public class CraftingPanel : MonoBehaviour
 
         tabsContainer.gameObject.SetActive(true);
 
-        // Create "All" tab first
-        CreateTabButton("Tout", null);
+        // Create "All" tab first (null = all)
+        CreateTab(null);
 
-        // Create tab for each category
-        foreach (var category in variantsByCategory.Keys.OrderBy(k => k))
+        // Create tab for each category, sorted by SortOrder from registry
+        var sortedCategories = GetSortedCategories();
+        foreach (var categoryId in sortedCategories)
         {
-            CreateTabButton(category, category);
+            CreateTab(categoryId);
         }
 
         UpdateTabVisuals();
     }
 
     /// <summary>
-    /// Create a single tab button
+    /// Get categories sorted by their SortOrder in the registry
     /// </summary>
-    private void CreateTabButton(string label, string categoryValue)
+    private List<string> GetSortedCategories()
     {
-        GameObject tabObj = Instantiate(tabButtonPrefab, tabsContainer);
-        instantiatedTabs.Add(tabObj);
-
-        // Setup button text
-        TextMeshProUGUI tabText = tabObj.GetComponentInChildren<TextMeshProUGUI>();
-        if (tabText != null)
+        if (categoryRegistry == null)
         {
-            tabText.text = label;
+            // Fallback: alphabetical order
+            return variantsByCategory.Keys.OrderBy(k => k).ToList();
         }
 
-        // Setup button click
-        Button tabButton = tabObj.GetComponent<Button>();
+        return variantsByCategory.Keys
+            .OrderBy(categoryId =>
+            {
+                var def = categoryRegistry.GetCategory(categoryId);
+                return def != null ? def.SortOrder : int.MaxValue;
+            })
+            .ThenBy(k => k) // Alphabetical as tiebreaker
+            .ToList();
+    }
+
+    /// <summary>
+    /// Create a tab - pass category string (null for "All" tab)
+    /// Looks up icon from registry and passes data to the tab component
+    /// </summary>
+    private void CreateTab(string category)
+    {
+        GameObject tabObj = Instantiate(tabButtonPrefab, tabsContainer);
+        CategoryTabButton tabButton = tabObj.GetComponent<CategoryTabButton>();
+
         if (tabButton != null)
         {
-            string capturedCategory = categoryValue; // Capture for closure
-            tabButton.onClick.AddListener(() => OnTabClicked(capturedCategory));
+            // Look up icon and display name from registry
+            Sprite icon;
+            string label;
+
+            if (string.IsNullOrEmpty(category))
+            {
+                // "All" tab
+                icon = allTabIcon;
+                label = "Tout";
+            }
+            else
+            {
+                // Category tab - look up from registry
+                icon = categoryRegistry?.GetCategoryIcon(category) ?? defaultCategoryIcon;
+                label = categoryRegistry?.GetCategoryDisplayName(category) ?? category;
+            }
+
+            tabButton.Setup(category, icon, label);
+            instantiatedTabs.Add(tabButton);
+        }
+        else
+        {
+            Logger.LogWarning("CraftingPanel: tabButtonPrefab missing CategoryTabButton component!", Logger.LogCategory.ActivityLog);
+            Destroy(tabObj);
+            return;
+        }
+
+        // Setup click handler
+        Button button = tabObj.GetComponent<Button>();
+        if (button != null)
+        {
+            string capturedCategory = category;
+            button.onClick.AddListener(() => OnTabClicked(capturedCategory));
         }
     }
 
@@ -289,27 +337,12 @@ public class CraftingPanel : MonoBehaviour
     /// </summary>
     private void UpdateTabVisuals()
     {
-        for (int i = 0; i < instantiatedTabs.Count; i++)
+        foreach (var tab in instantiatedTabs)
         {
-            var tab = instantiatedTabs[i];
             if (tab == null) continue;
 
-            Image tabImage = tab.GetComponent<Image>();
-            if (tabImage == null) continue;
-
-            // First tab is "All" (null category), rest are category-specific
-            bool isActive;
-            if (i == 0)
-            {
-                isActive = currentCategory == null;
-            }
-            else
-            {
-                string tabCategory = variantsByCategory.Keys.OrderBy(k => k).ElementAtOrDefault(i - 1);
-                isActive = currentCategory == tabCategory;
-            }
-
-            tabImage.color = isActive ? activeTabColor : inactiveTabColor;
+            bool isActive = tab.GetCategoryId() == currentCategory;
+            tab.SetSelected(isActive, activeTabColor, inactiveTabColor);
         }
     }
 
@@ -463,7 +496,7 @@ public class CraftingPanel : MonoBehaviour
         {
             if (tab != null)
             {
-                Destroy(tab);
+                Destroy(tab.gameObject);
             }
         }
         instantiatedTabs.Clear();
