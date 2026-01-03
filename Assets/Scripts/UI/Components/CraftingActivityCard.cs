@@ -31,6 +31,11 @@ public class CraftingActivityCard : MonoBehaviour
     [SerializeField] private float shakeDuration = 0.5f;
     [SerializeField] private float shakeIntensity = 10f;
 
+    [Header("Selection")]
+    [SerializeField] private GameObject selectionBackground; // Background shown when card is selected
+    [SerializeField] private CanvasGroup canvasGroup; // For dimming effect
+    [SerializeField] private float dimmedAlpha = 0.5f;
+
     [Header("Prefabs")]
     [SerializeField] private GameObject ingredientPrefab;
 
@@ -331,21 +336,7 @@ public class CraftingActivityCard : MonoBehaviour
     {
         if (activityVariant != null)
         {
-            // V�rifier d'abord le niveau - PAS d'animation si niveau insuffisant
-            if (!hasRequiredLevel)
-            {
-                Logger.LogInfo($"CraftingActivityCard: Level requirement not met for {activityVariant.VariantName}", Logger.LogCategory.ActivityLog);
-                return; // Pas d'animation, juste ignorer le clic
-            }
-
-            // Puis v�rifier les ressources - Animation seulement pour les ressources manquantes
-            if (!hasEnoughIngredients)
-            {
-                Logger.LogInfo($"CraftingActivityCard: Not enough ingredients for {activityVariant.VariantName}, shaking card", Logger.LogCategory.ActivityLog);
-                StartCoroutine(ShakeAnimation());
-                return;
-            }
-
+            // Allow selection of any card (for browsing)
             Logger.LogInfo($"CraftingActivityCard: Card clicked for {activityVariant.VariantName}", Logger.LogCategory.ActivityLog);
             OnCardClicked?.Invoke(activityVariant);
         }
@@ -385,7 +376,29 @@ public class CraftingActivityCard : MonoBehaviour
     }
 
     /// <summary>
-    /// Mettre � jour la couleur du texte de niveau
+    /// Set the card as selected (shows selection background)
+    /// </summary>
+    public void SetSelected(bool selected)
+    {
+        if (selectionBackground != null)
+        {
+            selectionBackground.SetActive(selected);
+        }
+    }
+
+    /// <summary>
+    /// Set the card as dimmed (when another card is selected)
+    /// </summary>
+    public void SetDimmed(bool dimmed)
+    {
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = dimmed ? dimmedAlpha : 1f;
+        }
+    }
+
+    /// <summary>
+    /// Mettre a jour la couleur du texte de niveau
     /// </summary>
     private void UpdateLevelTextColor()
     {

@@ -15,7 +15,7 @@ MonoBehaviour:
   ActivityID: forger
   ActivityName: Forger
   BaseDescription: Vous prenez place devant l'enclume...
-  Type: 0
+  Type: 1
   ActivityIcon: {fileID: 21300000, guid: e467da0b9405ca845960b11349b73308, type: 3}
   ActivityColor: {r: 1, g: 1, b: 1, a: 1}
   IsAvailable: 1

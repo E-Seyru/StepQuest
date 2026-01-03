@@ -73,9 +73,6 @@ public class CraftingPanel : MonoBehaviour
             closeButton.onClick.AddListener(ClosePanel);
         }
 
-        // Setup grid layout for cards container
-        SetupGridLayout();
-
         // Get or add CanvasGroup for fade animations
         panelCanvasGroup = GetComponent<CanvasGroup>();
         if (panelCanvasGroup == null)
@@ -108,29 +105,6 @@ public class CraftingPanel : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Setup the grid layout for the cards container
-    /// </summary>
-    private void SetupGridLayout()
-    {
-        if (cardsContainer == null) return;
-
-        // Add GridLayoutGroup if not present
-        GridLayoutGroup gridLayout = cardsContainer.GetComponent<GridLayoutGroup>();
-        if (gridLayout == null)
-        {
-            gridLayout = cardsContainer.gameObject.AddComponent<GridLayoutGroup>();
-        }
-
-        // Configure grid layout
-        gridLayout.childAlignment = TextAnchor.UpperCenter;
-        gridLayout.constraint = GridLayoutGroup.Constraint.Flexible;
-        gridLayout.spacing = new Vector2(30f, 30f);
-        gridLayout.padding = new RectOffset(30, 30, 30, 30);
-        gridLayout.cellSize = new Vector2(200f, 280f);
-
-        Logger.LogInfo("CraftingPanel: Grid layout configured", Logger.LogCategory.ActivityLog);
-    }
 
     #region Public Methods
 
@@ -436,33 +410,30 @@ public class CraftingPanel : MonoBehaviour
     {
         Logger.LogInfo($"CraftingPanel: Variant selected: {variant.VariantName}", Logger.LogCategory.ActivityLog);
 
-        // Start the time-based activity via ActivityManager
-        if (ActivityManager.Instance != null && currentActivity != null)
-        {
-            string activityId = currentActivity.ActivityId;
-            string variantId = ActivityRegistry.GenerateVariantId(variant.VariantName);
-
-            bool success = ActivityManager.Instance.StartTimedActivity(activityId, variantId);
-
-            if (success)
-            {
-                Logger.LogInfo($"Successfully started crafting activity: {variant.GetDisplayName()}", Logger.LogCategory.ActivityLog);
-                // Panel will be closed via ActivityStartedEvent -> FadeOutAndClose()
-            }
-            else
-            {
-                Logger.LogWarning($"Failed to start crafting activity: {variant.GetDisplayName()}", Logger.LogCategory.ActivityLog);
-                // Close panel if activity failed to start
-                ClosePanel();
-            }
-        }
-        else
-        {
-            ClosePanel();
-        }
+        // Deselect previous card and select the new one
+        SelectCardForVariant(variant);
 
         // Notify listeners
         OnVariantSelected?.Invoke(variant);
+    }
+
+    /// <summary>
+    /// Select a card and deselect all others
+    /// </summary>
+    private void SelectCardForVariant(ActivityVariant variant)
+    {
+        foreach (var cardObj in instantiatedCards)
+        {
+            if (cardObj == null) continue;
+
+            CraftingActivityCard card = cardObj.GetComponent<CraftingActivityCard>();
+            if (card != null)
+            {
+                bool isSelected = card.GetActivityVariant() == variant;
+                card.SetSelected(isSelected);
+                card.SetDimmed(!isSelected); // Dim non-selected cards
+            }
+        }
     }
 
     /// <summary>

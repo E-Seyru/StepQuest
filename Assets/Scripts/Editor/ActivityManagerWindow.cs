@@ -38,6 +38,7 @@ public class ActivityManagerWindow : EditorWindow
 
     private string newActivityName = "";
     private string newActivityDescription = "";
+    private ActivityType newActivityType = ActivityType.Harvesting;
     private string newVariantName = "";
     private string newVariantDescription = "";
     private string newPOIName = "";
@@ -97,7 +98,7 @@ public class ActivityManagerWindow : EditorWindow
 
     private void DrawCreateActivityDialog()
     {
-        GUILayout.BeginArea(new Rect(50, 100, 400, 250));
+        GUILayout.BeginArea(new Rect(50, 100, 400, 300));
         EditorGUILayout.BeginVertical("box");
 
         EditorGUILayout.LabelField("Create New Activity", EditorStyles.boldLabel);
@@ -105,6 +106,23 @@ public class ActivityManagerWindow : EditorWindow
 
         EditorGUILayout.LabelField("Activity Name:");
         newActivityName = EditorGUILayout.TextField(newActivityName);
+
+        EditorGUILayout.LabelField("Activity Type:");
+        newActivityType = (ActivityType)EditorGUILayout.EnumPopup(newActivityType);
+
+        // Show type description
+        string typeDescription = newActivityType switch
+        {
+            ActivityType.Harvesting => "Step-based gathering (mining, woodcutting, fishing)",
+            ActivityType.Crafting => "Time-based crafting (forging, cooking)",
+            ActivityType.Exploration => "Step-based discovery of hidden content",
+            ActivityType.Merchant => "Buy/sell with NPCs",
+            ActivityType.Bank => "Storage management",
+            _ => ""
+        };
+        EditorGUILayout.LabelField(typeDescription, EditorStyles.miniLabel);
+
+        EditorGUILayout.Space();
 
         EditorGUILayout.LabelField("Description:");
         newActivityDescription = EditorGUILayout.TextArea(newActivityDescription, GUILayout.Height(60));
@@ -290,6 +308,7 @@ public class ActivityManagerWindow : EditorWindow
         showCreateActivityDialog = false;
         newActivityName = "";
         newActivityDescription = "";
+        newActivityType = ActivityType.Harvesting;
     }
 
     private void ResetCreateVariantDialog()
@@ -327,6 +346,7 @@ public class ActivityManagerWindow : EditorWindow
         newActivity.ActivityName = activityName;
         newActivity.ActivityID = activityID;
         newActivity.BaseDescription = description;
+        newActivity.Type = newActivityType;
         newActivity.IsAvailable = true;
 
         // Save to appropriate folder
@@ -912,6 +932,22 @@ public class ActivityManagerWindow : EditorWindow
         EditorGUILayout.BeginHorizontal();
 
         EditorGUILayout.LabelField(activity.GetDisplayName(), EditorStyles.boldLabel, GUILayout.Width(200));
+
+        // Show activity type with color coding
+        string typeLabel = activity.Type.ToString();
+        Color typeColor = activity.Type switch
+        {
+            ActivityType.Harvesting => new Color(0.4f, 0.8f, 0.4f), // Green
+            ActivityType.Crafting => new Color(0.8f, 0.6f, 0.2f),   // Orange
+            ActivityType.Exploration => new Color(0.4f, 0.6f, 0.9f), // Blue
+            ActivityType.Merchant => new Color(0.9f, 0.8f, 0.2f),   // Yellow
+            ActivityType.Bank => new Color(0.7f, 0.7f, 0.7f),       // Gray
+            _ => Color.white
+        };
+        GUIStyle typeStyle = new GUIStyle(EditorStyles.miniLabel);
+        typeStyle.normal.textColor = typeColor;
+        EditorGUILayout.LabelField($"[{typeLabel}]", typeStyle, GUILayout.Width(80));
+
         EditorGUILayout.LabelField($"ID: {activity.ActivityID}", EditorStyles.miniLabel);
 
         GUILayout.FlexibleSpace();
