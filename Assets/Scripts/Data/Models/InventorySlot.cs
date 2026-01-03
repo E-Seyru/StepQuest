@@ -9,12 +9,19 @@ public class InventorySlot
     public int Quantity;
 
     /// <summary>
+    /// The rarity tier of the item in this slot (1-5, or 0 for items without rarity variants)
+    /// Items only stack if they have the same ItemID AND RarityTier
+    /// </summary>
+    public int RarityTier;
+
+    /// <summary>
     /// Create an empty inventory slot
     /// </summary>
     public InventorySlot()
     {
         ItemID = string.Empty;
         Quantity = 0;
+        RarityTier = 0;
     }
 
     /// <summary>
@@ -24,6 +31,17 @@ public class InventorySlot
     {
         ItemID = itemId;
         Quantity = quantity;
+        RarityTier = 0;
+    }
+
+    /// <summary>
+    /// Create an inventory slot with specific item, quantity, and rarity
+    /// </summary>
+    public InventorySlot(string itemId, int quantity, int rarityTier)
+    {
+        ItemID = itemId;
+        Quantity = quantity;
+        RarityTier = rarityTier;
     }
 
     /// <summary>
@@ -35,11 +53,20 @@ public class InventorySlot
     }
 
     /// <summary>
-    /// Check if this slot contains a specific item
+    /// Check if this slot contains a specific item (ignores rarity)
     /// </summary>
     public bool HasItem(string itemId)
     {
         return !IsEmpty() && ItemID == itemId;
+    }
+
+    /// <summary>
+    /// Check if this slot contains a specific item with a specific rarity
+    /// Use this for stacking checks
+    /// </summary>
+    public bool HasItemWithRarity(string itemId, int rarityTier)
+    {
+        return !IsEmpty() && ItemID == itemId && RarityTier == rarityTier;
     }
 
     /// <summary>
@@ -49,15 +76,27 @@ public class InventorySlot
     {
         ItemID = string.Empty;
         Quantity = 0;
+        RarityTier = 0;
     }
 
     /// <summary>
-    /// Set the contents of this slot
+    /// Set the contents of this slot (without rarity)
     /// </summary>
     public void SetItem(string itemId, int quantity)
     {
         ItemID = itemId;
         Quantity = quantity;
+        RarityTier = 0;
+    }
+
+    /// <summary>
+    /// Set the contents of this slot with rarity
+    /// </summary>
+    public void SetItem(string itemId, int quantity, int rarityTier)
+    {
+        ItemID = itemId;
+        Quantity = quantity;
+        RarityTier = rarityTier;
     }
 
     /// <summary>
@@ -94,7 +133,7 @@ public class InventorySlot
     /// </summary>
     public InventorySlot Clone()
     {
-        return new InventorySlot(ItemID, Quantity);
+        return new InventorySlot(ItemID, Quantity, RarityTier);
     }
 
     /// <summary>
@@ -104,6 +143,9 @@ public class InventorySlot
     {
         if (IsEmpty())
             return "[Empty Slot]";
+
+        if (RarityTier > 0)
+            return $"[{ItemID} x{Quantity} (R{RarityTier})]";
 
         return $"[{ItemID} x{Quantity}]";
     }

@@ -42,9 +42,28 @@ public class ItemManagerWindow : EditorWindow
     private EquipmentType newEquipmentSlot = EquipmentType.Weapon;
     private int newInventorySlots = 0;
 
+    // Rarity stats fields for creation
+    private bool[] enabledRarityTiers = new bool[5]; // Index 0 = tier 1, etc.
+    private List<ItemStat>[] rarityStats = new List<ItemStat>[5];
+
+    // Expanded items for inline editing
+    private HashSet<ItemDefinition> expandedItems = new HashSet<ItemDefinition>();
+
     void OnEnable()
     {
         LoadRegistry();
+        InitializeRarityStats();
+    }
+
+    private void InitializeRarityStats()
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            if (rarityStats[i] == null)
+                rarityStats[i] = new List<ItemStat>();
+        }
+        // Default to Common enabled
+        enabledRarityTiers[0] = true;
     }
 
     void OnGUI()
@@ -187,12 +206,21 @@ public class ItemManagerWindow : EditorWindow
         EditorGUILayout.LabelField($"[{item.Type}]", EditorStyles.miniLabel, GUILayout.Width(80));
         GUI.color = oldColor;
 
-        // Rarity
-        GUI.color = item.GetRarityColor();
-        EditorGUILayout.LabelField($"{item.GetRarityText()}", EditorStyles.miniLabel, GUILayout.Width(80));
-        GUI.color = oldColor;
+        // Show available rarities instead of single rarity
+        DrawRarityBadges(item);
 
         GUILayout.FlexibleSpace();
+
+        // Expand/Collapse button for rarity stats
+        bool isExpanded = expandedItems.Contains(item);
+        string expandLabel = isExpanded ? "▼" : "►";
+        if (GUILayout.Button(expandLabel, GUILayout.Width(25)))
+        {
+            if (isExpanded)
+                expandedItems.Remove(item);
+            else
+                expandedItems.Add(item);
+        }
 
         if (GUILayout.Button("Edit", GUILayout.Width(40)))
         {
@@ -233,8 +261,182 @@ public class ItemManagerWindow : EditorWindow
             EditorGUILayout.LabelField(item.Description, EditorStyles.wordWrappedMiniLabel);
         }
 
+        // Expanded rarity stats section
+        if (isExpanded)
+        {
+            DrawItemRarityStatsSection(item);
+        }
+
         EditorGUILayout.EndVertical();
         EditorGUILayout.Space();
+    }
+
+    private void DrawRarityBadges(ItemDefinition item)
+    {
+        var oldColor = GUI.color;
+
+        if (item.HasRarityStats())
+        {
+            var tiers = item.GetAvailableRarityTiers();
+            foreach (int tier in tiers)
+            {
+                var rarityStats = item.GetStatsForRarity(tier);
+                if (rarityStats != null)
+                {
+                    GUI.color = rarityStats.GetRarityColor();
+                    string shortName = GetRarityShortName(tier);
+                    EditorGUILayout.LabelField(shortName, EditorStyles.miniLabel, GUILayout.Width(20));
+                }
+            }
+        }
+        else
+        {
+            // Fallback to base rarity
+            GUI.color = item.GetRarityColor();
+            EditorGUILayout.LabelField($"{item.GetRarityText()}", EditorStyles.miniLabel, GUILayout.Width(80));
+        }
+
+        GUI.color = oldColor;
+    }
+
+    private string GetRarityShortName(int tier)
+    {
+        return tier switch
+        {
+            1 => "C",
+            2 => "U",
+            3 => "R",
+            4 => "E",
+            5 => "L",
+            _ => "?"
+        };
+    }
+
+    private void DrawItemRarityStatsSection(ItemDefinition item)
+    {
+        EditorGUI.indentLevel++;
+        EditorGUILayout.BeginVertical("helpBox");
+
+        EditorGUILayout.LabelField("Rarity Stats", EditorStyles.boldLabel);
+
+        if (!item.HasRarityStats())
+        {
+            EditorGUILayout.HelpBox("No rarity stats defined. Use the Inspector to add rarity tiers.", MessageType.Info);
+
+            if (GUILayout.Button("Add Rarity Stats", GUILayout.Width(120)))
+            {
+                // Add a default common rarity
+                if (item.RarityStats == null)
+                    item.RarityStats = new List<ItemRarityStats>();
+
+                item.RarityStats.Add(new ItemRarityStats(1));
+                EditorUtility.SetDirty(item);
+            }
+        }
+        else
+        {
+            var tiers = item.GetAvailableRarityTiers();
+
+            foreach (int tier in tiers)
+            {
+                var rarityStats = item.GetStatsForRarity(tier);
+                if (rarityStats == null) continue;
+
+                var oldColor = GUI.color;
+                GUI.color = rarityStats.GetRarityColor();
+
+                EditorGUILayout.BeginVertical("box");
+                EditorGUILayout.BeginHorizontal();
+
+                EditorGUILayout.LabelField($"[{rarityStats.GetRarityDisplayName()}]", EditorStyles.boldLabel, GUILayout.Width(100));
+
+                GUI.color = oldColor;
+
+                // Stats count
+                int statCount = rarityStats.Stats?.Count ?? 0;
+                EditorGUILayout.LabelField($"{statCount} stats", EditorStyles.miniLabel, GUILayout.Width(60));
+
+                // Ability
+                if (rarityStats.UnlockedAbility != null)
+                {
+                    EditorGUILayout.LabelField($"Ability: {rarityStats.UnlockedAbility.AbilityName}", EditorStyles.miniLabel);
+                }
+
+                GUILayout.FlexibleSpace();
+
+                // Remove rarity button
+                GUI.color = new Color(1f, 0.5f, 0.5f);
+                if (GUILayout.Button("X", GUILayout.Width(20)))
+                {
+                    if (EditorUtility.DisplayDialog("Remove Rarity",
+                        $"Remove {rarityStats.GetRarityDisplayName()} tier from this item?",
+                        "Remove", "Cancel"))
+                    {
+                        item.RarityStats.Remove(rarityStats);
+                        EditorUtility.SetDirty(item);
+                    }
+                }
+                GUI.color = oldColor;
+
+                EditorGUILayout.EndHorizontal();
+
+                // Draw stats
+                if (rarityStats.Stats != null && rarityStats.Stats.Count > 0)
+                {
+                    EditorGUI.indentLevel++;
+                    foreach (var stat in rarityStats.Stats)
+                    {
+                        EditorGUILayout.LabelField($"• {stat.GetDisplayString()}", EditorStyles.miniLabel);
+                    }
+                    EditorGUI.indentLevel--;
+                }
+
+                EditorGUILayout.EndVertical();
+            }
+
+            EditorGUILayout.Space();
+
+            // Add new rarity tier
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Add Tier:", GUILayout.Width(60));
+
+            for (int t = 1; t <= 5; t++)
+            {
+                bool exists = tiers.Contains(t);
+                GUI.enabled = !exists;
+
+                var color = new ItemRarityStats(t).GetRarityColor();
+                GUI.color = exists ? Color.gray : color;
+
+                if (GUILayout.Button(GetRarityShortName(t), GUILayout.Width(25)))
+                {
+                    item.RarityStats.Add(new ItemRarityStats(t));
+                    EditorUtility.SetDirty(item);
+                }
+            }
+
+            GUI.enabled = true;
+            GUI.color = Color.white;
+            EditorGUILayout.EndHorizontal();
+        }
+
+        // Base unlocked ability
+        EditorGUILayout.Space();
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Base Ability:", GUILayout.Width(80));
+
+        var newBaseAbility = (AbilityDefinition)EditorGUILayout.ObjectField(
+            item.BaseUnlockedAbility, typeof(AbilityDefinition), false);
+
+        if (newBaseAbility != item.BaseUnlockedAbility)
+        {
+            item.BaseUnlockedAbility = newBaseAbility;
+            EditorUtility.SetDirty(item);
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.EndVertical();
+        EditorGUI.indentLevel--;
     }
 
     private Color GetTypeColor(ItemType type)
@@ -260,9 +462,9 @@ public class ItemManagerWindow : EditorWindow
 
         // Center the dialog
         var dialogRect = new Rect(
-            (position.width - 450) / 2,
-            (position.height - 500) / 2,
-            450, 500);
+            (position.width - 500) / 2,
+            (position.height - 550) / 2,
+            500, 550);
 
         GUILayout.BeginArea(dialogRect);
 
@@ -288,9 +490,29 @@ public class ItemManagerWindow : EditorWindow
         EditorGUILayout.BeginHorizontal();
         EditorGUILayout.LabelField("Base Price:", GUILayout.Width(80));
         newItemPrice = EditorGUILayout.IntField(newItemPrice, GUILayout.Width(80));
+        EditorGUILayout.EndHorizontal();
 
-        EditorGUILayout.LabelField("Rarity:", GUILayout.Width(50));
-        newItemRarity = EditorGUILayout.IntSlider(newItemRarity, 1, 5);
+        EditorGUILayout.Space();
+
+        // Rarity Tiers
+        EditorGUILayout.LabelField("Available Rarity Tiers:", EditorStyles.boldLabel);
+        EditorGUILayout.BeginHorizontal();
+        string[] rarityNames = { "Common", "Uncommon", "Rare", "Epic", "Legendary" };
+        Color[] rarityColors = {
+            Color.gray,
+            Color.green,
+            Color.blue,
+            new Color(0.6f, 0.0f, 1.0f),
+            new Color(1.0f, 0.6f, 0.0f)
+        };
+
+        for (int i = 0; i < 5; i++)
+        {
+            var oldColor = GUI.color;
+            GUI.color = enabledRarityTiers[i] ? rarityColors[i] : Color.gray;
+            enabledRarityTiers[i] = GUILayout.Toggle(enabledRarityTiers[i], rarityNames[i], "Button", GUILayout.Width(80));
+            GUI.color = oldColor;
+        }
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.Space();
@@ -385,11 +607,31 @@ public class ItemManagerWindow : EditorWindow
         newItem.Description = newItemDescription;
         newItem.Type = newItemType;
         newItem.BasePrice = newItemPrice;
-        newItem.RarityTier = newItemRarity;
         newItem.IsStackable = newItemStackable;
         newItem.MaxStackSize = newItemStackable ? newItemMaxStack : 1;
         newItem.ItemIcon = newItemIcon;
         newItem.ItemColor = newItemColor;
+
+        // Add rarity stats for enabled tiers
+        newItem.RarityStats = new List<ItemRarityStats>();
+        for (int i = 0; i < 5; i++)
+        {
+            if (enabledRarityTiers[i])
+            {
+                newItem.RarityStats.Add(new ItemRarityStats(i + 1));
+            }
+        }
+
+        // Set base rarity tier to lowest enabled tier (for backwards compatibility)
+        newItem.RarityTier = 1;
+        for (int i = 0; i < 5; i++)
+        {
+            if (enabledRarityTiers[i])
+            {
+                newItem.RarityTier = i + 1;
+                break;
+            }
+        }
 
         // Equipment specific settings
         if (newItemType == ItemType.Equipment)
@@ -467,6 +709,13 @@ public class ItemManagerWindow : EditorWindow
         newItemColor = Color.white;
         newEquipmentSlot = EquipmentType.Weapon;
         newInventorySlots = 0;
+
+        // Reset rarity tiers (default to Common enabled)
+        for (int i = 0; i < 5; i++)
+        {
+            enabledRarityTiers[i] = (i == 0); // Only Common enabled by default
+            rarityStats[i] = new List<ItemStat>();
+        }
     }
 
     private string GenerateIDFromName(string name)

@@ -102,10 +102,18 @@ public class InventoryManager : MonoBehaviour
     // === PUBLIC API - EXACTLY THE SAME ===
     public bool AddItem(string containerId, string itemId, int quantity)
     {
+        return AddItem(containerId, itemId, quantity, 0);
+    }
+
+    /// <summary>
+    /// Add item with specific rarity tier (for rarity-based stacking)
+    /// </summary>
+    public bool AddItem(string containerId, string itemId, int quantity, int rarityTier)
+    {
         if (!validationService.ValidateAddItem(containerId, itemId, quantity, itemRegistry))
             return false;
 
-        bool success = containerService.AddItem(containerId, itemId, quantity, itemRegistry);
+        bool success = containerService.AddItem(containerId, itemId, quantity, rarityTier, itemRegistry);
         if (success)
         {
             persistenceService.MarkDirty(containerId);
@@ -115,10 +123,18 @@ public class InventoryManager : MonoBehaviour
 
     public bool RemoveItem(string containerId, string itemId, int quantity)
     {
+        return RemoveItem(containerId, itemId, quantity, 0);
+    }
+
+    /// <summary>
+    /// Remove item with specific rarity tier (for rarity-based stacking)
+    /// </summary>
+    public bool RemoveItem(string containerId, string itemId, int quantity, int rarityTier)
+    {
         if (!validationService.ValidateRemoveItem(containerId, itemId, quantity))
             return false;
 
-        bool success = containerService.RemoveItem(containerId, itemId, quantity, itemRegistry);
+        bool success = containerService.RemoveItem(containerId, itemId, quantity, rarityTier, itemRegistry);
         if (success)
         {
             persistenceService.MarkDirty(containerId);
@@ -139,7 +155,15 @@ public class InventoryManager : MonoBehaviour
 
     public bool CanAddItem(string containerId, string itemId, int quantity)
     {
-        return containerService.CanAddItem(containerId, itemId, quantity, itemRegistry);
+        return CanAddItem(containerId, itemId, quantity, 0);
+    }
+
+    /// <summary>
+    /// Check if item with specific rarity can be added (for rarity-based stacking)
+    /// </summary>
+    public bool CanAddItem(string containerId, string itemId, int quantity, int rarityTier)
+    {
+        return containerService.CanAddItem(containerId, itemId, quantity, rarityTier, itemRegistry);
     }
 
     public InventoryContainer GetContainer(string containerId)
@@ -361,6 +385,14 @@ public class InventoryContainerService
 
     public bool AddItem(string containerId, string itemId, int quantity, ItemRegistry registry)
     {
+        return AddItem(containerId, itemId, quantity, 0, registry);
+    }
+
+    /// <summary>
+    /// Add item with specific rarity tier (items only stack with same rarity)
+    /// </summary>
+    public bool AddItem(string containerId, string itemId, int quantity, int rarityTier, ItemRegistry registry)
+    {
         lock (containersLock)
         {
             var container = containers.TryGetValue(containerId, out var cont) ? cont : null;
@@ -371,12 +403,12 @@ public class InventoryContainerService
 
             int remainingToAdd = quantity;
 
-            // Try to add to existing stacks first
+            // Try to add to existing stacks first (must match both itemId AND rarityTier)
             if (itemDef.IsStackable)
             {
                 foreach (var slot in container.Slots)
                 {
-                    if (slot.HasItem(itemId))
+                    if (slot.HasItemWithRarity(itemId, rarityTier))
                     {
                         int canAddToStack = itemDef.MaxStackSize - slot.Quantity;
                         int toAdd = Mathf.Min(remainingToAdd, canAddToStack);
@@ -397,7 +429,7 @@ public class InventoryContainerService
                 if (emptySlotIndex == -1) break;
 
                 int toAdd = itemDef.IsStackable ? Mathf.Min(remainingToAdd, itemDef.MaxStackSize) : 1;
-                container.Slots[emptySlotIndex].SetItem(itemId, toAdd);
+                container.Slots[emptySlotIndex].SetItem(itemId, toAdd, rarityTier);
                 remainingToAdd -= toAdd;
             }
 
@@ -414,16 +446,37 @@ public class InventoryContainerService
 
     public bool RemoveItem(string containerId, string itemId, int quantity, ItemRegistry registry)
     {
+        return RemoveItem(containerId, itemId, quantity, 0, registry);
+    }
+
+    /// <summary>
+    /// Remove item with specific rarity tier (only removes from matching rarity stacks)
+    /// If rarityTier is 0, removes from any stack (backwards compatible)
+    /// </summary>
+    public bool RemoveItem(string containerId, string itemId, int quantity, int rarityTier, ItemRegistry registry)
+    {
         lock (containersLock)
         {
             var container = containers.TryGetValue(containerId, out var cont) ? cont : null;
-            if (container == null || !container.HasItem(itemId, quantity)) return false;
+            if (container == null) return false;
+
+            // Check if we have enough (considering rarity if specified)
+            int availableQuantity = 0;
+            foreach (var slot in container.Slots)
+            {
+                if (rarityTier == 0 ? slot.HasItem(itemId) : slot.HasItemWithRarity(itemId, rarityTier))
+                {
+                    availableQuantity += slot.Quantity;
+                }
+            }
+            if (availableQuantity < quantity) return false;
 
             int remainingToRemove = quantity;
             for (int i = 0; i < container.Slots.Count && remainingToRemove > 0; i++)
             {
                 var slot = container.Slots[i];
-                if (slot.HasItem(itemId))
+                bool matches = rarityTier == 0 ? slot.HasItem(itemId) : slot.HasItemWithRarity(itemId, rarityTier);
+                if (matches)
                 {
                     int toRemove = Mathf.Min(remainingToRemove, slot.Quantity);
                     slot.RemoveQuantity(toRemove);
@@ -495,6 +548,14 @@ public class InventoryContainerService
 
     public bool CanAddItem(string containerId, string itemId, int quantity, ItemRegistry registry)
     {
+        return CanAddItem(containerId, itemId, quantity, 0, registry);
+    }
+
+    /// <summary>
+    /// Check if item with specific rarity can be added (only stacks with same rarity)
+    /// </summary>
+    public bool CanAddItem(string containerId, string itemId, int quantity, int rarityTier, ItemRegistry registry)
+    {
         lock (containersLock)
         {
             var container = containers.TryGetValue(containerId, out var cont) ? cont : null;
@@ -509,11 +570,11 @@ public class InventoryContainerService
                 return quantity <= availableSlots;
             }
 
-            // Calculate space in existing stacks
+            // Calculate space in existing stacks (must match both itemId AND rarityTier)
             int spaceInExistingStacks = 0;
             foreach (var slot in container.Slots)
             {
-                if (slot.HasItem(itemId))
+                if (slot.HasItemWithRarity(itemId, rarityTier))
                 {
                     spaceInExistingStacks += (itemDef.MaxStackSize - slot.Quantity);
                 }

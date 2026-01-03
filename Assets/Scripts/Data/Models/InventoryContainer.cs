@@ -114,6 +114,50 @@ public class InventoryContainer
     }
 
     /// <summary>
+    /// Get total quantity of specific item with specific rarity in container
+    /// </summary>
+    public int GetItemQuantityWithRarity(string itemId, int rarityTier)
+    {
+        int total = 0;
+        foreach (var slot in Slots)
+        {
+            if (slot.HasItemWithRarity(itemId, rarityTier))
+                total += slot.Quantity;
+        }
+        return total;
+    }
+
+    /// <summary>
+    /// Check if container has enough of specific item with specific rarity
+    /// </summary>
+    public bool HasItemWithRarity(string itemId, int rarityTier, int requiredQuantity = 1)
+    {
+        return GetItemQuantityWithRarity(itemId, rarityTier) >= requiredQuantity;
+    }
+
+    /// <summary>
+    /// Find first slot containing specific item with specific rarity
+    /// </summary>
+    /// <returns>Slot index or -1 if item not found</returns>
+    public int FindItemSlotWithRarity(string itemId, int rarityTier)
+    {
+        for (int i = 0; i < Slots.Count; i++)
+        {
+            if (Slots[i].HasItemWithRarity(itemId, rarityTier))
+                return i;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// Get all slots containing a specific item with specific rarity
+    /// </summary>
+    public List<InventorySlot> GetItemSlotsWithRarity(string itemId, int rarityTier)
+    {
+        return Slots.Where(slot => slot.HasItemWithRarity(itemId, rarityTier)).ToList();
+    }
+
+    /// <summary>
     /// Get all non-empty slots
     /// </summary>
     public List<InventorySlot> GetNonEmptySlots()

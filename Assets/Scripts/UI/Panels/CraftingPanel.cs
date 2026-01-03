@@ -352,21 +352,24 @@ public class CraftingPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Get variants filtered by current category
+    /// Get variants filtered by current category, sorted by level requirement (ascending)
     /// </summary>
     private List<ActivityVariant> GetFilteredVariants()
     {
         if (currentCategory == null)
         {
-            // Show all variants
-            return variantsByCategory.Values.SelectMany(v => v).ToList();
+            // Show all variants, sorted by level requirement
+            return variantsByCategory.Values
+                .SelectMany(v => v)
+                .OrderBy(v => v.UnlockRequirement)
+                .ToList();
         }
         else
         {
-            // Show only variants from selected category
+            // Show only variants from selected category, sorted by level requirement
             if (variantsByCategory.TryGetValue(currentCategory, out var variants))
             {
-                return variants;
+                return variants.OrderBy(v => v.UnlockRequirement).ToList();
             }
             return new List<ActivityVariant>();
         }

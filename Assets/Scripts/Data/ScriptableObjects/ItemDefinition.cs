@@ -1,5 +1,6 @@
 // Purpose: Simple ScriptableObject defining game items (materials, equipment, consumables, etc.)
 // Filepath: Assets/Scripts/Data/ScriptableObjects/ItemDefinition.cs
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "New Item", menuName = "WalkAndRPG/Item Definition")]
@@ -47,6 +48,13 @@ public class ItemDefinition : ScriptableObject
 
     [Tooltip("Number of inventory slots this item provides (for backpacks only)")]
     public int InventorySlots = 0;
+
+    [Header("Stats by Rarity")]
+    [Tooltip("Stats for each available rarity tier. Only add entries for rarities this item can have.")]
+    public List<ItemRarityStats> RarityStats = new List<ItemRarityStats>();
+
+    [Tooltip("Ability granted when this item is equipped (applies to all rarities unless overridden)")]
+    public AbilityDefinition BaseUnlockedAbility;
 
     /// <summary>
     /// Get display info for UI
@@ -102,6 +110,93 @@ public class ItemDefinition : ScriptableObject
     public bool IsBackpack()
     {
         return EquipmentSlot == EquipmentType.Backpack;
+    }
+
+    /// <summary>
+    /// Check if this item has rarity-based stats
+    /// </summary>
+    public bool HasRarityStats()
+    {
+        return RarityStats != null && RarityStats.Count > 0;
+    }
+
+    /// <summary>
+    /// Get the stats for a specific rarity tier
+    /// </summary>
+    public ItemRarityStats GetStatsForRarity(int rarityTier)
+    {
+        if (RarityStats == null) return null;
+
+        foreach (var stats in RarityStats)
+        {
+            if (stats.RarityTier == rarityTier)
+                return stats;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Get all available rarity tiers for this item (sorted)
+    /// </summary>
+    public List<int> GetAvailableRarityTiers()
+    {
+        var tiers = new List<int>();
+        if (RarityStats != null)
+        {
+            foreach (var stats in RarityStats)
+            {
+                if (!tiers.Contains(stats.RarityTier))
+                    tiers.Add(stats.RarityTier);
+            }
+            tiers.Sort();
+        }
+        return tiers;
+    }
+
+    /// <summary>
+    /// Get the lowest rarity tier available for this item
+    /// </summary>
+    public int GetLowestRarityTier()
+    {
+        if (RarityStats == null || RarityStats.Count == 0)
+            return RarityTier; // Fallback to base rarity
+
+        int lowest = 5;
+        foreach (var stats in RarityStats)
+        {
+            if (stats.RarityTier < lowest)
+                lowest = stats.RarityTier;
+        }
+        return lowest;
+    }
+
+    /// <summary>
+    /// Get the highest rarity tier available for this item
+    /// </summary>
+    public int GetHighestRarityTier()
+    {
+        if (RarityStats == null || RarityStats.Count == 0)
+            return RarityTier; // Fallback to base rarity
+
+        int highest = 1;
+        foreach (var stats in RarityStats)
+        {
+            if (stats.RarityTier > highest)
+                highest = stats.RarityTier;
+        }
+        return highest;
+    }
+
+    /// <summary>
+    /// Get the ability unlocked at a specific rarity (checks rarity-specific first, then base)
+    /// </summary>
+    public AbilityDefinition GetUnlockedAbilityForRarity(int rarityTier)
+    {
+        var rarityStats = GetStatsForRarity(rarityTier);
+        if (rarityStats?.UnlockedAbility != null)
+            return rarityStats.UnlockedAbility;
+
+        return BaseUnlockedAbility;
     }
 
     /// <summary>
