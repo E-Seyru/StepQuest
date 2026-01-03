@@ -38,101 +38,66 @@ public class CategoryManagerWindow : EditorWindow
     private int newCategorySortOrder = 0;
 
     // Predefined category suggestions organized by crafting profession
+    // Kept simple: 3-5 categories per profession
     private static readonly Dictionary<string, List<CategorySuggestion>> CategorySuggestions = new Dictionary<string, List<CategorySuggestion>>
     {
         // ===== FORGING / BLACKSMITHING =====
         { "Forging", new List<CategorySuggestion>
             {
-                new CategorySuggestion("bars", "Lingots", "Raw metal bars (iron, steel, gold, mithril)", new Color(0.7f, 0.7f, 0.7f)),
-                new CategorySuggestion("weapons_swords", "Epees", "One-handed and two-handed swords", new Color(0.8f, 0.8f, 0.9f)),
-                new CategorySuggestion("weapons_axes", "Haches", "Battle axes and throwing axes", new Color(0.6f, 0.5f, 0.4f)),
-                new CategorySuggestion("weapons_maces", "Masses", "Maces, hammers, and blunt weapons", new Color(0.5f, 0.5f, 0.5f)),
-                new CategorySuggestion("weapons_daggers", "Dagues", "Daggers and knives", new Color(0.4f, 0.4f, 0.5f)),
-                new CategorySuggestion("weapons_spears", "Lances", "Spears and polearms", new Color(0.6f, 0.6f, 0.7f)),
-                new CategorySuggestion("armor_helmets", "Casques", "Head protection", new Color(0.7f, 0.6f, 0.5f)),
-                new CategorySuggestion("armor_chestplates", "Plastrons", "Chest armor", new Color(0.6f, 0.6f, 0.7f)),
-                new CategorySuggestion("armor_gauntlets", "Gantelets", "Hand and arm protection", new Color(0.5f, 0.5f, 0.6f)),
-                new CategorySuggestion("armor_boots", "Bottes", "Metal boots and greaves", new Color(0.4f, 0.4f, 0.5f)),
-                new CategorySuggestion("armor_shields", "Boucliers", "Shields of all types", new Color(0.6f, 0.5f, 0.4f)),
-                new CategorySuggestion("tools", "Outils", "Pickaxes, hammers, tongs", new Color(0.5f, 0.4f, 0.3f)),
-                new CategorySuggestion("nails_fittings", "Clous & Ferrures", "Nails, hinges, fittings", new Color(0.4f, 0.4f, 0.4f)),
-                new CategorySuggestion("horseshoes", "Fers a Cheval", "Horseshoes and horse gear", new Color(0.6f, 0.5f, 0.4f)),
+                new CategorySuggestion("bars", "Lingots", "Metal bars and ingots", new Color(0.7f, 0.7f, 0.7f)),
+                new CategorySuggestion("weapons", "Armes", "Swords, axes, maces, daggers", new Color(0.6f, 0.6f, 0.7f)),
+                new CategorySuggestion("armor", "Armures", "Helmets, chestplates, gauntlets, boots", new Color(0.5f, 0.5f, 0.6f)),
+                new CategorySuggestion("tools", "Outils", "Pickaxes, hammers, tools", new Color(0.5f, 0.4f, 0.3f)),
             }
         },
 
         // ===== COOKING =====
         { "Cooking", new List<CategorySuggestion>
             {
-                new CategorySuggestion("meals_meat", "Viandes", "Cooked meat dishes", new Color(0.8f, 0.4f, 0.3f)),
-                new CategorySuggestion("meals_fish", "Poissons", "Cooked fish dishes", new Color(0.4f, 0.6f, 0.8f)),
-                new CategorySuggestion("meals_vegetarian", "Vegetarien", "Vegetable-based meals", new Color(0.4f, 0.7f, 0.3f)),
-                new CategorySuggestion("soups_stews", "Soupes & Ragouts", "Soups, stews, broths", new Color(0.7f, 0.5f, 0.3f)),
-                new CategorySuggestion("bread_pastry", "Pains & Patisseries", "Bread, cakes, pastries", new Color(0.9f, 0.8f, 0.5f)),
-                new CategorySuggestion("desserts", "Desserts", "Sweet treats and desserts", new Color(0.9f, 0.6f, 0.7f)),
+                new CategorySuggestion("meals", "Plats", "Cooked meals and dishes", new Color(0.8f, 0.5f, 0.3f)),
                 new CategorySuggestion("drinks", "Boissons", "Drinks, juices, teas", new Color(0.5f, 0.7f, 0.9f)),
-                new CategorySuggestion("preserves", "Conserves", "Preserved foods, jams, pickles", new Color(0.8f, 0.6f, 0.4f)),
-                new CategorySuggestion("spices_seasonings", "Epices", "Spice blends and seasonings", new Color(0.9f, 0.7f, 0.2f)),
-                new CategorySuggestion("rations", "Rations", "Travel food and rations", new Color(0.6f, 0.5f, 0.4f)),
+                new CategorySuggestion("desserts", "Desserts", "Pastries and sweet treats", new Color(0.9f, 0.7f, 0.6f)),
+                new CategorySuggestion("rations", "Rations", "Travel food and preserved rations", new Color(0.6f, 0.5f, 0.4f)),
             }
         },
 
         // ===== ALCHEMY / POTIONS =====
         { "Alchemy", new List<CategorySuggestion>
             {
-                new CategorySuggestion("potions_health", "Potions de Vie", "Health restoration potions", new Color(0.9f, 0.2f, 0.2f)),
-                new CategorySuggestion("potions_mana", "Potions de Mana", "Mana restoration potions", new Color(0.2f, 0.4f, 0.9f)),
-                new CategorySuggestion("potions_stamina", "Potions d'Endurance", "Stamina restoration potions", new Color(0.2f, 0.8f, 0.3f)),
-                new CategorySuggestion("potions_buff", "Potions de Buff", "Stat-boosting potions", new Color(0.9f, 0.7f, 0.2f)),
-                new CategorySuggestion("potions_resistance", "Potions de Resistance", "Elemental resistance potions", new Color(0.6f, 0.4f, 0.8f)),
-                new CategorySuggestion("poisons", "Poisons", "Weapon coatings and poisons", new Color(0.4f, 0.8f, 0.2f)),
-                new CategorySuggestion("antidotes", "Antidotes", "Cure poisons and diseases", new Color(0.8f, 0.8f, 0.3f)),
-                new CategorySuggestion("elixirs", "Elixirs", "Powerful long-duration effects", new Color(0.7f, 0.3f, 0.9f)),
-                new CategorySuggestion("oils", "Huiles", "Weapon oils and enhancements", new Color(0.6f, 0.5f, 0.2f)),
-                new CategorySuggestion("bombs_grenades", "Bombes", "Throwable explosives", new Color(0.9f, 0.5f, 0.2f)),
-                new CategorySuggestion("reagents", "Reactifs", "Crafted alchemical reagents", new Color(0.5f, 0.6f, 0.7f)),
+                new CategorySuggestion("potions", "Potions", "Health, mana, stamina potions", new Color(0.9f, 0.3f, 0.3f)),
+                new CategorySuggestion("elixirs", "Elixirs", "Buff potions and long-duration effects", new Color(0.7f, 0.5f, 0.9f)),
+                new CategorySuggestion("poisons", "Poisons", "Weapon coatings and poisons", new Color(0.4f, 0.8f, 0.3f)),
+                new CategorySuggestion("bombs", "Bombes", "Throwable explosives", new Color(0.9f, 0.5f, 0.2f)),
             }
         },
 
         // ===== LEATHERWORKING =====
         { "Leatherworking", new List<CategorySuggestion>
             {
-                new CategorySuggestion("leather_processed", "Cuirs Traites", "Processed leather materials", new Color(0.6f, 0.4f, 0.2f)),
-                new CategorySuggestion("armor_light", "Armure Legere", "Light leather armor pieces", new Color(0.7f, 0.5f, 0.3f)),
-                new CategorySuggestion("gloves", "Gants", "Leather gloves", new Color(0.5f, 0.4f, 0.3f)),
-                new CategorySuggestion("boots_leather", "Bottes Cuir", "Leather boots", new Color(0.4f, 0.3f, 0.2f)),
-                new CategorySuggestion("belts", "Ceintures", "Belts and straps", new Color(0.5f, 0.3f, 0.2f)),
+                new CategorySuggestion("leather", "Cuirs", "Processed leather materials", new Color(0.6f, 0.4f, 0.2f)),
+                new CategorySuggestion("light_armor", "Armure Legere", "Light armor pieces", new Color(0.7f, 0.5f, 0.3f)),
                 new CategorySuggestion("bags", "Sacs", "Bags, pouches, backpacks", new Color(0.6f, 0.5f, 0.3f)),
-                new CategorySuggestion("quivers", "Carquois", "Arrow quivers", new Color(0.5f, 0.4f, 0.2f)),
-                new CategorySuggestion("saddles", "Selles", "Horse saddles and tack", new Color(0.7f, 0.5f, 0.2f)),
-                new CategorySuggestion("sheaths", "Fourreaux", "Weapon sheaths and holsters", new Color(0.4f, 0.3f, 0.2f)),
+                new CategorySuggestion("accessories", "Accessoires", "Belts, gloves, boots", new Color(0.5f, 0.4f, 0.3f)),
             }
         },
 
         // ===== TAILORING / CLOTHCRAFT =====
         { "Tailoring", new List<CategorySuggestion>
             {
-                new CategorySuggestion("cloth_processed", "Tissus", "Processed cloth materials", new Color(0.8f, 0.8f, 0.9f)),
-                new CategorySuggestion("robes", "Robes", "Mage robes and gowns", new Color(0.5f, 0.4f, 0.8f)),
+                new CategorySuggestion("cloth", "Tissus", "Processed cloth materials", new Color(0.8f, 0.8f, 0.9f)),
+                new CategorySuggestion("robes", "Robes", "Mage robes and cloth armor", new Color(0.5f, 0.4f, 0.8f)),
                 new CategorySuggestion("cloaks", "Capes", "Cloaks and capes", new Color(0.4f, 0.3f, 0.6f)),
-                new CategorySuggestion("hats", "Chapeaux", "Hats and hoods", new Color(0.6f, 0.5f, 0.7f)),
-                new CategorySuggestion("shirts", "Chemises", "Shirts and tunics", new Color(0.7f, 0.7f, 0.8f)),
-                new CategorySuggestion("pants", "Pantalons", "Pants and leggings", new Color(0.5f, 0.5f, 0.6f)),
-                new CategorySuggestion("bandages", "Bandages", "Medical bandages", new Color(0.9f, 0.9f, 0.9f)),
-                new CategorySuggestion("bags_cloth", "Sacs en Tissu", "Cloth bags and pouches", new Color(0.7f, 0.6f, 0.5f)),
+                new CategorySuggestion("clothing", "Vetements", "Shirts, pants, hats", new Color(0.7f, 0.7f, 0.8f)),
             }
         },
 
         // ===== JEWELCRAFTING =====
         { "Jewelcrafting", new List<CategorySuggestion>
             {
-                new CategorySuggestion("gems_cut", "Gemmes Taillees", "Cut and polished gems", new Color(0.8f, 0.3f, 0.8f)),
+                new CategorySuggestion("gems", "Gemmes", "Cut and polished gems", new Color(0.8f, 0.3f, 0.8f)),
                 new CategorySuggestion("rings", "Anneaux", "Finger rings", new Color(0.9f, 0.8f, 0.3f)),
-                new CategorySuggestion("necklaces", "Colliers", "Necklaces and pendants", new Color(0.8f, 0.7f, 0.4f)),
-                new CategorySuggestion("earrings", "Boucles d'Oreilles", "Earrings", new Color(0.7f, 0.6f, 0.8f)),
-                new CategorySuggestion("bracelets", "Bracelets", "Bracelets and bangles", new Color(0.6f, 0.7f, 0.8f)),
-                new CategorySuggestion("crowns", "Couronnes", "Crowns and tiaras", new Color(0.9f, 0.85f, 0.2f)),
-                new CategorySuggestion("amulets", "Amulettes", "Magical amulets", new Color(0.5f, 0.3f, 0.7f)),
-                new CategorySuggestion("trinkets", "Bibelots", "Misc trinkets and charms", new Color(0.6f, 0.5f, 0.6f)),
+                new CategorySuggestion("necklaces", "Colliers", "Necklaces and amulets", new Color(0.8f, 0.7f, 0.4f)),
+                new CategorySuggestion("trinkets", "Bibelots", "Bracelets, earrings, charms", new Color(0.6f, 0.6f, 0.7f)),
             }
         },
 
@@ -141,13 +106,8 @@ public class CategoryManagerWindow : EditorWindow
             {
                 new CategorySuggestion("planks", "Planches", "Processed wood planks", new Color(0.7f, 0.5f, 0.3f)),
                 new CategorySuggestion("bows", "Arcs", "Bows and crossbows", new Color(0.6f, 0.5f, 0.3f)),
-                new CategorySuggestion("staves", "Batons", "Magic staves and walking sticks", new Color(0.5f, 0.4f, 0.3f)),
-                new CategorySuggestion("arrows", "Fleches", "Arrow shafts and arrows", new Color(0.6f, 0.4f, 0.2f)),
-                new CategorySuggestion("shields_wood", "Boucliers Bois", "Wooden shields", new Color(0.7f, 0.5f, 0.2f)),
-                new CategorySuggestion("handles", "Manches", "Tool and weapon handles", new Color(0.5f, 0.4f, 0.2f)),
-                new CategorySuggestion("furniture", "Mobilier", "Furniture pieces", new Color(0.6f, 0.4f, 0.3f)),
-                new CategorySuggestion("instruments", "Instruments", "Musical instruments", new Color(0.8f, 0.6f, 0.4f)),
-                new CategorySuggestion("carts", "Chariots", "Carts and wagon parts", new Color(0.5f, 0.4f, 0.3f)),
+                new CategorySuggestion("staves", "Batons", "Magic staves and wands", new Color(0.5f, 0.4f, 0.6f)),
+                new CategorySuggestion("furniture", "Mobilier", "Furniture and decorations", new Color(0.6f, 0.4f, 0.3f)),
             }
         },
 
@@ -156,46 +116,7 @@ public class CategoryManagerWindow : EditorWindow
             {
                 new CategorySuggestion("scrolls", "Parchemins", "Magic scrolls", new Color(0.9f, 0.9f, 0.7f)),
                 new CategorySuggestion("runes", "Runes", "Enchantment runes", new Color(0.4f, 0.5f, 0.9f)),
-                new CategorySuggestion("enchant_weapon", "Enchant. Armes", "Weapon enchantments", new Color(0.8f, 0.3f, 0.3f)),
-                new CategorySuggestion("enchant_armor", "Enchant. Armures", "Armor enchantments", new Color(0.3f, 0.5f, 0.8f)),
-                new CategorySuggestion("enchant_jewelry", "Enchant. Bijoux", "Jewelry enchantments", new Color(0.8f, 0.6f, 0.9f)),
-                new CategorySuggestion("glyphs", "Glyphes", "Magical glyphs", new Color(0.5f, 0.4f, 0.7f)),
-                new CategorySuggestion("wands", "Baguettes", "Magic wands", new Color(0.7f, 0.5f, 0.9f)),
-            }
-        },
-
-        // ===== FISHING (crafting aspect) =====
-        { "Fishing Crafts", new List<CategorySuggestion>
-            {
-                new CategorySuggestion("lures", "Appats", "Fishing lures and bait", new Color(0.5f, 0.7f, 0.4f)),
-                new CategorySuggestion("rods", "Cannes", "Fishing rods", new Color(0.6f, 0.5f, 0.4f)),
-                new CategorySuggestion("nets", "Filets", "Fishing nets", new Color(0.5f, 0.6f, 0.5f)),
-                new CategorySuggestion("traps_fish", "Pieges", "Fish traps", new Color(0.4f, 0.5f, 0.4f)),
-            }
-        },
-
-        // ===== CONSTRUCTION / MASONRY =====
-        { "Construction", new List<CategorySuggestion>
-            {
-                new CategorySuggestion("bricks", "Briques", "Bricks and blocks", new Color(0.8f, 0.5f, 0.3f)),
-                new CategorySuggestion("stone_processed", "Pierres Taillees", "Processed stone", new Color(0.6f, 0.6f, 0.6f)),
-                new CategorySuggestion("foundations", "Fondations", "Building foundations", new Color(0.5f, 0.5f, 0.5f)),
-                new CategorySuggestion("walls", "Murs", "Wall sections", new Color(0.6f, 0.5f, 0.4f)),
-                new CategorySuggestion("roofing", "Toitures", "Roof materials", new Color(0.7f, 0.4f, 0.3f)),
-                new CategorySuggestion("decorations", "Decorations", "Decorative elements", new Color(0.7f, 0.6f, 0.5f)),
-            }
-        },
-
-        // ===== GENERAL / MISC =====
-        { "General", new List<CategorySuggestion>
-            {
-                new CategorySuggestion("components", "Composants", "Crafting components", new Color(0.6f, 0.6f, 0.6f)),
-                new CategorySuggestion("materials", "Materiaux", "Processed materials", new Color(0.5f, 0.5f, 0.5f)),
-                new CategorySuggestion("containers", "Conteneurs", "Bottles, jars, boxes", new Color(0.7f, 0.6f, 0.5f)),
-                new CategorySuggestion("rope_string", "Cordes & Ficelles", "Rope and string products", new Color(0.6f, 0.5f, 0.4f)),
-                new CategorySuggestion("candles", "Bougies", "Candles and light sources", new Color(0.9f, 0.8f, 0.5f)),
-                new CategorySuggestion("paper", "Papier", "Paper and parchment", new Color(0.9f, 0.9f, 0.8f)),
-                new CategorySuggestion("dyes", "Teintures", "Dyes and pigments", new Color(0.7f, 0.3f, 0.5f)),
+                new CategorySuggestion("enchantments", "Enchantements", "Weapon and armor enchantments", new Color(0.7f, 0.4f, 0.8f)),
             }
         },
     };

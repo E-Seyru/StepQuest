@@ -613,11 +613,9 @@ public class ActivityDisplayPanel : MonoBehaviour
         // Re-setup button listeners when panel is re-enabled (after panel switching)
         SetupButtonListeners();
 
-        // Restore isDisplaying flag if the panel is visible (e.g., after panel switching)
-        if (gameObject.activeInHierarchy)
-        {
-            isDisplaying = true;
-        }
+        // Check if there's an active activity and show the panel if needed
+        // This handles the case when navigating back to LocationDetailsPanel while an activity is running
+        CheckAndShowIfActivityActive();
     }
 
     void OnDisable()

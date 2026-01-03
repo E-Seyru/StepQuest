@@ -176,17 +176,8 @@ public class AboveCanvasInitializationService
             return;
         }
 
-        // Check that PanelManager is available
-        if (PanelManager.Instance == null)
-        {
-            Logger.LogWarning("AboveCanvasManager: PanelManager.Instance is null", Logger.LogCategory.General);
-            return;
-        }
-
-        // Navigate to LocationDetailsPanel (ActivityDisplayPanel will show automatically if activity is active)
-        PanelManager.Instance.HideMapAndGoToPanel("LocationDetailsPanel");
-
-        Logger.LogInfo("AboveCanvasManager: ActivityBar clicked - navigating to LocationDetailsPanel", Logger.LogCategory.General);
+        // Use shared method to open ActivityDisplayPanel
+        OpenActivityDisplayPanel();
     }
 
     private void SetupIdleBarButton()
@@ -221,8 +212,35 @@ public class AboveCanvasInitializationService
             return;
         }
 
-        // If not in combat (idle state), do nothing or optionally navigate somewhere
+        // Check if there's an active activity - open ActivityDisplayPanel
+        var activityManager = ActivityManager.Instance;
+        if (activityManager != null && activityManager.HasActiveActivity())
+        {
+            OpenActivityDisplayPanel();
+            return;
+        }
+
+        // If not in combat and no activity (truly idle), do nothing
         Logger.LogInfo("AboveCanvasManager: IdleBar clicked in idle state - no action", Logger.LogCategory.General);
+    }
+
+    /// <summary>
+    /// Opens the ActivityDisplayPanel, navigating to LocationDetailsPanel first if needed
+    /// </summary>
+    private void OpenActivityDisplayPanel()
+    {
+        var panelManager = PanelManager.Instance;
+        if (panelManager == null)
+        {
+            Logger.LogWarning("AboveCanvasManager: PanelManager.Instance is null", Logger.LogCategory.General);
+            return;
+        }
+
+        // Navigate to LocationDetailsPanel with smooth slide animation
+        panelManager.GoToPanelAnimated("LocationDetailsPanel");
+
+        // ActivityDisplayPanel will show automatically via its event subscriptions
+        Logger.LogInfo("AboveCanvasManager: Navigating to LocationDetailsPanel with animation", Logger.LogCategory.General);
     }
 
     private void SetupProgressBar()

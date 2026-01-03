@@ -548,6 +548,118 @@ public class PanelManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Navigate to a panel with slide animation (like swiping)
+    /// </summary>
+    /// <param name="panelName">Name of the panel to navigate to</param>
+    public void GoToPanelAnimated(string panelName)
+    {
+        int panelIndex = FindPanelIndexByName(panelName);
+        if (panelIndex >= 0)
+        {
+            GoToPanelAnimated(panelIndex);
+        }
+        else
+        {
+            Logger.LogWarning($"PanelManager: Panel with name '{panelName}' not found!", Logger.LogCategory.General);
+        }
+    }
+
+    /// <summary>
+    /// Navigate to a panel with slide animation (like swiping)
+    /// </summary>
+    /// <param name="panelIndex">Index of the panel to navigate to</param>
+    public void GoToPanelAnimated(int panelIndex)
+    {
+        if (panelIndex < 0 || panelIndex >= panels.Count || panels[panelIndex] == null)
+        {
+            Logger.LogWarning($"PanelManager: Invalid panel index for GoToPanelAnimated: {panelIndex}", Logger.LogCategory.General);
+            return;
+        }
+
+        // If transitioning, skip
+        if (isTransitioning)
+        {
+            Logger.LogWarning("PanelManager: Already transitioning, skipping GoToPanelAnimated", Logger.LogCategory.General);
+            return;
+        }
+
+        // If we're on the map, use slide-in only animation (no "from" panel to slide out)
+        if (!mapIsHidden)
+        {
+            mapPanel.SetActive(false);
+            mapIsHidden = true;
+            OnMapStateChanged?.Invoke(false);
+            StartInputDetection();
+
+            // Slide in the target panel from the right
+            StartSlideInTransition(panelIndex);
+            Logger.LogInfo($"PanelManager: Slide-in transition from map to panel {panelIndex}", Logger.LogCategory.General);
+            return;
+        }
+
+        // If already on target panel, do nothing
+        if (panelIndex == currentPanelIndex)
+        {
+            Logger.LogInfo($"PanelManager: Already on panel {panelIndex}", Logger.LogCategory.General);
+            return;
+        }
+
+        // Determine direction based on panel indices
+        TransitionDirection direction = panelIndex > currentPanelIndex ? TransitionDirection.Right : TransitionDirection.Left;
+
+        // Start the animated transition
+        StartTransition(currentPanelIndex, panelIndex, direction);
+
+        Logger.LogInfo($"PanelManager: Animated transition from {currentPanelIndex} to {panelIndex}", Logger.LogCategory.General);
+    }
+
+    /// <summary>
+    /// Slide in a single panel (used when coming from map)
+    /// </summary>
+    private void StartSlideInTransition(int panelIndex)
+    {
+        isTransitioning = true;
+
+        RectTransform toRect = panels[panelIndex].GetComponent<RectTransform>();
+
+        // Activate the panel
+        if (!alwaysActivePanelIndices.Contains(panelIndex))
+            panels[panelIndex].SetActive(true);
+
+        // Start off-screen to the right
+        toRect.anchoredPosition = new Vector2(panelContainer.rect.width, 0);
+
+        // Animate to center
+        StartCoroutine(SlideInPanel(toRect, panelIndex));
+    }
+
+    /// <summary>
+    /// Coroutine to slide in a single panel
+    /// </summary>
+    private IEnumerator SlideInPanel(RectTransform toRect, int targetIndex)
+    {
+        float transitionDuration = 1f / transitionSpeed;
+        Vector2 startPos = toRect.anchoredPosition;
+        Vector2 targetPos = Vector2.zero;
+
+        float elapsedTime = 0f;
+
+        while (elapsedTime < transitionDuration)
+        {
+            float t = transitionCurve.Evaluate(elapsedTime / transitionDuration);
+            toRect.anchoredPosition = Vector2.Lerp(startPos, targetPos, t);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Finalize
+        toRect.anchoredPosition = targetPos;
+        currentPanelIndex = targetIndex;
+        isTransitioning = false;
+        OnPanelChanged?.Invoke(currentPanelIndex);
+    }
+
     // OPTIMISATION : Nettoyer les coroutines a la destruction
     private void OnDestroy()
     {

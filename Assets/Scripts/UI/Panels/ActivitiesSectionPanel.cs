@@ -78,6 +78,27 @@ public class ActivitiesSectionPanel : MonoBehaviour
         // Subscribe to activity events to auto-hide when activity starts
         EventBus.Subscribe<ActivityStartedEvent>(OnActivityStarted);
         EventBus.Subscribe<ActivityStoppedEvent>(OnActivityStopped);
+
+        // Check if there's already an active activity (resumed from save)
+        // Use Invoke to delay check until other managers are initialized
+        Invoke(nameof(CheckInitialActivityState), 0.1f);
+    }
+
+    /// <summary>
+    /// Check if an activity is already in progress on startup and hide panel if so
+    /// </summary>
+    private void CheckInitialActivityState()
+    {
+        if (ActivityManager.Instance != null && ActivityManager.Instance.HasActiveActivity())
+        {
+            // Activity was resumed from save - immediately hide without animation
+            if (rectTransform != null)
+            {
+                rectTransform.anchoredPosition = new Vector2(rectTransform.anchoredPosition.x, hiddenYPosition);
+                isHidden = true;
+            }
+            Logger.LogInfo("ActivitiesSectionPanel: Hidden on startup - activity already in progress", Logger.LogCategory.ActivityLog);
+        }
     }
 
     #region Public Methods
