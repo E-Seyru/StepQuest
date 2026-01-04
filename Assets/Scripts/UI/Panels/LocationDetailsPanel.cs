@@ -661,6 +661,7 @@ public class LocationDetailsPanel : MonoBehaviour
     {
         if (CraftingPanel.Instance != null)
         {
+            SlideOutActivitiesSection();
             CraftingPanel.Instance.OpenWithActivity(locationActivity);
         }
         else

@@ -24,3 +24,35 @@ MonoBehaviour:
   MaxStackSize: 1
   EquipmentSlot: 1
   InventorySlots: 0
+  RarityStats:
+  - RarityTier: 1
+    Stats:
+    - StatType: 0
+      Value: 1
+      IsPercentage: 0
+    UnlockedAbility: {fileID: 0}
+  - RarityTier: 2
+    Stats:
+    - StatType: 0
+      Value: 2
+      IsPercentage: 0
+    UnlockedAbility: {fileID: 0}
+  - RarityTier: 3
+    Stats:
+    - StatType: 0
+      Value: 3
+      IsPercentage: 0
+    UnlockedAbility: {fileID: 0}
+  - RarityTier: 4
+    Stats:
+    - StatType: 0
+      Value: 4
+      IsPercentage: 0
+    UnlockedAbility: {fileID: 0}
+  - RarityTier: 5
+    Stats:
+    - StatType: 0
+      Value: 5
+      IsPercentage: 0
+    UnlockedAbility: {fileID: 0}
+  BaseUnlockedAbility: {fileID: 0}

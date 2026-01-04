@@ -19,15 +19,25 @@ public class CraftingDetailPanel : MonoBehaviour
     [SerializeField] private Sprite noItemSelectedSprite; // Placeholder sprite shown when no item selected
 
     [Header("Rarity Tabs")]
-    [SerializeField] private Transform rarityTabsContainer;
-    [SerializeField] private GameObject rarityTabPrefab;
-    [SerializeField] private Color inactiveTabColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+    [SerializeField] private List<RectTransform> rarityTabs; // Assign tabs manually (index 0 = Common, 1 = Uncommon, etc.)
+    [SerializeField] private float selectedTabOffsetY = 10f; // How much selected tab raises up
+    [SerializeField] private float tabAnimationSpeed = 10f; // Speed of tab sliding animation
 
     [Header("Stats Display")]
     [SerializeField] private GameObject statLinePrefab; // Used for stats AND abilities
 
     [Header("Rarity Background")]
     [SerializeField] private Image rarityBackground;
+    [SerializeField] private Image rarityBorderBackground;
+    [SerializeField] private Color[] rarityColors = new Color[]
+    {
+        Color.gray,                         // Common
+        Color.green,                        // Uncommon
+        Color.blue,                         // Rare
+        new Color(0.6f, 0.0f, 1.0f),        // Epic (purple)
+        new Color(1.0f, 0.6f, 0.0f)         // Legendary (orange)
+    };
+    [SerializeField, Range(0f, 1f)] private float rarityColorDim = 0.7f; // Dim factor for rarity colors
 
     [Header("Placeholder Texts")]
     [SerializeField] private string noDescriptionText = "Aucune description disponible.";
@@ -37,22 +47,81 @@ public class CraftingDetailPanel : MonoBehaviour
     private ActivityVariant currentVariant;
     private ItemDefinition currentOutputItem;
     private int selectedRarityTier = 1;
-    private List<GameObject> instantiatedTabs = new List<GameObject>();
     private List<GameObject> instantiatedStatLines = new List<GameObject>();
+
+    // Tab animation state
+    private List<float> tabBasePositionsY = new List<float>();
+    private List<float> tabTargetPositionsY = new List<float>();
+    private bool tabsInitialized = false;
 
     void Start()
     {
         // Subscribe to variant selection events
         CraftingPanel.OnVariantSelected += OnVariantSelected;
 
+        // Initialize tabs
+        InitializeTabs();
+
         // Start with no item selected
         ClearPanel();
+    }
+
+    void Update()
+    {
+        // Animate tabs towards their target positions
+        AnimateTabs();
+    }
+
+    private void InitializeTabs()
+    {
+        if (rarityTabs == null || rarityTabs.Count == 0) return;
+
+        tabBasePositionsY.Clear();
+        tabTargetPositionsY.Clear();
+
+        for (int i = 0; i < rarityTabs.Count; i++)
+        {
+            if (rarityTabs[i] == null) continue;
+
+            // Store the base Y position (unselected state - lower)
+            float baseY = rarityTabs[i].anchoredPosition.y;
+            tabBasePositionsY.Add(baseY);
+            tabTargetPositionsY.Add(baseY);
+
+            // Add click listener
+            int tierIndex = i;
+            Button tabButton = rarityTabs[i].GetComponent<Button>();
+            if (tabButton != null)
+            {
+                tabButton.onClick.AddListener(() => OnRarityTabClicked(tierIndex + 1));
+            }
+        }
+
+        tabsInitialized = true;
+    }
+
+    private void AnimateTabs()
+    {
+        if (!tabsInitialized || rarityTabs == null) return;
+
+        for (int i = 0; i < rarityTabs.Count; i++)
+        {
+            if (rarityTabs[i] == null || i >= tabTargetPositionsY.Count) continue;
+
+            Vector2 currentPos = rarityTabs[i].anchoredPosition;
+            float targetY = tabTargetPositionsY[i];
+
+            if (!Mathf.Approximately(currentPos.y, targetY))
+            {
+                float newY = Mathf.Lerp(currentPos.y, targetY, Time.deltaTime * tabAnimationSpeed);
+                rarityTabs[i].anchoredPosition = new Vector2(currentPos.x, newY);
+            }
+        }
     }
 
     void OnDestroy()
     {
         CraftingPanel.OnVariantSelected -= OnVariantSelected;
-        ClearTabs();
         ClearStatLines();
     }
 
@@ -78,14 +147,8 @@ public class CraftingDetailPanel : MonoBehaviour
             return;
         }
 
-        // Show rarity background when item is selected
-        if (rarityBackground != null)
-        {
-            rarityBackground.gameObject.SetActive(true);
-        }
-
         SetupBasicInfo();
-        SetupRarityTabs();
+        SetupRarityTabs(); // This will handle rarity background visibility
         UpdateStatsDisplay();
     }
 
@@ -125,81 +188,37 @@ public class CraftingDetailPanel : MonoBehaviour
     /// </summary>
     private void SetupRarityTabs()
     {
-        ClearTabs();
+        if (rarityTabs == null || rarityTabs.Count == 0) return;
 
         if (currentOutputItem == null || !currentOutputItem.HasRarityStats())
         {
-            // Hide tabs container if no rarity stats
-            if (rarityTabsContainer != null)
-            {
-                rarityTabsContainer.gameObject.SetActive(false);
-            }
+            // Hide all tabs if no rarity stats
+            SetAllTabsVisible(false);
             selectedRarityTier = 0;
             UpdateRarityBackground();
             return;
         }
 
-        if (rarityTabsContainer != null)
-        {
-            rarityTabsContainer.gameObject.SetActive(true);
-        }
-
         List<int> availableRarities = currentOutputItem.GetAvailableRarityTiers();
 
-        // Select the lowest rarity by default
+        // Show/hide tabs based on available rarities
+        for (int i = 0; i < rarityTabs.Count; i++)
+        {
+            if (rarityTabs[i] == null) continue;
+
+            int tierForThisTab = i + 1; // Tab index 0 = tier 1 (Common)
+            bool isAvailable = availableRarities.Contains(tierForThisTab);
+            rarityTabs[i].gameObject.SetActive(isAvailable);
+        }
+
+        // Select the lowest available rarity by default
         if (availableRarities.Count > 0)
         {
             selectedRarityTier = availableRarities[0];
         }
 
-        // Create a tab for each available rarity
-        foreach (int rarityTier in availableRarities)
-        {
-            CreateRarityTab(rarityTier);
-        }
-
-        UpdateTabVisuals();
+        UpdateTabPositions();
         UpdateRarityBackground();
-    }
-
-    /// <summary>
-    /// Create a single rarity tab
-    /// </summary>
-    private void CreateRarityTab(int rarityTier)
-    {
-        if (rarityTabPrefab == null || rarityTabsContainer == null) return;
-
-        GameObject tabObj = Instantiate(rarityTabPrefab, rarityTabsContainer);
-        instantiatedTabs.Add(tabObj);
-
-        // Get rarity info
-        ItemRarityStats rarityStats = currentOutputItem.GetStatsForRarity(rarityTier);
-        string rarityName = rarityStats?.GetRarityDisplayName() ?? $"R{rarityTier}";
-        Color rarityColor = rarityStats?.GetRarityColor() ?? Color.white;
-
-        // Setup tab text
-        TextMeshProUGUI tabText = tabObj.GetComponentInChildren<TextMeshProUGUI>();
-        if (tabText != null)
-        {
-            tabText.text = rarityName;
-        }
-
-        // Setup click handler
-        Button tabButton = tabObj.GetComponent<Button>();
-        if (tabButton != null)
-        {
-            int capturedRarity = rarityTier;
-            tabButton.onClick.AddListener(() => OnRarityTabClicked(capturedRarity));
-        }
-
-        // Store rarity tier reference
-        RarityTabData tabData = tabObj.GetComponent<RarityTabData>();
-        if (tabData == null)
-        {
-            tabData = tabObj.AddComponent<RarityTabData>();
-        }
-        tabData.RarityTier = rarityTier;
-        tabData.RarityColor = rarityColor;
     }
 
     /// <summary>
@@ -208,7 +227,7 @@ public class CraftingDetailPanel : MonoBehaviour
     private void OnRarityTabClicked(int rarityTier)
     {
         selectedRarityTier = rarityTier;
-        UpdateTabVisuals();
+        UpdateTabPositions();
         UpdateRarityBackground();
         UpdateStatsDisplay();
 
@@ -216,49 +235,82 @@ public class CraftingDetailPanel : MonoBehaviour
     }
 
     /// <summary>
+    /// Update tab Y positions based on selection (selected tab stays up, others slide down)
+    /// </summary>
+    private void UpdateTabPositions()
+    {
+        if (!tabsInitialized || rarityTabs == null) return;
+
+        for (int i = 0; i < rarityTabs.Count && i < tabTargetPositionsY.Count && i < tabBasePositionsY.Count; i++)
+        {
+            if (rarityTabs[i] == null) continue;
+
+            int tierForThisTab = i + 1;
+            bool isSelected = tierForThisTab == selectedRarityTier;
+
+            // Selected tab goes to base position + offset (higher), others go to base position (lower)
+            tabTargetPositionsY[i] = isSelected ? tabBasePositionsY[i] + selectedTabOffsetY : tabBasePositionsY[i];
+        }
+    }
+
+    /// <summary>
+    /// Set visibility of all tabs
+    /// </summary>
+    private void SetAllTabsVisible(bool visible)
+    {
+        if (rarityTabs == null) return;
+
+        foreach (var tab in rarityTabs)
+        {
+            if (tab != null)
+            {
+                tab.gameObject.SetActive(visible);
+            }
+        }
+    }
+
+    /// <summary>
     /// Update the panel background color based on selected rarity
     /// </summary>
     private void UpdateRarityBackground()
     {
-        if (rarityBackground == null) return;
-
         if (currentOutputItem == null || selectedRarityTier == 0)
         {
-            rarityBackground.color = Color.white;
+            // Hide backgrounds when no rarity stats
+            if (rarityBackground != null)
+                rarityBackground.gameObject.SetActive(false);
+            if (rarityBorderBackground != null)
+                rarityBorderBackground.gameObject.SetActive(false);
             return;
         }
 
-        ItemRarityStats rarityStats = currentOutputItem.GetStatsForRarity(selectedRarityTier);
-        rarityBackground.color = rarityStats?.GetRarityColor() ?? Color.white;
-    }
+        // Show backgrounds and set color
+        if (rarityBackground != null)
+            rarityBackground.gameObject.SetActive(true);
+        if (rarityBorderBackground != null)
+            rarityBorderBackground.gameObject.SetActive(true);
 
-    /// <summary>
-    /// Update tab visual states (active/inactive)
-    /// </summary>
-    private void UpdateTabVisuals()
-    {
-        foreach (var tabObj in instantiatedTabs)
+        // Use Inspector-configured colors (tier 1 = index 0, etc.)
+        int colorIndex = selectedRarityTier - 1;
+        Color rarityColor = Color.white;
+        if (rarityColors != null && colorIndex >= 0 && colorIndex < rarityColors.Length)
         {
-            if (tabObj == null) continue;
+            rarityColor = rarityColors[colorIndex];
+        }
 
-            RarityTabData tabData = tabObj.GetComponent<RarityTabData>();
-            if (tabData == null) continue;
+        if (rarityBackground != null)
+            rarityBackground.color = rarityColor;
 
-            bool isActive = tabData.RarityTier == selectedRarityTier;
-
-            // Update background color
-            Image tabImage = tabObj.GetComponent<Image>();
-            if (tabImage != null)
-            {
-                tabImage.color = isActive ? tabData.RarityColor : inactiveTabColor;
-            }
-
-            // Update text color
-            TextMeshProUGUI tabText = tabObj.GetComponentInChildren<TextMeshProUGUI>();
-            if (tabText != null)
-            {
-                tabText.color = isActive ? Color.white : Color.gray;
-            }
+        // Apply transparency to border background
+        if (rarityBorderBackground != null)
+        {
+            Color transparentColor = new Color(
+                rarityColor.r,
+                rarityColor.g,
+                rarityColor.b,
+                rarityColorDim
+            );
+            rarityBorderBackground.color = transparentColor;
         }
     }
 
@@ -356,38 +408,23 @@ public class CraftingDetailPanel : MonoBehaviour
             itemDescriptionText.text = noDescriptionText;
         }
 
-        // Hide tabs
-        if (rarityTabsContainer != null)
-        {
-            rarityTabsContainer.gameObject.SetActive(false);
-        }
+        // Hide all tabs
+        SetAllTabsVisible(false);
 
-        // Hide rarity background when no item selected
+        // Hide rarity backgrounds when no item selected
         if (rarityBackground != null)
         {
             rarityBackground.gameObject.SetActive(false);
         }
+        if (rarityBorderBackground != null)
+        {
+            rarityBorderBackground.gameObject.SetActive(false);
+        }
 
-        ClearTabs();
         ClearStatLines();
 
         // Show "no stats" placeholder
         CreateStatLine(noStatsText);
-    }
-
-    /// <summary>
-    /// Clear all instantiated tabs
-    /// </summary>
-    private void ClearTabs()
-    {
-        foreach (var tab in instantiatedTabs)
-        {
-            if (tab != null)
-            {
-                Destroy(tab);
-            }
-        }
-        instantiatedTabs.Clear();
     }
 
     /// <summary>
@@ -442,13 +479,4 @@ public class CraftingDetailPanel : MonoBehaviour
     }
 
     #endregion
-}
-
-/// <summary>
-/// Helper component to store rarity data on tab GameObjects
-/// </summary>
-public class RarityTabData : MonoBehaviour
-{
-    public int RarityTier;
-    public Color RarityColor;
 }
