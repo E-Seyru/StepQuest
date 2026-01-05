@@ -14,3 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CategoryRegistry
   categories:
   - {fileID: 11400000, guid: e5c6e5a759be8704fa837b81ad0f2cbd, type: 2}
+  - {fileID: 11400000, guid: 08ae03b84984c594cb33ab8476491604, type: 2}
+  - {fileID: 11400000, guid: d9a05def0777e9f44b2a76471f559089, type: 2}
+  - {fileID: 11400000, guid: 6d5cde13278574440b069bcdf0759bd3, type: 2}
+  - {fileID: 11400000, guid: 2f9ae9a135bdfdd4c9138c845c7b771c, type: 2}

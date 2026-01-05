@@ -19,6 +19,7 @@ MonoBehaviour:
   ItemColor: {r: 1, g: 1, b: 1, a: 1}
   BasePrice: 1
   RarityTier: 1
+  Category: {fileID: 11400000, guid: d9a05def0777e9f44b2a76471f559089, type: 2}
   Type: 0
   IsStackable: 0
   MaxStackSize: 1

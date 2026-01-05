@@ -17,6 +17,87 @@ public class CategoryManagerWindow : EditorWindow
         window.Show();
     }
 
+    [MenuItem("StepQuest/Create Default Forging Categories")]
+    public static void CreateDefaultForgingCategories()
+    {
+        // Find or create CategoryRegistry
+        CategoryRegistry registry = null;
+        string[] guids = AssetDatabase.FindAssets("t:CategoryRegistry");
+        if (guids.Length > 0)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+            registry = AssetDatabase.LoadAssetAtPath<CategoryRegistry>(path);
+        }
+
+        if (registry == null)
+        {
+            // Create registry
+            registry = CreateInstance<CategoryRegistry>();
+            string folder = "Assets/ScriptableObjects/Registries";
+            if (!AssetDatabase.IsValidFolder(folder))
+            {
+                AssetDatabase.CreateFolder("Assets/ScriptableObjects", "Registries");
+            }
+            AssetDatabase.CreateAsset(registry, $"{folder}/CategoryRegistry.asset");
+        }
+
+        // Ensure Categories folder exists
+        string categoryFolder = "Assets/ScriptableObjects/Categories";
+        if (!AssetDatabase.IsValidFolder(categoryFolder))
+        {
+            AssetDatabase.CreateFolder("Assets/ScriptableObjects", "Categories");
+        }
+
+        // Define the categories to create
+        var categoriesToCreate = new[]
+        {
+            ("bars", "Lingots", new Color(0.7f, 0.7f, 0.7f), 0),
+            ("weapons", "Armes", new Color(0.6f, 0.6f, 0.7f), 1),
+            ("armor", "Armures", new Color(0.5f, 0.5f, 0.6f), 2),
+            ("tools", "Outils", new Color(0.5f, 0.4f, 0.3f), 3),
+        };
+
+        int createdCount = 0;
+        var serializedRegistry = new SerializedObject(registry);
+        var categoriesProperty = serializedRegistry.FindProperty("categories");
+
+        foreach (var (id, displayName, color, sortOrder) in categoriesToCreate)
+        {
+            // Skip if already exists
+            if (registry.HasCategory(id))
+            {
+                Logger.LogInfo($"Category '{id}' already exists, skipping.", Logger.LogCategory.EditorLog);
+                continue;
+            }
+
+            // Create the category asset
+            var category = CreateInstance<CategoryDefinition>();
+            category.CategoryID = id;
+            category.DisplayName = displayName;
+            category.CategoryColor = color;
+            category.SortOrder = sortOrder;
+
+            string assetPath = $"{categoryFolder}/{displayName}.asset";
+            assetPath = AssetDatabase.GenerateUniqueAssetPath(assetPath);
+            AssetDatabase.CreateAsset(category, assetPath);
+
+            // Add to registry
+            categoriesProperty.InsertArrayElementAtIndex(categoriesProperty.arraySize);
+            categoriesProperty.GetArrayElementAtIndex(categoriesProperty.arraySize - 1).objectReferenceValue = category;
+
+            createdCount++;
+            Logger.LogInfo($"Created category: {displayName} (ID: {id})", Logger.LogCategory.EditorLog);
+        }
+
+        serializedRegistry.ApplyModifiedProperties();
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        EditorUtility.DisplayDialog("Categories Created",
+            $"Created {createdCount} new categories:\n• Lingots (bars)\n• Armes (weapons)\n• Armures (armor)\n• Outils (tools)",
+            "OK");
+    }
+
     // Data
     private CategoryRegistry categoryRegistry;
 

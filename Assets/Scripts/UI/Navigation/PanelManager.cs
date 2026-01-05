@@ -239,6 +239,10 @@ public class PanelManager : MonoBehaviour
                     break;
 
                 case TouchPhase.Ended:
+                    // Block swipe if it started over the CraftingPanel tabs area
+                    if (CraftingPanel.Instance != null && CraftingPanel.Instance.IsPositionOverTabs(touchStartPosition))
+                        return;
+
                     Vector2 swipeDelta = touch.position - touchStartPosition;
                     float swipeTime = Time.time - touchStartTime;
 

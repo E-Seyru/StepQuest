@@ -17,6 +17,7 @@ MonoBehaviour:
   ParentActivityID: forger
   AutoDetectParent: 1
   IsTimeBased: 1
+  Category: 
   PrimaryResource: {fileID: 11400000, guid: 91fe5f15f5e232645b3a9f9d2cacb9bc, type: 2}
   SecondaryResources: []
   ActionCost: 10

@@ -32,6 +32,10 @@ public class ItemDefinition : ScriptableObject
     [Range(1, 5)]
     public int RarityTier = 1;
 
+    [Header("Category")]
+    [Tooltip("Category for grouping in crafting panels (e.g., Bars, Weapons, Armor). Used to determine which tab this item appears under.")]
+    public CategoryDefinition Category;
+
     [Header("Inventory Behavior")]
     [Tooltip("What type of item this is")]
     public ItemType Type = ItemType.Material;

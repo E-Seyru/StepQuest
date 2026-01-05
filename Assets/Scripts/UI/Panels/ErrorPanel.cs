@@ -23,6 +23,8 @@ public class ErrorPanel : MonoBehaviour
     private bool isDisplaying = false;
     private Transform currentPOI = null;
     private Vector2 currentOffset;
+    private bool isUsingUIPosition = false;
+    private Vector2 uiTargetPosition;
 
     public static ErrorPanel Instance { get; private set; }
 
@@ -77,6 +79,7 @@ public class ErrorPanel : MonoBehaviour
         }
 
         currentPOI = poiTransform;
+        isUsingUIPosition = false;
         CalculateAdaptedOffset();
         UpdatePosition();
 
@@ -95,6 +98,81 @@ public class ErrorPanel : MonoBehaviour
                     HideError();
                 });
             });
+    }
+
+    /// <summary>
+    /// Show error positioned relative to a UI element (RectTransform)
+    /// </summary>
+    public void ShowErrorAboveUI(string message, RectTransform uiElement)
+    {
+        if (isDisplaying) return;
+
+        if (errorText != null)
+        {
+            errorText.text = message;
+        }
+
+        currentPOI = null;
+        isUsingUIPosition = true;
+        uiTargetPosition = GetPositionAboveUIElement(uiElement);
+
+        RectTransform rectTransform = transform as RectTransform;
+        if (rectTransform != null)
+        {
+            rectTransform.anchoredPosition = uiTargetPosition;
+        }
+
+        canvasGroup.alpha = 0f;
+        gameObject.SetActive(true);
+        isDisplaying = true;
+
+        LeanTween.cancel(gameObject);
+
+        LeanTween.alphaCanvas(canvasGroup, 1f, fadeInDuration)
+            .setEase(fadeInEase)
+            .setOnComplete(() =>
+            {
+                LeanTween.delayedCall(displayDuration, () =>
+                {
+                    HideError();
+                });
+            });
+    }
+
+    /// <summary>
+    /// Calculate position above a UI element
+    /// </summary>
+    private Vector2 GetPositionAboveUIElement(RectTransform uiElement)
+    {
+        if (uiElement == null)
+            return new Vector2(0f, 200f);
+
+        RectTransform rectTransform = transform as RectTransform;
+        Canvas parentCanvas = GetComponentInParent<Canvas>();
+
+        if (parentCanvas == null || rectTransform == null)
+            return new Vector2(0f, 200f);
+
+        // Get the UI element's screen position
+        Vector3[] corners = new Vector3[4];
+        uiElement.GetWorldCorners(corners);
+
+        // Get top center of the UI element
+        Vector3 topCenter = (corners[1] + corners[2]) / 2f;
+
+        // Convert to local position in our canvas
+        Vector2 localPosition;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            parentCanvas.transform as RectTransform,
+            RectTransformUtility.WorldToScreenPoint(parentCanvas.worldCamera, topCenter),
+            parentCanvas.worldCamera,
+            out localPosition
+        );
+
+        // Add offset above the element
+        localPosition.y += poiOffset.y;
+
+        return localPosition;
     }
 
     public void HideError()

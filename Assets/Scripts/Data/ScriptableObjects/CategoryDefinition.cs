@@ -10,7 +10,7 @@ using UnityEngine;
 public class CategoryDefinition : ScriptableObject
 {
     [Header("Identity")]
-    [Tooltip("Unique identifier - must match the Category string in ActivityVariant")]
+    [Tooltip("Unique identifier for this category")]
     public string CategoryID;
 
     [Tooltip("Display name shown in UI")]

@@ -42,6 +42,9 @@ public class ItemManagerWindow : EditorWindow
     private EquipmentType newEquipmentSlot = EquipmentType.Weapon;
     private int newInventorySlots = 0;
 
+    // Category field
+    private CategoryDefinition newItemCategory = null;
+
     // Rarity stats fields for creation
     private bool[] enabledRarityTiers = new bool[5]; // Index 0 = tier 1, etc.
     private List<ItemStat>[] rarityStats = new List<ItemStat>[5];
@@ -205,6 +208,14 @@ public class ItemManagerWindow : EditorWindow
         GUI.color = GetTypeColor(item.Type);
         EditorGUILayout.LabelField($"[{item.Type}]", EditorStyles.miniLabel, GUILayout.Width(80));
         GUI.color = oldColor;
+
+        // Category badge
+        if (item.Category != null)
+        {
+            GUI.color = item.Category.CategoryColor;
+            EditorGUILayout.LabelField($"[{item.Category.GetDisplayName()}]", EditorStyles.miniLabel, GUILayout.Width(80));
+            GUI.color = oldColor;
+        }
 
         // Show available rarities instead of single rarity
         DrawRarityBadges(item);
@@ -435,6 +446,92 @@ public class ItemManagerWindow : EditorWindow
         }
         EditorGUILayout.EndHorizontal();
 
+        // Category
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Category:", GUILayout.Width(80));
+
+        var newCategory = (CategoryDefinition)EditorGUILayout.ObjectField(
+            item.Category, typeof(CategoryDefinition), false);
+
+        if (newCategory != item.Category)
+        {
+            item.Category = newCategory;
+            EditorUtility.SetDirty(item);
+        }
+        EditorGUILayout.EndHorizontal();
+
+        // Inventory Behavior section
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Inventory Behavior", EditorStyles.boldLabel);
+
+        // Item Type
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Item Type:", GUILayout.Width(80));
+        var newType = (ItemType)EditorGUILayout.EnumPopup(item.Type);
+        if (newType != item.Type)
+        {
+            item.Type = newType;
+            EditorUtility.SetDirty(item);
+        }
+        EditorGUILayout.EndHorizontal();
+
+        // Is Stackable
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Stackable:", GUILayout.Width(80));
+        var newStackable = EditorGUILayout.Toggle(item.IsStackable);
+        if (newStackable != item.IsStackable)
+        {
+            item.IsStackable = newStackable;
+            EditorUtility.SetDirty(item);
+        }
+        EditorGUILayout.EndHorizontal();
+
+        // Max Stack Size (only if stackable)
+        if (item.IsStackable)
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Max Stack:", GUILayout.Width(80));
+            var newMaxStack = EditorGUILayout.IntField(item.MaxStackSize, GUILayout.Width(60));
+            if (newMaxStack != item.MaxStackSize)
+            {
+                item.MaxStackSize = newMaxStack;
+                EditorUtility.SetDirty(item);
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+
+        // Equipment section (only if Equipment type)
+        if (item.Type == ItemType.Equipment)
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Equipment Settings", EditorStyles.boldLabel);
+
+            // Equipment Slot
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Slot:", GUILayout.Width(80));
+            var newSlot = (EquipmentType)EditorGUILayout.EnumPopup(item.EquipmentSlot);
+            if (newSlot != item.EquipmentSlot)
+            {
+                item.EquipmentSlot = newSlot;
+                EditorUtility.SetDirty(item);
+            }
+            EditorGUILayout.EndHorizontal();
+
+            // Inventory Slots (only for Backpack)
+            if (item.EquipmentSlot == EquipmentType.Backpack)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField("Inv. Slots:", GUILayout.Width(80));
+                var newInvSlots = EditorGUILayout.IntField(item.InventorySlots, GUILayout.Width(60));
+                if (newInvSlots != item.InventorySlots)
+                {
+                    item.InventorySlots = newInvSlots;
+                    EditorUtility.SetDirty(item);
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+
         EditorGUILayout.EndVertical();
         EditorGUI.indentLevel--;
     }
@@ -529,6 +626,12 @@ public class ItemManagerWindow : EditorWindow
 
         EditorGUILayout.Space();
 
+        // Category
+        EditorGUILayout.LabelField("Category (for crafting panels):");
+        newItemCategory = (CategoryDefinition)EditorGUILayout.ObjectField(newItemCategory, typeof(CategoryDefinition), false);
+
+        EditorGUILayout.Space();
+
         // Visual
         EditorGUILayout.LabelField("Visual:");
         newItemIcon = (Sprite)EditorGUILayout.ObjectField("Icon", newItemIcon, typeof(Sprite), false);
@@ -611,6 +714,7 @@ public class ItemManagerWindow : EditorWindow
         newItem.MaxStackSize = newItemStackable ? newItemMaxStack : 1;
         newItem.ItemIcon = newItemIcon;
         newItem.ItemColor = newItemColor;
+        newItem.Category = newItemCategory;
 
         // Add rarity stats for enabled tiers
         newItem.RarityStats = new List<ItemRarityStats>();
@@ -709,6 +813,7 @@ public class ItemManagerWindow : EditorWindow
         newItemColor = Color.white;
         newEquipmentSlot = EquipmentType.Weapon;
         newInventorySlots = 0;
+        newItemCategory = null;
 
         // Reset rarity tiers (default to Common enabled)
         for (int i = 0; i < 5; i++)

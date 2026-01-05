@@ -19,8 +19,11 @@ MonoBehaviour:
   ItemColor: {r: 1, g: 1, b: 1, a: 1}
   BasePrice: 10
   RarityTier: 1
+  Category: {fileID: 11400000, guid: 08ae03b84984c594cb33ab8476491604, type: 2}
   Type: 1
   IsStackable: 1
   MaxStackSize: 99
   EquipmentSlot: 0
   InventorySlots: 0
+  RarityStats: []
+  BaseUnlockedAbility: {fileID: 0}

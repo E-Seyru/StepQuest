@@ -15,6 +15,7 @@ using UnityEngine.UI;
 public class CraftingPanel : MonoBehaviour
 {
     [Header("UI References")]
+    [SerializeField] private GameObject craftingPanelContainer; // The container with all UI content (hidden during crafting)
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private ScrollRect scrollView;
     [SerializeField] private Transform cardsContainer;
@@ -23,24 +24,27 @@ public class CraftingPanel : MonoBehaviour
     [Header("Tabs")]
     [SerializeField] private Transform tabsContainer;
     [SerializeField] private GameObject tabButtonPrefab; // Must have CategoryTabButton component
-    [SerializeField] private CategoryRegistry categoryRegistry; // For sorting tabs by SortOrder and icon lookup
     [SerializeField] private Color activeTabColor = Color.white;
     [SerializeField] private Color inactiveTabColor = new Color(0.7f, 0.7f, 0.7f, 1f);
     [SerializeField] private Sprite allTabIcon; // Icon for the "All" tab
-    [SerializeField] private Sprite defaultCategoryIcon; // Fallback icon when category not found in registry
+    [SerializeField] private Sprite defaultCategoryIcon; // Fallback icon when category has no icon
 
     [Header("Card Prefab")]
     [SerializeField] private GameObject craftingCardPrefab;
+
+    [Header("Start Button")]
+    [SerializeField] private Button startCraftingButton;
 
     [Header("Fade Animation")]
     [SerializeField] private float fadeOutDuration = 0.15f;
 
     // Current state
     private LocationActivity currentActivity;
+    private ActivityVariant selectedVariant = null;
     private List<GameObject> instantiatedCards = new List<GameObject>();
     private List<CategoryTabButton> instantiatedTabs = new List<CategoryTabButton>();
-    private Dictionary<string, List<ActivityVariant>> variantsByCategory = new Dictionary<string, List<ActivityVariant>>();
-    private string currentCategory = null; // null means show all
+    private Dictionary<CategoryDefinition, List<ActivityVariant>> variantsByCategory = new Dictionary<CategoryDefinition, List<ActivityVariant>>();
+    private CategoryDefinition currentCategory = null; // null means show all
 
     // Animation state
     private CanvasGroup panelCanvasGroup;
@@ -51,6 +55,27 @@ public class CraftingPanel : MonoBehaviour
 
     // Singleton
     public static CraftingPanel Instance { get; private set; }
+
+    /// <summary>
+    /// Returns true when the panel is open
+    /// </summary>
+    public bool IsOpen => gameObject.activeInHierarchy;
+
+    /// <summary>
+    /// Check if a screen position is over the tabs area (used by PanelManager to block swipes)
+    /// </summary>
+    public bool IsPositionOverTabs(Vector2 screenPosition)
+    {
+        if (!IsOpen || tabsContainer == null || !tabsContainer.gameObject.activeInHierarchy)
+            return false;
+
+        RectTransform tabsRect = tabsContainer.GetComponent<RectTransform>();
+        if (tabsRect == null)
+            return false;
+
+        // Check if screen position is within the tabs RectTransform
+        return RectTransformUtility.RectangleContainsScreenPoint(tabsRect, screenPosition, null);
+    }
 
     void Awake()
     {
@@ -73,6 +98,12 @@ public class CraftingPanel : MonoBehaviour
             closeButton.onClick.AddListener(ClosePanel);
         }
 
+        // Setup start crafting button
+        if (startCraftingButton != null)
+        {
+            startCraftingButton.onClick.AddListener(OnStartCraftingClicked);
+        }
+
         // Get or add CanvasGroup for fade animations
         panelCanvasGroup = GetComponent<CanvasGroup>();
         if (panelCanvasGroup == null)
@@ -80,8 +111,9 @@ public class CraftingPanel : MonoBehaviour
             panelCanvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
 
-        // Subscribe to activity events - fade out when activity starts
+        // Subscribe to activity events
         EventBus.Subscribe<ActivityStartedEvent>(OnActivityStarted);
+        EventBus.Subscribe<ActivityStoppedEvent>(OnActivityStopped);
 
         // Start hidden
         gameObject.SetActive(false);
@@ -121,11 +153,19 @@ public class CraftingPanel : MonoBehaviour
 
         currentActivity = activity;
         currentCategory = null; // Reset to show all
+        selectedVariant = null; // Reset selection
 
         UpdateTitle();
         OrganizeVariantsByCategory();
         CreateCategoryTabs();
         PopulateVariantCards();
+        UpdateStartButtonState();
+
+        // Ensure container is visible when opening
+        if (craftingPanelContainer != null)
+        {
+            craftingPanelContainer.SetActive(true);
+        }
 
         gameObject.SetActive(true);
 
@@ -141,6 +181,12 @@ public class CraftingPanel : MonoBehaviour
         ClearVariantCards();
         ClearTabs();
         variantsByCategory.Clear();
+
+        // Slide the activities section back in
+        if (LocationDetailsPanel.Instance != null)
+        {
+            LocationDetailsPanel.Instance.SlideInActivitiesSection();
+        }
 
         Logger.LogInfo("CraftingPanel: Panel closed", Logger.LogCategory.ActivityLog);
     }
@@ -161,7 +207,7 @@ public class CraftingPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Organize variants by their Category field
+    /// Organize variants by their Category field, filtering by activity's available categories
     /// </summary>
     private void OrganizeVariantsByCategory()
     {
@@ -169,13 +215,25 @@ public class CraftingPanel : MonoBehaviour
 
         if (currentActivity == null || currentActivity.ActivityVariants == null) return;
 
+        // Get the activity's defined categories (if any)
+        var activityCategories = currentActivity.ActivityReference?.AvailableCategories;
+        bool hasDefinedCategories = activityCategories != null && activityCategories.Count > 0;
+
         foreach (var variant in currentActivity.ActivityVariants)
         {
             // Only include time-based variants
             if (variant == null || !variant.IsValidVariant() || !variant.IsTimeBased)
                 continue;
 
-            string category = string.IsNullOrEmpty(variant.Category) ? "General" : variant.Category;
+            // Get category from the item being crafted (PrimaryResource)
+            CategoryDefinition category = variant.PrimaryResource?.Category;
+
+            // If activity has defined categories, only include variants with matching categories
+            if (hasDefinedCategories)
+            {
+                if (category == null || !activityCategories.Contains(category))
+                    continue;
+            }
 
             if (!variantsByCategory.ContainsKey(category))
             {
@@ -189,14 +247,18 @@ public class CraftingPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Create category tabs if there are multiple categories
+    /// Create category tabs based on activity's defined categories
     /// </summary>
     private void CreateCategoryTabs()
     {
         ClearTabs();
 
-        // Only show tabs if there are multiple categories
-        if (variantsByCategory.Count <= 1)
+        // Get the activity's defined categories
+        var activityCategories = currentActivity?.ActivityReference?.AvailableCategories;
+        bool hasDefinedCategories = activityCategories != null && activityCategories.Count > 0;
+
+        // Only show tabs if the activity has multiple defined categories
+        if (!hasDefinedCategories || activityCategories.Count <= 1)
         {
             if (tabsContainer != null)
             {
@@ -216,66 +278,63 @@ public class CraftingPanel : MonoBehaviour
         // Create "All" tab first (null = all)
         CreateTab(null);
 
-        // Create tab for each category, sorted by SortOrder from registry
+        // Create tab for each category defined by the activity, sorted by SortOrder
         var sortedCategories = GetSortedCategories();
-        foreach (var categoryId in sortedCategories)
+        foreach (var category in sortedCategories)
         {
-            CreateTab(categoryId);
+            CreateTab(category);
         }
 
         UpdateTabVisuals();
     }
 
     /// <summary>
-    /// Get categories sorted by their SortOrder in the registry
+    /// Get categories from the activity, sorted by their SortOrder
     /// </summary>
-    private List<string> GetSortedCategories()
+    private List<CategoryDefinition> GetSortedCategories()
     {
-        if (categoryRegistry == null)
-        {
-            // Fallback: alphabetical order
-            return variantsByCategory.Keys.OrderBy(k => k).ToList();
-        }
+        var activityCategories = currentActivity?.ActivityReference?.AvailableCategories;
+        if (activityCategories == null || activityCategories.Count == 0)
+            return new List<CategoryDefinition>();
 
-        return variantsByCategory.Keys
-            .OrderBy(categoryId =>
-            {
-                var def = categoryRegistry.GetCategory(categoryId);
-                return def != null ? def.SortOrder : int.MaxValue;
-            })
-            .ThenBy(k => k) // Alphabetical as tiebreaker
+        return activityCategories
+            .Where(cat => cat != null)
+            .OrderBy(cat => cat.SortOrder)
+            .ThenBy(cat => cat.GetDisplayName()) // Alphabetical as tiebreaker
             .ToList();
     }
 
     /// <summary>
-    /// Create a tab - pass category string (null for "All" tab)
-    /// Looks up icon from registry and passes data to the tab component
+    /// Create a tab - pass CategoryDefinition (null for "All" tab)
     /// </summary>
-    private void CreateTab(string category)
+    private void CreateTab(CategoryDefinition category)
     {
         GameObject tabObj = Instantiate(tabButtonPrefab, tabsContainer);
         CategoryTabButton tabButton = tabObj.GetComponent<CategoryTabButton>();
 
         if (tabButton != null)
         {
-            // Look up icon and display name from registry
+            // Get icon and display name directly from CategoryDefinition
             Sprite icon;
             string label;
+            string categoryId;
 
-            if (string.IsNullOrEmpty(category))
+            if (category == null)
             {
                 // "All" tab
                 icon = allTabIcon;
                 label = "Tout";
+                categoryId = null;
             }
             else
             {
-                // Category tab - look up from registry
-                icon = categoryRegistry?.GetCategoryIcon(category) ?? defaultCategoryIcon;
-                label = categoryRegistry?.GetCategoryDisplayName(category) ?? category;
+                // Category tab - get data directly from the definition
+                icon = category.Icon ?? defaultCategoryIcon;
+                label = category.GetDisplayName();
+                categoryId = category.CategoryID;
             }
 
-            tabButton.Setup(category, icon, label);
+            tabButton.Setup(categoryId, icon, label);
             instantiatedTabs.Add(tabButton);
         }
         else
@@ -289,7 +348,7 @@ public class CraftingPanel : MonoBehaviour
         Button button = tabObj.GetComponent<Button>();
         if (button != null)
         {
-            string capturedCategory = category;
+            CategoryDefinition capturedCategory = category;
             button.onClick.AddListener(() => OnTabClicked(capturedCategory));
         }
     }
@@ -297,13 +356,42 @@ public class CraftingPanel : MonoBehaviour
     /// <summary>
     /// Handle tab click
     /// </summary>
-    private void OnTabClicked(string category)
+    private void OnTabClicked(CategoryDefinition category)
     {
         currentCategory = category;
         UpdateTabVisuals();
+
+        // Deselect any previously selected variant when switching tabs
+        DeselectAllCards();
+
         PopulateVariantCards();
 
-        Logger.LogInfo($"CraftingPanel: Switched to category '{category ?? "All"}'", Logger.LogCategory.ActivityLog);
+        Logger.LogInfo($"CraftingPanel: Switched to category '{(category != null ? category.GetDisplayName() : "All")}'", Logger.LogCategory.ActivityLog);
+    }
+
+    /// <summary>
+    /// Deselect all cards and notify listeners that no variant is selected
+    /// </summary>
+    private void DeselectAllCards()
+    {
+        foreach (var cardObj in instantiatedCards)
+        {
+            if (cardObj == null) continue;
+
+            CraftingActivityCard card = cardObj.GetComponent<CraftingActivityCard>();
+            if (card != null)
+            {
+                card.SetSelected(false);
+                card.SetDimmed(false);
+            }
+        }
+
+        // Clear selected variant
+        selectedVariant = null;
+        UpdateStartButtonState();
+
+        // Notify listeners that no variant is selected
+        OnVariantSelected?.Invoke(null);
     }
 
     /// <summary>
@@ -311,11 +399,13 @@ public class CraftingPanel : MonoBehaviour
     /// </summary>
     private void UpdateTabVisuals()
     {
+        string currentCategoryId = currentCategory?.CategoryID;
+
         foreach (var tab in instantiatedTabs)
         {
             if (tab == null) continue;
 
-            bool isActive = tab.GetCategoryId() == currentCategory;
+            bool isActive = tab.GetCategoryId() == currentCategoryId;
             tab.SetSelected(isActive, activeTabColor, inactiveTabColor);
         }
     }
@@ -413,8 +503,14 @@ public class CraftingPanel : MonoBehaviour
     {
         Logger.LogInfo($"CraftingPanel: Variant selected: {variant.VariantName}", Logger.LogCategory.ActivityLog);
 
+        // Update selected variant
+        selectedVariant = variant;
+
         // Deselect previous card and select the new one
         SelectCardForVariant(variant);
+
+        // Update start button state
+        UpdateStartButtonState();
 
         // Notify listeners
         OnVariantSelected?.Invoke(variant);
@@ -514,46 +610,61 @@ public class CraftingPanel : MonoBehaviour
     #region Activity Event Handlers
 
     /// <summary>
-    /// Called when an activity starts - fade out immediately
+    /// Called when an activity starts - hide the container but keep background
     /// </summary>
     private void OnActivityStarted(ActivityStartedEvent eventData)
     {
         if (!gameObject.activeInHierarchy) return;
 
-        FadeOutAndClose();
+        // Only react to time-based activities (crafting)
+        if (eventData.Variant == null || !eventData.Variant.IsTimeBased) return;
+
+        HideContainer();
     }
 
     /// <summary>
-    /// Fade out the entire panel and close it
+    /// Called when an activity stops (completed or cancelled) - show the container again
     /// </summary>
-    private void FadeOutAndClose()
+    private void OnActivityStopped(ActivityStoppedEvent eventData)
     {
-        CancelPanelFadeTween();
+        if (!gameObject.activeInHierarchy) return;
 
-        if (panelCanvasGroup != null)
+        // Only react to time-based activities (crafting)
+        if (eventData.Variant == null || !eventData.Variant.IsTimeBased) return;
+
+        ShowContainer();
+    }
+
+    /// <summary>
+    /// Hide the crafting container (keep background visible)
+    /// </summary>
+    private void HideContainer()
+    {
+        if (craftingPanelContainer != null)
         {
-            panelFadeTween = LeanTween.alphaCanvas(panelCanvasGroup, 0f, fadeOutDuration)
-                .setEase(LeanTweenType.easeOutQuad)
-                .setOnComplete(() =>
-                {
-                    panelFadeTween = -1;
-                    // Reset and deactivate
-                    if (panelCanvasGroup != null)
-                        panelCanvasGroup.alpha = 1f;
-                    gameObject.SetActive(false);
-                    ClearVariantCards();
-                    ClearTabs();
-                })
-                .id;
-        }
-        else
-        {
-            gameObject.SetActive(false);
-            ClearVariantCards();
-            ClearTabs();
+            craftingPanelContainer.SetActive(false);
         }
 
-        Logger.LogInfo("CraftingPanel: Fading out after activity started", Logger.LogCategory.ActivityLog);
+        Logger.LogInfo("CraftingPanel: Hiding container, keeping background", Logger.LogCategory.ActivityLog);
+    }
+
+    /// <summary>
+    /// Show the crafting container again
+    /// </summary>
+    private void ShowContainer()
+    {
+        if (craftingPanelContainer != null)
+        {
+            craftingPanelContainer.SetActive(true);
+        }
+
+        // Refresh card states since inventory may have changed
+        RefreshAllCardStates();
+
+        // Deselect any previously selected card
+        DeselectAllCards();
+
+        Logger.LogInfo("CraftingPanel: Showing container after activity ended", Logger.LogCategory.ActivityLog);
     }
 
     /// <summary>
@@ -570,6 +681,117 @@ public class CraftingPanel : MonoBehaviour
 
     #endregion
 
+    #region Start Button
+
+    /// <summary>
+    /// Update the start button state based on selection
+    /// </summary>
+    private void UpdateStartButtonState()
+    {
+        if (startCraftingButton == null) return;
+
+        // Button is enabled only when a variant is selected
+        startCraftingButton.interactable = selectedVariant != null;
+    }
+
+    /// <summary>
+    /// Handle start crafting button click
+    /// </summary>
+    private void OnStartCraftingClicked()
+    {
+        if (selectedVariant == null)
+        {
+            Logger.LogWarning("CraftingPanel: No variant selected when trying to start crafting!", Logger.LogCategory.ActivityLog);
+            return;
+        }
+
+        // Validation 1: Check level requirement
+        if (selectedVariant.UnlockRequirement > 0)
+        {
+            string mainSkillId = selectedVariant.GetMainSkillId();
+            int playerLevel = 1;
+
+            if (XpManager.Instance != null)
+            {
+                var skillData = XpManager.Instance.GetPlayerSkill(mainSkillId);
+                playerLevel = skillData?.Level ?? 1;
+            }
+
+            if (playerLevel < selectedVariant.UnlockRequirement)
+            {
+                // Show error: level too low
+                string errorMessage = $"Niveau {selectedVariant.UnlockRequirement} requis en {mainSkillId}! (Actuel: {playerLevel})";
+                ShowCraftingError(errorMessage);
+                Logger.LogInfo($"CraftingPanel: Cannot craft - level too low ({playerLevel} < {selectedVariant.UnlockRequirement})", Logger.LogCategory.ActivityLog);
+                return;
+            }
+        }
+
+        // Validation 2: Check materials
+        if (InventoryManager.Instance != null)
+        {
+            if (!selectedVariant.CanCraft(InventoryManager.Instance))
+            {
+                // Show error: missing materials
+                string errorMessage = $"Materiaux insuffisants!\nRequis: {selectedVariant.GetRequiredMaterialsText()}";
+                ShowCraftingError(errorMessage);
+                Logger.LogInfo($"CraftingPanel: Cannot craft - missing materials for {selectedVariant.GetDisplayName()}", Logger.LogCategory.ActivityLog);
+                return;
+            }
+        }
+
+        // Validation passed - start crafting
+        if (ActivityManager.Instance != null && currentActivity != null)
+        {
+            string activityId = currentActivity.ActivityReference?.ActivityID;
+            string locationId = MapManager.Instance?.CurrentLocation?.LocationID;
+
+            bool started = ActivityManager.Instance.StartTimedActivity(activityId, selectedVariant.name, locationId);
+
+            if (started)
+            {
+                Logger.LogInfo($"CraftingPanel: Started crafting {selectedVariant.GetDisplayName()}", Logger.LogCategory.ActivityLog);
+                // Panel will close automatically via OnActivityStarted event
+            }
+            else
+            {
+                ShowCraftingError("Impossible de demarrer la fabrication!");
+                Logger.LogError($"CraftingPanel: Failed to start timed activity for {selectedVariant.GetDisplayName()}", Logger.LogCategory.ActivityLog);
+            }
+        }
+        else
+        {
+            ShowCraftingError("Erreur systeme!");
+            Logger.LogError("CraftingPanel: ActivityManager or currentActivity is null!", Logger.LogCategory.ActivityLog);
+        }
+    }
+
+    /// <summary>
+    /// Show a crafting error using the ErrorPanel, positioned above the start button
+    /// </summary>
+    private void ShowCraftingError(string message)
+    {
+        if (ErrorPanel.Instance != null)
+        {
+            // Position error above the start button
+            if (startCraftingButton != null)
+            {
+                RectTransform buttonRect = startCraftingButton.GetComponent<RectTransform>();
+                ErrorPanel.Instance.ShowErrorAboveUI(message, buttonRect);
+            }
+            else
+            {
+                ErrorPanel.Instance.ShowError(message);
+            }
+        }
+        else
+        {
+            Logger.LogWarning($"CraftingPanel: ErrorPanel not available. Error was: {message}", Logger.LogCategory.ActivityLog);
+        }
+    }
+
+    #endregion
+
     void OnDestroy()
     {
         CancelPanelFadeTween();
@@ -578,10 +800,16 @@ public class CraftingPanel : MonoBehaviour
 
         // Unsubscribe from events
         EventBus.Unsubscribe<ActivityStartedEvent>(OnActivityStarted);
+        EventBus.Unsubscribe<ActivityStoppedEvent>(OnActivityStopped);
 
         if (closeButton != null)
         {
             closeButton.onClick.RemoveListener(ClosePanel);
+        }
+
+        if (startCraftingButton != null)
+        {
+            startCraftingButton.onClick.RemoveListener(OnStartCraftingClicked);
         }
     }
 }

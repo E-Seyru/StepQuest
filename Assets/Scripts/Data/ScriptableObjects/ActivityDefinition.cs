@@ -33,6 +33,10 @@ public class ActivityDefinition : ScriptableObject
     public Sprite ActivityIcon;
     public Color ActivityColor = Color.white;
 
+    [Header("Categories (for Crafting UI)")]
+    [Tooltip("Categories available for this activity. Used to create tabs in CraftingPanel. Variants must have a matching Category to appear under that tab.")]
+    public List<CategoryDefinition> AvailableCategories = new List<CategoryDefinition>();
+
     [Header("Availability")]
     public bool IsAvailable = true;
     public int UnlockRequirement = 0; // Could be skill level, quest completion, etc.
