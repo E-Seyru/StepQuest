@@ -701,14 +701,23 @@ public class ActivityProgressService
         // Add steps to activity
         currentActivityCache.AddSteps(newSteps);
 
+        // Check if this is an exploration activity and get speed modifier
+        var activityDef = cacheService.GetActivityDefinition(currentActivityCache.ActivityId);
+        bool isExploration = activityDef?.ActivityReference?.IsExploration() ?? false;
+        float speedModifier = 1.0f;
+        if (isExploration && ExplorationManager.Instance != null)
+        {
+            speedModifier = ExplorationManager.Instance.GetExplorationSpeedModifier();
+        }
+
         // =====================================
         // EVENTBUS - Publier l'evenement de progression AVANT le traitement des ticks
         // =====================================
         EventBus.Publish(new ActivityProgressEvent(currentActivityCache, currentVariantCache,
-            currentActivityCache.GetProgressToNextTick(currentVariantCache) * 100f));
+            currentActivityCache.GetProgressToNextTick(currentVariantCache, speedModifier) * 100f));
 
-        // Check for completed ticks
-        int completedTicks = currentActivityCache.CalculateCompleteTicks(currentVariantCache, 0);
+        // Check for completed ticks (with speed modifier for exploration)
+        int completedTicks = currentActivityCache.CalculateCompleteTicks(currentVariantCache, 0, speedModifier);
 
         if (completedTicks > 0)
         {
@@ -723,7 +732,7 @@ public class ActivityProgressService
 
         if (enableDebugLogs && newSteps > 0)
         {
-            float progress = currentActivityCache.GetProgressToNextTick(currentVariantCache);
+            float progress = currentActivityCache.GetProgressToNextTick(currentVariantCache, speedModifier);
             Logger.LogInfo($"ActivityManager: Added {newSteps} steps to {currentVariantCache.GetDisplayName()}, Progress: {progress:F2}", Logger.LogCategory.General);
         }
     }
@@ -732,7 +741,18 @@ public class ActivityProgressService
     {
         if (ticksCompleted <= 0 || currentVariantCache == null) return;
 
-        // Calculate rewards
+        // Check if this is an exploration activity
+        var activityDef = cacheService.GetActivityDefinition(currentActivityCache.ActivityId);
+        bool isExploration = activityDef?.ActivityReference?.IsExploration() ?? false;
+
+        if (isExploration)
+        {
+            // Exploration activities use ExplorationManager for discovery logic instead of item rewards
+            ProcessExplorationTicks(ticksCompleted, currentActivityCache, currentVariantCache);
+            return;
+        }
+
+        // Standard harvesting activity - give item rewards
         int totalRewards = ticksCompleted;
         string resourceId = currentVariantCache.PrimaryResource?.ItemID;
 
@@ -772,6 +792,49 @@ public class ActivityProgressService
         if (enableDebugLogs)
         {
             Logger.LogInfo($"ActivityManager: Completed {ticksCompleted} ticks, gained {totalRewards} {resourceId}", Logger.LogCategory.General);
+        }
+    }
+
+    /// <summary>
+    /// Process exploration ticks - delegates to ExplorationManager for discovery logic
+    /// </summary>
+    private void ProcessExplorationTicks(int ticksCompleted, ActivityData currentActivityCache, ActivityVariant currentVariantCache)
+    {
+        if (ticksCompleted <= 0) return;
+
+        // Process each tick through ExplorationManager
+        var explorationManager = ExplorationManager.Instance;
+        if (explorationManager == null)
+        {
+            Logger.LogError("ActivityManager: ExplorationManager not found for exploration activity!", Logger.LogCategory.ActivityLog);
+            return;
+        }
+
+        // Get the speed modifier from ExplorationManager (accounts for stats, buffs, etc.)
+        float speedModifier = explorationManager.GetExplorationSpeedModifier();
+
+        // Process each tick
+        for (int i = 0; i < ticksCompleted; i++)
+        {
+            explorationManager.ProcessExplorationTick();
+        }
+
+        // Update activity progress with speed modifier (thread-safe)
+        currentActivityCache.ProcessTicks(currentVariantCache, ticksCompleted, speedModifier);
+        DataManager.Instance.UpdateActivity(currentActivityCache);
+
+        // Mark as dirty for persistence
+        ActivityManager.Instance.PersistenceService.MarkDirty();
+
+        // Publish tick event (with null resource since exploration doesn't give items directly)
+        EventBus.Publish(new ActivityTickEvent(currentActivityCache, currentVariantCache, ticksCompleted, null));
+
+        // Publish progress event with delay
+        ActivityManager.Instance.StartCoroutine(PublishProgressEventDelayed(currentActivityCache, currentVariantCache));
+
+        if (enableDebugLogs)
+        {
+            Logger.LogInfo($"ActivityManager: Completed {ticksCompleted} exploration ticks (speed modifier: {speedModifier:F2})", Logger.LogCategory.ActivityLog);
         }
     }
 

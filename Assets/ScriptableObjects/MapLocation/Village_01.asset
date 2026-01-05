@@ -36,7 +36,8 @@ MonoBehaviour:
     LocationSpecificName: 
     LocationDescription: 
     ActivityVariants:
-    - {fileID: 11400000, guid: e5a825ae7b04ac04699d066e6c4cc955, type: 2}
+    - {fileID: 0}
+    - {fileID: 11400000, guid: 8d03be3b418ec0f44b2391ac00e6fce4, type: 2}
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}

@@ -92,10 +92,19 @@ public class ActivityData
 
     /// <summary>
     /// Calcule le progres vers le prochain tic (0.0 a 1.0)
-    /// Pour les activites pas: utilise le ActivityVariant pour connaître le ActionCost
+    /// Pour les activites pas: utilise le ActivityVariant pour connaitre le ActionCost
     /// Pour les activites temps: utilise RequiredTimeMs
     /// </summary>
     public float GetProgressToNextTick(ActivityVariant variant)
+    {
+        return GetProgressToNextTick(variant, 1.0f);
+    }
+
+    /// <summary>
+    /// Calcule le progres vers le prochain tic avec un modificateur de vitesse
+    /// </summary>
+    /// <param name="speedModifier">Multiplicateur de vitesse (1.0 = normal, inferieur = plus rapide)</param>
+    public float GetProgressToNextTick(ActivityVariant variant, float speedModifier)
     {
         if (IsTimeBased)
         {
@@ -104,17 +113,25 @@ public class ActivityData
         }
         else
         {
-            if (variant == null || variant.ActionCost <= 0) return 0f;
-            return (float)AccumulatedSteps / variant.ActionCost;
+            int actionCost = variant?.GetEffectiveActionCost(speedModifier) ?? 0;
+            if (actionCost <= 0) return 0f;
+            return (float)AccumulatedSteps / actionCost;
         }
     }
 
     /// <summary>
-    /// MODIFIE: Calcule combien de tics complets peuvent etre effectues
-    /// Pour les pas: utilise les pas donnes
-    /// Pour le temps: verifie si le temps requis est atteint
+    /// Calcule combien de tics complets peuvent etre effectues
     /// </summary>
     public int CalculateCompleteTicks(ActivityVariant variant, int additionalSteps)
+    {
+        return CalculateCompleteTicks(variant, additionalSteps, 1.0f);
+    }
+
+    /// <summary>
+    /// Calcule combien de tics complets peuvent etre effectues avec un modificateur de vitesse
+    /// </summary>
+    /// <param name="speedModifier">Multiplicateur de vitesse (1.0 = normal, inferieur = plus rapide)</param>
+    public int CalculateCompleteTicks(ActivityVariant variant, int additionalSteps, float speedModifier)
     {
         if (IsTimeBased)
         {
@@ -123,16 +140,26 @@ public class ActivityData
         }
         else
         {
-            if (variant == null || variant.ActionCost <= 0) return 0;
+            int actionCost = variant?.GetEffectiveActionCost(speedModifier) ?? 0;
+            if (actionCost <= 0) return 0;
             int totalSteps = AccumulatedSteps + additionalSteps;
-            return totalSteps / variant.ActionCost;
+            return totalSteps / actionCost;
         }
     }
 
     /// <summary>
-    /// MODIFIE: Met a jour apres avoir effectue des tics
+    /// Met a jour apres avoir effectue des tics
     /// </summary>
     public void ProcessTicks(ActivityVariant variant, int ticksCompleted)
+    {
+        ProcessTicks(variant, ticksCompleted, 1.0f);
+    }
+
+    /// <summary>
+    /// Met a jour apres avoir effectue des tics avec un modificateur de vitesse
+    /// </summary>
+    /// <param name="speedModifier">Multiplicateur de vitesse (1.0 = normal, inferieur = plus rapide)</param>
+    public void ProcessTicks(ActivityVariant variant, int ticksCompleted, float speedModifier)
     {
         if (ticksCompleted <= 0) return;
 
@@ -146,9 +173,10 @@ public class ActivityData
         }
         else
         {
-            if (variant != null && variant.ActionCost > 0)
+            int actionCost = variant?.GetEffectiveActionCost(speedModifier) ?? 0;
+            if (actionCost > 0)
             {
-                int stepsUsed = ticksCompleted * variant.ActionCost;
+                int stepsUsed = ticksCompleted * actionCost;
                 AccumulatedSteps = Math.Max(0, AccumulatedSteps - stepsUsed);
             }
         }
@@ -292,7 +320,8 @@ public class ActivityData
         }
         else
         {
-            return $"[Step Activity: {variant.GetDisplayName()} - Progress: {AccumulatedSteps}/{variant.ActionCost} steps - Resource: {variant.PrimaryResource?.GetDisplayName() ?? "Unknown"}]";
+            string resourceName = variant.IsExplorationVariant ? "Discoveries" : (variant.PrimaryResource?.GetDisplayName() ?? "Unknown");
+            return $"[Step Activity: {variant.GetDisplayName()} - Progress: {AccumulatedSteps}/{variant.GetEffectiveActionCost()} steps - Resource: {resourceName}]";
         }
     }
 }

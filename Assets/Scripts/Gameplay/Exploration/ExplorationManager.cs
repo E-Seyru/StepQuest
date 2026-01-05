@@ -1,5 +1,6 @@
 // Purpose: Manager for exploration activities - handles discovery logic and tracking
 // Filepath: Assets/Scripts/Gameplay/Exploration/ExplorationManager.cs
+using ActivityEvents;
 using ExplorationEvents;
 using System.Collections.Generic;
 using UnityEngine;
@@ -24,6 +25,9 @@ public class ExplorationManager : MonoBehaviour
     private int totalXPGained = 0;
     private int discoveriesThisSession = 0;
 
+    // Runtime modifiers (can be set by stats, equipment, buffs, etc.)
+    private float explorationSpeedModifier = 1.0f;
+
     void Awake()
     {
         if (Instance == null)
@@ -44,6 +48,25 @@ public class ExplorationManager : MonoBehaviour
         if (dataManager == null)
         {
             Logger.LogError("ExplorationManager: DataManager not found!", Logger.LogCategory.ActivityLog);
+        }
+
+        // Subscribe to activity events to auto-stop exploration when activity stops
+        EventBus.Subscribe<ActivityStoppedEvent>(OnActivityStopped);
+    }
+
+    void OnDestroy()
+    {
+        EventBus.Unsubscribe<ActivityStoppedEvent>(OnActivityStopped);
+    }
+
+    /// <summary>
+    /// Called when an activity stops - stop exploration if it was an exploration activity
+    /// </summary>
+    private void OnActivityStopped(ActivityStoppedEvent eventData)
+    {
+        if (isExploring)
+        {
+            StopExploration(eventData.WasCompleted);
         }
     }
 
@@ -145,6 +168,52 @@ public class ExplorationManager : MonoBehaviour
     public MapLocationDefinition GetCurrentLocation()
     {
         return currentLocation;
+    }
+
+    /// <summary>
+    /// Get the current exploration speed modifier (1.0 = normal, lower = faster, higher = slower)
+    /// </summary>
+    public float GetExplorationSpeedModifier()
+    {
+        return explorationSpeedModifier;
+    }
+
+    /// <summary>
+    /// Set the exploration speed modifier (affects steps per tick)
+    /// Can be called by stat systems, equipment bonuses, buffs, etc.
+    /// </summary>
+    /// <param name="modifier">1.0 = normal speed, 0.5 = twice as fast, 2.0 = half speed</param>
+    public void SetExplorationSpeedModifier(float modifier)
+    {
+        explorationSpeedModifier = Mathf.Max(0.1f, modifier); // Minimum 0.1x to prevent zero/negative
+        Logger.LogInfo($"ExplorationManager: Speed modifier set to {explorationSpeedModifier:F2}", Logger.LogCategory.ActivityLog);
+    }
+
+    /// <summary>
+    /// Add to the current exploration speed modifier (stacks additively)
+    /// </summary>
+    /// <param name="bonus">Positive = slower, Negative = faster (e.g., -0.1 = 10% faster)</param>
+    public void AddExplorationSpeedBonus(float bonus)
+    {
+        explorationSpeedModifier = Mathf.Max(0.1f, explorationSpeedModifier + bonus);
+    }
+
+    /// <summary>
+    /// Reset the exploration speed modifier to default (1.0)
+    /// </summary>
+    public void ResetExplorationSpeedModifier()
+    {
+        explorationSpeedModifier = 1.0f;
+    }
+
+    /// <summary>
+    /// Calculate the effective steps per tick for the current exploration
+    /// Takes into account base value from variant and any active modifiers
+    /// </summary>
+    public int GetEffectiveStepsPerTick(ActivityVariant variant)
+    {
+        if (variant == null) return GameConstants.ExplorationStepsPerTick;
+        return variant.GetEffectiveActionCost(explorationSpeedModifier);
     }
 
     /// <summary>

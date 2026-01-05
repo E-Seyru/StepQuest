@@ -77,7 +77,8 @@ MonoBehaviour:
   - ActivityReference: {fileID: 11400000, guid: 8f875fd1e58da0e47b143f3567d84689, type: 2}
     LocationSpecificName: 
     LocationDescription: 
-    ActivityVariants: []
+    ActivityVariants:
+    - {fileID: 11400000, guid: 8d03be3b418ec0f44b2391ac00e6fce4, type: 2}
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}

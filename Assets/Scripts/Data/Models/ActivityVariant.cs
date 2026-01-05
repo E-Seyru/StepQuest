@@ -21,17 +21,23 @@ public class ActivityVariant : ScriptableObject
     [Header("Activity Type")]
     [Tooltip("Is this a time-based activity (crafting) or step-based activity (gathering)?")]
     public bool IsTimeBased = false;
+    [Tooltip("Is this an exploration activity? (no item rewards, uses discovery system instead)")]
+    public bool IsExplorationVariant = false;
 
     [Header("Results/Products")]
     public ItemDefinition PrimaryResource;
     public ItemDefinition[] SecondaryResources;
 
     [Header("Step-Based Settings")]
-    [Tooltip("How many steps needed for one completion (ignored for time-based activities)")]
+    [Tooltip("How many steps needed for one completion (ignored for time-based activities). For exploration, this is steps per discovery tick.")]
     public int ActionCost = 10;
     [Tooltip("Success rate percentage (0-100)")]
     [Range(0, 100)]
     public int SuccessRate = 100;
+
+    [Header("Exploration Settings")]
+    [Tooltip("Base steps per exploration tick (only used if IsExplorationVariant is true and ActionCost is 0)")]
+    public int BaseExplorationStepsPerTick = 50;
 
     [Header("Experience & Progression")]
     [Tooltip("XP gagnee par tick/completion pour la competence principale (ex: Mining)")]
@@ -95,6 +101,39 @@ public class ActivityVariant : ScriptableObject
     public string GetDisplayName()
     {
         return string.IsNullOrEmpty(VariantName) ? name : VariantName;
+    }
+
+    /// <summary>
+    /// Get the effective action cost (steps per tick)
+    /// For exploration variants, uses BaseExplorationStepsPerTick if ActionCost is 0
+    /// </summary>
+    public int GetEffectiveActionCost()
+    {
+        if (IsExplorationVariant && ActionCost <= 0)
+        {
+            return BaseExplorationStepsPerTick > 0 ? BaseExplorationStepsPerTick : GameConstants.ExplorationStepsPerTick;
+        }
+        return ActionCost;
+    }
+
+    /// <summary>
+    /// Get the effective action cost with modifiers applied (for exploration, accounts for stats/bonuses)
+    /// </summary>
+    /// <param name="modifier">Multiplier applied to the base cost (e.g., 0.9 = 10% faster, 1.1 = 10% slower)</param>
+    public int GetEffectiveActionCost(float modifier)
+    {
+        int baseCost = GetEffectiveActionCost();
+        int modifiedCost = Mathf.RoundToInt(baseCost * modifier);
+        return Mathf.Max(1, modifiedCost); // Minimum 1 step per tick
+    }
+
+    /// <summary>
+    /// Get the base exploration steps per tick (before modifiers)
+    /// </summary>
+    public int GetBaseExplorationStepsPerTick()
+    {
+        if (!IsExplorationVariant) return ActionCost;
+        return ActionCost > 0 ? ActionCost : (BaseExplorationStepsPerTick > 0 ? BaseExplorationStepsPerTick : GameConstants.ExplorationStepsPerTick);
     }
 
     /// <summary>
@@ -239,8 +278,10 @@ public class ActivityVariant : ScriptableObject
     public bool IsValidVariant()
     {
         if (string.IsNullOrEmpty(VariantName)) return false;
-        if (PrimaryResource == null) return false;
         if (string.IsNullOrEmpty(GetParentActivityID())) return false;
+
+        // Exploration variants don't need a PrimaryResource (rewards come from discoveries)
+        if (!IsExplorationVariant && PrimaryResource == null) return false;
 
         if (IsTimeBased)
         {
@@ -251,10 +292,15 @@ public class ActivityVariant : ScriptableObject
                 if (RequiredMaterials.Length != RequiredQuantities.Length) return false;
             }
         }
+        else if (!IsExplorationVariant)
+        {
+            // Validation pour les activites basees sur les pas (non-exploration)
+            if (ActionCost <= 0) return false;
+        }
         else
         {
-            // Validation pour les activites basees sur les pas
-            if (ActionCost <= 0) return false;
+            // Exploration variants - use GameConstants for steps per tick
+            // ActionCost can be 0, will use default from GameConstants.ExplorationStepsPerTick
         }
 
         return true;

@@ -1,39 +1,44 @@
-// Purpose: Panel for exploration activities - shows discoverable content and exploration progress
+// Purpose: Panel for exploration activities - shows discoverable content grouped by category
 // Filepath: Assets/Scripts/UI/Panels/ExplorationPanelUI.cs
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
 /// Panel that displays exploration information for a location.
-/// Shows discoverable content (enemies, NPCs, dungeons), discovery chances, and exploration progress.
+/// Shows discoverable content (activities, enemies, NPCs) in a unified scrollable view with category sections.
 /// </summary>
 public class ExplorationPanelUI : MonoBehaviour
 {
     [Header("UI References - Header")]
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private TextMeshProUGUI locationNameText;
-    [SerializeField] private Image locationImage;
     [SerializeField] private Button closeButton;
 
-    [Header("UI References - Progress")]
-    [SerializeField] private TextMeshProUGUI progressText;
-    [SerializeField] private Slider progressSlider;
-    [SerializeField] private TextMeshProUGUI discoveredCountText;
-
-    [Header("UI References - Discoverable Content")]
-    [SerializeField] private Transform discoverableContainer;
+    [Header("UI References - Scroll Content")]
+    [SerializeField] private Transform contentContainer;
+    [SerializeField] private GameObject sectionHeaderPrefab;
     [SerializeField] private GameObject discoverableItemPrefab;
-    [SerializeField] private TextMeshProUGUI noDiscoverablesText;
+    [SerializeField] private TextMeshProUGUI nothingToDiscoverText;
 
-    [Header("UI References - Help Section")]
-    [SerializeField] private GameObject helpSection;
-    [SerializeField] private TextMeshProUGUI helpText;
+    [Header("UI References - Discovery Chance")]
+    [SerializeField] private TextMeshProUGUI discoveryChanceLabel;
+    [SerializeField] private TextMeshProUGUI discoveryChanceText;
 
     [Header("UI References - Action")]
     [SerializeField] private Button startExplorationButton;
     [SerializeField] private TextMeshProUGUI startButtonText;
+
+    [Header("Discovery Chance Colors")]
+    [SerializeField] private Color colorImpossible = new Color(0.5f, 0.5f, 0.5f);
+    [SerializeField] private Color colorExtremementFaible = new Color(0.8f, 0.2f, 0.2f);
+    [SerializeField] private Color colorTresFaible = new Color(0.9f, 0.4f, 0.2f);
+    [SerializeField] private Color colorFaible = new Color(0.9f, 0.6f, 0.2f);
+    [SerializeField] private Color colorMoyenne = new Color(0.9f, 0.9f, 0.2f);
+    [SerializeField] private Color colorBonne = new Color(0.6f, 0.9f, 0.3f);
+    [SerializeField] private Color colorExcellente = new Color(0.2f, 0.9f, 0.2f);
 
     // Current state
     private MapLocationDefinition currentLocation;
@@ -58,7 +63,6 @@ public class ExplorationPanelUI : MonoBehaviour
 
     void Start()
     {
-        // Setup buttons
         if (closeButton != null)
         {
             closeButton.onClick.AddListener(ClosePanel);
@@ -69,7 +73,6 @@ public class ExplorationPanelUI : MonoBehaviour
             startExplorationButton.onClick.AddListener(OnStartExplorationClicked);
         }
 
-        // Start hidden
         gameObject.SetActive(false);
     }
 
@@ -90,9 +93,8 @@ public class ExplorationPanelUI : MonoBehaviour
         currentActivity = activity;
 
         UpdateHeader();
-        UpdateProgress();
-        UpdateDiscoverableContent();
-        UpdateHelpSection();
+        UpdateContent();
+        UpdateDiscoveryChance();
         UpdateActionButton();
 
         gameObject.SetActive(true);
@@ -118,8 +120,8 @@ public class ExplorationPanelUI : MonoBehaviour
     {
         if (currentLocation == null) return;
 
-        UpdateProgress();
-        UpdateDiscoverableContent();
+        UpdateContent();
+        UpdateDiscoveryChance();
         UpdateActionButton();
     }
 
@@ -128,7 +130,7 @@ public class ExplorationPanelUI : MonoBehaviour
     #region Private Methods - UI Updates
 
     /// <summary>
-    /// Update header section (title, location name, image)
+    /// Update header section
     /// </summary>
     private void UpdateHeader()
     {
@@ -141,104 +143,213 @@ public class ExplorationPanelUI : MonoBehaviour
         {
             locationNameText.text = currentLocation.DisplayName;
         }
-
-        if (locationImage != null && currentLocation.LocationImage != null)
-        {
-            locationImage.sprite = currentLocation.LocationImage;
-            locationImage.color = Color.white;
-        }
     }
 
     /// <summary>
-    /// Update exploration progress section
+    /// Update content with category sections
     /// </summary>
-    private void UpdateProgress()
-    {
-        // Get discovery stats from PlayerData
-        int totalDiscoverable = GetTotalDiscoverableCount();
-        int discovered = GetDiscoveredCount();
-        float progressPercent = totalDiscoverable > 0 ? (float)discovered / totalDiscoverable : 0f;
-
-        if (progressText != null)
-        {
-            if (totalDiscoverable == 0)
-            {
-                progressText.text = "Rien a decouvrir ici";
-            }
-            else if (discovered >= totalDiscoverable)
-            {
-                progressText.text = "Exploration complete !";
-            }
-            else
-            {
-                progressText.text = $"Progression: {progressPercent * 100f:F0}%";
-            }
-        }
-
-        if (progressSlider != null)
-        {
-            progressSlider.value = progressPercent;
-        }
-
-        if (discoveredCountText != null)
-        {
-            discoveredCountText.text = $"{discovered} / {totalDiscoverable} decouvertes";
-        }
-    }
-
-    /// <summary>
-    /// Update discoverable content list
-    /// </summary>
-    private void UpdateDiscoverableContent()
+    private void UpdateContent()
     {
         ClearInstantiatedItems();
 
-        if (discoverableContainer == null) return;
+        if (contentContainer == null) return;
 
-        // Get all discoverable content at this location
-        var discoverables = GetAllDiscoverableContent();
+        // Get discoverable content for each category
+        var activities = GetDiscoverableActivities();
+        var enemies = GetDiscoverableEnemies();
+        var npcs = GetDiscoverableNPCs();
 
-        if (discoverables.Count == 0)
+        bool hasAnyContent = activities.Count > 0 || enemies.Count > 0 || npcs.Count > 0;
+
+        // Show "nothing to discover" if all categories are empty
+        if (nothingToDiscoverText != null)
         {
-            if (noDiscoverablesText != null)
+            nothingToDiscoverText.gameObject.SetActive(!hasAnyContent);
+            if (!hasAnyContent)
             {
-                noDiscoverablesText.gameObject.SetActive(true);
-                noDiscoverablesText.text = "Aucun contenu a decouvrir a cet endroit.";
+                nothingToDiscoverText.text = "Rien a decouvrir a cet endroit.";
+            }
+        }
+
+        if (!hasAnyContent) return;
+
+        // Create sections for each category
+        CreateCategorySection("Activites", activities, DiscoverableType.Activity);
+        CreateCategorySection("Ennemis", enemies, DiscoverableType.Enemy);
+        CreateCategorySection("Habitants", npcs, DiscoverableType.NPC);
+
+        // Force layout rebuild
+        LayoutRebuilder.ForceRebuildLayoutImmediate(contentContainer.GetComponent<RectTransform>());
+    }
+
+    /// <summary>
+    /// Create a category section with header and items
+    /// </summary>
+    private void CreateCategorySection(string categoryName, List<DiscoverableInfo> items, DiscoverableType type)
+    {
+        if (contentContainer == null) return;
+
+        // Count discovered/total
+        int discovered = items.Count(i => i.IsDiscovered);
+        int total = items.Count;
+
+        // Create section header
+        if (sectionHeaderPrefab != null)
+        {
+            GameObject header = Instantiate(sectionHeaderPrefab, contentContainer);
+            instantiatedItems.Add(header);
+
+            var headerText = header.GetComponentInChildren<TextMeshProUGUI>();
+            if (headerText != null)
+            {
+                if (total == 0)
+                {
+                    string typeText = type switch
+                    {
+                        DiscoverableType.Activity => "activite cachee",
+                        DiscoverableType.Enemy => "ennemi cache",
+                        DiscoverableType.NPC => "habitant cache",
+                        _ => "element cache"
+                    };
+                    headerText.text = $"{categoryName} - Aucun(e) {typeText} ici";
+                }
+                else
+                {
+                    headerText.text = $"{categoryName} ({discovered}/{total})";
+                }
+            }
+        }
+
+        // Create items (skip if none)
+        if (total == 0) return;
+
+        // Sort by rarity (rarer first), then by discovered status
+        var sortedItems = items
+            .OrderByDescending(i => (int)i.Rarity)
+            .ThenBy(i => i.IsDiscovered ? 1 : 0)
+            .ToList();
+
+        foreach (var item in sortedItems)
+        {
+            CreateDiscoverableItem(item);
+        }
+    }
+
+    /// <summary>
+    /// Create UI item for a discoverable
+    /// </summary>
+    private void CreateDiscoverableItem(DiscoverableInfo info)
+    {
+        if (discoverableItemPrefab == null || contentContainer == null) return;
+
+        GameObject item = Instantiate(discoverableItemPrefab, contentContainer);
+        instantiatedItems.Add(item);
+
+        var itemUI = item.GetComponent<DiscoverableItemUI>();
+        if (itemUI != null)
+        {
+            itemUI.Setup(info);
+        }
+        else
+        {
+            // Fallback
+            var text = item.GetComponentInChildren<TextMeshProUGUI>();
+            if (text != null)
+            {
+                string rarityColor = GetRarityColorHex(info.Rarity);
+                string displayName = info.IsDiscovered ? info.Name : "???";
+                text.text = $"<color={rarityColor}>{displayName}</color>";
+            }
+        }
+    }
+
+    /// <summary>
+    /// Update discovery chance display based on best available chance
+    /// </summary>
+    private void UpdateDiscoveryChance()
+    {
+        if (discoveryChanceText == null) return;
+
+        // Get all undiscovered items
+        var allUndiscovered = GetAllUndiscoveredContent();
+
+        if (allUndiscovered.Count == 0)
+        {
+            // Everything discovered
+            discoveryChanceText.text = "Complete !";
+            discoveryChanceText.color = colorExcellente;
+            if (discoveryChanceLabel != null)
+            {
+                discoveryChanceLabel.text = "Exploration :";
             }
             return;
         }
 
-        if (noDiscoverablesText != null)
+        // Find the best (highest) discovery chance among undiscovered items
+        float bestChance = 0f;
+        foreach (var item in allUndiscovered)
         {
-            noDiscoverablesText.gameObject.SetActive(false);
+            float baseChance = GameConstants.GetBaseDiscoveryChance(item.Rarity);
+            float modifiedChance = GetModifiedDiscoveryChance(baseChance);
+            if (modifiedChance > bestChance)
+            {
+                bestChance = modifiedChance;
+            }
         }
 
-        // Create UI items for each discoverable
-        foreach (var discoverable in discoverables)
+        // Convert to display text and color
+        var (chanceText, chanceColor) = GetChanceDisplayInfo(bestChance);
+
+        if (discoveryChanceLabel != null)
         {
-            CreateDiscoverableItem(discoverable);
+            discoveryChanceLabel.text = "Vos chances de decouverte :";
         }
 
-        // Force layout rebuild
-        LayoutRebuilder.ForceRebuildLayoutImmediate(discoverableContainer.GetComponent<RectTransform>());
+        discoveryChanceText.text = chanceText;
+        discoveryChanceText.color = chanceColor;
     }
 
     /// <summary>
-    /// Update help section with discovery chances
+    /// Get modified discovery chance based on player's exploration skill
     /// </summary>
-    private void UpdateHelpSection()
+    private float GetModifiedDiscoveryChance(float baseChance)
     {
-        if (helpSection == null || helpText == null) return;
+        // Get exploration skill level
+        int explorationLevel = 1;
+        if (DataManager.Instance?.PlayerData != null)
+        {
+            var skills = DataManager.Instance.PlayerData.Skills;
+            if (skills != null && skills.TryGetValue("exploration", out var skillData))
+            {
+                explorationLevel = skillData.Level;
+            }
+        }
 
-        string help = "Chances de decouverte par tick:\n";
-        help += $"- Commun: {GameConstants.DiscoveryChanceCommon * 100f:F1}%\n";
-        help += $"- Peu commun: {GameConstants.DiscoveryChanceUncommon * 100f:F1}%\n";
-        help += $"- Rare: {GameConstants.DiscoveryChanceRare * 100f:F1}%\n";
-        help += $"- epique: {GameConstants.DiscoveryChanceEpic * 100f:F1}%\n";
-        help += $"- Legendaire: {GameConstants.DiscoveryChanceLegendary * 100f:F1}%\n\n";
-        help += "Le niveau d'Exploration augmente vos chances !";
+        // +2% per level, capped at +100%
+        float bonus = Mathf.Min((explorationLevel - 1) * 0.02f, 1.0f);
+        return baseChance * (1f + bonus);
+    }
 
-        helpText.text = help;
+    /// <summary>
+    /// Convert chance value to display text and color
+    /// </summary>
+    private (string text, Color color) GetChanceDisplayInfo(float chance)
+    {
+        // Thresholds for chance levels
+        if (chance < 0.001f)
+            return ("Impossible", colorImpossible);
+        else if (chance < 0.005f)
+            return ("Extremement faible", colorExtremementFaible);
+        else if (chance < 0.015f)
+            return ("Tres faible", colorTresFaible);
+        else if (chance < 0.03f)
+            return ("Faible", colorFaible);
+        else if (chance < 0.06f)
+            return ("Moyenne", colorMoyenne);
+        else if (chance < 0.10f)
+            return ("Bonne", colorBonne);
+        else
+            return ("Excellente", colorExcellente);
     }
 
     /// <summary>
@@ -248,22 +359,16 @@ public class ExplorationPanelUI : MonoBehaviour
     {
         if (startExplorationButton == null) return;
 
-        int totalDiscoverable = GetTotalDiscoverableCount();
-        int discovered = GetDiscoveredCount();
-        bool isFullyExplored = discovered >= totalDiscoverable && totalDiscoverable > 0;
+        var allUndiscovered = GetAllUndiscoveredContent();
+        bool hasUndiscovered = allUndiscovered.Count > 0;
 
-        // Button is always available (can grind XP even after 100%)
         startExplorationButton.interactable = true;
 
         if (startButtonText != null)
         {
-            if (totalDiscoverable == 0)
+            if (!hasUndiscovered)
             {
-                startButtonText.text = "Explorer";
-            }
-            else if (isFullyExplored)
-            {
-                startButtonText.text = "Continuer l'exploration (XP)";
+                startButtonText.text = "Continuer (XP)";
             }
             else
             {
@@ -274,118 +379,119 @@ public class ExplorationPanelUI : MonoBehaviour
 
     #endregion
 
-    #region Private Methods - Data
+    #region Private Methods - Data Retrieval
 
     /// <summary>
-    /// Get all discoverable content at this location
+    /// Get discoverable activities at this location
     /// </summary>
-    private List<DiscoverableInfo> GetAllDiscoverableContent()
+    private List<DiscoverableInfo> GetDiscoverableActivities()
     {
-        var discoverables = new List<DiscoverableInfo>();
+        var list = new List<DiscoverableInfo>();
+        if (currentLocation?.AvailableActivities == null) return list;
 
-        if (currentLocation == null) return discoverables;
-
-        // Add hidden enemies
-        if (currentLocation.AvailableEnemies != null)
+        foreach (var activity in currentLocation.AvailableActivities)
         {
-            foreach (var enemy in currentLocation.AvailableEnemies)
+            if (activity == null || !activity.IsHidden || activity.ActivityReference == null) continue;
+
+            bool isDiscovered = IsDiscovered(activity.GetDiscoveryID());
+            list.Add(new DiscoverableInfo
             {
-                if (enemy != null && enemy.IsHidden && enemy.EnemyReference != null)
-                {
-                    bool isDiscovered = IsDiscovered(enemy.GetDiscoveryID());
-                    discoverables.Add(new DiscoverableInfo
-                    {
-                        Id = enemy.GetDiscoveryID(),
-                        Name = isDiscovered ? enemy.EnemyReference.GetDisplayName() : "???",
-                        Type = DiscoverableType.Enemy,
-                        Rarity = enemy.Rarity,
-                        BonusXP = enemy.GetDiscoveryBonusXP(),
-                        IsDiscovered = isDiscovered,
-                        Icon = isDiscovered ? enemy.EnemyReference.Avatar : null
-                    });
-                }
-            }
+                Id = activity.GetDiscoveryID(),
+                Name = isDiscovered ? activity.GetDisplayName() : "???",
+                Type = DiscoverableType.Activity,
+                Rarity = activity.Rarity,
+                BonusXP = activity.GetDiscoveryBonusXP(),
+                IsDiscovered = isDiscovered,
+                Icon = isDiscovered ? activity.GetIcon() : null
+            });
         }
-
-        // Add hidden NPCs
-        if (currentLocation.AvailableNPCs != null)
-        {
-            foreach (var npc in currentLocation.AvailableNPCs)
-            {
-                if (npc != null && npc.IsHidden && npc.NPCReference != null)
-                {
-                    bool isDiscovered = IsDiscovered(npc.GetDiscoveryID());
-                    discoverables.Add(new DiscoverableInfo
-                    {
-                        Id = npc.GetDiscoveryID(),
-                        Name = isDiscovered ? npc.NPCReference.GetDisplayName() : "???",
-                        Type = DiscoverableType.NPC,
-                        Rarity = npc.Rarity,
-                        BonusXP = npc.GetDiscoveryBonusXP(),
-                        IsDiscovered = isDiscovered,
-                        Icon = isDiscovered ? npc.NPCReference.Avatar : null
-                    });
-                }
-            }
-        }
-
-        // Add hidden activities
-        if (currentLocation.AvailableActivities != null)
-        {
-            foreach (var activity in currentLocation.AvailableActivities)
-            {
-                if (activity != null && activity.IsHidden && activity.ActivityReference != null)
-                {
-                    bool isDiscovered = IsDiscovered(activity.GetDiscoveryID());
-                    discoverables.Add(new DiscoverableInfo
-                    {
-                        Id = activity.GetDiscoveryID(),
-                        Name = isDiscovered ? activity.GetDisplayName() : "???",
-                        Type = DiscoverableType.Activity,
-                        Rarity = activity.Rarity,
-                        BonusXP = activity.GetDiscoveryBonusXP(),
-                        IsDiscovered = isDiscovered,
-                        Icon = isDiscovered ? activity.GetIcon() : null
-                    });
-                }
-            }
-        }
-
-        // TODO: Add dungeons when LocationDungeon is implemented
-
-        // Sort by rarity (rarer items first)
-        discoverables.Sort((a, b) => b.Rarity.CompareTo(a.Rarity));
-
-        return discoverables;
+        return list;
     }
 
     /// <summary>
-    /// Create UI item for a discoverable
+    /// Get discoverable enemies at this location
     /// </summary>
-    private void CreateDiscoverableItem(DiscoverableInfo info)
+    private List<DiscoverableInfo> GetDiscoverableEnemies()
     {
-        if (discoverableItemPrefab == null || discoverableContainer == null) return;
+        var list = new List<DiscoverableInfo>();
+        if (currentLocation?.AvailableEnemies == null) return list;
 
-        GameObject item = Instantiate(discoverableItemPrefab, discoverableContainer);
-        instantiatedItems.Add(item);
+        foreach (var enemy in currentLocation.AvailableEnemies)
+        {
+            if (enemy == null || !enemy.IsHidden || enemy.EnemyReference == null) continue;
 
-        // Setup the item (assuming it has DiscoverableItemUI component)
-        var itemUI = item.GetComponent<DiscoverableItemUI>();
-        if (itemUI != null)
-        {
-            itemUI.Setup(info);
-        }
-        else
-        {
-            // Fallback: try to set text directly if it has a TextMeshProUGUI
-            var text = item.GetComponentInChildren<TextMeshProUGUI>();
-            if (text != null)
+            bool isDiscovered = IsDiscovered(enemy.GetDiscoveryID());
+            list.Add(new DiscoverableInfo
             {
-                string rarityColor = GetRarityColor(info.Rarity);
-                string status = info.IsDiscovered ? "[Decouvert]" : "[???]";
-                text.text = $"<color={rarityColor}>{info.Name}</color> {status}";
-            }
+                Id = enemy.GetDiscoveryID(),
+                Name = isDiscovered ? enemy.EnemyReference.GetDisplayName() : "???",
+                Type = DiscoverableType.Enemy,
+                Rarity = enemy.Rarity,
+                BonusXP = enemy.GetDiscoveryBonusXP(),
+                IsDiscovered = isDiscovered,
+                Icon = isDiscovered ? enemy.EnemyReference.Avatar : null
+            });
         }
+        return list;
+    }
+
+    /// <summary>
+    /// Get discoverable NPCs at this location
+    /// </summary>
+    private List<DiscoverableInfo> GetDiscoverableNPCs()
+    {
+        var list = new List<DiscoverableInfo>();
+        if (currentLocation?.AvailableNPCs == null) return list;
+
+        foreach (var npc in currentLocation.AvailableNPCs)
+        {
+            if (npc == null || !npc.IsHidden || npc.NPCReference == null) continue;
+
+            bool isDiscovered = IsDiscovered(npc.GetDiscoveryID());
+            list.Add(new DiscoverableInfo
+            {
+                Id = npc.GetDiscoveryID(),
+                Name = isDiscovered ? npc.NPCReference.GetDisplayName() : "???",
+                Type = DiscoverableType.NPC,
+                Rarity = npc.Rarity,
+                BonusXP = npc.GetDiscoveryBonusXP(),
+                IsDiscovered = isDiscovered,
+                Icon = isDiscovered ? npc.NPCReference.Avatar : null
+            });
+        }
+        return list;
+    }
+
+    /// <summary>
+    /// Get all undiscovered content across all categories
+    /// </summary>
+    private List<DiscoverableInfo> GetAllUndiscoveredContent()
+    {
+        var all = new List<DiscoverableInfo>();
+        all.AddRange(GetDiscoverableActivities().Where(i => !i.IsDiscovered));
+        all.AddRange(GetDiscoverableEnemies().Where(i => !i.IsDiscovered));
+        all.AddRange(GetDiscoverableNPCs().Where(i => !i.IsDiscovered));
+        return all;
+    }
+
+    /// <summary>
+    /// Check if a specific item has been discovered
+    /// </summary>
+    private bool IsDiscovered(string discoveryId)
+    {
+        if (currentLocation == null || string.IsNullOrEmpty(discoveryId)) return false;
+
+        if (ExplorationManager.Instance != null)
+        {
+            return ExplorationManager.Instance.IsDiscoveredAtLocation(currentLocation.LocationID, discoveryId);
+        }
+
+        if (DataManager.Instance?.PlayerData != null)
+        {
+            return DataManager.Instance.PlayerData.HasDiscoveredAtLocation(currentLocation.LocationID, discoveryId);
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -404,113 +510,19 @@ public class ExplorationPanelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Get total count of discoverable content
-    /// </summary>
-    private int GetTotalDiscoverableCount()
-    {
-        if (currentLocation == null) return 0;
-
-        int count = 0;
-
-        // Count hidden enemies
-        if (currentLocation.AvailableEnemies != null)
-        {
-            foreach (var enemy in currentLocation.AvailableEnemies)
-            {
-                if (enemy != null && enemy.IsHidden)
-                    count++;
-            }
-        }
-
-        // Count hidden NPCs
-        if (currentLocation.AvailableNPCs != null)
-        {
-            foreach (var npc in currentLocation.AvailableNPCs)
-            {
-                if (npc != null && npc.IsHidden)
-                    count++;
-            }
-        }
-
-        // Count hidden activities
-        if (currentLocation.AvailableActivities != null)
-        {
-            foreach (var activity in currentLocation.AvailableActivities)
-            {
-                if (activity != null && activity.IsHidden)
-                    count++;
-            }
-        }
-
-        // TODO: Add dungeons when implemented
-
-        return count;
-    }
-
-    /// <summary>
-    /// Get count of already discovered content at this location
-    /// </summary>
-    private int GetDiscoveredCount()
-    {
-        if (currentLocation == null) return 0;
-
-        // Use ExplorationManager if available, otherwise check PlayerData directly
-        if (ExplorationManager.Instance != null)
-        {
-            return ExplorationManager.Instance.GetDiscoveredCountAtLocation(currentLocation);
-        }
-
-        // Fallback to direct PlayerData check
-        if (DataManager.Instance?.PlayerData != null)
-        {
-            return DataManager.Instance.PlayerData.GetDiscoveryCountAtLocation(currentLocation.LocationID);
-        }
-
-        return 0;
-    }
-
-    /// <summary>
-    /// Check if a specific item has been discovered
-    /// </summary>
-    private bool IsDiscovered(string discoveryId)
-    {
-        if (currentLocation == null || string.IsNullOrEmpty(discoveryId)) return false;
-
-        // Use ExplorationManager if available, otherwise check PlayerData directly
-        if (ExplorationManager.Instance != null)
-        {
-            return ExplorationManager.Instance.IsDiscoveredAtLocation(currentLocation.LocationID, discoveryId);
-        }
-
-        // Fallback to direct PlayerData check
-        if (DataManager.Instance?.PlayerData != null)
-        {
-            return DataManager.Instance.PlayerData.HasDiscoveredAtLocation(currentLocation.LocationID, discoveryId);
-        }
-
-        return false;
-    }
-
-    /// <summary>
     /// Get HTML color string for rarity
     /// </summary>
-    private string GetRarityColor(DiscoveryRarity rarity)
+    private string GetRarityColorHex(DiscoveryRarity rarity)
     {
-        switch (rarity)
+        return rarity switch
         {
-            case DiscoveryRarity.Common:
-                return "#FFFFFF"; // White
-            case DiscoveryRarity.Uncommon:
-                return "#1EFF00"; // Green
-            case DiscoveryRarity.Rare:
-                return "#0070DD"; // Blue
-            case DiscoveryRarity.Epic:
-                return "#A335EE"; // Purple
-            case DiscoveryRarity.Legendary:
-                return "#FF8000"; // Orange
-            default:
-                return "#FFFFFF";
-        }
+            DiscoveryRarity.Common => "#FFFFFF",
+            DiscoveryRarity.Uncommon => "#1EFF00",
+            DiscoveryRarity.Rare => "#0070DD",
+            DiscoveryRarity.Epic => "#A335EE",
+            DiscoveryRarity.Legendary => "#FF8000",
+            _ => "#FFFFFF"
+        };
     }
 
     #endregion
@@ -524,14 +536,67 @@ public class ExplorationPanelUI : MonoBehaviour
     {
         if (currentLocation == null || currentActivity == null) return;
 
-        Logger.LogInfo($"ExplorationPanelUI: Starting exploration at {currentLocation.DisplayName}", Logger.LogCategory.ActivityLog);
+        // Check if we can start an activity
+        if (ActivityManager.Instance == null)
+        {
+            Logger.LogError("ExplorationPanelUI: ActivityManager not found!", Logger.LogCategory.ActivityLog);
+            return;
+        }
 
-        // TODO: Start exploration activity via ActivityManager
-        // For now, just log
-        Logger.LogWarning("ExplorationPanelUI: Exploration activity start not yet implemented!", Logger.LogCategory.ActivityLog);
+        if (!ActivityManager.Instance.CanStartActivity())
+        {
+            Logger.LogWarning("ExplorationPanelUI: Cannot start activity - another activity is in progress", Logger.LogCategory.ActivityLog);
+            return;
+        }
 
-        // Close panel after starting (or keep open for real-time updates?)
-        // ClosePanel();
+        // Get activity and variant IDs
+        string activityId = currentActivity.ActivityReference?.ActivityID;
+
+        // For exploration, we use a default variant or the first available one
+        string variantId = GetExplorationVariantId();
+
+        if (string.IsNullOrEmpty(activityId) || string.IsNullOrEmpty(variantId))
+        {
+            Logger.LogError("ExplorationPanelUI: Invalid activity or variant ID!", Logger.LogCategory.ActivityLog);
+            return;
+        }
+
+        // Start the exploration activity via ActivityManager
+        bool success = ActivityManager.Instance.StartActivity(activityId, variantId);
+
+        if (success)
+        {
+            // Also notify ExplorationManager to track discovery state
+            ExplorationManager.Instance?.StartExploration(currentLocation);
+
+            Logger.LogInfo($"ExplorationPanelUI: Started exploration at {currentLocation.DisplayName}", Logger.LogCategory.ActivityLog);
+
+            // Close the panel - ActivityDisplayPanel will show progress
+            ClosePanel();
+        }
+        else
+        {
+            Logger.LogWarning("ExplorationPanelUI: Failed to start exploration activity", Logger.LogCategory.ActivityLog);
+        }
+    }
+
+    /// <summary>
+    /// Get a valid exploration variant ID for this location
+    /// </summary>
+    private string GetExplorationVariantId()
+    {
+        // Try to get from the LocationActivity's ActivityVariants
+        if (currentActivity.ActivityVariants != null && currentActivity.ActivityVariants.Count > 0)
+        {
+            var firstVariant = currentActivity.ActivityVariants[0];
+            if (firstVariant != null && !string.IsNullOrEmpty(firstVariant.VariantName))
+            {
+                return ActivityRegistry.GenerateVariantId(firstVariant.VariantName);
+            }
+        }
+
+        // Last resort: use a default exploration variant name
+        return "exploration_default";
     }
 
     #endregion
@@ -555,10 +620,10 @@ public class ExplorationPanelUI : MonoBehaviour
 /// </summary>
 public enum DiscoverableType
 {
+    Activity,
     Enemy,
     NPC,
-    Dungeon,
-    Activity
+    Dungeon
 }
 
 /// <summary>
