@@ -104,10 +104,11 @@ public class CombatAbilityService
                 case AbilityEffectType.Damage:
                     if (effect.Value > 0)
                     {
+                        // Use effectTarget to respect TargetsSelf flag (allows self-damage abilities)
                         float modifiedDamage = effect.Value * sourceStats.AttackMultiplier;
-                        float actualDamage = target.TakeDamage(modifiedDamage);
+                        float actualDamage = effectTarget.TakeDamage(modifiedDamage);
                         result.DamageDealt += actualDamage;
-                        _eventService.PublishHealthChanged(target);
+                        _eventService.PublishHealthChanged(effectTarget);
                     }
                     break;
 

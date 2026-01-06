@@ -45,14 +45,22 @@ public class CombatSectionPanel : MonoBehaviour
         EventBus.Subscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
     }
 
-    void OnEnable()
+    void OnDestroy()
     {
-        EventBus.Subscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
-    }
-
-    void OnDisable()
-    {
+        // Unsubscribe from events
         EventBus.Unsubscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
+
+        foreach (var card in instantiatedEnemyCards)
+        {
+            if (card != null)
+            {
+                var enemyCard = card.GetComponent<EnemyCard>();
+                if (enemyCard != null)
+                {
+                    enemyCard.OnCardClicked -= OnEnemyCardClicked;
+                }
+            }
+        }
     }
 
     #region Public Methods
@@ -371,28 +379,6 @@ public class CombatSectionPanel : MonoBehaviour
         }
 
         return Instantiate(enemyCardPrefab, enemiesContainer);
-    }
-
-    #endregion
-
-    #region Unity Events
-
-    void OnDestroy()
-    {
-        // Unsubscribe from events
-        EventBus.Unsubscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
-
-        foreach (var card in instantiatedEnemyCards)
-        {
-            if (card != null)
-            {
-                var enemyCard = card.GetComponent<EnemyCard>();
-                if (enemyCard != null)
-                {
-                    enemyCard.OnCardClicked -= OnEnemyCardClicked;
-                }
-            }
-        }
     }
 
     #endregion

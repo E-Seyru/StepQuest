@@ -44,14 +44,22 @@ public class SocialSectionPanel : MonoBehaviour
         EventBus.Subscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
     }
 
-    void OnEnable()
+    void OnDestroy()
     {
-        EventBus.Subscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
-    }
-
-    void OnDisable()
-    {
+        // Unsubscribe from events
         EventBus.Unsubscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
+
+        foreach (var card in instantiatedSocialActivityCards)
+        {
+            if (card != null)
+            {
+                var avatarCard = card.GetComponent<SocialAvatarCard>();
+                if (avatarCard != null)
+                {
+                    avatarCard.OnCardClicked -= OnNPCAvatarCardClicked;
+                }
+            }
+        }
     }
 
     #region Public Methods
@@ -362,28 +370,6 @@ public class SocialSectionPanel : MonoBehaviour
         }
 
         return Instantiate(socialAvatarPrefab, socialActivitiesContainer);
-    }
-
-    #endregion
-
-    #region Unity Events
-
-    void OnDestroy()
-    {
-        // Unsubscribe from events
-        EventBus.Unsubscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
-
-        foreach (var card in instantiatedSocialActivityCards)
-        {
-            if (card != null)
-            {
-                var avatarCard = card.GetComponent<SocialAvatarCard>();
-                if (avatarCard != null)
-                {
-                    avatarCard.OnCardClicked -= OnNPCAvatarCardClicked;
-                }
-            }
-        }
     }
 
     #endregion

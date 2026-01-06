@@ -625,8 +625,6 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     private void OpenExplorationPanel(LocationActivity locationActivity)
     {
-        // TODO: Open ExplorationPanelUI when it's created
-        // For now, log that we need to create this panel
         Logger.LogInfo($"LocationDetailsPanel: Opening exploration for {locationActivity.GetDisplayName()} at {currentLocation.DisplayName}", Logger.LogCategory.General);
 
         if (ExplorationPanelUI.Instance != null)

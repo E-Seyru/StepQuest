@@ -450,11 +450,21 @@ public class ActivityTimeService
                 currentActivityCache.AccumulatedTimeMs = currentActivityCache.RequiredTimeMs;
                 completedCrafts++;
 
-                // Donner les recompenses
+                // Donner les recompenses - check inventory capacity first
                 string resourceId = currentVariantCache.PrimaryResource?.ItemID;
                 if (!string.IsNullOrEmpty(resourceId))
                 {
-                    InventoryManager.Instance.AddItem("player", resourceId, 1);
+                    var inventoryManager = InventoryManager.Instance;
+                    if (!inventoryManager.CanAddItem("player", resourceId, 1))
+                    {
+                        // Inventory full - stop crafting
+                        Logger.LogWarning($"ActivityTimeService: Inventory full, stopping offline crafting after {completedCrafts} crafts", Logger.LogCategory.General);
+                        currentActivityCache.Clear();
+                        DataManager.Instance.StopActivity();
+                        activityWasStopped = true;
+                        break;
+                    }
+                    inventoryManager.AddItem("player", resourceId, 1);
                 }
 
                 // Verifier si on peut continuer

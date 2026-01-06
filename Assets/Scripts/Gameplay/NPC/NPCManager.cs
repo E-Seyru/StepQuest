@@ -67,8 +67,11 @@ public class NPCManager : MonoBehaviour
             return false;
         }
 
-        // TODO: Add to discovered list when PlayerData access is available
-        // For now just fire the event
+        // Add to PlayerData discovered list
+        if (DataManager.Instance?.PlayerData != null)
+        {
+            DataManager.Instance.PlayerData.AddDiscoveredNPC(npcId);
+        }
 
         if (enableDebugLogs)
             Logger.LogInfo($"NPCManager: Discovered NPC '{npcId}'", Logger.LogCategory.General);
@@ -85,8 +88,8 @@ public class NPCManager : MonoBehaviour
     /// </summary>
     public bool IsNPCDiscovered(string npcId)
     {
-        // TODO: Check PlayerData when access is available
-        return false;
+        if (string.IsNullOrEmpty(npcId)) return false;
+        return DataManager.Instance?.PlayerData?.HasDiscoveredNPC(npcId) ?? false;
     }
 
     /// <summary>
@@ -94,8 +97,7 @@ public class NPCManager : MonoBehaviour
     /// </summary>
     public List<string> GetDiscoveredNPCs()
     {
-        // TODO: Get from PlayerData when access is available
-        return new List<string>();
+        return DataManager.Instance?.PlayerData?.DiscoveredNPCs ?? new List<string>();
     }
 
     // === UTILITY ===

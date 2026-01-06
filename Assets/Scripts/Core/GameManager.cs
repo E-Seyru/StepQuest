@@ -46,6 +46,9 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        // Subscribe to events early in Awake to avoid missing events during startup
+        SubscribeToManagerEvents();
+
         Logger.LogInfo("GameManager: Initializing...", Logger.LogCategory.General);
     }
 
@@ -71,9 +74,6 @@ public class GameManager : MonoBehaviour
         dataManager = DataManager.Instance;
         mapManager = MapManager.Instance;
         activityManager = ActivityManager.Instance;
-
-        // S'abonner aux evenements des autres managers
-        SubscribeToManagerEvents();
 
         // Determiner l'etat initial du jeu
         DetermineInitialGameState();

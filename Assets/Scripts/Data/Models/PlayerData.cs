@@ -236,7 +236,10 @@ public class PlayerData
             }
             catch (Exception ex)
             {
-                Logger.LogError($"PlayerData: Error deserializing Skills: {ex.Message}", Logger.LogCategory.General);
+                // CRITICAL: Data corruption detected - log prominently but don't lose the JSON
+                Logger.LogError($"PlayerData: CRITICAL - Skills JSON corrupted! Data NOT lost, raw JSON preserved. Error: {ex.Message}", Logger.LogCategory.General);
+                Logger.LogError($"PlayerData: Corrupted Skills JSON: {_skillsJson}", Logger.LogCategory.General);
+                // Return empty to prevent crash, but the raw JSON is preserved for recovery
                 return new Dictionary<string, SkillData>();
             }
         }
@@ -249,7 +252,7 @@ public class PlayerData
             catch (Exception ex)
             {
                 Logger.LogError($"PlayerData: Error serializing Skills: {ex.Message}", Logger.LogCategory.General);
-                _skillsJson = null;
+                // DON'T clear _skillsJson - preserve existing data on serialization failure
             }
         }
     }
@@ -268,7 +271,8 @@ public class PlayerData
             }
             catch (Exception ex)
             {
-                Logger.LogError($"PlayerData: Error deserializing SubSkills: {ex.Message}", Logger.LogCategory.General);
+                Logger.LogError($"PlayerData: CRITICAL - SubSkills JSON corrupted! Data NOT lost, raw JSON preserved. Error: {ex.Message}", Logger.LogCategory.General);
+                Logger.LogError($"PlayerData: Corrupted SubSkills JSON: {_subSkillsJson}", Logger.LogCategory.General);
                 return new Dictionary<string, SkillData>();
             }
         }
@@ -281,7 +285,7 @@ public class PlayerData
             catch (Exception ex)
             {
                 Logger.LogError($"PlayerData: Error serializing SubSkills: {ex.Message}", Logger.LogCategory.General);
-                _subSkillsJson = null;
+                // DON'T clear - preserve existing data
             }
         }
     }
@@ -321,7 +325,8 @@ public class PlayerData
             }
             catch (Exception ex)
             {
-                Logger.LogError($"PlayerData: Error deserializing OwnedAbilities: {ex.Message}", Logger.LogCategory.General);
+                Logger.LogError($"PlayerData: CRITICAL - OwnedAbilities JSON corrupted! Raw JSON preserved. Error: {ex.Message}", Logger.LogCategory.General);
+                Logger.LogError($"PlayerData: Corrupted OwnedAbilities JSON: {_ownedAbilitiesJson}", Logger.LogCategory.General);
                 return new List<string>();
             }
         }
@@ -334,7 +339,7 @@ public class PlayerData
             catch (Exception ex)
             {
                 Logger.LogError($"PlayerData: Error serializing OwnedAbilities: {ex.Message}", Logger.LogCategory.General);
-                _ownedAbilitiesJson = null;
+                // DON'T clear - preserve existing data
             }
         }
     }
@@ -354,7 +359,8 @@ public class PlayerData
             }
             catch (Exception ex)
             {
-                Logger.LogError($"PlayerData: Error deserializing EquippedAbilities: {ex.Message}", Logger.LogCategory.General);
+                Logger.LogError($"PlayerData: CRITICAL - EquippedAbilities JSON corrupted! Raw JSON preserved. Error: {ex.Message}", Logger.LogCategory.General);
+                Logger.LogError($"PlayerData: Corrupted EquippedAbilities JSON: {_equippedAbilitiesJson}", Logger.LogCategory.General);
                 return new List<string>();
             }
         }
@@ -367,7 +373,7 @@ public class PlayerData
             catch (Exception ex)
             {
                 Logger.LogError($"PlayerData: Error serializing EquippedAbilities: {ex.Message}", Logger.LogCategory.General);
-                _equippedAbilitiesJson = null;
+                // DON'T clear - preserve existing data
             }
         }
     }
@@ -403,7 +409,8 @@ public class PlayerData
             }
             catch (Exception ex)
             {
-                Logger.LogError($"PlayerData: Error deserializing LocationDiscoveries: {ex.Message}", Logger.LogCategory.General);
+                Logger.LogError($"PlayerData: CRITICAL - LocationDiscoveries JSON corrupted! Raw JSON preserved. Error: {ex.Message}", Logger.LogCategory.General);
+                Logger.LogError($"PlayerData: Corrupted LocationDiscoveries JSON: {_locationDiscoveriesJson}", Logger.LogCategory.General);
                 return new Dictionary<string, List<string>>();
             }
         }
@@ -416,7 +423,7 @@ public class PlayerData
             catch (Exception ex)
             {
                 Logger.LogError($"PlayerData: Error serializing LocationDiscoveries: {ex.Message}", Logger.LogCategory.General);
-                _locationDiscoveriesJson = null;
+                // DON'T clear - preserve existing data
             }
         }
     }
@@ -456,7 +463,8 @@ public class PlayerData
             }
             catch (Exception ex)
             {
-                Logger.LogError($"PlayerData: Error deserializing DialogueFlags: {ex.Message}", Logger.LogCategory.General);
+                Logger.LogError($"PlayerData: CRITICAL - DialogueFlags JSON corrupted! Raw JSON preserved. Error: {ex.Message}", Logger.LogCategory.General);
+                Logger.LogError($"PlayerData: Corrupted DialogueFlags JSON: {_dialogueFlagsJson}", Logger.LogCategory.General);
                 return new Dictionary<string, bool>();
             }
         }
@@ -469,7 +477,7 @@ public class PlayerData
             catch (Exception ex)
             {
                 Logger.LogError($"PlayerData: Error serializing DialogueFlags: {ex.Message}", Logger.LogCategory.General);
-                _dialogueFlagsJson = null;
+                // DON'T clear - preserve existing data
             }
         }
     }
@@ -489,7 +497,8 @@ public class PlayerData
             }
             catch (Exception ex)
             {
-                Logger.LogError($"PlayerData: Error deserializing NPCRelationships: {ex.Message}", Logger.LogCategory.General);
+                Logger.LogError($"PlayerData: CRITICAL - NPCRelationships JSON corrupted! Raw JSON preserved. Error: {ex.Message}", Logger.LogCategory.General);
+                Logger.LogError($"PlayerData: Corrupted NPCRelationships JSON: {_npcRelationshipsJson}", Logger.LogCategory.General);
                 return new Dictionary<string, int>();
             }
         }
@@ -502,7 +511,7 @@ public class PlayerData
             catch (Exception ex)
             {
                 Logger.LogError($"PlayerData: Error serializing NPCRelationships: {ex.Message}", Logger.LogCategory.General);
-                _npcRelationshipsJson = null;
+                // DON'T clear - preserve existing data
             }
         }
     }
@@ -528,7 +537,8 @@ public class PlayerData
             }
             catch (Exception ex)
             {
-                Logger.LogError($"PlayerData: Error deserializing DiscoveredNPCs: {ex.Message}", Logger.LogCategory.General);
+                Logger.LogError($"PlayerData: CRITICAL - DiscoveredNPCs JSON corrupted! Raw JSON preserved. Error: {ex.Message}", Logger.LogCategory.General);
+                Logger.LogError($"PlayerData: Corrupted DiscoveredNPCs JSON: {_discoveredNPCsJson}", Logger.LogCategory.General);
                 return new List<string>();
             }
         }
@@ -541,7 +551,7 @@ public class PlayerData
             catch (Exception ex)
             {
                 Logger.LogError($"PlayerData: Error serializing DiscoveredNPCs: {ex.Message}", Logger.LogCategory.General);
-                _discoveredNPCsJson = null;
+                // DON'T clear - preserve existing data
             }
         }
     }
@@ -739,6 +749,21 @@ public class PlayerData
     {
         var discovered = DiscoveredNPCs;
         return discovered.Contains(npcId);
+    }
+
+    /// <summary>
+    /// Add an NPC to the discovered list
+    /// </summary>
+    public bool AddDiscoveredNPC(string npcId)
+    {
+        if (string.IsNullOrEmpty(npcId)) return false;
+
+        var discovered = DiscoveredNPCs;
+        if (discovered.Contains(npcId)) return false;
+
+        discovered.Add(npcId);
+        DiscoveredNPCs = discovered;
+        return true;
     }
 
     // === METHODES D'EXPLORATION ===

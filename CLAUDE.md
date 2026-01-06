@@ -77,6 +77,10 @@ Event types are defined in `Assets/Scripts/Core/Events/GameEvents.cs` under name
 - Inventory and equipment
 - Skills and SubSkills (Dictionary<string, SkillData>)
 - OwnedAbilities and EquippedAbilities (List<string>)
+- LocationDiscoveries (Dictionary<string, HashSet<string>>) - Exploration discoveries per location
+- DiscoveredNPCs (List<string>) - NPCs the player has met
+- NPCRelationships (Dictionary<string, int>) - Affinity points per NPC
+- DialogueFlags (Dictionary<string, bool>) - Story/dialogue progress flags
 
 **LocalDatabase** uses SQLite for persistent storage on device.
 
@@ -170,7 +174,7 @@ NPCs can be placed at locations and interacted with by players.
   - Illustration (large image for interaction panel)
   - ThemeColor, IsActive
 - **NPCRegistry** - Central registry with fast lookup cache
-- **NPCManager** - Singleton handling NPC discovery and interaction events
+- **NPCManager** - Singleton handling NPC discovery (via PlayerData.DiscoveredNPCs) and interaction events
 
 **UI Components:**
 - **SocialSectionPanel** - Displays NPC cards at a location (similar to CombatSectionPanel for enemies)
@@ -260,23 +264,24 @@ Open project in Unity and use standard Unity build workflow:
 ## Current Development Status
 
 ### Implemented:
-- Core travel system (step-based)
-- Activity system (step-based harvesting, time-based crafting)
+- Core travel system (step-based with multi-segment pathfinding)
+- Activity system (step-based harvesting, time-based crafting with offline progress)
 - Full inventory and equipment system
 - Combat system with auto-battler mechanics
-- Generic status effect system
+- Generic status effect system (DoT, HoT, buffs, debuffs, stuns)
 - Ability ownership and equipment with weight limits
-- XP/Skill progression system
-- Event-driven architecture
-- NPC system with discovery and interaction UI
+- XP/Skill progression system (main skills + sub-skills)
+- Event-driven architecture (EventBus pattern)
+- NPC system with discovery tracking and interaction UI
+- Exploration system with rarity-based discoveries
+- Specialized activity panels (Gathering, Crafting, Exploration, Bank)
 
 ### In Progress / Next Steps:
-- NPC relationship system (tracking points per NPC)
-- NPC Talk/Gift functionality
-- Expand enemy loot tables with test items
-- Balance combat and progression
-- Add more content (abilities, enemies, locations, NPCs)
-- UI polish for ability equipment in InventoryPanel
+- NPC Talk/Gift functionality (relationship points system exists, UI needs work)
+- MerchantPanel for buy/sell activities
+- Ability weight enforcement (system exists, not yet balanced)
+- XP curve balancing and rewards tuning
+- Expand content (abilities, enemies, locations, NPCs)
 - Looped/offline combat simulation
 
 ### Exploration System (Implemented)
@@ -322,19 +327,17 @@ Step-based activity for discovering hidden content at locations.
 - `CombatSectionPanel`, `SocialSectionPanel`, `LocationDetailsPanel` subscribe to `ExplorationDiscoveryEvent`
 - Panels refresh automatically when relevant content is discovered
 
-### Activity Panels Refactoring (Next Task)
-The current `ActivityVariantsPanel` will be replaced with specialized panels per activity type:
+### Activity Panels (Implemented)
+Specialized panels per activity type, routed via `LocationDetailsPanel.OnActivitySelected()`:
 
-**Planned Panels:**
-1. **MerchantPanel** - For buying/selling with NPCs (merchant-type activities)
-2. **ExplorationOverviewPanel** - For exploration activities (already have `ExplorationPanelUI`)
-3. **GatheringPanel** - For step-based harvesting activities (mining, woodcutting, fishing)
-4. **CraftingPanel** - For time-based crafting activities (forging, cooking)
+**Implemented Panels:**
+- **ExplorationPanelUI** - For exploration activities (discovery rolls, progress tracking)
+- **GatheringPanel** - For step-based harvesting activities (mining, woodcutting, fishing)
+- **CraftingPanel** - For time-based crafting activities (forging, cooking)
+- **BankPanel** - For bank/storage activities
 
-**Design Considerations:**
-- Each panel tailored to its activity type's unique UI needs
-- `LocationDetailsPanel.OnActivitySelected()` routes to appropriate panel based on `ActivityType`
-- Current `ActivityVariantsPanel` logic to be distributed across new panels
+**Pending Panels:**
+- **MerchantPanel** - For buying/selling with NPCs (merchant-type activities)
 
 ### Expedition System (Future - Not Yet Designed)
 Long-distance step-based activity with tiered goals and rewards. Concept notes:
