@@ -80,8 +80,6 @@ public class CombatSectionPanel : MonoBehaviour
     /// </summary>
     public void DisplayEnemies(List<LocationEnemy> enemies)
     {
-        Logger.LogInfo($"CombatSectionPanel: DisplayEnemies called with {enemies?.Count ?? 0} enemies", Logger.LogCategory.CombatLog);
-
         if (enemies == null)
         {
             enemies = new List<LocationEnemy>();
@@ -210,11 +208,9 @@ public class CombatSectionPanel : MonoBehaviour
 
     private void ShowNoEnemiesMessage()
     {
-        Logger.LogInfo($"CombatSectionPanel: ShowNoEnemiesMessage called, noEnemiesText is {(noEnemiesText != null ? "assigned" : "NULL")}", Logger.LogCategory.CombatLog);
         if (noEnemiesText != null)
         {
             noEnemiesText.gameObject.SetActive(true);
-            Logger.LogInfo($"CombatSectionPanel: noEnemiesText activated, active={noEnemiesText.gameObject.activeSelf}", Logger.LogCategory.CombatLog);
         }
         UpdateSectionTitle(0);
     }
