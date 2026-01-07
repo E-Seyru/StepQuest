@@ -14,7 +14,7 @@ public class ExplorationCategorySection : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private TextMeshProUGUI headerText;
     [SerializeField] private Transform itemsContainer;
-    [SerializeField] private GameObject emptyStateText;
+    [SerializeField] private TextMeshProUGUI emptyStateText;
 
     [Header("Configuration")]
     [SerializeField] private string categoryName = "Category";
@@ -47,7 +47,11 @@ public class ExplorationCategorySection : MonoBehaviour
         bool hasItems = total > 0;
         if (emptyStateText != null)
         {
-            emptyStateText.SetActive(!hasItems);
+            emptyStateText.gameObject.SetActive(!hasItems);
+            if (!hasItems)
+            {
+                emptyStateText.text = emptyMessage;
+            }
         }
 
         if (!hasItems) return;
@@ -98,7 +102,7 @@ public class ExplorationCategorySection : MonoBehaviour
 
         if (total == 0)
         {
-            headerText.text = $"{categoryName} - {emptyMessage}";
+            headerText.text = categoryName;
         }
         else
         {

@@ -359,6 +359,8 @@ public class GameDataResetter : EditorWindow
                 Logger.LogInfo(" Reset des donnees NPC...", Logger.LogCategory.EditorLog);
                 playerData.DiscoveredNPCs = new List<string>();
                 playerData.NPCRelationships = new Dictionary<string, int>();
+                // Also reset location discoveries (exploration system)
+                playerData.ClearAllDiscoveries();
             }
 
             // 9. Reset des flags de dialogue

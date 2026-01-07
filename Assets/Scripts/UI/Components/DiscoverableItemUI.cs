@@ -74,6 +74,7 @@ public class DiscoverableItemUI : MonoBehaviour
         if (currentInfo.Icon != null)
         {
             iconImage.sprite = currentInfo.Icon;
+            iconImage.preserveAspect = true;
         }
 
         if (currentInfo.IsDiscovered)

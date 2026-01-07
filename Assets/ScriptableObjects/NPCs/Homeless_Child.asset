@@ -16,6 +16,7 @@ MonoBehaviour:
   NPCName: Homeless child
   Description: A homeless child
   Avatar: {fileID: 8037868039139570920, guid: 61951df610e844240836dd57c0ca5905, type: 3}
+  SilhouetteIcon: {fileID: 2805318445106240653, guid: 967029c7ab2104045a3f227bfa017af6, type: 3}
   Illustration: {fileID: -2574164509539785578, guid: 98f9a83ff5182354cad97a0ce12412db, type: 3}
   ThemeColor: {r: 1, g: 1, b: 1, a: 1}
   EmotionNeutral: {fileID: 8313593300519353791, guid: 7297f1be5c301dc489b05218059e76a6, type: 3}

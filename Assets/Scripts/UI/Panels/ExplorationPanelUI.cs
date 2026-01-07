@@ -29,6 +29,10 @@ public class ExplorationPanelUI : MonoBehaviour
     [SerializeField] private Button startExplorationButton;
     [SerializeField] private TextMeshProUGUI startButtonText;
 
+    [Header("UI References - Results Panel")]
+    [SerializeField] private ExplorationResultsPanel resultsPanel;
+    [SerializeField] private GameObject explorationPanelContainer; // Main content to hide when showing results
+
     [Header("Discovery Chance Colors")]
     [SerializeField] private Color colorImpossible = new Color(0.5f, 0.5f, 0.5f);
     [SerializeField] private Color colorExtremementFaible = new Color(0.8f, 0.2f, 0.2f);
@@ -94,6 +98,12 @@ public class ExplorationPanelUI : MonoBehaviour
         UpdateDiscoveryChance();
         UpdateActionButton();
 
+        // Ensure container is visible (may have been hidden by results panel)
+        if (explorationPanelContainer != null)
+        {
+            explorationPanelContainer.SetActive(true);
+        }
+
         gameObject.SetActive(true);
 
         Logger.LogInfo($"ExplorationPanelUI: Opened for {location.DisplayName}", Logger.LogCategory.ActivityLog);
@@ -126,6 +136,66 @@ public class ExplorationPanelUI : MonoBehaviour
         UpdateContent();
         UpdateDiscoveryChance();
         UpdateActionButton();
+    }
+
+    /// <summary>
+    /// Show the exploration panel with results after an exploration activity ends.
+    /// Opens the panel, refreshes content, then shows the results overlay.
+    /// </summary>
+    public void ShowResultsAfterExploration(MapLocationDefinition location, List<DiscoveryResult> discoveries)
+    {
+        if (location == null)
+        {
+            Logger.LogWarning("ExplorationPanelUI: Cannot show results with null location!", Logger.LogCategory.ActivityLog);
+            return;
+        }
+
+        currentLocation = location;
+
+        // Update the panel content (discoveries are now saved in PlayerData)
+        UpdateHeader();
+        UpdateContent();
+        UpdateDiscoveryChance();
+        UpdateActionButton();
+
+        // Show the panel but hide the main container (only results panel visible)
+        gameObject.SetActive(true);
+        if (explorationPanelContainer != null)
+        {
+            explorationPanelContainer.SetActive(false);
+        }
+
+        // Now show the results overlay with callback to restore container when closed
+        if (resultsPanel != null)
+        {
+            resultsPanel.ShowResults(discoveries, OnResultsPanelClosed);
+        }
+        else
+        {
+            Logger.LogWarning("ExplorationPanelUI: Results panel reference is null! Assign it in the inspector.", Logger.LogCategory.ActivityLog);
+            // Restore container if results panel is missing
+            if (explorationPanelContainer != null)
+            {
+                explorationPanelContainer.SetActive(true);
+            }
+        }
+
+        Logger.LogInfo($"ExplorationPanelUI: Showing results for {location.DisplayName} with {discoveries?.Count ?? 0} discoveries", Logger.LogCategory.ActivityLog);
+    }
+
+    /// <summary>
+    /// Called when the results panel is closed - restore UI and slide in activities
+    /// </summary>
+    private void OnResultsPanelClosed()
+    {
+        // Restore the exploration panel container
+        if (explorationPanelContainer != null)
+        {
+            explorationPanelContainer.SetActive(true);
+        }
+
+        // Close this panel entirely and slide in ActivitiesSectionPanel
+        ClosePanel();
     }
 
     #endregion
@@ -348,10 +418,12 @@ public class ExplorationPanelUI : MonoBehaviour
         {
             if (npc == null || !npc.IsHidden || npc.NPCReference == null) continue;
 
-            bool isDiscovered = IsDiscovered(npc.GetDiscoveryID());
+            string discoveryId = npc.GetDiscoveryID();
+            bool isDiscovered = IsDiscovered(discoveryId);
+
             list.Add(new DiscoverableInfo
             {
-                Id = npc.GetDiscoveryID(),
+                Id = discoveryId,
                 Name = npc.NPCReference.GetDisplayName(),
                 Type = DiscoverableType.NPC,
                 Rarity = npc.Rarity,
@@ -439,8 +511,11 @@ public class ExplorationPanelUI : MonoBehaviour
 
             Logger.LogInfo($"ExplorationPanelUI: Started exploration at {currentLocation.DisplayName}", Logger.LogCategory.ActivityLog);
 
-            // Close the panel - ActivityDisplayPanel will show progress
-            ClosePanel();
+            // Just hide the panel without sliding in ActivitiesSectionPanel
+            // The ActivitiesSectionPanel should stay hidden while exploring
+            // ActivityDisplayPanel will show progress
+            gameObject.SetActive(false);
+            ClearAllSections();
         }
         else
         {

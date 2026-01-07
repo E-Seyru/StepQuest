@@ -24,6 +24,7 @@ public class ExplorationManager : MonoBehaviour
     private int currentTick = 0;
     private int totalXPGained = 0;
     private int discoveriesThisSession = 0;
+    private List<DiscoveryResult> sessionDiscoveries = new List<DiscoveryResult>();
 
     // Runtime modifiers (can be set by stats, equipment, buffs, etc.)
     private float explorationSpeedModifier = 1.0f;
@@ -66,7 +67,9 @@ public class ExplorationManager : MonoBehaviour
     {
         if (isExploring)
         {
-            StopExploration(eventData.WasCompleted);
+            // For exploration, always show results (even when manually stopped)
+            // since the player walked and may have discovered things
+            StopExploration(completed: true);
         }
     }
 
@@ -94,6 +97,7 @@ public class ExplorationManager : MonoBehaviour
         currentTick = 0;
         totalXPGained = 0;
         discoveriesThisSession = 0;
+        sessionDiscoveries.Clear();
         isExploring = true;
 
         // Publish start event
@@ -145,6 +149,24 @@ public class ExplorationManager : MonoBehaviour
         Logger.LogInfo($"ExplorationManager: Exploration {(completed ? "completed" : "cancelled")} at {currentLocation?.DisplayName ?? "unknown"}. " +
             $"Ticks: {currentTick}, Discoveries: {discoveriesThisSession}, XP: {totalXPGained}", Logger.LogCategory.ActivityLog);
 
+        // Show results panel if exploration was completed (not cancelled)
+        if (completed)
+        {
+            // Create a copy of discoveries to pass to the panel
+            var discoveriesToShow = new List<DiscoveryResult>(sessionDiscoveries);
+
+            // First open the ExplorationPanelUI, then show results
+            if (ExplorationPanelUI.Instance != null && currentLocation != null)
+            {
+                ExplorationPanelUI.Instance.ShowResultsAfterExploration(currentLocation, discoveriesToShow);
+            }
+            else if (ExplorationResultsPanel.Instance != null)
+            {
+                // Fallback: show results panel directly
+                ExplorationResultsPanel.Instance.ShowResults(discoveriesToShow);
+            }
+        }
+
         // Reset state
         isExploring = false;
         currentLocation = null;
@@ -152,6 +174,7 @@ public class ExplorationManager : MonoBehaviour
         currentTick = 0;
         totalXPGained = 0;
         discoveriesThisSession = 0;
+        sessionDiscoveries.Clear();
     }
 
     /// <summary>
@@ -220,7 +243,7 @@ public class ExplorationManager : MonoBehaviour
     /// Manually trigger a discovery (for testing or quest rewards)
     /// </summary>
     public bool TriggerDiscovery(string locationId, string discoveryId, DiscoverableType type,
-        DiscoveryRarity rarity, string displayName)
+        DiscoveryRarity rarity, string displayName, Sprite icon = null, string flavorText = null)
     {
         if (dataManager?.PlayerData == null) return false;
 
@@ -238,6 +261,18 @@ public class ExplorationManager : MonoBehaviour
         int bonusXP = GameConstants.GetDiscoveryBonusXP(rarity);
 
         // TODO: Award XP via XpManager
+
+        // Track this discovery for the results panel
+        sessionDiscoveries.Add(new DiscoveryResult
+        {
+            Id = discoveryId,
+            Name = displayName,
+            Type = type,
+            Rarity = rarity,
+            Icon = icon,
+            FlavorText = flavorText,
+            BonusXP = bonusXP
+        });
 
         // Publish discovery event
         EventBus.Publish(new ExplorationDiscoveryEvent(
@@ -446,7 +481,8 @@ public class ExplorationManager : MonoBehaviour
                     discoverable.Id,
                     discoverable.Type,
                     discoverable.Rarity,
-                    discoverable.Name
+                    discoverable.Name,
+                    discoverable.Icon // Pass the icon for the results panel
                 );
 
                 if (success)

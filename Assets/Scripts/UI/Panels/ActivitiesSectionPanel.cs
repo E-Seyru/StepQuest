@@ -421,12 +421,18 @@ public class ActivitiesSectionPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Called when an activity stops - slide back in (unless CraftingPanel is open)
+    /// Called when an activity stops - slide back in (unless CraftingPanel or ExplorationPanel is open)
     /// </summary>
     private void OnActivityStopped(ActivityStoppedEvent eventData)
     {
         // Don't slide in if CraftingPanel is open - it will show its container instead
         if (CraftingPanel.Instance != null && CraftingPanel.Instance.IsOpen)
+        {
+            return;
+        }
+
+        // Don't slide in for exploration activities - ExplorationPanelUI handles showing results
+        if (eventData.Variant != null && eventData.Variant.IsExplorationVariant)
         {
             return;
         }
