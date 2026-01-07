@@ -58,6 +58,9 @@ public class EnemyDefinition : ScriptableObject
     [Tooltip("Avatar image displayed in the ActivitiesSectionPanel")]
     public Sprite Avatar;
 
+    [Tooltip("Silhouette icon for exploration panel (shown blackened when undiscovered). Falls back to Avatar if not set.")]
+    public Sprite SilhouetteIcon;
+
     [Tooltip("Color theme for this enemy")]
     public Color EnemyColor = Color.white;
 
@@ -100,6 +103,14 @@ public class EnemyDefinition : ScriptableObject
     public string GetDisplayName()
     {
         return string.IsNullOrEmpty(EnemyName) ? EnemyID : EnemyName;
+    }
+
+    /// <summary>
+    /// Get the silhouette icon for exploration panel (falls back to Avatar)
+    /// </summary>
+    public Sprite GetSilhouetteIcon()
+    {
+        return SilhouetteIcon != null ? SilhouetteIcon : Avatar;
     }
 
     /// <summary>

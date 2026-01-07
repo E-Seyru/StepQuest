@@ -5,32 +5,28 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// UI component for displaying a single discoverable item (enemy, NPC, dungeon) in the exploration panel.
-/// Shows name, rarity, type, and discovery status.
+/// UI component for displaying a single discoverable item (enemy, NPC, activity) in the exploration panel.
+/// Shows icon (blackened if undiscovered), name (??? if undiscovered), rarity background, and discovered checkmark.
 /// </summary>
 public class DiscoverableItemUI : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private Image iconImage;
-    [SerializeField] private Image iconBackground;
+    [SerializeField] private Image rarityBackground;
     [SerializeField] private TextMeshProUGUI nameText;
-    [SerializeField] private TextMeshProUGUI typeText;
-    [SerializeField] private TextMeshProUGUI rarityText;
-    [SerializeField] private TextMeshProUGUI bonusXPText;
-    [SerializeField] private GameObject discoveredOverlay;
-    [SerializeField] private GameObject unknownOverlay;
-    [SerializeField] private Image rarityBorder;
+    [SerializeField] private GameObject discoveredCheckmark;
 
     [Header("Rarity Colors")]
-    [SerializeField] private Color commonColor = Color.white;
-    [SerializeField] private Color uncommonColor = new Color(0.12f, 1f, 0f); // Green
-    [SerializeField] private Color rareColor = new Color(0f, 0.44f, 0.87f); // Blue
-    [SerializeField] private Color epicColor = new Color(0.64f, 0.21f, 0.93f); // Purple
-    [SerializeField] private Color legendaryColor = new Color(1f, 0.5f, 0f); // Orange
+    [SerializeField] private Color commonColor = new Color(0.8f, 0.8f, 0.8f);
+    [SerializeField] private Color uncommonColor = new Color(0.12f, 0.8f, 0f);
+    [SerializeField] private Color rareColor = new Color(0f, 0.44f, 0.87f);
+    [SerializeField] private Color epicColor = new Color(0.64f, 0.21f, 0.93f);
+    [SerializeField] private Color legendaryColor = new Color(1f, 0.5f, 0f);
 
-    [Header("Unknown State")]
-    [SerializeField] private Sprite unknownIcon;
-    [SerializeField] private Color unknownColor = new Color(0.5f, 0.5f, 0.5f, 0.7f);
+    [Header("Undiscovered State")]
+    [SerializeField] private Color undiscoveredIconColor = Color.black;
+    [SerializeField] private float undiscoveredIconAlpha = 0.7f;
+    [SerializeField] private Color undiscoveredNameColor = new Color(0.5f, 0.5f, 0.5f);
 
     // Current data
     private DiscoverableInfo currentInfo;
@@ -45,56 +41,25 @@ public class DiscoverableItemUI : MonoBehaviour
         // Set icon
         UpdateIcon();
 
-        // Set name
+        // Set name (??? if not discovered)
         if (nameText != null)
         {
             nameText.text = info.IsDiscovered ? info.Name : "???";
-            nameText.color = info.IsDiscovered ? GetRarityColor(info.Rarity) : unknownColor;
+            nameText.color = info.IsDiscovered ? Color.white : undiscoveredNameColor;
         }
 
-        // Set type
-        if (typeText != null)
+        // Set rarity background color
+        if (rarityBackground != null)
         {
-            typeText.text = GetTypeString(info.Type);
+            Color bgColor = GetRarityColor(info.Rarity);
+            bgColor.a = info.IsDiscovered ? 0.4f : 0.2f;
+            rarityBackground.color = bgColor;
         }
 
-        // Set rarity
-        if (rarityText != null)
+        // Show checkmark only if discovered
+        if (discoveredCheckmark != null)
         {
-            rarityText.text = GetRarityString(info.Rarity);
-            rarityText.color = GetRarityColor(info.Rarity);
-        }
-
-        // Set bonus XP
-        if (bonusXPText != null)
-        {
-            if (info.IsDiscovered)
-            {
-                bonusXPText.text = $"+{info.BonusXP} XP";
-                bonusXPText.gameObject.SetActive(false); // Already discovered, no bonus
-            }
-            else
-            {
-                bonusXPText.text = $"+{info.BonusXP} XP";
-                bonusXPText.gameObject.SetActive(true);
-            }
-        }
-
-        // Set rarity border
-        if (rarityBorder != null)
-        {
-            rarityBorder.color = GetRarityColor(info.Rarity);
-        }
-
-        // Set overlays
-        if (discoveredOverlay != null)
-        {
-            discoveredOverlay.SetActive(info.IsDiscovered);
-        }
-
-        if (unknownOverlay != null)
-        {
-            unknownOverlay.SetActive(!info.IsDiscovered);
+            discoveredCheckmark.SetActive(info.IsDiscovered);
         }
     }
 
@@ -105,27 +70,23 @@ public class DiscoverableItemUI : MonoBehaviour
     {
         if (iconImage == null) return;
 
-        if (currentInfo.IsDiscovered && currentInfo.Icon != null)
+        // Use the icon from info (DiscoveredItemIcon or fallback to regular icon)
+        if (currentInfo.Icon != null)
         {
             iconImage.sprite = currentInfo.Icon;
-            iconImage.color = Color.white;
         }
-        else if (unknownIcon != null)
+
+        if (currentInfo.IsDiscovered)
         {
-            iconImage.sprite = unknownIcon;
-            iconImage.color = unknownColor;
+            // Normal display
+            iconImage.color = Color.white;
         }
         else
         {
-            iconImage.color = unknownColor;
-        }
-
-        // Set background color based on rarity
-        if (iconBackground != null)
-        {
-            Color bgColor = GetRarityColor(currentInfo.Rarity);
-            bgColor.a = currentInfo.IsDiscovered ? 0.3f : 0.1f;
-            iconBackground.color = bgColor;
+            // Blackened and faded
+            Color blackened = undiscoveredIconColor;
+            blackened.a = undiscoveredIconAlpha;
+            iconImage.color = blackened;
         }
     }
 
@@ -148,48 +109,6 @@ public class DiscoverableItemUI : MonoBehaviour
                 return legendaryColor;
             default:
                 return commonColor;
-        }
-    }
-
-    /// <summary>
-    /// Get display string for rarity
-    /// </summary>
-    private string GetRarityString(DiscoveryRarity rarity)
-    {
-        switch (rarity)
-        {
-            case DiscoveryRarity.Common:
-                return "Commun";
-            case DiscoveryRarity.Uncommon:
-                return "Peu commun";
-            case DiscoveryRarity.Rare:
-                return "Rare";
-            case DiscoveryRarity.Epic:
-                return "epique";
-            case DiscoveryRarity.Legendary:
-                return "Legendaire";
-            default:
-                return "Inconnu";
-        }
-    }
-
-    /// <summary>
-    /// Get display string for discoverable type
-    /// </summary>
-    private string GetTypeString(DiscoverableType type)
-    {
-        switch (type)
-        {
-            case DiscoverableType.Enemy:
-                return "Monstre";
-            case DiscoverableType.NPC:
-                return "PNJ";
-            case DiscoverableType.Dungeon:
-                return "Donjon";
-            case DiscoverableType.Activity:
-                return "Activite";
-            default:
-                return "???";
         }
     }
 }

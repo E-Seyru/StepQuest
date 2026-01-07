@@ -629,6 +629,7 @@ public class LocationDetailsPanel : MonoBehaviour
 
         if (ExplorationPanelUI.Instance != null)
         {
+            SlideOutActivitiesSection();
             ExplorationPanelUI.Instance.OpenWithLocation(currentLocation, locationActivity);
         }
         else

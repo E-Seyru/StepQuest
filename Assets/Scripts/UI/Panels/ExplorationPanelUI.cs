@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Panel that displays exploration information for a location.
-/// Shows discoverable content (activities, enemies, NPCs) in a unified scrollable view with category sections.
+/// Shows discoverable content (activities, enemies, NPCs) in three fixed category sections.
 /// </summary>
 public class ExplorationPanelUI : MonoBehaviour
 {
@@ -17,14 +17,12 @@ public class ExplorationPanelUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI locationNameText;
     [SerializeField] private Button closeButton;
 
-    [Header("UI References - Scroll Content")]
-    [SerializeField] private Transform contentContainer;
-    [SerializeField] private GameObject sectionHeaderPrefab;
-    [SerializeField] private GameObject discoverableItemPrefab;
-    [SerializeField] private TextMeshProUGUI nothingToDiscoverText;
+    [Header("UI References - Category Sections")]
+    [SerializeField] private ExplorationCategorySection activitiesSection;
+    [SerializeField] private ExplorationCategorySection enemiesSection;
+    [SerializeField] private ExplorationCategorySection npcsSection;
 
     [Header("UI References - Discovery Chance")]
-    [SerializeField] private TextMeshProUGUI discoveryChanceLabel;
     [SerializeField] private TextMeshProUGUI discoveryChanceText;
 
     [Header("UI References - Action")]
@@ -43,7 +41,6 @@ public class ExplorationPanelUI : MonoBehaviour
     // Current state
     private MapLocationDefinition currentLocation;
     private LocationActivity currentActivity;
-    private List<GameObject> instantiatedItems = new List<GameObject>();
 
     // Singleton
     public static ExplorationPanelUI Instance { get; private set; }
@@ -108,7 +105,13 @@ public class ExplorationPanelUI : MonoBehaviour
     public void ClosePanel()
     {
         gameObject.SetActive(false);
-        ClearInstantiatedItems();
+        ClearAllSections();
+
+        // Slide activities section back in
+        if (LocationDetailsPanel.Instance != null)
+        {
+            LocationDetailsPanel.Instance.SlideInActivitiesSection();
+        }
 
         Logger.LogInfo("ExplorationPanelUI: Panel closed", Logger.LogCategory.ActivityLog);
     }
@@ -146,121 +149,19 @@ public class ExplorationPanelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Update content with category sections
+    /// Update content in all category sections
     /// </summary>
     private void UpdateContent()
     {
-        ClearInstantiatedItems();
-
-        if (contentContainer == null) return;
-
         // Get discoverable content for each category
         var activities = GetDiscoverableActivities();
         var enemies = GetDiscoverableEnemies();
         var npcs = GetDiscoverableNPCs();
 
-        bool hasAnyContent = activities.Count > 0 || enemies.Count > 0 || npcs.Count > 0;
-
-        // Show "nothing to discover" if all categories are empty
-        if (nothingToDiscoverText != null)
-        {
-            nothingToDiscoverText.gameObject.SetActive(!hasAnyContent);
-            if (!hasAnyContent)
-            {
-                nothingToDiscoverText.text = "Rien a decouvrir a cet endroit.";
-            }
-        }
-
-        if (!hasAnyContent) return;
-
-        // Create sections for each category
-        CreateCategorySection("Activites", activities, DiscoverableType.Activity);
-        CreateCategorySection("Ennemis", enemies, DiscoverableType.Enemy);
-        CreateCategorySection("Habitants", npcs, DiscoverableType.NPC);
-
-        // Force layout rebuild
-        LayoutRebuilder.ForceRebuildLayoutImmediate(contentContainer.GetComponent<RectTransform>());
-    }
-
-    /// <summary>
-    /// Create a category section with header and items
-    /// </summary>
-    private void CreateCategorySection(string categoryName, List<DiscoverableInfo> items, DiscoverableType type)
-    {
-        if (contentContainer == null) return;
-
-        // Count discovered/total
-        int discovered = items.Count(i => i.IsDiscovered);
-        int total = items.Count;
-
-        // Create section header
-        if (sectionHeaderPrefab != null)
-        {
-            GameObject header = Instantiate(sectionHeaderPrefab, contentContainer);
-            instantiatedItems.Add(header);
-
-            var headerText = header.GetComponentInChildren<TextMeshProUGUI>();
-            if (headerText != null)
-            {
-                if (total == 0)
-                {
-                    string typeText = type switch
-                    {
-                        DiscoverableType.Activity => "activite cachee",
-                        DiscoverableType.Enemy => "ennemi cache",
-                        DiscoverableType.NPC => "habitant cache",
-                        _ => "element cache"
-                    };
-                    headerText.text = $"{categoryName} - Aucun(e) {typeText} ici";
-                }
-                else
-                {
-                    headerText.text = $"{categoryName} ({discovered}/{total})";
-                }
-            }
-        }
-
-        // Create items (skip if none)
-        if (total == 0) return;
-
-        // Sort by rarity (rarer first), then by discovered status
-        var sortedItems = items
-            .OrderByDescending(i => (int)i.Rarity)
-            .ThenBy(i => i.IsDiscovered ? 1 : 0)
-            .ToList();
-
-        foreach (var item in sortedItems)
-        {
-            CreateDiscoverableItem(item);
-        }
-    }
-
-    /// <summary>
-    /// Create UI item for a discoverable
-    /// </summary>
-    private void CreateDiscoverableItem(DiscoverableInfo info)
-    {
-        if (discoverableItemPrefab == null || contentContainer == null) return;
-
-        GameObject item = Instantiate(discoverableItemPrefab, contentContainer);
-        instantiatedItems.Add(item);
-
-        var itemUI = item.GetComponent<DiscoverableItemUI>();
-        if (itemUI != null)
-        {
-            itemUI.Setup(info);
-        }
-        else
-        {
-            // Fallback
-            var text = item.GetComponentInChildren<TextMeshProUGUI>();
-            if (text != null)
-            {
-                string rarityColor = GetRarityColorHex(info.Rarity);
-                string displayName = info.IsDiscovered ? info.Name : "???";
-                text.text = $"<color={rarityColor}>{displayName}</color>";
-            }
-        }
+        // Populate each section (sections handle their own empty state display)
+        activitiesSection?.Populate(activities);
+        enemiesSection?.Populate(enemies);
+        npcsSection?.Populate(npcs);
     }
 
     /// <summary>
@@ -276,12 +177,7 @@ public class ExplorationPanelUI : MonoBehaviour
         if (allUndiscovered.Count == 0)
         {
             // Everything discovered
-            discoveryChanceText.text = "Complete !";
-            discoveryChanceText.color = colorExcellente;
-            if (discoveryChanceLabel != null)
-            {
-                discoveryChanceLabel.text = "Exploration :";
-            }
+            discoveryChanceText.text = "Exploration : <color=#33E633>Complete !</color>";
             return;
         }
 
@@ -299,14 +195,9 @@ public class ExplorationPanelUI : MonoBehaviour
 
         // Convert to display text and color
         var (chanceText, chanceColor) = GetChanceDisplayInfo(bestChance);
+        string colorHex = ColorUtility.ToHtmlStringRGB(chanceColor);
 
-        if (discoveryChanceLabel != null)
-        {
-            discoveryChanceLabel.text = "Vos chances de decouverte :";
-        }
-
-        discoveryChanceText.text = chanceText;
-        discoveryChanceText.color = chanceColor;
+        discoveryChanceText.text = $"Chances de decouverte : <color=#{colorHex}>{chanceText}</color>";
     }
 
     /// <summary>
@@ -377,6 +268,16 @@ public class ExplorationPanelUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Clear all section content
+    /// </summary>
+    private void ClearAllSections()
+    {
+        activitiesSection?.ClearItems();
+        enemiesSection?.ClearItems();
+        npcsSection?.ClearItems();
+    }
+
     #endregion
 
     #region Private Methods - Data Retrieval
@@ -397,12 +298,12 @@ public class ExplorationPanelUI : MonoBehaviour
             list.Add(new DiscoverableInfo
             {
                 Id = activity.GetDiscoveryID(),
-                Name = isDiscovered ? activity.GetDisplayName() : "???",
+                Name = activity.GetDisplayName(),
                 Type = DiscoverableType.Activity,
                 Rarity = activity.Rarity,
                 BonusXP = activity.GetDiscoveryBonusXP(),
                 IsDiscovered = isDiscovered,
-                Icon = isDiscovered ? activity.GetIcon() : null
+                Icon = activity.GetIcon()
             });
         }
         return list;
@@ -424,12 +325,12 @@ public class ExplorationPanelUI : MonoBehaviour
             list.Add(new DiscoverableInfo
             {
                 Id = enemy.GetDiscoveryID(),
-                Name = isDiscovered ? enemy.EnemyReference.GetDisplayName() : "???",
+                Name = enemy.EnemyReference.GetDisplayName(),
                 Type = DiscoverableType.Enemy,
                 Rarity = enemy.Rarity,
                 BonusXP = enemy.GetDiscoveryBonusXP(),
                 IsDiscovered = isDiscovered,
-                Icon = isDiscovered ? enemy.EnemyReference.Avatar : null
+                Icon = enemy.EnemyReference.GetSilhouetteIcon()
             });
         }
         return list;
@@ -451,12 +352,12 @@ public class ExplorationPanelUI : MonoBehaviour
             list.Add(new DiscoverableInfo
             {
                 Id = npc.GetDiscoveryID(),
-                Name = isDiscovered ? npc.NPCReference.GetDisplayName() : "???",
+                Name = npc.NPCReference.GetDisplayName(),
                 Type = DiscoverableType.NPC,
                 Rarity = npc.Rarity,
                 BonusXP = npc.GetDiscoveryBonusXP(),
                 IsDiscovered = isDiscovered,
-                Icon = isDiscovered ? npc.NPCReference.Avatar : null
+                Icon = npc.NPCReference.GetSilhouetteIcon()
             });
         }
         return list;
@@ -494,37 +395,6 @@ public class ExplorationPanelUI : MonoBehaviour
         return false;
     }
 
-    /// <summary>
-    /// Clear all instantiated UI items
-    /// </summary>
-    private void ClearInstantiatedItems()
-    {
-        foreach (var item in instantiatedItems)
-        {
-            if (item != null)
-            {
-                Destroy(item);
-            }
-        }
-        instantiatedItems.Clear();
-    }
-
-    /// <summary>
-    /// Get HTML color string for rarity
-    /// </summary>
-    private string GetRarityColorHex(DiscoveryRarity rarity)
-    {
-        return rarity switch
-        {
-            DiscoveryRarity.Common => "#FFFFFF",
-            DiscoveryRarity.Uncommon => "#1EFF00",
-            DiscoveryRarity.Rare => "#0070DD",
-            DiscoveryRarity.Epic => "#A335EE",
-            DiscoveryRarity.Legendary => "#FF8000",
-            _ => "#FFFFFF"
-        };
-    }
-
     #endregion
 
     #region Private Methods - Actions
@@ -551,8 +421,6 @@ public class ExplorationPanelUI : MonoBehaviour
 
         // Get activity and variant IDs
         string activityId = currentActivity.ActivityReference?.ActivityID;
-
-        // For exploration, we use a default variant or the first available one
         string variantId = GetExplorationVariantId();
 
         if (string.IsNullOrEmpty(activityId) || string.IsNullOrEmpty(variantId))
