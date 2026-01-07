@@ -61,14 +61,14 @@ public class LocationRegistry : ScriptableObject
             return null;
         }
 
-        // Ensure cache is initialized
-        if (!isCacheInitialized)
+        // Ensure cache is initialized (also check if cache is null for safety after domain reload)
+        if (!isCacheInitialized || locationCache == null)
         {
             InitializeCache();
         }
 
         // O(1) lookup using dictionary
-        if (locationCache.TryGetValue(locationId, out var location))
+        if (locationCache != null && locationCache.TryGetValue(locationId, out var location))
         {
             return location;
         }
@@ -163,6 +163,9 @@ public class LocationRegistry : ScriptableObject
             issues.Add($"Location '{location.name}' has empty LocationID");
         }
 
+        // Build a set of valid location IDs for connection checking (avoids triggering error logs)
+        var validLocationIds = new HashSet<string>(validLocations.Select(loc => loc.LocationID));
+
         // Check for broken connections
         foreach (var location in validLocations)
         {
@@ -172,7 +175,7 @@ public class LocationRegistry : ScriptableObject
                 {
                     issues.Add($"'{location.LocationID}' has connection with empty destination");
                 }
-                else if (!HasLocation(connection.DestinationLocationID))
+                else if (!validLocationIds.Contains(connection.DestinationLocationID))
                 {
                     issues.Add($"'{location.LocationID}' connects to missing location '{connection.DestinationLocationID}'");
                 }

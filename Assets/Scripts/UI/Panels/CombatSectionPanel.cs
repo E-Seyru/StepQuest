@@ -35,12 +35,6 @@ public class CombatSectionPanel : MonoBehaviour
         ValidateReferences();
         SetupGridLayout();
 
-        // Hide "no enemies" text by default
-        if (noEnemiesText != null)
-        {
-            noEnemiesText.gameObject.SetActive(false);
-        }
-
         // Subscribe to discovery events to refresh when enemies are discovered
         EventBus.Subscribe<ExplorationDiscoveryEvent>(OnExplorationDiscovery);
     }
@@ -86,6 +80,8 @@ public class CombatSectionPanel : MonoBehaviour
     /// </summary>
     public void DisplayEnemies(List<LocationEnemy> enemies)
     {
+        Logger.LogInfo($"CombatSectionPanel: DisplayEnemies called with {enemies?.Count ?? 0} enemies", Logger.LogCategory.CombatLog);
+
         if (enemies == null)
         {
             enemies = new List<LocationEnemy>();
@@ -99,7 +95,7 @@ public class CombatSectionPanel : MonoBehaviour
         // Count visible enemies (non-hidden or already discovered)
         int visibleCount = GetVisibleEnemyCount(enemies);
 
-        // Update content (tab system controls visibility)
+        // Update content (tab system controls section visibility)
         if (visibleCount == 0)
         {
             ShowNoEnemiesMessage();
@@ -112,6 +108,12 @@ public class CombatSectionPanel : MonoBehaviour
             }
             UpdateSectionTitle(visibleCount);
             CreateEnemyCards(enemies);
+        }
+
+        // Force layout rebuild to ensure proper positioning
+        if (combatSection != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(combatSection.GetComponent<RectTransform>());
         }
 
         Logger.LogInfo($"CombatSectionPanel: Displayed {visibleCount} enemies (total: {enemies.Count})", Logger.LogCategory.CombatLog);
@@ -208,9 +210,11 @@ public class CombatSectionPanel : MonoBehaviour
 
     private void ShowNoEnemiesMessage()
     {
+        Logger.LogInfo($"CombatSectionPanel: ShowNoEnemiesMessage called, noEnemiesText is {(noEnemiesText != null ? "assigned" : "NULL")}", Logger.LogCategory.CombatLog);
         if (noEnemiesText != null)
         {
             noEnemiesText.gameObject.SetActive(true);
+            Logger.LogInfo($"CombatSectionPanel: noEnemiesText activated, active={noEnemiesText.gameObject.activeSelf}", Logger.LogCategory.CombatLog);
         }
         UpdateSectionTitle(0);
     }
