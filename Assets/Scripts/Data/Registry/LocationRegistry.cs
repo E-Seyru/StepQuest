@@ -15,6 +15,41 @@ public class LocationRegistry : ScriptableObject
     [TextArea(3, 6)]
     public string ValidationStatus = "Click 'Validate Registry' to check for issues";
 
+    // Lookup cache for O(1) access instead of O(n) scans
+    private Dictionary<string, MapLocationDefinition> locationCache;
+    private bool isCacheInitialized = false;
+
+    /// <summary>
+    /// Initialize the location cache for O(1) lookups. Called automatically on first access.
+    /// </summary>
+    public void InitializeCache()
+    {
+        if (isCacheInitialized) return;
+
+        locationCache = new Dictionary<string, MapLocationDefinition>();
+        foreach (var location in AllLocations)
+        {
+            if (location != null && !string.IsNullOrEmpty(location.LocationID))
+            {
+                if (!locationCache.ContainsKey(location.LocationID))
+                {
+                    locationCache[location.LocationID] = location;
+                }
+            }
+        }
+        isCacheInitialized = true;
+        Logger.LogInfo($"LocationRegistry: Cache initialized with {locationCache.Count} locations");
+    }
+
+    /// <summary>
+    /// Invalidate the cache (call when AllLocations is modified at runtime)
+    /// </summary>
+    public void InvalidateCache()
+    {
+        isCacheInitialized = false;
+        locationCache = null;
+    }
+
     /// <summary>
     /// Find a location by its ID
     /// </summary>
@@ -26,14 +61,20 @@ public class LocationRegistry : ScriptableObject
             return null;
         }
 
-        var location = AllLocations.FirstOrDefault(loc => loc != null && loc.LocationID == locationId);
-
-        if (location == null)
+        // Ensure cache is initialized
+        if (!isCacheInitialized)
         {
-            Logger.LogError($"LocationRegistry: Location with ID '{locationId}' not found!");
+            InitializeCache();
         }
 
-        return location;
+        // O(1) lookup using dictionary
+        if (locationCache.TryGetValue(locationId, out var location))
+        {
+            return location;
+        }
+
+        Logger.LogError($"LocationRegistry: Location with ID '{locationId}' not found!");
+        return null;
     }
 
     /// <summary>
@@ -163,6 +204,8 @@ public class LocationRegistry : ScriptableObject
     {
         // Auto-validate when something changes in the editor
         ValidateRegistry();
+        // Invalidate cache when list changes in editor
+        InvalidateCache();
     }
 #endif
 }

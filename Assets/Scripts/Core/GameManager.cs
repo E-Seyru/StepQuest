@@ -62,12 +62,26 @@ public class GameManager : MonoBehaviour
     {
         Logger.LogInfo("GameManager: Waiting for other managers...", Logger.LogCategory.General);
 
-        // Attendre que les managers soient disponibles
+        // Attendre que les managers soient disponibles with timeout
+        float elapsedTime = 0f;
+        float pollInterval = GameConstants.ServicePollIntervalSeconds;
+        float timeout = GameConstants.ServiceTimeoutSeconds;
+
         while (DataManager.Instance == null ||
                MapManager.Instance == null ||
                ActivityManager.Instance == null)
         {
-            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(pollInterval);
+            elapsedTime += pollInterval;
+
+            if (elapsedTime >= timeout)
+            {
+                Logger.LogError($"GameManager: Initialization timeout after {timeout}s! " +
+                    $"DataManager: {DataManager.Instance != null}, " +
+                    $"MapManager: {MapManager.Instance != null}, " +
+                    $"ActivityManager: {ActivityManager.Instance != null}", Logger.LogCategory.General);
+                yield break;
+            }
         }
 
         // Recuperer les references

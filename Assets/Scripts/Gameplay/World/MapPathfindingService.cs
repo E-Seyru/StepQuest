@@ -177,7 +177,9 @@ public class MapPathfindingService
         while (unvisited.Count > 0)
         {
             // Trouver la location non visitee avec la distance minimale
-            string currentLocationId = unvisited.OrderBy(id => distances[id]).First();
+            // Using Aggregate instead of OrderBy().First() for O(n) instead of O(n log n)
+            string currentLocationId = unvisited.Aggregate((min, id) =>
+                distances[id] < distances[min] ? id : min);
 
             if (distances[currentLocationId] == int.MaxValue)
             {
