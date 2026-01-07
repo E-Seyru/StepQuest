@@ -184,12 +184,9 @@ public class ExplorationResultsPanel : MonoBehaviour
         if (discoveryImage != null)
         {
             discoveryImage.gameObject.SetActive(true);
-            if (discovery.Icon != null)
-            {
-                discoveryImage.sprite = discovery.Icon;
-                discoveryImage.preserveAspect = true;
-                discoveryImage.color = Color.white;
-            }
+            discoveryImage.sprite = discovery.Icon; // Set sprite (can be null)
+            discoveryImage.preserveAspect = true;
+            discoveryImage.color = discovery.Icon != null ? Color.white : Color.clear; // Hide if no icon
         }
 
         if (typeText != null)
