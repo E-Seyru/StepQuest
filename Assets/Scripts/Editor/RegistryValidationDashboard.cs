@@ -39,7 +39,19 @@ public class RegistryValidationDashboard : EditorWindow
     // UI State
     private Vector2 scrollPosition;
     private int selectedTab = 0;
-    private readonly string[] tabNames = { "Overview", "Cross-References", "Issues" };
+    private readonly string[] tabNames = { "Overview", "Cross-References", "Issues", "Balance Warnings" };
+
+    // Balance warnings
+    private List<BalanceWarning> balanceWarnings = new List<BalanceWarning>();
+    private bool hasRunBalanceCheck = false;
+
+    private struct BalanceWarning
+    {
+        public string category;
+        public string message;
+        public Object asset;
+        public string fixAction; // Description of auto-fix if available
+    }
 
     // Issue filters
     private bool showErrors = true;
@@ -82,6 +94,9 @@ public class RegistryValidationDashboard : EditorWindow
                 break;
             case 2:
                 DrawIssuesTab();
+                break;
+            case 3:
+                DrawBalanceWarningsTab();
                 break;
         }
 
@@ -158,6 +173,11 @@ public class RegistryValidationDashboard : EditorWindow
             statusEffectRegistry != null ? statusEffectRegistry.ValidationStatus : "Not loaded");
 
         EditorGUILayout.Space();
+
+        // Orphaned Assets section
+        DrawOrphanedAssetsSection();
+
+        EditorGUILayout.Space();
         EditorGUILayout.LabelField("Content Summary", EditorStyles.boldLabel);
 
         // Content breakdown
@@ -205,6 +225,201 @@ public class RegistryValidationDashboard : EditorWindow
         EditorGUILayout.LabelField(displayStatus, EditorStyles.wordWrappedMiniLabel);
 
         EditorGUILayout.EndHorizontal();
+    }
+
+    private void DrawOrphanedAssetsSection()
+    {
+        EditorGUILayout.LabelField("Orphaned Assets", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            "Orphaned assets exist on disk but aren't in their registry. Click 'Add' to register them.",
+            MessageType.Info);
+
+        // Find orphaned items
+        var orphanedItems = FindOrphanedItems();
+        var orphanedAbilities = FindOrphanedAbilities();
+        var orphanedEffects = FindOrphanedStatusEffects();
+
+        int totalOrphans = orphanedItems.Count + orphanedAbilities.Count + orphanedEffects.Count;
+
+        if (totalOrphans == 0)
+        {
+            EditorGUILayout.LabelField("No orphaned assets found.", EditorStyles.miniLabel);
+            return;
+        }
+
+        EditorGUILayout.BeginVertical("box");
+
+        // Orphaned Items
+        if (orphanedItems.Count > 0)
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField($"Orphaned Items: {orphanedItems.Count}", EditorStyles.boldLabel);
+            if (GUILayout.Button("Add All to Registry", GUILayout.Width(130)))
+            {
+                AddItemsToRegistry(orphanedItems);
+            }
+            EditorGUILayout.EndHorizontal();
+
+            foreach (var item in orphanedItems.Take(5))
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"  • {item.GetDisplayName()}", GUILayout.ExpandWidth(true));
+                if (GUILayout.Button("Add", GUILayout.Width(40)))
+                {
+                    AddItemsToRegistry(new List<ItemDefinition> { item });
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+            if (orphanedItems.Count > 5)
+            {
+                EditorGUILayout.LabelField($"  ...and {orphanedItems.Count - 5} more", EditorStyles.miniLabel);
+            }
+        }
+
+        // Orphaned Abilities
+        if (orphanedAbilities.Count > 0)
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField($"Orphaned Abilities: {orphanedAbilities.Count}", EditorStyles.boldLabel);
+            if (GUILayout.Button("Add All to Registry", GUILayout.Width(130)))
+            {
+                AddAbilitiesToRegistry(orphanedAbilities);
+            }
+            EditorGUILayout.EndHorizontal();
+
+            foreach (var ability in orphanedAbilities.Take(5))
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"  • {ability.GetDisplayName()}", GUILayout.ExpandWidth(true));
+                if (GUILayout.Button("Add", GUILayout.Width(40)))
+                {
+                    AddAbilitiesToRegistry(new List<AbilityDefinition> { ability });
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+            if (orphanedAbilities.Count > 5)
+            {
+                EditorGUILayout.LabelField($"  ...and {orphanedAbilities.Count - 5} more", EditorStyles.miniLabel);
+            }
+        }
+
+        // Orphaned Status Effects
+        if (orphanedEffects.Count > 0)
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField($"Orphaned Status Effects: {orphanedEffects.Count}", EditorStyles.boldLabel);
+            if (GUILayout.Button("Add All to Registry", GUILayout.Width(130)))
+            {
+                AddStatusEffectsToRegistry(orphanedEffects);
+            }
+            EditorGUILayout.EndHorizontal();
+
+            foreach (var effect in orphanedEffects.Take(5))
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"  • {effect.GetDisplayName()}", GUILayout.ExpandWidth(true));
+                if (GUILayout.Button("Add", GUILayout.Width(40)))
+                {
+                    AddStatusEffectsToRegistry(new List<StatusEffectDefinition> { effect });
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+            if (orphanedEffects.Count > 5)
+            {
+                EditorGUILayout.LabelField($"  ...and {orphanedEffects.Count - 5} more", EditorStyles.miniLabel);
+            }
+        }
+
+        EditorGUILayout.EndVertical();
+    }
+
+    private List<ItemDefinition> FindOrphanedItems()
+    {
+        if (itemRegistry == null) return new List<ItemDefinition>();
+
+        var allItems = FindAllAssets<ItemDefinition>();
+        var registeredItems = new HashSet<ItemDefinition>(itemRegistry.AllItems.Where(i => i != null));
+
+        return allItems.Where(i => !registeredItems.Contains(i)).ToList();
+    }
+
+    private List<AbilityDefinition> FindOrphanedAbilities()
+    {
+        if (abilityRegistry == null) return new List<AbilityDefinition>();
+
+        var allAbilities = FindAllAssets<AbilityDefinition>();
+        var registeredAbilities = new HashSet<AbilityDefinition>(abilityRegistry.AllAbilities.Where(a => a != null));
+
+        return allAbilities.Where(a => !registeredAbilities.Contains(a)).ToList();
+    }
+
+    private List<StatusEffectDefinition> FindOrphanedStatusEffects()
+    {
+        if (statusEffectRegistry == null) return new List<StatusEffectDefinition>();
+
+        var allEffects = FindAllAssets<StatusEffectDefinition>();
+        var registeredEffects = new HashSet<StatusEffectDefinition>(statusEffectRegistry.AllEffects.Where(e => e != null));
+
+        return allEffects.Where(e => !registeredEffects.Contains(e)).ToList();
+    }
+
+    private void AddItemsToRegistry(List<ItemDefinition> items)
+    {
+        if (itemRegistry == null || items.Count == 0) return;
+
+        foreach (var item in items)
+        {
+            if (!itemRegistry.AllItems.Contains(item))
+            {
+                itemRegistry.AllItems.Add(item);
+            }
+        }
+
+        EditorUtility.SetDirty(itemRegistry);
+        AssetDatabase.SaveAssets();
+        RefreshCounts();
+
+        Logger.LogInfo($"Added {items.Count} item(s) to registry", Logger.LogCategory.EditorLog);
+    }
+
+    private void AddAbilitiesToRegistry(List<AbilityDefinition> abilities)
+    {
+        if (abilityRegistry == null || abilities.Count == 0) return;
+
+        foreach (var ability in abilities)
+        {
+            if (!abilityRegistry.AllAbilities.Contains(ability))
+            {
+                abilityRegistry.AllAbilities.Add(ability);
+            }
+        }
+
+        EditorUtility.SetDirty(abilityRegistry);
+        AssetDatabase.SaveAssets();
+        RefreshCounts();
+
+        Logger.LogInfo($"Added {abilities.Count} ability(ies) to registry", Logger.LogCategory.EditorLog);
+    }
+
+    private void AddStatusEffectsToRegistry(List<StatusEffectDefinition> effects)
+    {
+        if (statusEffectRegistry == null || effects.Count == 0) return;
+
+        foreach (var effect in effects)
+        {
+            if (!statusEffectRegistry.AllEffects.Contains(effect))
+            {
+                statusEffectRegistry.AllEffects.Add(effect);
+            }
+        }
+
+        EditorUtility.SetDirty(statusEffectRegistry);
+        AssetDatabase.SaveAssets();
+        RefreshCounts();
+
+        Logger.LogInfo($"Added {effects.Count} status effect(s) to registry", Logger.LogCategory.EditorLog);
     }
     #endregion
 
@@ -375,6 +590,280 @@ public class RegistryValidationDashboard : EditorWindow
             }
 
             EditorGUILayout.Space();
+        }
+    }
+    #endregion
+
+    #region Balance Warnings Tab
+    private void DrawBalanceWarningsTab()
+    {
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Balance Warnings", EditorStyles.boldLabel);
+
+        if (GUILayout.Button("Check Balance", GUILayout.Width(100)))
+        {
+            CheckBalanceWarnings();
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.HelpBox(
+            "Balance warnings identify content that may be incomplete or unbalanced:\n" +
+            "- Enemies with no abilities\n" +
+            "- Items with 0 sell value\n" +
+            "- Activities with 0 XP rewards\n" +
+            "- Locations with no content\n" +
+            "- Abilities with no effects",
+            MessageType.Info);
+
+        EditorGUILayout.Space();
+
+        if (!hasRunBalanceCheck)
+        {
+            EditorGUILayout.HelpBox("Click 'Check Balance' to scan for balance issues.", MessageType.Info);
+            return;
+        }
+
+        if (balanceWarnings.Count == 0)
+        {
+            EditorGUILayout.HelpBox("No balance issues found! All content looks good.", MessageType.Info);
+            return;
+        }
+
+        EditorGUILayout.LabelField($"Found {balanceWarnings.Count} balance warning(s)", EditorStyles.boldLabel);
+        EditorGUILayout.Space();
+
+        // Group by category
+        var grouped = balanceWarnings.GroupBy(w => w.category);
+
+        foreach (var group in grouped)
+        {
+            EditorGUILayout.BeginVertical("box");
+            EditorGUILayout.LabelField($"{group.Key} ({group.Count()})", EditorStyles.boldLabel);
+
+            foreach (var warning in group)
+            {
+                EditorGUILayout.BeginHorizontal();
+
+                var oldColor = GUI.color;
+                GUI.color = new Color(1f, 0.7f, 0.3f);
+                EditorGUILayout.LabelField("[BAL]", GUILayout.Width(40));
+                GUI.color = oldColor;
+
+                EditorGUILayout.LabelField(warning.message, EditorStyles.wordWrappedMiniLabel, GUILayout.ExpandWidth(true));
+
+                if (warning.asset != null && GUILayout.Button("Edit", GUILayout.Width(40)))
+                {
+                    Selection.activeObject = warning.asset;
+                    EditorGUIUtility.PingObject(warning.asset);
+                }
+
+                EditorGUILayout.EndHorizontal();
+            }
+
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.Space();
+        }
+    }
+
+    private void CheckBalanceWarnings()
+    {
+        balanceWarnings.Clear();
+        hasRunBalanceCheck = true;
+
+        CheckEnemyBalance();
+        CheckItemBalance();
+        CheckActivityBalance();
+        CheckLocationBalance();
+        CheckAbilityBalance();
+
+        Logger.LogInfo($"Balance Check Complete: {balanceWarnings.Count} warning(s) found.", Logger.LogCategory.EditorLog);
+    }
+
+    private void CheckEnemyBalance()
+    {
+        var enemies = FindAllAssets<EnemyDefinition>();
+
+        foreach (var enemy in enemies)
+        {
+            // No abilities
+            if (enemy.Abilities == null || !enemy.Abilities.Any(a => a != null))
+            {
+                balanceWarnings.Add(new BalanceWarning
+                {
+                    category = "Enemies",
+                    message = $"'{enemy.GetDisplayName()}' has no abilities",
+                    asset = enemy
+                });
+            }
+
+            // No loot
+            if (enemy.LootTable == null || !enemy.LootTable.Any(l => l != null && l.Item != null))
+            {
+                balanceWarnings.Add(new BalanceWarning
+                {
+                    category = "Enemies",
+                    message = $"'{enemy.GetDisplayName()}' has no loot drops",
+                    asset = enemy
+                });
+            }
+
+            // Zero or very low HP
+            if (enemy.MaxHealth <= 0)
+            {
+                balanceWarnings.Add(new BalanceWarning
+                {
+                    category = "Enemies",
+                    message = $"'{enemy.GetDisplayName()}' has {enemy.MaxHealth} HP",
+                    asset = enemy
+                });
+            }
+
+            // Zero XP reward
+            if (enemy.ExperienceReward <= 0)
+            {
+                balanceWarnings.Add(new BalanceWarning
+                {
+                    category = "Enemies",
+                    message = $"'{enemy.GetDisplayName()}' gives 0 XP",
+                    asset = enemy
+                });
+            }
+        }
+    }
+
+    private void CheckItemBalance()
+    {
+        if (itemRegistry == null) return;
+
+        foreach (var item in itemRegistry.AllItems.Where(i => i != null))
+        {
+            // Zero sell value for sellable items (exclude quest items, etc.)
+            if (item.BasePrice <= 0 && item.Type != ItemType.Quest)
+            {
+                balanceWarnings.Add(new BalanceWarning
+                {
+                    category = "Items",
+                    message = $"'{item.GetDisplayName()}' has 0 sell value",
+                    asset = item
+                });
+            }
+        }
+    }
+
+    private void CheckActivityBalance()
+    {
+        var variants = FindAllAssets<ActivityVariant>();
+
+        foreach (var variant in variants)
+        {
+            // Zero XP
+            if (variant.MainSkillXPPerTick <= 0 && variant.SubSkillXPPerTick <= 0)
+            {
+                balanceWarnings.Add(new BalanceWarning
+                {
+                    category = "Activities",
+                    message = $"'{variant.GetDisplayName()}' gives 0 XP",
+                    asset = variant
+                });
+            }
+
+            // No primary resource for harvesting activities
+            if (!variant.IsTimeBased && variant.PrimaryResource == null)
+            {
+                balanceWarnings.Add(new BalanceWarning
+                {
+                    category = "Activities",
+                    message = $"'{variant.GetDisplayName()}' has no primary resource",
+                    asset = variant
+                });
+            }
+
+            // Zero step cost for step-based activities
+            if (!variant.IsTimeBased && variant.ActionCost <= 0)
+            {
+                balanceWarnings.Add(new BalanceWarning
+                {
+                    category = "Activities",
+                    message = $"'{variant.GetDisplayName()}' requires 0 steps",
+                    asset = variant
+                });
+            }
+        }
+    }
+
+    private void CheckLocationBalance()
+    {
+        var locations = FindAllAssets<MapLocationDefinition>();
+
+        foreach (var location in locations)
+        {
+            bool hasEnemies = location.AvailableEnemies != null && location.AvailableEnemies.Any(e => e?.EnemyReference != null);
+            bool hasNPCs = location.AvailableNPCs != null && location.AvailableNPCs.Any(n => n?.NPCReference != null);
+            bool hasActivities = location.AvailableActivities != null && location.AvailableActivities.Any(a => a?.ActivityReference != null);
+            bool hasConnections = location.Connections != null && location.Connections.Any(c => c != null);
+
+            // No content at all
+            if (!hasEnemies && !hasNPCs && !hasActivities)
+            {
+                balanceWarnings.Add(new BalanceWarning
+                {
+                    category = "Locations",
+                    message = $"'{location.DisplayName}' has no enemies, NPCs, or activities",
+                    asset = location
+                });
+            }
+
+            // No connections (isolated location)
+            if (!hasConnections)
+            {
+                balanceWarnings.Add(new BalanceWarning
+                {
+                    category = "Locations",
+                    message = $"'{location.DisplayName}' has no connections (isolated)",
+                    asset = location
+                });
+            }
+        }
+    }
+
+    private void CheckAbilityBalance()
+    {
+        if (abilityRegistry == null) return;
+
+        foreach (var ability in abilityRegistry.AllAbilities.Where(a => a != null))
+        {
+            // No effects
+            if (ability.Effects == null || !ability.Effects.Any(e => e != null))
+            {
+                balanceWarnings.Add(new BalanceWarning
+                {
+                    category = "Abilities",
+                    message = $"'{ability.GetDisplayName()}' has no effects",
+                    asset = ability
+                });
+            }
+
+            // Zero cooldown (might be intentional for basic attacks)
+            if (ability.Cooldown <= 0 && ability.AbilityID != "basic_attack")
+            {
+                balanceWarnings.Add(new BalanceWarning
+                {
+                    category = "Abilities",
+                    message = $"'{ability.GetDisplayName()}' has 0 cooldown",
+                    asset = ability
+                });
+            }
+
+            // Zero weight (should have some weight for equipment limits)
+            if (ability.Weight <= 0)
+            {
+                balanceWarnings.Add(new BalanceWarning
+                {
+                    category = "Abilities",
+                    message = $"'{ability.GetDisplayName()}' has 0 weight",
+                    asset = ability
+                });
+            }
         }
     }
     #endregion

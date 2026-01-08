@@ -276,11 +276,84 @@ public class ItemManagerWindow : EditorWindow
         if (isExpanded)
         {
             DrawItemRarityStatsSection(item);
+            DrawItemDependencySection(item);
         }
 
         EditorGUILayout.EndVertical();
         EditorGUILayout.Space();
     }
+
+    private void DrawItemDependencySection(ItemDefinition item)
+    {
+        EditorGUILayout.Space();
+        EditorGUI.indentLevel++;
+        EditorGUILayout.BeginVertical("helpBox");
+
+        EditorGUILayout.LabelField("References", EditorStyles.boldLabel);
+
+        // Dropped By section
+        var droppedBy = DependencyScanner.GetCachedItemDroppedBy(item);
+        DrawReferenceSection("Dropped By", droppedBy, ref showDroppedBy);
+
+        // Used In section
+        var usedIn = DependencyScanner.GetCachedItemUsedIn(item);
+        DrawReferenceSection("Used In", usedIn, ref showUsedIn);
+
+        // Produced By section
+        var producedBy = DependencyScanner.FindItemProducedBy(item);
+        DrawReferenceSection("Produced By", producedBy, ref showProducedBy);
+
+        if (droppedBy.Count == 0 && usedIn.Count == 0 && producedBy.Count == 0)
+        {
+            EditorGUILayout.LabelField("No references found", EditorStyles.miniLabel);
+        }
+
+        EditorGUILayout.EndVertical();
+        EditorGUI.indentLevel--;
+    }
+
+    private void DrawReferenceSection(string title, List<DependencyScanner.ItemReference> refs, ref bool foldout)
+    {
+        if (refs.Count == 0) return;
+
+        foldout = EditorGUILayout.Foldout(foldout, $"{title} ({refs.Count})", true);
+
+        if (foldout)
+        {
+            EditorGUI.indentLevel++;
+            foreach (var r in refs)
+            {
+                EditorGUILayout.BeginHorizontal();
+
+                // Type color indicator
+                var oldColor = GUI.color;
+                GUI.color = r.SourceType == "Enemy" ? new Color(1f, 0.4f, 0.4f) : new Color(1f, 0.6f, 0.4f);
+                EditorGUILayout.LabelField($"[{r.SourceType}]", EditorStyles.miniLabel, GUILayout.Width(60));
+                GUI.color = oldColor;
+
+                // Source name
+                EditorGUILayout.LabelField(r.SourceName, GUILayout.Width(120));
+
+                // Context
+                EditorGUILayout.LabelField(r.Context, EditorStyles.miniLabel);
+
+                // Select button
+                if (GUILayout.Button("Select", GUILayout.Width(50)))
+                {
+                    Selection.activeObject = r.SourceAsset;
+                    EditorGUIUtility.PingObject(r.SourceAsset);
+                }
+
+                EditorGUILayout.EndHorizontal();
+            }
+            EditorGUI.indentLevel--;
+        }
+    }
+
+    // Foldout states for dependency sections
+    private bool showDroppedBy = false;
+    private bool showUsedIn = false;
+    private bool showProducedBy = false;
 
     private void DrawRarityBadges(ItemDefinition item)
     {
@@ -911,16 +984,15 @@ public class ItemManagerWindow : EditorWindow
     {
         if (itemRegistry != null && itemRegistry.AllItems.Contains(item))
         {
-            bool confirm = EditorUtility.DisplayDialog(
-                "Remove Item",
-                $"Remove '{item.GetDisplayName()}' from ItemRegistry?\n\n(This will NOT delete the asset file)",
-                "Remove", "Cancel");
+            // Use DependencyScanner for delete warning with references
+            bool confirm = DependencyScanner.ShowItemDeleteWarning(item);
 
             if (confirm)
             {
                 itemRegistry.AllItems.Remove(item);
                 EditorUtility.SetDirty(itemRegistry);
                 AssetDatabase.SaveAssets();
+                DependencyScanner.ClearCache(); // Clear cache after modification
                 Logger.LogInfo($"Removed item '{item.GetDisplayName()}' from ItemRegistry", Logger.LogCategory.EditorLog);
             }
         }

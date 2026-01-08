@@ -31,6 +31,9 @@ public class AbilityManagerWindow : EditorWindow
     private bool showAllEffectTypes = true;
     private AbilityEffectType filterEffectType = AbilityEffectType.Damage;
 
+    // Expanded abilities for showing Used By
+    private HashSet<AbilityDefinition> expandedAbilities = new HashSet<AbilityDefinition>();
+
     // Creation Dialog State
     private bool showCreateAbilityDialog = false;
     private Vector2 dialogScrollPosition;
@@ -252,6 +255,16 @@ public class AbilityManagerWindow : EditorWindow
 
         GUILayout.FlexibleSpace();
 
+        // Expand button
+        bool isExpanded = expandedAbilities.Contains(ability);
+        if (GUILayout.Button(isExpanded ? "▼" : "►", GUILayout.Width(25)))
+        {
+            if (isExpanded)
+                expandedAbilities.Remove(ability);
+            else
+                expandedAbilities.Add(ability);
+        }
+
         if (GUILayout.Button("Edit", GUILayout.Width(40)))
         {
             Selection.activeObject = ability;
@@ -278,8 +291,71 @@ public class AbilityManagerWindow : EditorWindow
         // Effects summary
         EditorGUILayout.LabelField($"Effects: {ability.GetEffectsSummary()}", EditorStyles.wordWrappedMiniLabel);
 
+        // Expanded section: Used By Enemies
+        if (isExpanded)
+        {
+            DrawAbilityUsedBySection(ability);
+        }
+
         EditorGUILayout.EndVertical();
         EditorGUILayout.Space();
+    }
+
+    private void DrawAbilityUsedBySection(AbilityDefinition ability)
+    {
+        EditorGUI.indentLevel++;
+        EditorGUILayout.BeginVertical("helpBox");
+
+        EditorGUILayout.LabelField("References", EditorStyles.boldLabel);
+
+        // Used By Enemies
+        var usedByEnemies = DependencyScanner.FindAbilityUsedByEnemies(ability);
+        if (usedByEnemies.Count > 0)
+        {
+            EditorGUILayout.LabelField($"Used By Enemies ({usedByEnemies.Count}):", EditorStyles.miniBoldLabel);
+            EditorGUI.indentLevel++;
+            foreach (var r in usedByEnemies)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"- {r.SourceName}", GUILayout.Width(150));
+                if (GUILayout.Button("Select", GUILayout.Width(50)))
+                {
+                    Selection.activeObject = r.SourceAsset;
+                    EditorGUIUtility.PingObject(r.SourceAsset);
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+            EditorGUI.indentLevel--;
+        }
+
+        // Unlocked By Items
+        var unlockedByItems = DependencyScanner.FindAbilityUnlockedByItems(ability);
+        if (unlockedByItems.Count > 0)
+        {
+            EditorGUILayout.LabelField($"Unlocked By Items ({unlockedByItems.Count}):", EditorStyles.miniBoldLabel);
+            EditorGUI.indentLevel++;
+            foreach (var r in unlockedByItems)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"- {r.SourceName}", GUILayout.Width(150));
+                EditorGUILayout.LabelField($"({r.Context})", EditorStyles.miniLabel);
+                if (GUILayout.Button("Select", GUILayout.Width(50)))
+                {
+                    Selection.activeObject = r.SourceAsset;
+                    EditorGUIUtility.PingObject(r.SourceAsset);
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+            EditorGUI.indentLevel--;
+        }
+
+        if (usedByEnemies.Count == 0 && unlockedByItems.Count == 0)
+        {
+            EditorGUILayout.LabelField("No references found", EditorStyles.miniLabel);
+        }
+
+        EditorGUILayout.EndVertical();
+        EditorGUI.indentLevel--;
     }
     #endregion
 
@@ -870,10 +946,8 @@ public class AbilityManagerWindow : EditorWindow
     {
         if (ability == null) return;
 
-        bool confirm = EditorUtility.DisplayDialog(
-            "Delete Ability",
-            $"Delete '{ability.GetDisplayName()}'?\n\nThis will permanently delete the asset file.",
-            "Delete", "Cancel");
+        // Use DependencyScanner for delete warning with references
+        bool confirm = DependencyScanner.ShowAbilityDeleteWarning(ability);
 
         if (confirm)
         {

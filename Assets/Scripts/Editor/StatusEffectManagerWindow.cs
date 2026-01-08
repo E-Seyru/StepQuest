@@ -32,6 +32,9 @@ public class StatusEffectManagerWindow : EditorWindow
     private bool showAllBehaviors = true;
     private EffectBehavior filterBehavior = EffectBehavior.DamageOverTime;
 
+    // Expanded effects for showing Used By
+    private HashSet<StatusEffectDefinition> expandedEffects = new HashSet<StatusEffectDefinition>();
+
     // Creation Dialog State
     private bool showCreateEffectDialog = false;
     private Vector2 dialogScrollPosition;
@@ -277,6 +280,16 @@ public class StatusEffectManagerWindow : EditorWindow
 
         GUILayout.FlexibleSpace();
 
+        // Expand button for showing "Used By" section
+        bool isExpanded = expandedEffects.Contains(effect);
+        if (GUILayout.Button(isExpanded ? "▼" : "▶", GUILayout.Width(25)))
+        {
+            if (isExpanded)
+                expandedEffects.Remove(effect);
+            else
+                expandedEffects.Add(effect);
+        }
+
         if (GUILayout.Button("Edit", GUILayout.Width(40)))
         {
             Selection.activeObject = effect;
@@ -331,8 +344,50 @@ public class StatusEffectManagerWindow : EditorWindow
         // Effect summary
         EditorGUILayout.LabelField($"Effect: {effect.GetEffectSummary()}", EditorStyles.wordWrappedMiniLabel);
 
+        // Draw expanded "Used By" section if effect is expanded
+        if (expandedEffects.Contains(effect))
+        {
+            DrawStatusEffectUsedBySection(effect);
+        }
+
         EditorGUILayout.EndVertical();
         EditorGUILayout.Space();
+    }
+
+    private void DrawStatusEffectUsedBySection(StatusEffectDefinition effect)
+    {
+        EditorGUILayout.Space();
+        EditorGUI.indentLevel++;
+
+        // Find abilities that apply this status effect
+        var references = DependencyScanner.FindStatusEffectUsedByAbilities(effect);
+
+        // Used By Abilities
+        EditorGUILayout.BeginVertical("box");
+        EditorGUILayout.LabelField($"Used By Abilities ({references.Count})", EditorStyles.boldLabel);
+
+        if (references.Count > 0)
+        {
+            foreach (var reference in references)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"  • {reference.SourceName}", GUILayout.ExpandWidth(true));
+                if (reference.SourceAsset != null && GUILayout.Button("Select", GUILayout.Width(50)))
+                {
+                    Selection.activeObject = reference.SourceAsset;
+                    EditorGUIUtility.PingObject(reference.SourceAsset);
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+        else
+        {
+            EditorGUILayout.LabelField("  Not used by any abilities", EditorStyles.miniLabel);
+        }
+
+        EditorGUILayout.EndVertical();
+
+        EditorGUI.indentLevel--;
     }
 
     private Color GetBehaviorColor(EffectBehavior behavior)
@@ -913,30 +968,29 @@ public class StatusEffectManagerWindow : EditorWindow
     {
         if (effect == null) return;
 
-        bool confirm = EditorUtility.DisplayDialog(
-            "Delete Status Effect",
-            $"Delete '{effect.GetDisplayName()}'?\n\nThis will permanently delete the asset file.",
-            "Delete", "Cancel");
-
-        if (confirm)
+        // Use DependencyScanner to show delete warning with references
+        if (!DependencyScanner.ShowStatusEffectDeleteWarning(effect))
         {
-            // Remove from registry first
-            if (statusEffectRegistry != null && statusEffectRegistry.AllEffects.Contains(effect))
-            {
-                statusEffectRegistry.AllEffects.Remove(effect);
-                EditorUtility.SetDirty(statusEffectRegistry);
-            }
-
-            // Get asset path and delete the file
-            string assetPath = AssetDatabase.GetAssetPath(effect);
-            if (!string.IsNullOrEmpty(assetPath))
-            {
-                AssetDatabase.DeleteAsset(assetPath);
-                Logger.LogInfo($"Deleted status effect '{effect.GetDisplayName()}' at {assetPath}", Logger.LogCategory.EditorLog);
-            }
-
-            AssetDatabase.SaveAssets();
+            return; // User cancelled
         }
+
+        // Remove from registry first
+        if (statusEffectRegistry != null && statusEffectRegistry.AllEffects.Contains(effect))
+        {
+            statusEffectRegistry.AllEffects.Remove(effect);
+            EditorUtility.SetDirty(statusEffectRegistry);
+        }
+
+        // Get asset path and delete the file
+        string assetPath = AssetDatabase.GetAssetPath(effect);
+        if (!string.IsNullOrEmpty(assetPath))
+        {
+            AssetDatabase.DeleteAsset(assetPath);
+            Logger.LogInfo($"Deleted status effect '{effect.GetDisplayName()}' at {assetPath}", Logger.LogCategory.EditorLog);
+        }
+
+        AssetDatabase.SaveAssets();
+        expandedEffects.Remove(effect);
     }
 
     private string GenerateIDFromName(string name)

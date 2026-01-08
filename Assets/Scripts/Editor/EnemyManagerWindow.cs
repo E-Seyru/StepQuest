@@ -26,7 +26,11 @@ public class EnemyManagerWindow : EditorWindow
     private Vector2 scrollPosition;
     private string searchFilter = "";
     private int selectedTab = 0;
-    private readonly string[] tabNames = { "Enemies", "Quick Create", "Validation" };
+    private readonly string[] tabNames = { "Enemies", "Loot Analysis", "Quick Create", "Validation" };
+
+    // Loot Analysis State
+    private EnemyDefinition selectedLootEnemy = null;
+    private int lootSimulationCount = 100;
 
     // Filter State
     private bool filterHasLoot = false;
@@ -73,9 +77,12 @@ public class EnemyManagerWindow : EditorWindow
                 DrawEnemiesTab();
                 break;
             case 1:
-                DrawQuickCreateTab();
+                DrawLootAnalysisTab();
                 break;
             case 2:
+                DrawQuickCreateTab();
+                break;
+            case 3:
                 DrawValidationTab();
                 break;
         }
@@ -243,6 +250,219 @@ public class EnemyManagerWindow : EditorWindow
 
         EditorGUILayout.EndVertical();
         EditorGUILayout.Space(2);
+    }
+    #endregion
+
+    #region Loot Analysis Tab
+    private void DrawLootAnalysisTab()
+    {
+        EditorGUILayout.LabelField("Loot Analysis", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox("Select an enemy to analyze their loot table probabilities.", MessageType.Info);
+        EditorGUILayout.Space();
+
+        // Enemy selector
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Select Enemy:", GUILayout.Width(100));
+        selectedLootEnemy = (EnemyDefinition)EditorGUILayout.ObjectField(selectedLootEnemy, typeof(EnemyDefinition), false);
+        EditorGUILayout.EndHorizontal();
+
+        if (selectedLootEnemy == null)
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Quick Select:", EditorStyles.boldLabel);
+
+            // Show enemies with loot for quick selection
+            var enemiesWithLoot = allEnemies.Where(e => e.LootTable != null && e.LootTable.Any(l => l?.Item != null)).Take(10);
+            foreach (var enemy in enemiesWithLoot)
+            {
+                if (GUILayout.Button($"{enemy.GetDisplayName()} (Lv.{enemy.Level})", GUILayout.Height(25)))
+                {
+                    selectedLootEnemy = enemy;
+                }
+            }
+            return;
+        }
+
+        EditorGUILayout.Space();
+
+        // Loot table display
+        DrawLootTableAnalysis(selectedLootEnemy);
+
+        EditorGUILayout.Space();
+
+        // Found At section
+        DrawEnemyLocations(selectedLootEnemy);
+    }
+
+    private void DrawLootTableAnalysis(EnemyDefinition enemy)
+    {
+        EditorGUILayout.BeginVertical("box");
+        EditorGUILayout.LabelField($"Loot Table: {enemy.GetDisplayName()}", EditorStyles.boldLabel);
+
+        if (enemy.LootTable == null || enemy.LootTable.Count == 0)
+        {
+            EditorGUILayout.HelpBox("This enemy has no loot table defined.", MessageType.Warning);
+            EditorGUILayout.EndVertical();
+            return;
+        }
+
+        // Calculate totals
+        float totalExpectedItems = 0f;
+
+        // Table header
+        EditorGUILayout.BeginHorizontal("box");
+        EditorGUILayout.LabelField("Item", EditorStyles.boldLabel, GUILayout.Width(150));
+        EditorGUILayout.LabelField("Chance", EditorStyles.boldLabel, GUILayout.Width(60));
+        EditorGUILayout.LabelField("Quantity", EditorStyles.boldLabel, GUILayout.Width(80));
+        EditorGUILayout.LabelField("Expected/Kill", EditorStyles.boldLabel, GUILayout.Width(100));
+        EditorGUILayout.EndHorizontal();
+
+        // Table rows
+        foreach (var loot in enemy.LootTable)
+        {
+            if (loot == null || loot.Item == null) continue;
+
+            float expectedQuantity = loot.DropChance * ((loot.MinQuantity + loot.MaxQuantity) / 2f);
+            totalExpectedItems += expectedQuantity;
+
+            EditorGUILayout.BeginHorizontal();
+
+            // Item name with icon
+            if (loot.Item.ItemIcon != null)
+            {
+                Rect iconRect = EditorGUILayout.GetControlRect(GUILayout.Width(20), GUILayout.Height(20));
+                EditorGUI.DrawPreviewTexture(iconRect, loot.Item.ItemIcon.texture);
+            }
+            EditorGUILayout.LabelField(loot.Item.GetDisplayName(), GUILayout.Width(128));
+
+            // Chance with color
+            var oldColor = GUI.color;
+            GUI.color = GetChanceColor(loot.DropChance);
+            EditorGUILayout.LabelField($"{loot.DropChance:P0}", GUILayout.Width(60));
+            GUI.color = oldColor;
+
+            // Quantity
+            string quantityText = loot.MinQuantity == loot.MaxQuantity
+                ? $"{loot.MinQuantity}"
+                : $"{loot.MinQuantity}-{loot.MaxQuantity}";
+            EditorGUILayout.LabelField(quantityText, GUILayout.Width(80));
+
+            // Expected per kill
+            EditorGUILayout.LabelField($"{expectedQuantity:F2}", GUILayout.Width(100));
+
+            // Select button
+            if (GUILayout.Button("Select", GUILayout.Width(50)))
+            {
+                Selection.activeObject = loot.Item;
+                EditorGUIUtility.PingObject(loot.Item);
+            }
+
+            EditorGUILayout.EndHorizontal();
+        }
+
+        // Summary
+        EditorGUILayout.Space();
+        EditorGUILayout.BeginHorizontal("box");
+        EditorGUILayout.LabelField($"Expected items per kill: {totalExpectedItems:F2}", EditorStyles.boldLabel);
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.Space();
+
+        // Simulation section
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Simulate kills:", GUILayout.Width(100));
+        lootSimulationCount = EditorGUILayout.IntField(lootSimulationCount, GUILayout.Width(60));
+        if (GUILayout.Button($"Simulate {lootSimulationCount} Kills", GUILayout.Width(150)))
+        {
+            SimulateLootDrops(enemy, lootSimulationCount);
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.EndVertical();
+    }
+
+    private void SimulateLootDrops(EnemyDefinition enemy, int killCount)
+    {
+        var results = new Dictionary<ItemDefinition, int>();
+
+        for (int i = 0; i < killCount; i++)
+        {
+            var loot = enemy.GenerateLoot();
+            foreach (var kvp in loot)
+            {
+                if (!results.ContainsKey(kvp.Key))
+                    results[kvp.Key] = 0;
+                results[kvp.Key] += kvp.Value;
+            }
+        }
+
+        // Build result message
+        string message = $"Simulation Results ({killCount} kills):\n\n";
+
+        if (results.Count == 0)
+        {
+            message += "No items dropped!";
+        }
+        else
+        {
+            foreach (var kvp in results.OrderByDescending(r => r.Value))
+            {
+                float avgPerKill = kvp.Value / (float)killCount;
+                message += $"{kvp.Key.GetDisplayName()}: {kvp.Value} total ({avgPerKill:F2}/kill)\n";
+            }
+        }
+
+        EditorUtility.DisplayDialog("Loot Simulation", message, "OK");
+    }
+
+    private void DrawEnemyLocations(EnemyDefinition enemy)
+    {
+        var locations = DependencyScanner.FindEnemyLocations(enemy);
+
+        EditorGUILayout.BeginVertical("box");
+        EditorGUILayout.LabelField($"Found At ({locations.Count} location(s))", EditorStyles.boldLabel);
+
+        if (locations.Count == 0)
+        {
+            EditorGUILayout.HelpBox("This enemy is not placed at any location.", MessageType.Warning);
+        }
+        else
+        {
+            foreach (var loc in locations)
+            {
+                EditorGUILayout.BeginHorizontal();
+
+                var oldColor = GUI.color;
+                if (loc.IsHidden)
+                {
+                    GUI.color = new Color(0.6f, 0.4f, 1f); // Purple for hidden
+                    EditorGUILayout.LabelField("[Hidden]", EditorStyles.miniLabel, GUILayout.Width(50));
+                }
+                GUI.color = oldColor;
+
+                EditorGUILayout.LabelField(loc.LocationName, GUILayout.Width(150));
+                EditorGUILayout.LabelField($"({loc.LocationID})", EditorStyles.miniLabel);
+
+                if (GUILayout.Button("Select", GUILayout.Width(50)))
+                {
+                    Selection.activeObject = loc.LocationAsset;
+                    EditorGUIUtility.PingObject(loc.LocationAsset);
+                }
+
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+
+        EditorGUILayout.EndVertical();
+    }
+
+    private Color GetChanceColor(float chance)
+    {
+        if (chance >= 0.8f) return new Color(0.3f, 0.8f, 0.3f); // Green - common
+        if (chance >= 0.5f) return new Color(0.8f, 0.8f, 0.3f); // Yellow - uncommon
+        if (chance >= 0.2f) return new Color(0.3f, 0.6f, 1f);   // Blue - rare
+        if (chance >= 0.05f) return new Color(0.6f, 0.3f, 1f);  // Purple - epic
+        return new Color(1f, 0.6f, 0.2f);                        // Orange - legendary
     }
     #endregion
 
@@ -671,10 +891,8 @@ public class EnemyManagerWindow : EditorWindow
     {
         if (enemy == null) return;
 
-        bool confirm = EditorUtility.DisplayDialog(
-            "Delete Enemy",
-            $"Delete '{enemy.GetDisplayName()}'?\n\nThis will permanently delete the asset file.",
-            "Delete", "Cancel");
+        // Use DependencyScanner for delete warning with references
+        bool confirm = DependencyScanner.ShowEnemyDeleteWarning(enemy);
 
         if (confirm)
         {

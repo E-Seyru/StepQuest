@@ -912,10 +912,8 @@ public class NPCManagerWindow : EditorWindow
     {
         if (npc == null) return;
 
-        bool confirm = EditorUtility.DisplayDialog(
-            "Delete NPC",
-            $"Delete '{npc.GetDisplayName()}'?\n\nThis will also remove it from all locations.",
-            "Delete", "Cancel");
+        // Use DependencyScanner for delete warning with references
+        bool confirm = DependencyScanner.ShowNPCDeleteWarning(npc);
 
         if (confirm)
         {
