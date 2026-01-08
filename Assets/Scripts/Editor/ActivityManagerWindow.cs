@@ -39,6 +39,9 @@ public class ActivityManagerWindow : EditorWindow
     private string newActivityName = "";
     private string newActivityDescription = "";
     private ActivityType newActivityType = ActivityType.Harvesting;
+    private Sprite newActivityIcon = null;
+    private Sprite newActivitySilhouetteIcon = null;
+    private Color newActivityColor = Color.white;
     private string newVariantName = "";
     private string newVariantDescription = "";
     private string newPOIName = "";
@@ -98,7 +101,7 @@ public class ActivityManagerWindow : EditorWindow
 
     private void DrawCreateActivityDialog()
     {
-        GUILayout.BeginArea(new Rect(50, 100, 400, 300));
+        GUILayout.BeginArea(new Rect(50, 100, 400, 420));
         EditorGUILayout.BeginVertical("box");
 
         EditorGUILayout.LabelField("Create New Activity", EditorStyles.boldLabel);
@@ -126,6 +129,15 @@ public class ActivityManagerWindow : EditorWindow
 
         EditorGUILayout.LabelField("Description:");
         newActivityDescription = EditorGUILayout.TextArea(newActivityDescription, GUILayout.Height(60));
+
+        EditorGUILayout.Space();
+
+        // Visual fields
+        EditorGUILayout.LabelField("Visual", EditorStyles.boldLabel);
+        newActivityIcon = (Sprite)EditorGUILayout.ObjectField("Activity Icon", newActivityIcon, typeof(Sprite), false);
+        newActivitySilhouetteIcon = (Sprite)EditorGUILayout.ObjectField("Silhouette Icon", newActivitySilhouetteIcon, typeof(Sprite), false);
+        EditorGUILayout.HelpBox("Silhouette Icon is shown for undiscovered activities. Falls back to Activity Icon if not set.", MessageType.None);
+        newActivityColor = EditorGUILayout.ColorField("Activity Color", newActivityColor);
 
         EditorGUILayout.Space();
 
@@ -309,6 +321,9 @@ public class ActivityManagerWindow : EditorWindow
         newActivityName = "";
         newActivityDescription = "";
         newActivityType = ActivityType.Harvesting;
+        newActivityIcon = null;
+        newActivitySilhouetteIcon = null;
+        newActivityColor = Color.white;
     }
 
     private void ResetCreateVariantDialog()
@@ -348,6 +363,9 @@ public class ActivityManagerWindow : EditorWindow
         newActivity.BaseDescription = description;
         newActivity.Type = newActivityType;
         newActivity.IsAvailable = true;
+        newActivity.ActivityIcon = newActivityIcon;
+        newActivity.SilhouetteIcon = newActivitySilhouetteIcon;
+        newActivity.ActivityColor = newActivityColor;
 
         // Save to appropriate folder
         string assetPath = $"Assets/ScriptableObjects/Activities/{activityName}.asset";

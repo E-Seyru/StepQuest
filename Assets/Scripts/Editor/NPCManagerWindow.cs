@@ -38,10 +38,23 @@ public class NPCManagerWindow : EditorWindow
     private string newNPCName = "";
     private string newNPCDescription = "";
     private Sprite newNPCAvatar = null;
+    private Sprite newNPCSilhouetteIcon = null;
     private Sprite newNPCIllustration = null;
     private Color newNPCColor = Color.white;
     private bool newNPCIsActive = true;
     private List<MapLocationDefinition> newNPCLocations = new List<MapLocationDefinition>();
+
+    // Emotion sprites
+    private bool showEmotionSprites = false;
+    private Sprite newNPCEmotionNeutral = null;
+    private Sprite newNPCEmotionJoy = null;
+    private Sprite newNPCEmotionSadness = null;
+    private Sprite newNPCEmotionAnger = null;
+    private Sprite newNPCEmotionSurprise = null;
+    private Sprite newNPCEmotionFear = null;
+    private Sprite newNPCEmotionCuriosity = null;
+    private Sprite newNPCEmotionEmbarrassment = null;
+    private Sprite newNPCEmotionLove = null;
 
     // Location Assignment State
     private NPCDefinition selectedNPCForAssignment = null;
@@ -190,6 +203,21 @@ public class NPCManagerWindow : EditorWindow
         EditorGUILayout.LabelField(npc.IsActive ? "Active" : "Inactive", EditorStyles.miniLabel, GUILayout.Width(50));
         GUI.color = oldColor;
 
+        // Feature badges
+        if (npc.EmotionNeutral != null)
+        {
+            GUI.color = new Color(0.4f, 0.8f, 1f);
+            EditorGUILayout.LabelField("[EMO]", EditorStyles.miniLabel, GUILayout.Width(35));
+            GUI.color = oldColor;
+        }
+
+        if (npc.Dialogues != null && npc.Dialogues.Count > 0)
+        {
+            GUI.color = new Color(1f, 0.8f, 0.4f);
+            EditorGUILayout.LabelField("[DLG]", EditorStyles.miniLabel, GUILayout.Width(35));
+            GUI.color = oldColor;
+        }
+
         // Color preview
         EditorGUI.DrawRect(EditorGUILayout.GetControlRect(GUILayout.Width(20), GUILayout.Height(16)), npc.ThemeColor);
 
@@ -256,8 +284,29 @@ public class NPCManagerWindow : EditorWindow
         // Visual
         EditorGUILayout.LabelField("Visual", EditorStyles.boldLabel);
         newNPCAvatar = (Sprite)EditorGUILayout.ObjectField("Avatar (small)", newNPCAvatar, typeof(Sprite), false);
+        newNPCSilhouetteIcon = (Sprite)EditorGUILayout.ObjectField("Silhouette Icon (exploration)", newNPCSilhouetteIcon, typeof(Sprite), false);
         newNPCIllustration = (Sprite)EditorGUILayout.ObjectField("Illustration (large)", newNPCIllustration, typeof(Sprite), false);
         newNPCColor = EditorGUILayout.ColorField("Theme Color", newNPCColor);
+
+        EditorGUILayout.Space();
+
+        // Emotion Sprites (collapsible)
+        showEmotionSprites = EditorGUILayout.Foldout(showEmotionSprites, "Dialogue Emotion Sprites", true);
+        if (showEmotionSprites)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.HelpBox("Optional: Add emotion sprites for dialogue expressions. Falls back to Illustration if not set.", MessageType.Info);
+            newNPCEmotionNeutral = (Sprite)EditorGUILayout.ObjectField("Neutral", newNPCEmotionNeutral, typeof(Sprite), false);
+            newNPCEmotionJoy = (Sprite)EditorGUILayout.ObjectField("Joy", newNPCEmotionJoy, typeof(Sprite), false);
+            newNPCEmotionSadness = (Sprite)EditorGUILayout.ObjectField("Sadness", newNPCEmotionSadness, typeof(Sprite), false);
+            newNPCEmotionAnger = (Sprite)EditorGUILayout.ObjectField("Anger", newNPCEmotionAnger, typeof(Sprite), false);
+            newNPCEmotionSurprise = (Sprite)EditorGUILayout.ObjectField("Surprise", newNPCEmotionSurprise, typeof(Sprite), false);
+            newNPCEmotionFear = (Sprite)EditorGUILayout.ObjectField("Fear", newNPCEmotionFear, typeof(Sprite), false);
+            newNPCEmotionCuriosity = (Sprite)EditorGUILayout.ObjectField("Curiosity", newNPCEmotionCuriosity, typeof(Sprite), false);
+            newNPCEmotionEmbarrassment = (Sprite)EditorGUILayout.ObjectField("Embarrassment", newNPCEmotionEmbarrassment, typeof(Sprite), false);
+            newNPCEmotionLove = (Sprite)EditorGUILayout.ObjectField("Love", newNPCEmotionLove, typeof(Sprite), false);
+            EditorGUI.indentLevel--;
+        }
 
         EditorGUILayout.Space();
 
@@ -329,9 +378,21 @@ public class NPCManagerWindow : EditorWindow
         npc.NPCID = newNPCName.ToLower().Replace(" ", "_").Replace("'", "");
         npc.Description = newNPCDescription;
         npc.Avatar = newNPCAvatar;
+        npc.SilhouetteIcon = newNPCSilhouetteIcon;
         npc.Illustration = newNPCIllustration;
         npc.ThemeColor = newNPCColor;
         npc.IsActive = newNPCIsActive;
+
+        // Emotion sprites
+        npc.EmotionNeutral = newNPCEmotionNeutral;
+        npc.EmotionJoy = newNPCEmotionJoy;
+        npc.EmotionSadness = newNPCEmotionSadness;
+        npc.EmotionAnger = newNPCEmotionAnger;
+        npc.EmotionSurprise = newNPCEmotionSurprise;
+        npc.EmotionFear = newNPCEmotionFear;
+        npc.EmotionCuriosity = newNPCEmotionCuriosity;
+        npc.EmotionEmbarrassment = newNPCEmotionEmbarrassment;
+        npc.EmotionLove = newNPCEmotionLove;
 
         // Save NPC asset
         string folder = "Assets/ScriptableObjects/NPCs";
@@ -385,10 +446,23 @@ public class NPCManagerWindow : EditorWindow
         newNPCName = "";
         newNPCDescription = "";
         newNPCAvatar = null;
+        newNPCSilhouetteIcon = null;
         newNPCIllustration = null;
         newNPCColor = Color.white;
         newNPCIsActive = true;
         newNPCLocations.Clear();
+
+        // Reset emotion sprites
+        showEmotionSprites = false;
+        newNPCEmotionNeutral = null;
+        newNPCEmotionJoy = null;
+        newNPCEmotionSadness = null;
+        newNPCEmotionAnger = null;
+        newNPCEmotionSurprise = null;
+        newNPCEmotionFear = null;
+        newNPCEmotionCuriosity = null;
+        newNPCEmotionEmbarrassment = null;
+        newNPCEmotionLove = null;
     }
     #endregion
 
@@ -591,10 +665,16 @@ public class NPCManagerWindow : EditorWindow
         EditorGUILayout.LabelField($"Total NPCs: {allNPCs.Count}");
 
         int withPortrait = allNPCs.Count(n => n.Avatar != null || n.Illustration != null);
+        int withSilhouette = allNPCs.Count(n => n.SilhouetteIcon != null);
+        int withEmotions = allNPCs.Count(n => n.EmotionNeutral != null);
         int activeNPCs = allNPCs.Count(n => n.IsActive);
         int withLocation = allNPCs.Count(n => GetLocationsForNPC(n).Count > 0);
+        int withDialogues = allNPCs.Count(n => n.Dialogues != null && n.Dialogues.Count > 0);
 
         EditorGUILayout.LabelField($"With Portrait: {withPortrait}/{allNPCs.Count}");
+        EditorGUILayout.LabelField($"With Silhouette: {withSilhouette}/{allNPCs.Count}");
+        EditorGUILayout.LabelField($"With Emotion Sprites: {withEmotions}/{allNPCs.Count}");
+        EditorGUILayout.LabelField($"With Dialogues: {withDialogues}/{allNPCs.Count}");
         EditorGUILayout.LabelField($"Active: {activeNPCs}/{allNPCs.Count}");
         EditorGUILayout.LabelField($"Assigned to Location: {withLocation}/{allNPCs.Count}");
 

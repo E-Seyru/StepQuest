@@ -245,6 +245,7 @@ Custom editor tools in `Assets/Scripts/Editor/`:
 - `ConnectionManagerWindow` - Manage location connections
 - `NPCManagerWindow` - Manage NPCs with bidirectional location sync
 - `ExplorationManagerWindow` - Configure hidden content and test discoveries at runtime
+- `ClaudeContentCreator` - Process JSON files from `Assets/Editor/ContentQueue/` to create ScriptableObjects (enemies, abilities, items, NPCs) and assign them to locations. Used by Claude Code's `/add-content` skill.
 
 ### Debug Tools
 Debug scripts in `Assets/Scripts/Debug/`:

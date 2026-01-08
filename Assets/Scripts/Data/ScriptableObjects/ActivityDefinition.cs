@@ -31,6 +31,8 @@ public class ActivityDefinition : ScriptableObject
 
     [Header("Visual")]
     public Sprite ActivityIcon;
+    [Tooltip("Silhouette icon for undiscovered activities (defaults to ActivityIcon if null)")]
+    public Sprite SilhouetteIcon;
     public Color ActivityColor = Color.white;
 
     [Header("Categories (for Crafting UI)")]
@@ -145,6 +147,14 @@ public class ActivityDefinition : ScriptableObject
     public Sprite GetActivityIcon()
     {
         return ActivityIcon;
+    }
+
+    /// <summary>
+    /// Get silhouette icon for undiscovered activities (falls back to ActivityIcon)
+    /// </summary>
+    public Sprite GetSilhouetteIcon()
+    {
+        return SilhouetteIcon != null ? SilhouetteIcon : ActivityIcon;
     }
 
 #if UNITY_EDITOR

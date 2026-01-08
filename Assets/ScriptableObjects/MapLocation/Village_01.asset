@@ -70,9 +70,17 @@ MonoBehaviour:
   AvailableEnemies:
   - EnemyReference: {fileID: 11400000, guid: f2be85aa16265d3448b912357d492ecc, type: 2}
     IsAvailable: 1
-    Requirements:
+    MinimumRequirement: 0
+    Requirements: 
     IsHidden: 1
     Rarity: 1
+    BonusXPOverride: 0
+  - EnemyReference: {fileID: 11400000, guid: 328a20459b8370041829ffafa600a3a6, type: 2}
+    IsAvailable: 1
+    MinimumRequirement: 0
+    Requirements: 
+    IsHidden: 1
+    Rarity: 0
     BonusXPOverride: 0
   AvailableNPCs:
   - NPCReference: {fileID: 11400000, guid: 581fbbf6fce5e3749bdfeecbff6c1517, type: 2}

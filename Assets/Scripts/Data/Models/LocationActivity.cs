@@ -32,6 +32,9 @@ public class LocationActivity
     [Tooltip("Location-specific icon (optional - uses ActivityReference.ActivityIcon if null)")]
     public Sprite LocationSpecificIcon;
 
+    [Tooltip("Location-specific silhouette icon for undiscovered activities (optional - uses ActivityReference.SilhouetteIcon if null)")]
+    public Sprite LocationSilhouetteIcon;
+
     [Header("Discovery Settings")]
     [Tooltip("If true, this activity must be discovered through exploration before it becomes available")]
     public bool IsHidden = false;
@@ -108,6 +111,20 @@ public class LocationActivity
             return ActivityReference.ActivityIcon;
 
         return null;
+    }
+
+    /// <summary>
+    /// Get the silhouette icon for undiscovered activities (location-specific or general, falls back to regular icon)
+    /// </summary>
+    public Sprite GetSilhouetteIcon()
+    {
+        if (LocationSilhouetteIcon != null)
+            return LocationSilhouetteIcon;
+
+        if (ActivityReference != null)
+            return ActivityReference.GetSilhouetteIcon();
+
+        return GetIcon();
     }
 
     /// <summary>
