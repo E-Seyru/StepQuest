@@ -9,7 +9,7 @@ using UnityEngine;
 
 public class ConnectionManagerWindow : EditorWindow
 {
-    [MenuItem("StepQuest/Connection Manager")]
+    [MenuItem("StepQuest/World/Connection Manager")]
     public static void ShowWindow()
     {
         ConnectionManagerWindow window = GetWindow<ConnectionManagerWindow>();

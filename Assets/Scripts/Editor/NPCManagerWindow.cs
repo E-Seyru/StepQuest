@@ -9,7 +9,7 @@ using UnityEngine;
 
 public class NPCManagerWindow : EditorWindow
 {
-    [MenuItem("WalkAndRPG/Social/NPC Manager")]
+    [MenuItem("StepQuest/Social/NPC Manager")]
     public static void ShowWindow()
     {
         NPCManagerWindow window = GetWindow<NPCManagerWindow>();

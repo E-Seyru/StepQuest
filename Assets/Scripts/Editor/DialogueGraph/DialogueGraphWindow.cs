@@ -26,7 +26,7 @@ public class DialogueGraphWindow : EditorWindow
     private DialogueNode selectedNode;
     private DialogueHeaderNode selectedHeader;
 
-    [MenuItem("WalkAndRPG/Social/Dialogue Graph Editor")]
+    [MenuItem("StepQuest/Social/Dialogue Graph Editor")]
     public static void ShowWindow()
     {
         var window = GetWindow<DialogueGraphWindow>();

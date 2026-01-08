@@ -8,7 +8,7 @@ using UnityEngine;
 
 public class CategoryManagerWindow : EditorWindow
 {
-    [MenuItem("WalkAndRPG/Content/Category Manager")]
+    [MenuItem("StepQuest/World/Category Manager")]
     public static void ShowWindow()
     {
         CategoryManagerWindow window = GetWindow<CategoryManagerWindow>();
@@ -17,7 +17,7 @@ public class CategoryManagerWindow : EditorWindow
         window.Show();
     }
 
-    [MenuItem("StepQuest/Create Default Forging Categories")]
+    [MenuItem("StepQuest/World/Create Default Categories")]
     public static void CreateDefaultForgingCategories()
     {
         // Find or create CategoryRegistry

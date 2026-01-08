@@ -8,7 +8,7 @@ using UnityEngine;
 
 public class GameDataResetter : EditorWindow
 {
-    [MenuItem("StepQuest/ Game Data Resetter")]
+    [MenuItem("StepQuest/Debug/Game Data Resetter")]
     public static void ShowWindow()
     {
         GameDataResetter window = GetWindow<GameDataResetter>();

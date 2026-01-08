@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class ActivityVariantEditor : EditorWindow
 {
-    [MenuItem("StepQuest/Activity Variant Manager")]
+    [MenuItem("StepQuest/World/Activity Variant Manager")]
     public static void ShowWindow()
     {
         ActivityVariantEditor window = GetWindow<ActivityVariantEditor>();

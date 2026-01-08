@@ -11,7 +11,7 @@ using System.IO;
 /// </summary>
 public class StatusEffectCreator : EditorWindow
 {
-    [MenuItem("WalkAndRPG/Combat/Create Test Status Effects")]
+    [MenuItem("StepQuest/Combat/Create Test Status Effects")]
     public static void CreateTestStatusEffects()
     {
         string folderPath = "Assets/ScriptableObjects/StatusEffects";
@@ -193,7 +193,7 @@ public class StatusEffectCreator : EditorWindow
         Logger.LogInfo($"StatusEffectCreator: Created {fileName}", Logger.LogCategory.EditorLog);
     }
 
-    [MenuItem("WalkAndRPG/Combat/Create Status Effect Registry")]
+    [MenuItem("StepQuest/Combat/Create Status Effect Registry")]
     public static void CreateStatusEffectRegistry()
     {
         string folderPath = "Assets/ScriptableObjects/Registries";

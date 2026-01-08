@@ -8,7 +8,7 @@ using UnityEngine;
 
 public class AbilityManagerWindow : EditorWindow
 {
-    [MenuItem("WalkAndRPG/Combat/Ability Manager")]
+    [MenuItem("StepQuest/Combat/Ability Manager")]
     public static void ShowWindow()
     {
         AbilityManagerWindow window = GetWindow<AbilityManagerWindow>();

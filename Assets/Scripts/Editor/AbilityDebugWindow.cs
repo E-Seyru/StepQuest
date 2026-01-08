@@ -10,7 +10,7 @@ public class AbilityDebugWindow : EditorWindow
     private Vector2 scrollPosition;
     private AbilityRegistry abilityRegistry;
 
-    [MenuItem("WalkAndRPG/Ability Debug")]
+    [MenuItem("StepQuest/Debug/Ability Debug")]
     public static void ShowWindow()
     {
         GetWindow<AbilityDebugWindow>("Ability Debug");

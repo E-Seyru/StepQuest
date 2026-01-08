@@ -63,6 +63,12 @@ MonoBehaviour:
     Text: Merci de m'avoir regarde. Revenez me voir si vous voulez !
     Emotion: 1
     Choices: []
+    EndsDialogue: 0
+    ShowReward: 0
+  - Speaker: Homeless child
+    Text: BLABLABLA
+    Emotion: 8
+    Choices: []
     EndsDialogue: 1
     ShowReward: 0
   FlagsToSetOnCompletion:
@@ -85,4 +91,7 @@ MonoBehaviour:
     Y: 0
   - LineIndex: 4
     X: 2000
+    Y: 230
+  - LineIndex: 5
+    X: 2364
     Y: 230

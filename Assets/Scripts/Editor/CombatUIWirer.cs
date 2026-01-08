@@ -11,7 +11,7 @@ public class CombatUIWirer : EditorWindow
 {
     private GameObject combatPanel;
 
-    [MenuItem("WalkAndRPG/Combat UI Wirer (Import Helper)")]
+    [MenuItem("StepQuest/Combat/UI Wirer")]
     public static void ShowWindow()
     {
         GetWindow<CombatUIWirer>("Combat UI Wirer");

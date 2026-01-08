@@ -8,7 +8,7 @@ using UnityEngine;
 
 public class ExplorationManagerWindow : EditorWindow
 {
-    [MenuItem("StepQuest/Exploration Manager")]
+    [MenuItem("StepQuest/World/Exploration Manager")]
     public static void ShowWindow()
     {
         ExplorationManagerWindow window = GetWindow<ExplorationManagerWindow>();

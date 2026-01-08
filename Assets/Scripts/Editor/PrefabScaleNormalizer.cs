@@ -24,7 +24,7 @@ public class PrefabScaleNormalizer : EditorWindow
         public bool willChange;
     }
 
-    [MenuItem("WalkAndRPG/Prefab Scale Normalizer")]
+    [MenuItem("StepQuest/Tools/Prefab Scale Normalizer")]
     public static void ShowWindow()
     {
         var window = GetWindow<PrefabScaleNormalizer>("Scale Normalizer");

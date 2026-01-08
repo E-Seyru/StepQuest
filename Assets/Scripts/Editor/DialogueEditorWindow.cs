@@ -13,7 +13,7 @@ using UnityEngine;
 /// </summary>
 public class DialogueEditorWindow : EditorWindow
 {
-    [MenuItem("WalkAndRPG/Social/Dialogue Editor")]
+    [MenuItem("StepQuest/Social/Dialogue Editor")]
     public static void ShowWindow()
     {
         var window = GetWindow<DialogueEditorWindow>();

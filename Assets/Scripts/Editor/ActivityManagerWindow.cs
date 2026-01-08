@@ -8,7 +8,7 @@ using UnityEngine;
 
 public class ActivityManagerWindow : EditorWindow
 {
-    [MenuItem("StepQuest/Activity Manager")]
+    [MenuItem("StepQuest/World/Activity Manager")]
     public static void ShowWindow()
     {
         ActivityManagerWindow window = GetWindow<ActivityManagerWindow>();

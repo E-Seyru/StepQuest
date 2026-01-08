@@ -21,7 +21,7 @@ public class ClaudeContentCreator : EditorWindow
     private List<string> pendingFiles = new List<string>();
     private string lastResult = "";
 
-    [MenuItem("WalkAndRPG/Claude Content Creator")]
+    [MenuItem("StepQuest/Tools/Claude Content Creator")]
     public static void ShowWindow()
     {
         var window = GetWindow<ClaudeContentCreator>("Claude Content");

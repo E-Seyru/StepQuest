@@ -18,7 +18,7 @@ public class CombatUIBuilder : EditorWindow
     private Color panelBackgroundColor = new Color(0.6f, 0.4f, 0.3f, 1f); // Brown like original
     private int topPadding = 150; // Padding to avoid overlay
 
-    [MenuItem("WalkAndRPG/Combat UI Builder")]
+    [MenuItem("StepQuest/Combat/UI Builder")]
     public static void ShowWindow()
     {
         GetWindow<CombatUIBuilder>("Combat UI Builder");

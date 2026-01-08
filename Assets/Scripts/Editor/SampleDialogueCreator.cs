@@ -11,7 +11,7 @@ using UnityEngine;
 /// </summary>
 public class SampleDialogueCreator : EditorWindow
 {
-    [MenuItem("WalkAndRPG/Social/Create Homeless Child Content")]
+    [MenuItem("StepQuest/Social/Create Sample Content")]
     public static void CreateHomelessChildContent()
     {
         // Create ThrowRock ability first
@@ -75,7 +75,7 @@ public class SampleDialogueCreator : EditorWindow
             "OK");
     }
 
-    [MenuItem("WalkAndRPG/Social/Reset Homeless Child Flags (Debug)")]
+    [MenuItem("StepQuest/Social/Reset Sample Flags")]
     public static void ResetHomelessChildFlags()
     {
         var playerData = DataManager.Instance?.PlayerData;

@@ -9,7 +9,7 @@ using UnityEngine;
 
 public class EnemyManagerWindow : EditorWindow
 {
-    [MenuItem("WalkAndRPG/Combat/Enemy Manager")]
+    [MenuItem("StepQuest/Combat/Enemy Manager")]
     public static void ShowWindow()
     {
         EnemyManagerWindow window = GetWindow<EnemyManagerWindow>();

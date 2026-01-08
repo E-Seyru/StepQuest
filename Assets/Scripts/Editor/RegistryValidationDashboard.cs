@@ -9,7 +9,7 @@ using UnityEngine;
 
 public class RegistryValidationDashboard : EditorWindow
 {
-    [MenuItem("WalkAndRPG/Registry Validation Dashboard")]
+    [MenuItem("StepQuest/Validation/Registry Dashboard")]
     public static void ShowWindow()
     {
         var window = GetWindow<RegistryValidationDashboard>();

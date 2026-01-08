@@ -10,7 +10,7 @@ public class CombatContentCreator : EditorWindow
 {
     private Vector2 scrollPosition;
 
-    [MenuItem("WalkAndRPG/Combat Content Creator")]
+    [MenuItem("StepQuest/Combat/Content Creator")]
     public static void ShowWindow()
     {
         GetWindow<CombatContentCreator>("Combat Content");

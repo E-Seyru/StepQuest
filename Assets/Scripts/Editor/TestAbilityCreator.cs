@@ -11,7 +11,7 @@ using System.IO;
 /// </summary>
 public class TestAbilityCreator : EditorWindow
 {
-    [MenuItem("WalkAndRPG/Combat/Create Test Abilities (All Status Effects)")]
+    [MenuItem("StepQuest/Combat/Create Test Abilities")]
     public static void CreateTestAbilities()
     {
         string abilityFolder = "Assets/ScriptableObjects/Abilities";

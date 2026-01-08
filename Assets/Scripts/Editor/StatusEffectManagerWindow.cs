@@ -8,7 +8,7 @@ using UnityEngine;
 
 public class StatusEffectManagerWindow : EditorWindow
 {
-    [MenuItem("WalkAndRPG/Combat/Status Effect Manager")]
+    [MenuItem("StepQuest/Combat/Status Effect Manager")]
     public static void ShowWindow()
     {
         StatusEffectManagerWindow window = GetWindow<StatusEffectManagerWindow>();

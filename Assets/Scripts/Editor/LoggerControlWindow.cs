@@ -12,7 +12,7 @@ public class LoggerControlWindow : EditorWindow
     private bool isLoggerEnabled = true;
     private bool[] categoryEnabled;
 
-    [MenuItem("Tools/Logger Control")]
+    [MenuItem("StepQuest/Debug/Logger Control")]
     public static void ShowWindow()
     {
         var window = GetWindow<LoggerControlWindow>("Logger Control");

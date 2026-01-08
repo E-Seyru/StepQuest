@@ -15,7 +15,7 @@ public class CombatTester : EditorWindow
     private const int MAX_LOG_LINES = 50;
     private bool isSubscribed = false;
 
-    [MenuItem("WalkAndRPG/Combat Tester")]
+    [MenuItem("StepQuest/Combat/Combat Tester")]
     public static void ShowWindow()
     {
         GetWindow<CombatTester>("Combat Tester");
