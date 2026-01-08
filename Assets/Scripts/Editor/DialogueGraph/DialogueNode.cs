@@ -142,8 +142,8 @@ public class DialogueNode : Node
         outputContainer.Clear();
         ChoiceOutputPorts.Clear();
 
-        // Create input port (always present)
-        InputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(int));
+        // Create input port using InstantiatePort (recommended method for proper styling)
+        InputPort = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(float));
         InputPort.portName = "";
         InputPort.portColor = new Color(0.4f, 0.8f, 0.4f);
         inputContainer.Add(InputPort);
@@ -155,7 +155,7 @@ public class DialogueNode : Node
             for (int i = 0; i < Line.Choices.Count; i++)
             {
                 var choice = Line.Choices[i];
-                var choicePort = Port.Create<Edge>(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(int));
+                var choicePort = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(float));
 
                 // Truncate choice text for port name
                 string choiceText = choice.ChoiceText ?? "Choice";
@@ -171,7 +171,7 @@ public class DialogueNode : Node
         else if (Line == null || !Line.EndsDialogue)
         {
             // Create default "Next" output port
-            DefaultOutputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(int));
+            DefaultOutputPort = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single, typeof(float));
             DefaultOutputPort.portName = "Next";
             DefaultOutputPort.portColor = new Color(0.8f, 0.8f, 0.4f);
             outputContainer.Add(DefaultOutputPort);

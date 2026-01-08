@@ -18,6 +18,28 @@ public class NPCManagerWindow : EditorWindow
         window.Show();
     }
 
+    /// <summary>
+    /// Opens the NPC Manager window and selects the specified NPC
+    /// </summary>
+    public static void ShowWindowAndSelect(NPCDefinition npc)
+    {
+        var window = GetWindow<NPCManagerWindow>();
+        window.titleContent = new GUIContent("NPC Manager");
+        window.minSize = new Vector2(600, 500);
+        window.Show();
+
+        if (npc != null)
+        {
+            window.selectedTab = 0; // Switch to NPCs tab
+            window.searchFilter = npc.NPCID; // Set search to find the NPC
+            window.Repaint();
+
+            // Also select in Unity's Project window
+            Selection.activeObject = npc;
+            EditorGUIUtility.PingObject(npc);
+        }
+    }
+
     // Data
     private List<NPCDefinition> allNPCs = new List<NPCDefinition>();
     private NPCRegistry npcRegistry;

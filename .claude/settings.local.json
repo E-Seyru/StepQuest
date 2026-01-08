@@ -15,7 +15,9 @@
       "Bash(^d \")",
       "Bash(powershell.exe -ExecutionPolicy Bypass -File .ReplaceDebugLogs.ps1)",
       "Bash(findstr:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(del \"c:\\\\Users\\\\wilhe\\\\OneDrive\\\\Desktop\\\\Projets Unit\\\\StepQuest\\\\Assets\\\\Scripts\\\\Editor\\\\MapGraph\\\\MapGraphStyles.uss\")",
+      "Bash(del /f \"c:\\\\Users\\\\wilhe\\\\OneDrive\\\\Desktop\\\\Projets Unit\\\\StepQuest\\\\Assets\\\\Scripts\\\\Editor\\\\MapGraph\\\\MapGraphStyles.uss\")"
     ],
     "deny": [],
     "ask": []

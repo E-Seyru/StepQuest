@@ -16,6 +16,27 @@ public class ActivityManagerWindow : EditorWindow
         window.Show();
     }
 
+    /// <summary>
+    /// Opens the Activity Manager window and selects the specified activity definition
+    /// </summary>
+    public static void ShowWindowAndSelect(ActivityDefinition activity)
+    {
+        var window = GetWindow<ActivityManagerWindow>();
+        window.titleContent = new GUIContent("Activity Manager");
+        window.Show();
+
+        if (activity != null)
+        {
+            window.selectedTab = 0; // Switch to Activities tab
+            window.searchFilter = activity.ActivityName; // Set search to find the activity
+            window.Repaint();
+
+            // Also select in Unity's Project window
+            Selection.activeObject = activity;
+            EditorGUIUtility.PingObject(activity);
+        }
+    }
+
     // Data
     private ActivityRegistry activityRegistry;
     private LocationRegistry locationRegistry;

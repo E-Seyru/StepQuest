@@ -15,7 +15,8 @@ MonoBehaviour:
   LocationID: foret_01
   DisplayName: Foret
   Description: Une foret tout ce qu'il y a de plus simple.
-  LongDescription: Une foret dense et mysterieuse. On y trouve du bois de qualite et diverses plantes sauvages.
+  LongDescription: Une foret dense et mysterieuse. On y trouve du bois de qualite
+    et diverses plantes sauvages.
   LocationImage: {fileID: 21300000, guid: 8064a9e5f68066a43a3b7ead784e6ef9, type: 3}
   LocationThemeColor: {r: 1, g: 1, b: 1, a: 1}
   Connections:
@@ -33,6 +34,10 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
+    LocationSilhouetteIcon: {fileID: 0}
+    IsHidden: 0
+    Rarity: 0
+    BonusXPOverride: 0
   - ActivityReference: {fileID: 11400000, guid: 43a05e7a60d120b4fb921b61737299b4, type: 2}
     LocationSpecificName: 
     LocationDescription: 
@@ -42,13 +47,22 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
+    LocationSilhouetteIcon: {fileID: 0}
+    IsHidden: 0
+    Rarity: 0
+    BonusXPOverride: 0
   AvailableEnemies:
   - EnemyReference: {fileID: 11400000, guid: b97d4a4ce4c7a4640b9832cfa9f63bd6, type: 2}
     IsAvailable: 1
     MinimumRequirement: 0
     Requirements: 
+    IsHidden: 0
+    Rarity: 0
+    BonusXPOverride: 0
+  AvailableNPCs: []
   LocationIcon: {fileID: 21300000, guid: 32af71dbf20033647b2f01e9e722d654, type: 3}
   POIColor: {r: 1, g: 1, b: 1, a: 1}
   IsAccessible: 1
   UnlockRequirement: 0
   DeveloperNotes: 
+  EditorPosition: {x: 121, y: 105}

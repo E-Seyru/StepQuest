@@ -64,6 +64,13 @@ public class MapLocationDefinition : ScriptableObject
     [TextArea(1, 3)]
     public string DeveloperNotes;
 
+#if UNITY_EDITOR
+    [Header("Editor Graph")]
+    [HideInInspector]
+    [Tooltip("Position in the Map Editor graph (editor-only)")]
+    public Vector2 EditorPosition = Vector2.zero;
+#endif
+
     /// <summary>
     /// Get all valid activities available at this location
     /// </summary>

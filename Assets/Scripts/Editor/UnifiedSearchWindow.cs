@@ -13,8 +13,8 @@ using UnityEngine;
 /// </summary>
 public class UnifiedSearchWindow : EditorWindow
 {
-    // Keyboard shortcut: Ctrl+Shift+F
-    [MenuItem("StepQuest/Unified Search %#f")]
+    // Keyboard shortcut: Ctrl+Alt+F
+    [MenuItem("StepQuest/Unified Search %&f")]
     public static void ShowWindow()
     {
         var window = GetWindow<UnifiedSearchWindow>();
@@ -23,6 +23,28 @@ public class UnifiedSearchWindow : EditorWindow
         window.Show();
         window.Focus();
         window.FocusSearchField();
+    }
+
+    /// <summary>
+    /// Opens the search window with a pre-filled query
+    /// </summary>
+    public static void OpenWithQuery(string query)
+    {
+        var window = GetWindow<UnifiedSearchWindow>();
+        window.titleContent = new GUIContent("Unified Search");
+        window.minSize = new Vector2(400, 500);
+        window.Show();
+        window.Focus();
+
+        if (!string.IsNullOrEmpty(query))
+        {
+            window.searchQuery = query;
+            window.PerformSearch();
+        }
+        else
+        {
+            window.FocusSearchField();
+        }
     }
 
     // Registries

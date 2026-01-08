@@ -18,6 +18,28 @@ public class EnemyManagerWindow : EditorWindow
         window.Show();
     }
 
+    /// <summary>
+    /// Opens the Enemy Manager window and selects the specified enemy
+    /// </summary>
+    public static void ShowWindowAndSelect(EnemyDefinition enemy)
+    {
+        var window = GetWindow<EnemyManagerWindow>();
+        window.titleContent = new GUIContent("Enemy Manager");
+        window.minSize = new Vector2(550, 450);
+        window.Show();
+
+        if (enemy != null)
+        {
+            window.selectedTab = 0; // Switch to Enemies tab
+            window.searchFilter = enemy.EnemyID; // Set search to find the enemy
+            window.Repaint();
+
+            // Also select in Unity's Project window
+            Selection.activeObject = enemy;
+            EditorGUIUtility.PingObject(enemy);
+        }
+    }
+
     // Data
     private List<EnemyDefinition> allEnemies = new List<EnemyDefinition>();
     private AbilityRegistry abilityRegistry;

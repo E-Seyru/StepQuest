@@ -19,11 +19,11 @@ MonoBehaviour:
   LocationImage: {fileID: 21300000, guid: 2166f399caff28540bb8e7dc8b915169, type: 3}
   LocationThemeColor: {r: 1, g: 1, b: 1, a: 1}
   Connections:
-  - DestinationLocationID: mine_01
+  - DestinationLocationID: village_01
     StepCost: 50
     IsAvailable: 1
     Requirements: 
-  - DestinationLocationID: village_01
+  - DestinationLocationID: mine_01
     StepCost: 50
     IsAvailable: 1
     Requirements: 
@@ -36,8 +36,15 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
+    LocationSilhouetteIcon: {fileID: 0}
+    IsHidden: 0
+    Rarity: 0
+    BonusXPOverride: 0
+  AvailableEnemies: []
+  AvailableNPCs: []
   LocationIcon: {fileID: 21300000, guid: 018c2d615854e2942a219a43b15a25c8, type: 3}
   POIColor: {r: 1, g: 1, b: 1, a: 1}
   IsAccessible: 1
   UnlockRequirement: 0
   DeveloperNotes: 
+  EditorPosition: {x: 462, y: 657}
