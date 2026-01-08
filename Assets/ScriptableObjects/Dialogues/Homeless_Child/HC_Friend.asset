@@ -57,9 +57,13 @@ MonoBehaviour:
     Text: Je suis content d'avoir un ami comme vous. Revenez vite !
     Emotion: 8
     Choices: []
-    EndsDialogue: 0
+    EndsDialogue: 1
     ShowReward: 0
   FlagsToSetOnCompletion: []
   AbilityToGrantOnCompletion: 
   ItemsToGrantOnCompletion: []
   DeveloperNotes: After playing rocks together. They are friends now!
+  nodePositions:
+  - LineIndex: 0
+    X: 400
+    Y: 1609

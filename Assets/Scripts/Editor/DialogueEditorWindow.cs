@@ -27,7 +27,7 @@ public class DialogueEditorWindow : EditorWindow
     private List<NPCDefinition> allNPCs = new List<NPCDefinition>();
     private Vector2 scrollPosition;
     private int selectedTab = 0;
-    private readonly string[] tabNames = { "Dialogues", "Create Dialogue", "NPC Assignment", "Validation" };
+    private readonly string[] tabNames = { "Dialogues", "Create Dialogue", "NPC Assignment", "Validation", "Tree View" };
     private string searchFilter = "";
 
     // Create state
@@ -73,6 +73,9 @@ public class DialogueEditorWindow : EditorWindow
                 break;
             case 3:
                 DrawValidationTab();
+                break;
+            case 4:
+                DrawTreeViewTab();
                 break;
         }
 
@@ -499,6 +502,121 @@ public class DialogueEditorWindow : EditorWindow
                 RefreshNPCList();
             }
         }
+    }
+
+    // === TREE VIEW TAB ===
+
+    private void DrawTreeViewTab()
+    {
+        EditorGUILayout.LabelField("Visual Dialogue Tree Editor", EditorStyles.boldLabel);
+        EditorGUILayout.Space();
+
+        EditorGUILayout.HelpBox(
+            "The Tree View shows ALL dialogues for an NPC in a single graph.\n" +
+            "Each dialogue appears as a separate tree with a colored header.\n" +
+            "Select an NPC below and click 'Open Graph' to view and edit all their dialogues.",
+            MessageType.Info);
+
+        EditorGUILayout.Space();
+
+        // Search filter
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Search:", GUILayout.Width(50));
+        searchFilter = EditorGUILayout.TextField(searchFilter);
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.Space();
+
+        // List NPCs with dialogue counts
+        var filteredNPCs = allNPCs
+            .Where(n => string.IsNullOrEmpty(searchFilter) ||
+                        n.NPCID.ToLower().Contains(searchFilter.ToLower()) ||
+                        n.NPCName.ToLower().Contains(searchFilter.ToLower()))
+            .OrderBy(n => n.GetDisplayName())
+            .ToList();
+
+        EditorGUILayout.LabelField($"Showing {filteredNPCs.Count} NPCs", EditorStyles.miniLabel);
+        EditorGUILayout.Space();
+
+        foreach (var npc in filteredNPCs)
+        {
+            DrawTreeViewNPCEntry(npc);
+        }
+
+        if (filteredNPCs.Count == 0)
+        {
+            EditorGUILayout.HelpBox("No NPCs found. Create some using WalkAndRPG > Social > NPC Manager.", MessageType.Info);
+        }
+
+        EditorGUILayout.Space();
+
+        // Quick open standalone window button
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.FlexibleSpace();
+        if (GUILayout.Button("Open Standalone Graph Editor", GUILayout.Height(25), GUILayout.Width(200)))
+        {
+            DialogueGraphWindow.ShowWindow();
+        }
+        GUILayout.FlexibleSpace();
+        EditorGUILayout.EndHorizontal();
+    }
+
+    private void DrawTreeViewNPCEntry(NPCDefinition npc)
+    {
+        int dialogueCount = npc.Dialogues?.Count(d => d != null) ?? 0;
+        int totalLines = npc.Dialogues?.Where(d => d != null).Sum(d => d.Lines?.Count ?? 0) ?? 0;
+        bool hasDialogues = dialogueCount > 0;
+
+        GUI.backgroundColor = hasDialogues ? Color.white : new Color(1f, 0.9f, 0.8f);
+        EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+        GUI.backgroundColor = Color.white;
+
+        // NPC avatar (small preview)
+        if (npc.Avatar != null)
+        {
+            GUILayout.Label(npc.Avatar.texture, GUILayout.Width(32), GUILayout.Height(32));
+        }
+        else
+        {
+            GUILayout.Label("", GUILayout.Width(32), GUILayout.Height(32));
+        }
+
+        // NPC info
+        EditorGUILayout.BeginVertical();
+
+        EditorGUILayout.LabelField(npc.GetDisplayName(), EditorStyles.boldLabel);
+
+        // Dialogue stats
+        string statsText;
+        if (hasDialogues)
+        {
+            int branchCount = npc.Dialogues
+                .Where(d => d != null && d.Lines != null)
+                .Sum(d => d.Lines.Count(l => l.HasChoices));
+            statsText = $"{dialogueCount} dialogue(s), {totalLines} lines, {branchCount} branches";
+        }
+        else
+        {
+            statsText = "No dialogues";
+        }
+
+        GUIStyle statsStyle = new GUIStyle(EditorStyles.miniLabel);
+        statsStyle.normal.textColor = hasDialogues ? new Color(0.6f, 0.6f, 0.6f) : new Color(0.8f, 0.5f, 0.3f);
+        EditorGUILayout.LabelField(statsText, statsStyle);
+
+        EditorGUILayout.EndVertical();
+
+        GUILayout.FlexibleSpace();
+
+        // Open Graph button
+        EditorGUI.BeginDisabledGroup(!hasDialogues);
+        if (GUILayout.Button("Open Graph", GUILayout.Width(90), GUILayout.Height(30)))
+        {
+            DialogueGraphWindow.OpenForNPC(npc);
+        }
+        EditorGUI.EndDisabledGroup();
+
+        EditorGUILayout.EndHorizontal();
     }
 
     // === DATA LOADING ===

@@ -63,10 +63,26 @@ MonoBehaviour:
     Text: Merci de m'avoir regarde. Revenez me voir si vous voulez !
     Emotion: 1
     Choices: []
-    EndsDialogue: 0
+    EndsDialogue: 1
     ShowReward: 0
   FlagsToSetOnCompletion:
   - HC_HasMet
   AbilityToGrantOnCompletion: 
   ItemsToGrantOnCompletion: []
   DeveloperNotes: First meeting. Sets HC_HasMet flag.
+  nodePositions:
+  - LineIndex: 0
+    X: 400
+    Y: 230
+  - LineIndex: 1
+    X: 508
+    Y: 0
+  - LineIndex: 2
+    X: 1306
+    Y: 339
+  - LineIndex: 3
+    X: 1034
+    Y: 0
+  - LineIndex: 4
+    X: 2000
+    Y: 230

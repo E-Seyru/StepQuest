@@ -27,9 +27,13 @@ MonoBehaviour:
     Text: Bonjour voyageur. C'est gentil de passer me voir.
     Emotion: 0
     Choices: []
-    EndsDialogue: 0
+    EndsDialogue: 1
     ShowReward: 0
   FlagsToSetOnCompletion: []
   AbilityToGrantOnCompletion: 
   ItemsToGrantOnCompletion: []
   DeveloperNotes: Fallback dialogue. Should rarely play due to other dialogues.
+  nodePositions:
+  - LineIndex: 1
+    X: 800
+    Y: 2260

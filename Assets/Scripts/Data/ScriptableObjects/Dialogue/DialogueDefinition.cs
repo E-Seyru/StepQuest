@@ -117,6 +117,88 @@ public class DialogueDefinition : ScriptableObject
         if (Lines == null) Lines = new List<DialogueLine>();
         if (FlagsToSetOnCompletion == null) FlagsToSetOnCompletion = new List<string>();
         if (ItemsToGrantOnCompletion == null) ItemsToGrantOnCompletion = new List<DialogueItemReward>();
+        if (nodePositions == null) nodePositions = new List<DialogueNodePosition>();
     }
+
+    #region Graph Editor Metadata
+
+    /// <summary>
+    /// Stores node positions for the graph editor (editor-only)
+    /// </summary>
+    [System.Serializable]
+    public class DialogueNodePosition
+    {
+        public int LineIndex;
+        public float X;
+        public float Y;
+    }
+
+    [HideInInspector]
+    [SerializeField] private List<DialogueNodePosition> nodePositions = new List<DialogueNodePosition>();
+
+    /// <summary>
+    /// Set the position of a dialogue line node in the graph editor
+    /// </summary>
+    public void SetNodePosition(int lineIndex, Vector2 position)
+    {
+        var existing = nodePositions.Find(p => p.LineIndex == lineIndex);
+        if (existing != null)
+        {
+            existing.X = position.x;
+            existing.Y = position.y;
+        }
+        else
+        {
+            nodePositions.Add(new DialogueNodePosition { LineIndex = lineIndex, X = position.x, Y = position.y });
+        }
+    }
+
+    /// <summary>
+    /// Get the position of a dialogue line node in the graph editor
+    /// </summary>
+    public Vector2 GetNodePosition(int lineIndex)
+    {
+        var existing = nodePositions.Find(p => p.LineIndex == lineIndex);
+        return existing != null ? new Vector2(existing.X, existing.Y) : Vector2.zero;
+    }
+
+    /// <summary>
+    /// Check if a node has a saved position
+    /// </summary>
+    public bool HasNodePosition(int lineIndex)
+    {
+        return nodePositions.Exists(p => p.LineIndex == lineIndex);
+    }
+
+    /// <summary>
+    /// Clear all saved node positions
+    /// </summary>
+    public void ClearNodePositions()
+    {
+        nodePositions.Clear();
+    }
+
+    /// <summary>
+    /// Remove position for a specific line index
+    /// </summary>
+    public void RemoveNodePosition(int lineIndex)
+    {
+        nodePositions.RemoveAll(p => p.LineIndex == lineIndex);
+    }
+
+    /// <summary>
+    /// Update line indices after a line is removed (shifts indices down)
+    /// </summary>
+    public void OnLineRemoved(int removedIndex)
+    {
+        nodePositions.RemoveAll(p => p.LineIndex == removedIndex);
+        foreach (var pos in nodePositions)
+        {
+            if (pos.LineIndex > removedIndex)
+                pos.LineIndex--;
+        }
+    }
+
+    #endregion
 #endif
 }

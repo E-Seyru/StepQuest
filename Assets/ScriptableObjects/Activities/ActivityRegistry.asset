@@ -23,6 +23,7 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
+    LocationSilhouetteIcon: {fileID: 0}
     IsHidden: 0
     Rarity: 0
     BonusXPOverride: 0
@@ -35,6 +36,7 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
+    LocationSilhouetteIcon: {fileID: 0}
     IsHidden: 0
     Rarity: 0
     BonusXPOverride: 0
@@ -47,6 +49,7 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
+    LocationSilhouetteIcon: {fileID: 0}
     IsHidden: 0
     Rarity: 0
     BonusXPOverride: 0
@@ -60,6 +63,7 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
+    LocationSilhouetteIcon: {fileID: 0}
     IsHidden: 0
     Rarity: 0
     BonusXPOverride: 0
@@ -71,6 +75,7 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
+    LocationSilhouetteIcon: {fileID: 0}
     IsHidden: 0
     Rarity: 0
     BonusXPOverride: 0
@@ -81,6 +86,7 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
+    LocationSilhouetteIcon: {fileID: 0}
     IsHidden: 0
     Rarity: 0
     BonusXPOverride: 0
@@ -91,6 +97,7 @@ MonoBehaviour:
     IsAvailable: 1
     SpecialRequirements: 
     LocationSpecificIcon: {fileID: 0}
+    LocationSilhouetteIcon: {fileID: 0}
     IsHidden: 0
     Rarity: 0
     BonusXPOverride: 0

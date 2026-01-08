@@ -1,0 +1,66 @@
+/* Purpose: USS stylesheet for DialogueGraphView - edge visibility fix */
+/* Filepath: Assets/Scripts/Editor/DialogueGraph/DialogueGraphStyles.uss */
+
+/* CRITICAL: Edge visibility styling */
+Edge {
+    --edge-color: rgb(180, 180, 180);
+    --edge-width: 2;
+    --selected-edge-color: rgb(68, 192, 255);
+    --ghost-edge-color: rgb(100, 100, 100);
+}
+
+Edge:hover {
+    --edge-color: rgb(220, 220, 220);
+}
+
+Edge:selected {
+    --edge-color: rgb(68, 192, 255);
+}
+
+/* EdgeControl is the actual rendered curve */
+EdgeControl {
+    stroke-color: rgb(180, 180, 180);
+    stroke-width: 2px;
+}
+
+/* Alternative selectors that Unity might use */
+.edge {
+    --edge-color: rgb(180, 180, 180);
+    --edge-width: 2;
+}
+
+#edge {
+    stroke-color: rgb(180, 180, 180);
+    stroke-width: 2px;
+}
+
+/* Grid background */
+GridBackground {
+    --grid-background-color: rgb(40, 40, 40);
+    --line-color: rgba(60, 60, 60, 0.4);
+    --thick-line-color: rgba(80, 80, 80, 0.8);
+    --spacing: 20;
+}
+
+/* Node styling */
+.node {
+    min-width: 200px;
+}
+
+/* Port styling */
+Port {
+    height: 24px;
+}
+
+Port > #connector {
+    border-color: rgb(100, 100, 100);
+    background-color: rgb(80, 80, 80);
+    border-radius: 8px;
+    width: 12px;
+    height: 12px;
+}
+
+Port > #connector:hover {
+    border-color: rgb(150, 150, 150);
+    background-color: rgb(120, 120, 120);
+}

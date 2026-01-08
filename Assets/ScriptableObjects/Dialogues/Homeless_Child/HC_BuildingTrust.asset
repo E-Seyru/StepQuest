@@ -67,10 +67,26 @@ MonoBehaviour:
     Text: Peut-etre qu'un jour... on pourrait jouer ensemble ?
     Emotion: 7
     Choices: []
-    EndsDialogue: 0
+    EndsDialogue: 1
     ShowReward: 0
   FlagsToSetOnCompletion:
   - HC_TalkedTwice
   AbilityToGrantOnCompletion: 
   ItemsToGrantOnCompletion: []
   DeveloperNotes: Second meeting. Child starts warming up.
+  nodePositions:
+  - LineIndex: 0
+    X: 384
+    Y: 614
+  - LineIndex: 1
+    X: 787
+    Y: 865
+  - LineIndex: 4
+    X: 1914
+    Y: 535
+  - LineIndex: 3
+    X: 1620
+    Y: 535
+  - LineIndex: 2
+    X: 1199
+    Y: 680

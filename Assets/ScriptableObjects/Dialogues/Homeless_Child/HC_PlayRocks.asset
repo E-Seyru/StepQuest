@@ -93,9 +93,16 @@ MonoBehaviour:
     Text: Oh... d'accord. Peut-etre une autre fois alors.
     Emotion: 2
     Choices: []
-    EndsDialogue: 0
+    EndsDialogue: 1
     ShowReward: 0
   FlagsToSetOnCompletion: []
   AbilityToGrantOnCompletion: 
   ItemsToGrantOnCompletion: []
   DeveloperNotes: Child offers to play! Grants ThrowRock ability if player agrees.
+  nodePositions:
+  - LineIndex: 2
+    X: 1200
+    Y: 1130
+  - LineIndex: 8
+    X: 2000
+    Y: 1360
