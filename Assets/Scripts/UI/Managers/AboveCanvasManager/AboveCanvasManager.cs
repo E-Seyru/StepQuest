@@ -65,6 +65,7 @@ public class AboveCanvasManager : MonoBehaviour
     [SerializeField] private RectTransform travelPathContainer; // Container with HorizontalLayoutGroup for travel path
     [SerializeField] private GameObject locationIconPrefab; // Prefab for location icons in path
     [SerializeField] private GameObject arrowPrefab; // Prefab for arrows between locations
+    [SerializeField] private Sprite ellipsisSprite; // Sprite for "..." when path has 4+ locations
     [SerializeField] private Vector2 locationIconSize = new Vector2(50f, 50f); // Size of location icons in travel path
     [SerializeField] private Vector2 arrowSize = new Vector2(30f, 30f); // Size of arrows in travel path
 
@@ -219,6 +220,7 @@ public class AboveCanvasManager : MonoBehaviour
     public RectTransform TravelPathContainer => travelPathContainer;
     public GameObject LocationIconPrefab => locationIconPrefab;
     public GameObject ArrowPrefab => arrowPrefab;
+    public Sprite EllipsisSprite => ellipsisSprite;
     public Vector2 LocationIconSize => locationIconSize;
     public Vector2 ArrowSize => arrowSize;
     // Pop Settings Accessors (Reward Animation)

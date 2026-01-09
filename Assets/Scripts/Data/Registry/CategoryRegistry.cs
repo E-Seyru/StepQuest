@@ -101,15 +101,64 @@ public class CategoryRegistry : ScriptableObject
         }
     }
 
+    /// <summary>
+    /// Clean null and duplicate references
+    /// </summary>
+    public int CleanNullReferences()
+    {
+        if (categories == null) return 0;
+
+        int removedCount = 0;
+        var seenIds = new HashSet<string>();
+
+        for (int i = categories.Count - 1; i >= 0; i--)
+        {
+            var category = categories[i];
+
+            if (category == null)
+            {
+                categories.RemoveAt(i);
+                removedCount++;
+                continue;
+            }
+
+            if (!string.IsNullOrEmpty(category.CategoryID))
+            {
+                if (seenIds.Contains(category.CategoryID.ToLower()))
+                {
+                    categories.RemoveAt(i);
+                    removedCount++;
+                    continue;
+                }
+                seenIds.Add(category.CategoryID.ToLower());
+            }
+        }
+
+        if (removedCount > 0)
+        {
+            isCacheValid = false;
+        }
+
+        return removedCount;
+    }
+
     private void OnEnable()
     {
+        CleanNullReferences();
         isCacheValid = false;
     }
 
 #if UNITY_EDITOR
     private void OnValidate()
     {
-        isCacheValid = false;
+        UnityEditor.EditorApplication.delayCall += () =>
+        {
+            if (this != null)
+            {
+                CleanNullReferences();
+                isCacheValid = false;
+            }
+        };
     }
 #endif
 }

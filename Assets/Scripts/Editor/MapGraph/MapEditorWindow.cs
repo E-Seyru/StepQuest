@@ -14,6 +14,12 @@ using UnityEngine.UIElements;
 /// </summary>
 public class MapEditorWindow : EditorWindow
 {
+    // EditorPrefs keys
+    private const string PREF_BG_OPACITY = "MapEditor_BackgroundOpacity";
+    private const string PREF_BG_SCALE = "MapEditor_BackgroundScale";
+    private const string PREF_BG_SHOW = "MapEditor_ShowBackground";
+    private const string PREF_SHOW_LABELS = "MapEditor_ShowLabels";
+
     // Data
     private LocationRegistry locationRegistry;
     private MapGraphView graphView;
@@ -74,6 +80,10 @@ public class MapEditorWindow : EditorWindow
         {
             graphView.LoadRegistry(locationRegistry);
             graphView.LoadBackgroundImage(); // Load world map background
+
+            // Apply saved background settings
+            ApplySavedBackgroundSettings();
+
             UpdateStats();
         }
         else
@@ -97,6 +107,15 @@ public class MapEditorWindow : EditorWindow
 
         toolbar.Add(new ToolbarSpacer());
 
+        // Create POI button
+        var createPOIButton = new ToolbarButton(OnCreatePOI);
+        createPOIButton.text = "+ Create POI";
+        createPOIButton.tooltip = "Create a new POI with a new location";
+        createPOIButton.style.backgroundColor = new Color(0.2f, 0.5f, 0.3f);
+        toolbar.Add(createPOIButton);
+
+        toolbar.Add(new ToolbarSpacer());
+
         // Auto-Layout button
         var autoLayoutButton = new ToolbarButton(OnAutoLayout);
         autoLayoutButton.text = "Auto-Layout";
@@ -113,11 +132,12 @@ public class MapEditorWindow : EditorWindow
 
         // Show Labels toggle
         showLabelsToggle = new Toggle("Labels");
-        showLabelsToggle.value = true;
+        showLabelsToggle.value = EditorPrefs.GetBool(PREF_SHOW_LABELS, true);
         showLabelsToggle.tooltip = "Show/hide step cost labels on connections";
         showLabelsToggle.RegisterValueChangedCallback(evt =>
         {
             graphView?.SetShowLabels(evt.newValue);
+            EditorPrefs.SetBool(PREF_SHOW_LABELS, evt.newValue);
         });
         toolbar.Add(showLabelsToggle);
 
@@ -133,13 +153,14 @@ public class MapEditorWindow : EditorWindow
 
         // Show Background toggle
         showBackgroundToggle = new Toggle("Show");
-        showBackgroundToggle.value = true;
+        showBackgroundToggle.value = EditorPrefs.GetBool(PREF_BG_SHOW, true);
         showBackgroundToggle.tooltip = "Show/hide world map background";
         showBackgroundToggle.RegisterValueChangedCallback(evt =>
         {
             graphView?.SetShowBackground(evt.newValue);
             opacitySlider.SetEnabled(evt.newValue);
             scaleSlider.SetEnabled(evt.newValue);
+            EditorPrefs.SetBool(PREF_BG_SHOW, evt.newValue);
         });
         toolbar.Add(showBackgroundToggle);
 
@@ -154,12 +175,13 @@ public class MapEditorWindow : EditorWindow
         opacityContainer.Add(opacityLabel);
 
         opacitySlider = new Slider(0.1f, 1f);
-        opacitySlider.value = 0.5f;
+        opacitySlider.value = EditorPrefs.GetFloat(PREF_BG_OPACITY, 0.5f);
         opacitySlider.style.width = 80;
         opacitySlider.tooltip = "Background image opacity";
         opacitySlider.RegisterValueChangedCallback(evt =>
         {
             graphView?.SetBackgroundOpacity(evt.newValue);
+            EditorPrefs.SetFloat(PREF_BG_OPACITY, evt.newValue);
         });
         opacityContainer.Add(opacitySlider);
         toolbar.Add(opacityContainer);
@@ -175,12 +197,13 @@ public class MapEditorWindow : EditorWindow
         scaleContainer.Add(scaleLabel);
 
         scaleSlider = new Slider(0.2f, 3f);
-        scaleSlider.value = 1f;
+        scaleSlider.value = EditorPrefs.GetFloat(PREF_BG_SCALE, 1f);
         scaleSlider.style.width = 80;
         scaleSlider.tooltip = "Background image scale";
         scaleSlider.RegisterValueChangedCallback(evt =>
         {
             graphView?.SetBackgroundScale(evt.newValue);
+            EditorPrefs.SetFloat(PREF_BG_SCALE, evt.newValue);
         });
         scaleContainer.Add(scaleSlider);
         toolbar.Add(scaleContainer);
@@ -350,8 +373,16 @@ public class MapEditorWindow : EditorWindow
             EditorGUIUtility.PingObject(location);
         });
         openButton.text = "Open in Inspector";
-        openButton.style.marginBottom = 12;
+        openButton.style.marginBottom = 8;
         inspectorContent.Add(openButton);
+
+        // Delete POI button
+        var deleteButton = new Button(() => ShowDeletePOIConfirmation(location));
+        deleteButton.text = "Delete POI";
+        deleteButton.style.backgroundColor = new Color(0.6f, 0.2f, 0.2f);
+        deleteButton.style.marginBottom = 12;
+        deleteButton.tooltip = "Delete this POI, its connections, and the scene GameObject";
+        inspectorContent.Add(deleteButton);
 
         // Separator
         AddSeparator();
@@ -835,6 +866,37 @@ public class MapEditorWindow : EditorWindow
         }
     }
 
+    private void OnCreatePOI()
+    {
+        if (locationRegistry == null)
+        {
+            EditorUtility.DisplayDialog("No Registry", "No LocationRegistry found. Create one first.", "OK");
+            return;
+        }
+
+        // Open the POI creation popup
+        CreatePOIPopup.Show(locationRegistry, OnPOICreated);
+    }
+
+    private void OnPOICreated(string locationId)
+    {
+        // Reload the graph view to show the new node
+        graphView.LoadRegistry(locationRegistry);
+        UpdateStats();
+
+        // Select and frame the new node
+        var newNode = graphView.GetNodeByLocationId(locationId);
+        if (newNode != null)
+        {
+            graphView.ClearSelection();
+            graphView.AddToSelection(newNode);
+            graphView.FrameSelection();
+            SelectNode(newNode);
+        }
+
+        SetStatus($"Created POI '{locationId}'");
+    }
+
     private void OnGraphModified()
     {
         UpdateStats();
@@ -868,6 +930,83 @@ public class MapEditorWindow : EditorWindow
         if (statusLabel != null)
         {
             statusLabel.text = message;
+        }
+    }
+
+    private void ApplySavedBackgroundSettings()
+    {
+        if (graphView == null) return;
+
+        // Apply saved values to the graph view
+        float opacity = EditorPrefs.GetFloat(PREF_BG_OPACITY, 0.5f);
+        float scale = EditorPrefs.GetFloat(PREF_BG_SCALE, 1f);
+        bool showBg = EditorPrefs.GetBool(PREF_BG_SHOW, true);
+        bool showLabels = EditorPrefs.GetBool(PREF_SHOW_LABELS, true);
+
+        graphView.SetBackgroundOpacity(opacity);
+        graphView.SetBackgroundScale(scale);
+        graphView.SetShowBackground(showBg);
+        graphView.SetShowLabels(showLabels);
+
+        // Update slider enabled states
+        opacitySlider?.SetEnabled(showBg);
+        scaleSlider?.SetEnabled(showBg);
+    }
+
+    private void ShowDeletePOIConfirmation(MapLocationDefinition location)
+    {
+        if (location == null) return;
+
+        // Count connections that will be removed
+        int outgoingConnections = location.Connections?.Count ?? 0;
+        int incomingConnections = 0;
+
+        if (locationRegistry?.AllLocations != null)
+        {
+            foreach (var otherLoc in locationRegistry.AllLocations.Where(l => l != null && l != location))
+            {
+                if (otherLoc.Connections?.Any(c => c?.DestinationLocationID == location.LocationID) == true)
+                {
+                    incomingConnections++;
+                }
+            }
+        }
+
+        string message = $"Delete POI '{location.DisplayName}'?\n\n" +
+                        $"This will:\n" +
+                        $"- Remove {outgoingConnections} outgoing connection(s)\n" +
+                        $"- Remove {incomingConnections} incoming connection(s)\n" +
+                        $"- Delete the POI GameObject from the scene\n\n" +
+                        $"Do you also want to delete the MapLocationDefinition asset?";
+
+        int choice = EditorUtility.DisplayDialogComplex(
+            "Delete POI",
+            message,
+            "Delete POI Only",      // Option 0 - keep the location asset
+            "Cancel",               // Option 1 - cancel
+            "Delete POI & Asset"    // Option 2 - delete everything including asset
+        );
+
+        if (choice == 1) return; // Cancel
+
+        bool deleteAsset = (choice == 2);
+        string locationId = location.LocationID;
+
+        if (MapGraphUtility.DeletePOI(locationId, locationRegistry, deleteAsset))
+        {
+            // Clear selection since the node is gone
+            ClearSelection();
+
+            // Reload the graph view
+            graphView.LoadRegistry(locationRegistry);
+            UpdateStats();
+
+            string assetInfo = deleteAsset ? " and its asset" : "";
+            SetStatus($"Deleted POI '{locationId}'{assetInfo}");
+        }
+        else
+        {
+            EditorUtility.DisplayDialog("Delete Failed", $"Failed to delete POI '{locationId}'. Check the console for details.", "OK");
         }
     }
 

@@ -426,5 +426,147 @@ public static class MapGraphUtility
         }
         return null;
     }
+
+    /// <summary>
+    /// Delete a POI and all its connections.
+    /// This removes:
+    /// - All connections FROM this location
+    /// - All connections TO this location (from other locations)
+    /// - The POI GameObject from the scene
+    /// - Optionally the MapLocationDefinition from the registry
+    /// </summary>
+    /// <param name="locationId">The location ID to delete</param>
+    /// <param name="registry">The location registry</param>
+    /// <param name="deleteLocationAsset">If true, also deletes the MapLocationDefinition ScriptableObject</param>
+    /// <returns>True if deletion was successful</returns>
+    public static bool DeletePOI(string locationId, LocationRegistry registry, bool deleteLocationAsset = false)
+    {
+        if (string.IsNullOrEmpty(locationId) || registry == null)
+        {
+            Logger.LogWarning("DeletePOI: Invalid locationId or registry", Logger.LogCategory.EditorLog);
+            return false;
+        }
+
+        var location = registry.GetLocationById(locationId);
+        if (location == null)
+        {
+            Logger.LogWarning($"DeletePOI: Location '{locationId}' not found in registry", Logger.LogCategory.EditorLog);
+            return false;
+        }
+
+        // Track what we're doing for undo
+        Undo.SetCurrentGroupName($"Delete POI {locationId}");
+        int undoGroup = Undo.GetCurrentGroup();
+
+        try
+        {
+            // 1. Remove all connections TO this location from other locations
+            int removedIncomingConnections = 0;
+            foreach (var otherLocation in registry.AllLocations.Where(l => l != null && l.LocationID != locationId))
+            {
+                if (otherLocation.Connections != null)
+                {
+                    int removed = otherLocation.Connections.RemoveAll(c => c?.DestinationLocationID == locationId);
+                    if (removed > 0)
+                    {
+                        removedIncomingConnections += removed;
+                        EditorUtility.SetDirty(otherLocation);
+                    }
+                }
+            }
+
+            // 2. Clear connections FROM this location (already handled by deleting, but be explicit)
+            int removedOutgoingConnections = location.Connections?.Count ?? 0;
+            if (location.Connections != null)
+            {
+                location.Connections.Clear();
+                EditorUtility.SetDirty(location);
+            }
+
+            // 3. Find and delete the POI GameObject in the scene
+            bool deletedGameObject = DeletePOIGameObject(locationId);
+
+            // 4. Remove from registry if requested
+            if (deleteLocationAsset)
+            {
+                registry.AllLocations.Remove(location);
+                EditorUtility.SetDirty(registry);
+
+                // Delete the asset file
+                string assetPath = AssetDatabase.GetAssetPath(location);
+                if (!string.IsNullOrEmpty(assetPath))
+                {
+                    AssetDatabase.DeleteAsset(assetPath);
+                }
+            }
+
+            AssetDatabase.SaveAssets();
+
+            Logger.LogInfo($"DeletePOI: Deleted '{locationId}' - Removed {removedIncomingConnections} incoming connections, {removedOutgoingConnections} outgoing connections, GameObject deleted: {deletedGameObject}", Logger.LogCategory.EditorLog);
+
+            Undo.CollapseUndoOperations(undoGroup);
+            return true;
+        }
+        catch (System.Exception ex)
+        {
+            Logger.LogError($"DeletePOI: Error deleting '{locationId}': {ex.Message}", Logger.LogCategory.EditorLog);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Find and delete a POI GameObject from the scene by its location ID
+    /// </summary>
+    public static bool DeletePOIGameObject(string locationId)
+    {
+        // Find all POI components in the scene
+        var allPOIs = Object.FindObjectsOfType<POI>();
+
+        foreach (var poi in allPOIs)
+        {
+            if (poi.LocationID == locationId)
+            {
+                Undo.DestroyObjectImmediate(poi.gameObject);
+                Logger.LogInfo($"Deleted POI GameObject for location '{locationId}'", Logger.LogCategory.EditorLog);
+                return true;
+            }
+        }
+
+        Logger.LogWarning($"No POI GameObject found for location '{locationId}'", Logger.LogCategory.EditorLog);
+        return false;
+    }
+
+    /// <summary>
+    /// Remove all connections to and from a location (but keep the location itself)
+    /// </summary>
+    public static void RemoveAllConnections(string locationId, LocationRegistry registry)
+    {
+        if (string.IsNullOrEmpty(locationId) || registry == null)
+            return;
+
+        var location = registry.GetLocationById(locationId);
+
+        // Remove outgoing connections
+        if (location?.Connections != null)
+        {
+            location.Connections.Clear();
+            EditorUtility.SetDirty(location);
+        }
+
+        // Remove incoming connections from all other locations
+        foreach (var otherLocation in registry.AllLocations.Where(l => l != null && l.LocationID != locationId))
+        {
+            if (otherLocation.Connections != null)
+            {
+                int removed = otherLocation.Connections.RemoveAll(c => c?.DestinationLocationID == locationId);
+                if (removed > 0)
+                {
+                    EditorUtility.SetDirty(otherLocation);
+                }
+            }
+        }
+
+        AssetDatabase.SaveAssets();
+    }
 }
 #endif

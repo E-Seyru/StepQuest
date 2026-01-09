@@ -130,14 +130,65 @@ public class LocationRegistry : ScriptableObject
     }
 
     /// <summary>
+    /// Clean null and duplicate references automatically
+    /// </summary>
+    public int CleanNullReferences()
+    {
+        if (AllLocations == null) return 0;
+
+        int removedCount = 0;
+        var seenIds = new HashSet<string>();
+
+        for (int i = AllLocations.Count - 1; i >= 0; i--)
+        {
+            var location = AllLocations[i];
+
+            // Remove null entries
+            if (location == null)
+            {
+                AllLocations.RemoveAt(i);
+                removedCount++;
+                continue;
+            }
+
+            // Remove duplicates (keep first occurrence)
+            if (!string.IsNullOrEmpty(location.LocationID))
+            {
+                if (seenIds.Contains(location.LocationID))
+                {
+                    AllLocations.RemoveAt(i);
+                    removedCount++;
+                    continue;
+                }
+                seenIds.Add(location.LocationID);
+            }
+        }
+
+        if (removedCount > 0)
+        {
+            InvalidateCache();
+        }
+
+        return removedCount;
+    }
+
+    /// <summary>
     /// Validate the registry for common issues (call this in editor)
     /// </summary>
     [ContextMenu("Validate Registry")]
     public void ValidateRegistry()
     {
+        // Auto-clean first
+        int cleanedCount = CleanNullReferences();
+
         var issues = new List<string>();
 
-        // Check for null locations
+        if (cleanedCount > 0)
+        {
+            issues.Add($"Auto-cleaned {cleanedCount} null/duplicate references");
+        }
+
+        // Check for null locations (should be 0 after cleaning)
         var nullCount = AllLocations.Count(loc => loc == null);
         if (nullCount > 0)
         {
@@ -202,13 +253,27 @@ public class LocationRegistry : ScriptableObject
         Logger.LogInfo($"LocationRegistry: Validation complete. {issues.Count} issue(s) found.");
     }
 
+    /// <summary>
+    /// Runtime initialization - auto-cleans
+    /// </summary>
+    void OnEnable()
+    {
+        CleanNullReferences();
+        InvalidateCache();
+    }
+
 #if UNITY_EDITOR
     void OnValidate()
     {
         // Auto-validate when something changes in the editor
-        ValidateRegistry();
-        // Invalidate cache when list changes in editor
-        InvalidateCache();
+        UnityEditor.EditorApplication.delayCall += () =>
+        {
+            if (this != null)
+            {
+                ValidateRegistry();
+                InvalidateCache();
+            }
+        };
     }
 #endif
 }

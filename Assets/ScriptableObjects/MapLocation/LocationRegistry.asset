@@ -17,7 +17,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d4a93afcd9f89e6469b9788f1684e14a, type: 2}
   - {fileID: 11400000, guid: 28ce137ca2d142b4f8c88b7b8f50420d, type: 2}
   - {fileID: 11400000, guid: 7ef997ec70410854d85d963a859185a1, type: 2}
-  - {fileID: 11400000, guid: 6e657b2cc539de644a278828524dd277, type: 2}
+  - {fileID: 11400000, guid: 11fb778c5e732c04c861f0a9b3d47bee, type: 2}
   ValidationStatus: 'Registry validation passed!
 
     Found 4 valid location(s).'

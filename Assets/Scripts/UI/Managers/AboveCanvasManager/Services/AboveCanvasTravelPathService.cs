@@ -13,13 +13,26 @@ public class AboveCanvasTravelPathService
     private readonly AboveCanvasManager manager;
     private readonly List<GameObject> instantiatedPathElements = new List<GameObject>();
 
+    // Cache the final destination to handle cases where TravelFinalDestinationId is not preserved between segments
+    private string cachedFinalDestination = null;
+
     public AboveCanvasTravelPathService(AboveCanvasManager manager)
     {
         this.manager = manager;
     }
 
     /// <summary>
-    /// Builds the travel path UI from a list of location IDs
+    /// Resets the cached final destination. Call this when starting a completely new travel.
+    /// </summary>
+    public void ResetFinalDestinationCache()
+    {
+        cachedFinalDestination = null;
+        Logger.LogInfo("AboveCanvasTravelPathService: Final destination cache reset", Logger.LogCategory.General);
+    }
+
+    /// <summary>
+    /// Builds the travel path UI from a list of location IDs.
+    /// Automatically collapses paths with 4+ locations to show [Start] -> [...] -> [End]
     /// </summary>
     /// <param name="locationIds">List of location IDs in order (origin -> ... -> destination)</param>
     public void BuildTravelPath(List<string> locationIds)
@@ -49,30 +62,45 @@ public class AboveCanvasTravelPathService
             return;
         }
 
+        // Get collapsed display path (max 3 elements, with ellipsis for 4+ locations)
+        var displayPath = GetDisplayPath(locationIds);
+        Logger.LogInfo($"AboveCanvasTravelPathService: Full path has {locationIds.Count} locations, display path has {displayPath.Count} elements", Logger.LogCategory.General);
+
         // Build path: Location -> Arrow -> Location -> Arrow -> ... -> Location
-        for (int i = 0; i < locationIds.Count; i++)
+        for (int i = 0; i < displayPath.Count; i++)
         {
-            // Add location icon
-            var location = locationRegistry.GetLocationById(locationIds[i]);
-            if (location != null)
+            string locationId = displayPath[i];
+
+            // Check if this is the ellipsis marker
+            if (locationId == ELLIPSIS_MARKER)
             {
-                AddLocationIcon(location, i == 0, i == locationIds.Count - 1);
-                Logger.LogWarning($"AboveCanvasTravelPathService: Added icon {i + 1}/{locationIds.Count} for {location.DisplayName}", Logger.LogCategory.General);
+                AddEllipsisIcon();
+                Logger.LogInfo($"AboveCanvasTravelPathService: Added ellipsis icon at position {i + 1}/{displayPath.Count}", Logger.LogCategory.General);
             }
             else
             {
-                Logger.LogWarning($"AboveCanvasTravelPathService: Location {locationIds[i]} not found in registry!", Logger.LogCategory.General);
+                // Add location icon
+                var location = locationRegistry.GetLocationById(locationId);
+                if (location != null)
+                {
+                    AddLocationIcon(location, i == 0, i == displayPath.Count - 1);
+                    Logger.LogInfo($"AboveCanvasTravelPathService: Added icon {i + 1}/{displayPath.Count} for {location.DisplayName}", Logger.LogCategory.General);
+                }
+                else
+                {
+                    Logger.LogWarning($"AboveCanvasTravelPathService: Location {locationId} not found in registry!", Logger.LogCategory.General);
+                }
             }
 
-            // Add arrow between locations (not after the last one)
-            if (i < locationIds.Count - 1)
+            // Add arrow between elements (not after the last one)
+            if (i < displayPath.Count - 1)
             {
                 AddArrow();
-                Logger.LogWarning($"AboveCanvasTravelPathService: Added arrow after icon {i + 1}", Logger.LogCategory.General);
+                Logger.LogInfo($"AboveCanvasTravelPathService: Added arrow after element {i + 1}", Logger.LogCategory.General);
             }
         }
 
-        Logger.LogWarning($"AboveCanvasTravelPathService: Built travel path - Total elements in list: {instantiatedPathElements.Count}", Logger.LogCategory.General);
+        Logger.LogInfo($"AboveCanvasTravelPathService: Built travel path - Total elements in list: {instantiatedPathElements.Count}", Logger.LogCategory.General);
     }
 
     /// <summary>
@@ -85,11 +113,35 @@ public class AboveCanvasTravelPathService
 
         if (dataManager?.PlayerData == null || !dataManager.PlayerData.IsCurrentlyTraveling())
         {
+            // Clear cache when not traveling
+            cachedFinalDestination = null;
             Logger.LogWarning("AboveCanvasTravelPathService: Not currently traveling", Logger.LogCategory.General);
             return;
         }
 
         var playerData = dataManager.PlayerData;
+
+        // Determine the final destination for this travel
+        // We need to be careful to distinguish between:
+        // 1. A new travel starting (should use fresh data, not cache)
+        // 2. A multi-segment travel continuation (should use cache if TravelFinalDestinationId is cleared)
+        if (!string.IsNullOrEmpty(playerData.TravelFinalDestinationId))
+        {
+            // TravelFinalDestinationId is set - use it and update cache
+            cachedFinalDestination = playerData.TravelFinalDestinationId;
+        }
+        else if (playerData.IsMultiSegmentTravel && !string.IsNullOrEmpty(cachedFinalDestination))
+        {
+            // Multi-segment travel with no TravelFinalDestinationId but we have a cache
+            // This is likely a segment continuation - keep using the cache
+            Logger.LogInfo($"AboveCanvasTravelPathService: Using cached final destination for multi-segment continuation", Logger.LogCategory.General);
+        }
+        else
+        {
+            // Simple travel or no valid cache - use TravelDestinationId
+            // This handles new travels that aren't multi-segment
+            cachedFinalDestination = playerData.TravelDestinationId;
+        }
 
         // Debug log available data
         Logger.LogWarning($"AboveCanvasTravelPathService: Travel data - " +
@@ -97,10 +149,11 @@ public class AboveCanvasTravelPathService
             $"TravelDestinationId={playerData.TravelDestinationId ?? "null"}, " +
             $"TravelOriginLocationId={playerData.TravelOriginLocationId ?? "null"}, " +
             $"TravelFinalDestinationId={playerData.TravelFinalDestinationId ?? "null"}, " +
+            $"cachedFinalDestination={cachedFinalDestination ?? "null"}, " +
             $"IsMultiSegmentTravel={playerData.IsMultiSegmentTravel}",
             Logger.LogCategory.General);
 
-        // Get the travel path
+        // Get the travel path using cached final destination
         List<string> pathLocations = GetCurrentTravelPath(dataManager, mapManager);
 
         if (pathLocations != null && pathLocations.Count > 0)
@@ -115,72 +168,124 @@ public class AboveCanvasTravelPathService
     }
 
     /// <summary>
-    /// Gets the current travel path from MapManager or reconstructs it
+    /// Gets the REMAINING travel path from current position to final destination.
+    /// Uses cachedFinalDestination which is set in BuildTravelPathFromCurrentTravel.
     /// </summary>
     private List<string> GetCurrentTravelPath(DataManager dataManager, MapManager mapManager)
     {
         var playerData = dataManager.PlayerData;
 
-        // Try to get the full path if it's a multi-segment travel
-        if (playerData.IsMultiSegmentTravel)
+        // Get current position (where we are now in the journey)
+        // TravelOriginLocationId is where we started the current segment
+        string currentPosition = playerData.TravelOriginLocationId;
+        if (string.IsNullOrEmpty(currentPosition))
         {
-            var originId = playerData.TravelOriginLocationId;
-            var finalDestId = playerData.TravelFinalDestinationId;
+            currentPosition = playerData.CurrentLocationId;
+        }
 
-            if (!string.IsNullOrEmpty(originId) && !string.IsNullOrEmpty(finalDestId) && mapManager?.PathfindingService != null)
+        // Use the cached final destination (set in BuildTravelPathFromCurrentTravel)
+        // This ensures we always use the true final destination even if TravelFinalDestinationId gets cleared
+        string finalDestination = cachedFinalDestination;
+
+        if (string.IsNullOrEmpty(currentPosition) || string.IsNullOrEmpty(finalDestination))
+        {
+            Logger.LogWarning($"AboveCanvasTravelPathService: Missing travel data - current={currentPosition}, final={finalDestination}", Logger.LogCategory.General);
+
+            // Fallback: just show destination
+            if (!string.IsNullOrEmpty(finalDestination))
             {
-                var pathResult = mapManager.PathfindingService.FindPath(originId, finalDestId);
-                if (pathResult != null && pathResult.IsReachable && pathResult.Path != null)
-                {
-                    return pathResult.Path;
-                }
+                return new List<string> { finalDestination };
+            }
+            return null;
+        }
+
+        // If current position equals final destination, just return destination
+        if (currentPosition == finalDestination)
+        {
+            return new List<string> { finalDestination };
+        }
+
+        // Try pathfinding to get remaining path
+        if (mapManager?.PathfindingService != null)
+        {
+            var pathResult = mapManager.PathfindingService.FindPath(currentPosition, finalDestination);
+            if (pathResult != null && pathResult.IsReachable && pathResult.Path != null && pathResult.Path.Count > 0)
+            {
+                Logger.LogInfo($"AboveCanvasTravelPathService: Remaining path has {pathResult.Path.Count} locations", Logger.LogCategory.General);
+                return pathResult.Path;
             }
         }
 
-        // For simple travel: find origin and destination
-        // Priority for origin: TravelOriginLocationId > CurrentLocationId
-        // Priority for destination: TravelFinalDestinationId > TravelDestinationId
-        string origin = null;
-        string destination = null;
+        // Fallback: simple origin -> destination
+        return new List<string> { currentPosition, finalDestination };
+    }
 
-        // Get destination (should always be available during travel)
-        destination = playerData.TravelFinalDestinationId;
-        if (string.IsNullOrEmpty(destination))
+    /// <summary>
+    /// Constant to mark that an ellipsis should be displayed instead of a location
+    /// </summary>
+    private const string ELLIPSIS_MARKER = "__ELLIPSIS__";
+
+    /// <summary>
+    /// Collapses a path to max 3 display elements if it has 4+ locations.
+    /// Returns: [Start, Middle, End] for 3 or fewer locations
+    /// Returns: [Start, ELLIPSIS_MARKER, End] for 4+ locations
+    /// </summary>
+    private List<string> GetDisplayPath(List<string> fullPath)
+    {
+        if (fullPath == null || fullPath.Count == 0)
+            return fullPath;
+
+        // 1-3 locations: show all
+        if (fullPath.Count <= 3)
+            return fullPath;
+
+        // 4+ locations: collapse to [Start, ..., End]
+        return new List<string>
         {
-            destination = playerData.TravelDestinationId;
+            fullPath[0],
+            ELLIPSIS_MARKER,
+            fullPath[fullPath.Count - 1]
+        };
+    }
+
+    /// <summary>
+    /// Adds an ellipsis icon (three dots) to indicate skipped locations
+    /// </summary>
+    private void AddEllipsisIcon()
+    {
+        if (manager.EllipsisSprite == null)
+        {
+            Logger.LogWarning("AboveCanvasTravelPathService: EllipsisSprite is null - assign it in inspector!", Logger.LogCategory.General);
+            return;
         }
 
-        // Get origin - for simple travel, we might need to find it from the destination's connections
-        origin = playerData.TravelOriginLocationId;
-        if (string.IsNullOrEmpty(origin))
+        if (manager.LocationIconPrefab == null)
         {
-            origin = playerData.CurrentLocationId;
+            Logger.LogWarning("AboveCanvasTravelPathService: LocationIconPrefab is null - cannot create ellipsis icon!", Logger.LogCategory.General);
+            return;
         }
 
-        // If origin is still null but we have destination, try to find connected location
-        if (string.IsNullOrEmpty(origin) && !string.IsNullOrEmpty(destination) && mapManager?.LocationRegistry != null)
+        Logger.LogInfo("AboveCanvasTravelPathService: Adding ellipsis icon", Logger.LogCategory.General);
+
+        var iconObj = Object.Instantiate(manager.LocationIconPrefab, manager.TravelPathContainer);
+        instantiatedPathElements.Add(iconObj);
+
+        // Ensure the instantiated object and all children are active
+        iconObj.SetActive(true);
+        SetAllChildrenActive(iconObj.transform);
+
+        // Apply configured size
+        ApplySize(iconObj, manager.LocationIconSize);
+
+        // Find the Image with no sprite assigned and set the ellipsis sprite
+        Image iconImage = FindEmptyImage(iconObj.transform);
+        if (iconImage != null)
         {
-            var destLocation = mapManager.LocationRegistry.GetLocationById(destination);
-            if (destLocation?.Connections != null && destLocation.Connections.Count > 0)
-            {
-                // Use first connected location as fallback origin
-                origin = destLocation.Connections[0].DestinationLocationID;
-                Logger.LogWarning($"AboveCanvasTravelPathService: Using connected location as origin: {origin}", Logger.LogCategory.General);
-            }
+            iconImage.sprite = manager.EllipsisSprite;
+            Logger.LogInfo("AboveCanvasTravelPathService: Set ellipsis sprite", Logger.LogCategory.General);
         }
 
-        if (!string.IsNullOrEmpty(origin) && !string.IsNullOrEmpty(destination))
-        {
-            return new List<string> { origin, destination };
-        }
-
-        // Last resort: just show destination
-        if (!string.IsNullOrEmpty(destination))
-        {
-            return new List<string> { destination };
-        }
-
-        return null;
+        iconObj.name = "PathIcon_Ellipsis";
     }
 
     /// <summary>
