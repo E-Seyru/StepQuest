@@ -230,10 +230,11 @@ public class AboveCanvasDisplayService
             manager.ArrowIcon.SetActive(false);
         }
 
-        // Show cancel travel button during travel
+        // Show cancel travel button during travel (but not during return trips)
         if (manager.CancelTravelButton != null)
         {
-            manager.CancelTravelButton.gameObject.SetActive(true);
+            bool isReturnTrip = DataManager.Instance?.PlayerData?.IsReturnTrip ?? false;
+            manager.CancelTravelButton.gameObject.SetActive(!isReturnTrip);
         }
     }
 

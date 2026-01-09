@@ -423,6 +423,13 @@ public class LocationDetailsPanel : MonoBehaviour
     /// </summary>
     public void RefreshPanel()
     {
+        // Check if we're currently traveling - don't show location details during travel
+        if (dataManager?.PlayerData != null && dataManager.PlayerData.IsCurrentlyTraveling())
+        {
+            ShowTravelingMessage();
+            return;
+        }
+
         if (mapManager?.CurrentLocation == null)
         {
             ShowNoLocationMessage();
@@ -871,6 +878,59 @@ public class LocationDetailsPanel : MonoBehaviour
         {
             locationDescriptionText.text = "Aucune information de location disponible.";
         }
+    }
+
+    /// <summary>
+    /// Affiche un message quand le joueur est en voyage
+    /// </summary>
+    private void ShowTravelingMessage()
+    {
+        // Get destination info
+        string destinationId = dataManager?.PlayerData?.TravelDestinationId ?? "inconnu";
+        var destinationLocation = mapManager?.LocationRegistry?.GetLocationById(destinationId);
+        string destinationName = destinationLocation?.DisplayName ?? destinationId;
+
+        // Update description text
+        if (locationDescriptionText != null)
+        {
+            locationDescriptionText.text = $"Vous etes en voyage vers {destinationName}.\n\nAttendez d'arriver a destination pour acceder aux details de la location.";
+        }
+
+        // Clear/hide all sections
+        if (activitiesSectionPanel != null)
+        {
+            activitiesSectionPanel.DisplayActivities(new List<ActivityDefinition>());
+        }
+        if (combatSectionPanel != null)
+        {
+            combatSectionPanel.DisplayEnemies(new List<LocationEnemy>());
+        }
+        if (socialSectionPanel != null)
+        {
+            socialSectionPanel.DisplayNPCs(new List<LocationNPC>());
+        }
+
+        // Update info section to show travel progress
+        if (locationInfoText != null)
+        {
+            var playerData = dataManager?.PlayerData;
+            if (playerData != null)
+            {
+                long progress = playerData.GetTravelProgress(playerData.TotalSteps);
+                int required = playerData.TravelRequiredSteps;
+                float progressPercent = required > 0 ? (float)progress / required * 100f : 0f;
+                locationInfoText.text = $"Progression: {progress}/{required} pas ({progressPercent:F1}%)";
+            }
+        }
+
+        // Clear image
+        if (locationImage != null)
+        {
+            locationImage.sprite = null;
+            locationImage.color = defaultImageColor;
+        }
+
+        Logger.LogInfo($"LocationDetailsPanel: Showing traveling message - heading to {destinationName}", Logger.LogCategory.General);
     }
 
     /// <summary>

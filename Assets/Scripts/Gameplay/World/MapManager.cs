@@ -713,6 +713,7 @@ public class MapTravelService
         if (dataManager?.PlayerData != null)
         {
             dataManager.PlayerData.IsMultiSegmentTravel = false;
+            dataManager.PlayerData.IsReturnTrip = false; // Clear return trip flag for new travels
         }
     }
 
@@ -805,6 +806,7 @@ public class MapTravelService
         playerData.TravelRequiredSteps = progressMade;
         playerData.TravelFinalDestinationId = null; // Clear - this is now a simple travel
         playerData.IsMultiSegmentTravel = false;
+        playerData.IsReturnTrip = true; // Mark as return trip - cannot be cancelled again
 
         // Save immediately
         dataManager.SaveGame();

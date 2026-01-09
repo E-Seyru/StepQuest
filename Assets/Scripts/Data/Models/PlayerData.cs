@@ -150,6 +150,15 @@ public class PlayerData
         set { _isMultiSegmentTravel = value; }
     }
 
+    // Flag pour voyage de retour après annulation (ne peut pas être annulé à nouveau)
+    private bool _isReturnTrip;
+    [Column("IsReturnTrip")]
+    public bool IsReturnTrip
+    {
+        get { return _isReturnTrip; }
+        set { _isReturnTrip = value; }
+    }
+
     // === SYSTeME D'ACTIVITe ===
 
     // Activite en cours (JSON serialise)
