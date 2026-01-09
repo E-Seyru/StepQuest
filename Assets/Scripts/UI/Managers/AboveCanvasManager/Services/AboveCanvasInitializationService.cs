@@ -75,6 +75,7 @@ public class AboveCanvasInitializationService
         SetupLocationButton(); // NOUVEAU: Ajouter cette ligne
         SetupActivityBarButton(); // Setup click handler for ActivityBar
         SetupIdleBarButton(); // Setup click handler for IdleBar (combat mode)
+        SetupCancelTravelButton(); // Setup click handler for Cancel Travel button
         SetupProgressBar();
     }
 
@@ -190,6 +191,37 @@ public class AboveCanvasInitializationService
         else
         {
             Logger.LogWarning("AboveCanvasManager: IdleBarButton is null - assign a Button component to IdleBar for click handling", Logger.LogCategory.General);
+        }
+    }
+
+    private void SetupCancelTravelButton()
+    {
+        if (manager.CancelTravelButton != null)
+        {
+            manager.CancelTravelButton.onClick.AddListener(OnCancelTravelButtonClicked);
+            // Initially hide the button (will be shown when travel starts)
+            manager.CancelTravelButton.gameObject.SetActive(false);
+            Logger.LogInfo("AboveCanvasManager: CancelTravelButton configured", Logger.LogCategory.General);
+        }
+        else
+        {
+            Logger.LogWarning("AboveCanvasManager: CancelTravelButton is null - assign a Button for cancel travel functionality", Logger.LogCategory.General);
+        }
+    }
+
+    private void OnCancelTravelButtonClicked()
+    {
+        // Show the confirmation popup
+        if (manager.TravelCancelPopup != null)
+        {
+            manager.TravelCancelPopup.Show();
+            Logger.LogInfo("AboveCanvasManager: Showing travel cancel confirmation popup", Logger.LogCategory.General);
+        }
+        else
+        {
+            // Fallback: cancel directly without confirmation if popup is not assigned
+            Logger.LogWarning("AboveCanvasManager: TravelCancelPopup is null - canceling travel directly", Logger.LogCategory.General);
+            MapManager.Instance?.CancelTravelAndReverse();
         }
     }
 

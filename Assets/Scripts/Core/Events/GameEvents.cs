@@ -125,6 +125,28 @@ namespace MapEvents
             return $"{base.ToString()} - Arrived at {NewLocation?.DisplayName} ({StepsTaken} steps taken)";
         }
     }
+
+    /// <summary>
+    /// Publie quand un voyage est annule et le joueur fait demi-tour
+    /// </summary>
+    public class TravelCancelledEvent : EventBusEvent
+    {
+        public string OriginalDestinationId { get; }
+        public string NewDestinationId { get; }
+        public int StepsToReturn { get; }
+
+        public TravelCancelledEvent(string originalDestinationId, string newDestinationId, int stepsToReturn)
+        {
+            OriginalDestinationId = originalDestinationId;
+            NewDestinationId = newDestinationId;
+            StepsToReturn = stepsToReturn;
+        }
+
+        public override string ToString()
+        {
+            return $"{base.ToString()} - Travel cancelled, returning to {NewDestinationId} ({StepsToReturn} steps)";
+        }
+    }
 }
 
 /// <summary>

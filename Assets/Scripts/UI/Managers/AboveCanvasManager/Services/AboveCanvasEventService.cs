@@ -29,10 +29,11 @@ public class AboveCanvasEventService
         // GameManager events → GameEvents
         EventBus.Subscribe<GameStateChangedEvent>(OnGameStateChanged);
 
-        // MapManager events → MapEvents  
+        // MapManager events → MapEvents
         EventBus.Subscribe<LocationChangedEvent>(OnLocationChanged);
         EventBus.Subscribe<TravelProgressEvent>(OnTravelProgress);
         EventBus.Subscribe<TravelStartedEvent>(OnTravelStarted);
+        EventBus.Subscribe<TravelCancelledEvent>(OnTravelCancelled);
 
         // ActivityManager events → ActivityEvents
         EventBus.Subscribe<ActivityProgressEvent>(OnActivityProgress);
@@ -55,6 +56,7 @@ public class AboveCanvasEventService
         EventBus.Unsubscribe<ActivityStoppedEvent>(OnActivityStopped);
         EventBus.Unsubscribe<ActivityTickEvent>(OnActivityTick);
         EventBus.Unsubscribe<TravelStartedEvent>(OnTravelStarted);
+        EventBus.Unsubscribe<TravelCancelledEvent>(OnTravelCancelled);
 
         Logger.LogInfo("AboveCanvasEventService: Unsubscribed from EventBus events", Logger.LogCategory.General);
     }
@@ -98,6 +100,15 @@ public class AboveCanvasEventService
         // Forcer une mise a jour complete de l'affichage pour recuperer les nouvelles icônes
         displayService.RefreshDisplay();
     }
+
+    private void OnTravelCancelled(TravelCancelledEvent eventData)
+    {
+        Logger.LogInfo($"AboveCanvasManager: Travel cancelled - returning from {eventData.OriginalDestinationId} to {eventData.NewDestinationId} ({eventData.StepsToReturn} steps)", Logger.LogCategory.General);
+
+        // Refresh display to update the travel path and progress
+        displayService.RefreshDisplay();
+    }
+
     private void OnActivityProgress(ActivityProgressEvent eventData)
     {
         Logger.LogInfo($"AboveCanvasManager: Activity progress {eventData.Activity?.ActivityId}/{eventData.Variant?.VariantName} ({eventData.ProgressPercentage:F1}%)", Logger.LogCategory.General);

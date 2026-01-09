@@ -127,6 +127,16 @@ public class MapManager : MonoBehaviour
         travelService?.ClearTravelState();
     }
 
+    /// <summary>
+    /// Annule le voyage en cours et fait demi-tour vers l'origine du segment actuel.
+    /// Les pas necessaires pour revenir = pas deja effectues sur le segment actuel.
+    /// </summary>
+    /// <returns>True si l'annulation a reussi, false sinon</returns>
+    public bool CancelTravelAndReverse()
+    {
+        return travelService?.CancelTravelAndReverse() ?? false;
+    }
+
     public void ForceSaveTravelProgress()
     {
         saveService?.ForceSaveTravelProgress();
@@ -727,6 +737,90 @@ public class MapTravelService
         Logger.LogInfo($"MapManager: Travel state cleared", Logger.LogCategory.MapLog);
     }
 
+    /// <summary>
+    /// Annule le voyage en cours et fait demi-tour vers l'origine du segment actuel.
+    /// Les pas necessaires pour revenir = pas deja effectues sur le segment actuel.
+    /// </summary>
+    public bool CancelTravelAndReverse()
+    {
+        var dataManager = DataManager.Instance;
+        if (dataManager?.PlayerData == null || !dataManager.PlayerData.IsCurrentlyTraveling())
+        {
+            Logger.LogWarning("MapManager: Cannot cancel travel - not currently traveling", Logger.LogCategory.MapLog);
+            return false;
+        }
+
+        var playerData = dataManager.PlayerData;
+
+        // Get current segment info
+        string originalDestination = playerData.TravelDestinationId;
+        string segmentOrigin = playerData.TravelOriginLocationId;
+        long currentSteps = playerData.TotalSteps;
+        long travelStartSteps = playerData.TravelStartSteps;
+
+        if (string.IsNullOrEmpty(segmentOrigin))
+        {
+            Logger.LogWarning("MapManager: Cannot cancel travel - no origin location recorded", Logger.LogCategory.MapLog);
+            return false;
+        }
+
+        // Calculate progress made on current segment
+        int progressMade = (int)(currentSteps - travelStartSteps);
+        if (progressMade < 0) progressMade = 0;
+
+        // If no progress made, just clear travel state
+        if (progressMade == 0)
+        {
+            Logger.LogInfo("MapManager: No progress made, clearing travel state", Logger.LogCategory.MapLog);
+            ClearTravelState();
+
+            // Set current location back to origin
+            var originLocation = manager.LocationRegistry.GetLocationById(segmentOrigin);
+            if (originLocation != null)
+            {
+                manager.SetCurrentLocation(originLocation);
+                playerData.CurrentLocationId = segmentOrigin;
+            }
+
+            dataManager.SaveGame();
+            eventService.TriggerTravelCancelled(originalDestination, segmentOrigin, 0);
+            return true;
+        }
+
+        // Set up reverse travel: going back to segment origin with steps = progress made
+        Logger.LogInfo($"MapManager: Cancelling travel. Reversing from {originalDestination} back to {segmentOrigin}. " +
+                      $"Progress made: {progressMade} steps, will need same to return.", Logger.LogCategory.MapLog);
+
+        // Clear multi-segment state - we're now doing a simple return trip
+        ResetMultiSegmentState();
+
+        // Configure new travel (reverse direction)
+        // New destination = old origin
+        // New origin = old destination (conceptually where we are now)
+        // Steps required = progress already made
+        playerData.CurrentLocationId = originalDestination; // Conceptually "at" the point we were heading to
+        playerData.TravelDestinationId = segmentOrigin;
+        playerData.TravelOriginLocationId = originalDestination;
+        playerData.TravelStartSteps = currentSteps;
+        playerData.TravelRequiredSteps = progressMade;
+        playerData.TravelFinalDestinationId = null; // Clear - this is now a simple travel
+        playerData.IsMultiSegmentTravel = false;
+
+        // Save immediately
+        dataManager.SaveGame();
+        saveService.ResetSaveTracking(currentSteps);
+
+        // Trigger events
+        eventService.TriggerTravelCancelled(originalDestination, segmentOrigin, progressMade);
+
+        var originLocationDef = manager.LocationRegistry.GetLocationById(segmentOrigin);
+        eventService.TriggerTravelStarted(segmentOrigin, null, progressMade);
+
+        Logger.LogInfo($"MapManager: Travel reversed. Now heading to {segmentOrigin} ({progressMade} steps required)", Logger.LogCategory.MapLog);
+
+        return true;
+    }
+
     private void ValidateTravelState()
     {
         var dataManager = DataManager.Instance;
@@ -883,6 +977,11 @@ public class MapEventService
     public void TriggerTravelCompleted(string destinationId, MapLocationDefinition newLocation, int stepsTaken)
     {
         EventBus.Publish(new TravelCompletedEvent(destinationId, newLocation, stepsTaken));
+    }
+
+    public void TriggerTravelCancelled(string originalDestinationId, string newDestinationId, int stepsToReturn)
+    {
+        EventBus.Publish(new TravelCancelledEvent(originalDestinationId, newDestinationId, stepsToReturn));
     }
 }
 

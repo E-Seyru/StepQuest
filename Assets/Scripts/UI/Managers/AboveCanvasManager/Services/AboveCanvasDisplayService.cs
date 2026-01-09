@@ -229,6 +229,12 @@ public class AboveCanvasDisplayService
         {
             manager.ArrowIcon.SetActive(false);
         }
+
+        // Show cancel travel button during travel
+        if (manager.CancelTravelButton != null)
+        {
+            manager.CancelTravelButton.gameObject.SetActive(true);
+        }
     }
 
     private void SetupActivityDisplay()
@@ -306,6 +312,12 @@ public class AboveCanvasDisplayService
         {
             manager.ArrowIcon.SetActive(false);
         }
+
+        // Hide cancel travel button during activities (it's only for travel)
+        if (manager.CancelTravelButton != null)
+        {
+            manager.CancelTravelButton.gameObject.SetActive(false);
+        }
     }
 
     // NOUVEAU : Methode pour formater l'affichage de progression d'activite
@@ -379,6 +391,12 @@ public class AboveCanvasDisplayService
         // Clear travel path when hiding
         travelPathService?.ClearTravelPath();
         animationService?.HideBar(manager.ActivityBar);
+
+        // Hide cancel travel button when not traveling
+        if (manager.CancelTravelButton != null)
+        {
+            manager.CancelTravelButton.gameObject.SetActive(false);
+        }
     }
 
     // ===============================================

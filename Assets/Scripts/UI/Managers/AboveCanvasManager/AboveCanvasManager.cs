@@ -69,6 +69,10 @@ public class AboveCanvasManager : MonoBehaviour
     [SerializeField] private Vector2 locationIconSize = new Vector2(50f, 50f); // Size of location icons in travel path
     [SerializeField] private Vector2 arrowSize = new Vector2(30f, 30f); // Size of arrows in travel path
 
+    [Header("Travel Cancel")]
+    [SerializeField] private Button cancelTravelButton; // Button to cancel travel (shown only during travel)
+    [SerializeField] private TravelCancelPopup travelCancelPopup; // Reference to the cancel confirmation popup
+
     [Header("Pop Settings (Reward Animation)")]
     [SerializeField] private float popScaleAmount = 1.3f;        // Grossit de 30%
     [SerializeField] private float popDuration = 0.35f;         // Animation rapide mais visible
@@ -223,6 +227,11 @@ public class AboveCanvasManager : MonoBehaviour
     public Sprite EllipsisSprite => ellipsisSprite;
     public Vector2 LocationIconSize => locationIconSize;
     public Vector2 ArrowSize => arrowSize;
+
+    // Travel Cancel Accessors
+    public Button CancelTravelButton => cancelTravelButton;
+    public TravelCancelPopup TravelCancelPopup => travelCancelPopup;
+
     // Pop Settings Accessors (Reward Animation)
     public float PopScaleAmount => popScaleAmount;
     public float PopDuration => popDuration;

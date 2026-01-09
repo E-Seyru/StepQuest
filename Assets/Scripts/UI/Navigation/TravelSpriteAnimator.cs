@@ -51,6 +51,8 @@ public class TravelSpriteAnimator : MonoBehaviour
     private string currentSegmentDestination = "";
     private string finalDestination = "";
     private string lastKnownLocationId = null; // ⭐ NOUVEAU : Pour gerer CurrentLocation null
+    private bool isTravelReversing = false; // Flag to prevent repositioning when reversing travel
+    private Vector3 savedSpritePosition; // Saved position when reversing travel
 
     public static TravelSpriteAnimator Instance { get; private set; }
 
@@ -92,6 +94,7 @@ public class TravelSpriteAnimator : MonoBehaviour
         EventBus.Subscribe<TravelCompletedEvent>(OnTravelCompleted);
         EventBus.Subscribe<TravelProgressEvent>(OnTravelProgress);
         EventBus.Subscribe<LocationChangedEvent>(OnLocationChanged);
+        EventBus.Subscribe<TravelCancelledEvent>(OnTravelCancelled);
 
         // Validation
         if (travelSprite == null)
@@ -327,6 +330,7 @@ public class TravelSpriteAnimator : MonoBehaviour
         EventBus.Unsubscribe<TravelCompletedEvent>(OnTravelCompleted);
         EventBus.Unsubscribe<TravelProgressEvent>(OnTravelProgress);
         EventBus.Unsubscribe<LocationChangedEvent>(OnLocationChanged);
+        EventBus.Unsubscribe<TravelCancelledEvent>(OnTravelCancelled);
 
         StopAllAnimations();
     }
@@ -380,6 +384,33 @@ public class TravelSpriteAnimator : MonoBehaviour
     }
 
     /// <summary>
+    /// Handles travel cancellation - saves sprite position and sets flag for reverse travel
+    /// </summary>
+    private void OnTravelCancelled(TravelCancelledEvent eventData)
+    {
+        if (enablePathfindingDebug)
+        {
+            Logger.LogInfo($"TravelSpriteAnimator: Travel cancelled - reversing from {eventData.OriginalDestinationId} to {eventData.NewDestinationId} ({eventData.StepsToReturn} steps)", Logger.LogCategory.MapLog);
+        }
+
+        // Save the sprite's current world position BEFORE any changes
+        if (travelSprite != null)
+        {
+            savedSpritePosition = travelSprite.transform.position;
+            if (enablePathfindingDebug)
+            {
+                Logger.LogInfo($"TravelSpriteAnimator: Saved sprite position at {savedSpritePosition}", Logger.LogCategory.MapLog);
+            }
+        }
+
+        // Set flag to prevent repositioning when TravelStartedEvent fires
+        isTravelReversing = true;
+
+        // Reset multi-segment state since we're now doing a simple return
+        ResetMultiSegmentState();
+    }
+
+    /// <summary>
     /// MODIFIe : Gere le debut d'un voyage avec gestion de CurrentLocation null
     /// </summary>
     private void OnTravelStarted(TravelStartedEvent eventData)
@@ -391,6 +422,43 @@ public class TravelSpriteAnimator : MonoBehaviour
 
         StopAllAnimations();
 
+        // Check if this is a reverse travel (from cancellation)
+        bool isReverseTravel = isTravelReversing;
+        isTravelReversing = false; // Reset the flag
+
+        if (isReverseTravel)
+        {
+            // For reverse travel: sprite stays where it is, path goes from current position to return destination
+            // endPosition = the destination we're returning to (eventData.DestinationLocationId)
+            endPosition = FindPOITravelStartPosition(eventData.DestinationLocationId) + spriteOffset;
+
+            // startPosition = where the sprite currently is (saved position)
+            startPosition = savedSpritePosition;
+
+            // Update tracking state to prevent path recalculation in OnTravelProgress
+            currentSegmentDestination = eventData.DestinationLocationId;
+
+            // Update lastKnownLocationId to the conceptual current position (from PlayerData.CurrentLocationId)
+            // Since CurrentLocation is null during reverse travel, we use PlayerData directly
+            if (dataManager?.PlayerData != null && !string.IsNullOrEmpty(dataManager.PlayerData.CurrentLocationId))
+            {
+                lastKnownLocationId = dataManager.PlayerData.CurrentLocationId;
+            }
+
+            if (enablePathfindingDebug)
+            {
+                Logger.LogInfo($"TravelSpriteAnimator: Reverse travel setup - start at saved position {startPosition}, end at {eventData.DestinationLocationId}, lastKnownLocationId={lastKnownLocationId}", Logger.LogCategory.MapLog);
+            }
+
+            // Don't reposition - sprite is already at the correct position
+            if (bounceAnimation)
+            {
+                StartBounceAnimation();
+            }
+            return;
+        }
+
+        // Normal travel (not a reverse)
         // ⭐ NOUVEAU : Utiliser la location de depart de l'evenement
         string fromLocationId = eventData.CurrentLocation?.LocationID;
 
