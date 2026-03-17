@@ -2,7 +2,14 @@
 
 > **Purpose**: Authoritative reference for all established lore and narrative elements. Contains ONLY what has been discussed and agreed upon.
 >
-> **Last Updated**: January 12, 2026 (Revised: Original's Prison Discovery, Violet Nation Economics, Summoning Mechanics, Geographic Clarifications)
+> **Last Lore Session**: January 12, 2026 (Revised: Original's Prison Discovery, Violet Nation Economics, Summoning Mechanics, Geographic Clarifications)
+>
+> **⚠ LOST LORE (session between Jan 12 and Mar 8)** - recover and merge when old conversation is found. Topics known to have been discussed: summoning devices, geography, otherworlders post-Death of Magic. Do not rebuild from memory alone.
+>
+> **Update Log**:
+> - **Jan 12, 2026**: Original's Prison Discovery, Violet Nation Economics, Summoning Mechanics, Geographic Clarifications
+> - **Mar 8, 2026**: War → Verge of War, Violet Nation origin (outcast nation, not pact), Pact Nations history (6+ nations, most dissolved), nation count clarification
+> - **Mar 14, 2026**: Added Teleportation Hub history (travel center → summoning conversion → seal casting site), continental geography and nation positions (map sketch), corruption visibility clarification (invisible, affects mana not terrain), merged Neighboring Nation into Violet Nation entry, removed placeholder locations from Player's Nation, renamed Violet Nation to Spera (hope), added Spera naming origin story (unification of scattered outcasts)
 
 ---
 
@@ -84,7 +91,8 @@
 - Makes humans sick (physical illness)
 - Makes animals sick, which causes them to become violent and aggressive (pain response, not mind control)
 - Causes crops to fail
-- Poisons and destroys the land
+
+**Visibility**: Corrupted magic affects ambient mana, not the physical landscape. The terrain itself is not visibly damaged or discolored. The effects are biological - sickness in living beings, crop failure - not environmental destruction. There is no visible atmospheric pollution or magical fog.
 
 **Important**: Corrupted magic does NOT affect minds directly - not humans, not animals. It does not control thoughts or alter personalities. Animals become aggressive because they are in pain and discomfort from the physical sickness. Psychological effects in humans (paranoia, violence, cruelty) come from human reactions to the physical crisis - sickness, hunger, fear.
 
@@ -202,7 +210,19 @@
 
 **The Choice**: They knew sealing all magic would cause catastrophe - collapse of their civilization, mass death, a dark age. But there was no other option. The more time passed, the more magic became corrupted and the more civilization suffered. If left to spread further, no one would have survived.
 
-**Multi-Nation Agreement**: The decision was made in agreement with most nations of that era. Possibly not all agreed.
+**Multi-Nation Agreement**: The decision was made in agreement with most nations of that era - at least 6 nations signed the post-Death of Magic pact. Possibly not all nations agreed. The pact nations also divided roles among themselves for the rebuilding of civilization that would follow.
+
+**The Fate of the Pact Nations**: Most of the original pact nations no longer exist as such. Over the millennia following the Death of Magic, wars, plagues, famine, and the general brutality of the dark age dissolved or transformed most of them. The pact nations were not naive about war - warfare existed in the ancient era - but they did not anticipate that the catastrophe itself would generate the conditions for it. The trauma, hunger, and desperation of the dark age produced conflicts of a scale and ferocity they had no framework to prepare for. Today only a handful of successor states remain, and smaller nations have formed since, some descended from pact fragments, others arising independently.
+
+### The Teleportation Hub
+
+**Original Purpose**: A central facility in the mountains, built for inter-nation teleportation. Located in a remote mountain pass, isolated from cities - this isolation meant all available ambient magic in the area could be dedicated to teleportation, which would not have been possible in populated areas where magic was used for many purposes. This made it the natural hub for all inter-nation travel.
+
+**Conversion for the Pact**: When the decision to seal was made, most teleportation devices at the hub were converted into otherworlder summoning portals, to bring as many otherworlders as possible before the seal. Some teleportation devices were kept operational for the evacuation - moving populations to their assigned pact nations.
+
+**The Casting of the Seal**: After populations were evacuated to their designated nations, the Death of Magic spell was cast at the hub. Approximately 100 of the most competent mages remained to perform the spell. A few hundred otherworlders stayed with them - not to help cast, but to help the mages survive the immediate aftermath, as the mages would be struck by magic withdrawal the moment the spell took effect. After the spell was cast, the otherworlders helped the weakened mages descend by river through the mountains to the northern island.
+
+**Current State**: The hub is now ancient ruins at the center of the mountain range, overgrown and partially collapsed after millennia. It is not recognized for what it was.
 
 ### The Death of Magic
 
@@ -369,15 +389,16 @@ Despite the loss of written knowledge, some memories survived through oral tradi
 - Social order breaking down
 - Refugees fleeing in all directions
 
-**The War**:
-- A neighboring nation declared war because the spreading corruption began affecting their own cities, crops, and people's health
-- Internal civil unrest: the nation's own citizens revolt against the extraction process that is poisoning them
+**The Political Crisis (Verge of War)**:
+- No war has been declared, but the third nation has issued ultimatums and mobilized troops at borders
+- Border skirmishes have occurred; full conflict is a real and imminent threat
+- Internal civil unrest: the violet nation's own citizens revolt against the extraction process that is poisoning them
 - The government represses internal dissent
 - The violet nation has POWER from the crystals - both energy infrastructure and military strength
 - Extraction continues despite the chaos
 
 **Why They Won't Stop**:
-- Stopping extraction means losing the war, losing the means to sustain the country, losing power
+- Stopping extraction means economic collapse and losing any leverage in the political standoff
 - Those responsible argue that the crystals are NOT causing the problems
 - They deny the connection between extraction and the degradation of health, crops, and land
 - Official position: the corruption has other causes; the crystals are safe and essential
@@ -557,35 +578,56 @@ At some point in the story, an important figure from the violet crystal nation w
 
 ## Nations
 
+### Continental Geography
+
+**Reference Map (Modern Era sketch):** See `Documentation/Maps/Modern_Era_Sketch.jpg`
+
+- Single main continent with an irregular, roughly compact shape
+- A major east-west mountain range divides the continent into northern and southern halves
+- The ancient teleportation hub ruins sit at the center of this mountain range
+- A river flows northward through the mountains from the hub area to the northern coast
+- Additional rivers flow south from the mountains
+- Several islands off the coasts, including one to the north (where the mages and otherworlders retreated after the seal)
+- Small nations or zones exist at the western edge, eastern coast, and southern area - their exact nature (independent nations, absorbed remnants, or autonomous zones) is TBD
+
 ### The Player's Nation (Name TBD)
 
+- A pact nation descendant
+- Located in the southwest, south of the mountain range
 - Where the player arrives and starts
 - Currently stable but under pressure
-- Receiving refugees
-- Contains: Village, Forest, Mine, Fisherman's Cabin (current locations)
+- Receiving refugees from the violet nation
 
-### The Neighboring Nation (Name TBD)
+### Third Nation (Name TBD)
 
-- Origin of the crisis
+- A pact nation descendant
+- Located in the northeast of the continent
+- Has issued ultimatums and mobilized military at borders with the violet nation - war has not been declared but is a real threat
+- Motivated by spreading corruption affecting their own cities, crops, and people
+- Further details TBD
+
+### Spera (The Violet Nation)
+
+- **Not a pact nation** - a completely separate origin
+- **Name origin**: "Spera" means hope. Named only a few hundred years ago - the first nation name of its kind, not derived from ancient pact-era naming conventions. The name was chosen by the first great groups who attempted to unite the scattered people hiding within this land - refugees from wars, exiles, outcasts with nowhere else to go. Before this effort, the territory was a no-man's land with no shared identity or unity. The act of naming gave these disparate people a sense of belonging and a collective identity for the first time.
+- Located in the north-center of the continent, north of the mountain range
+- Formed by outcasts, exiles, the too-poor, the banned - people with nowhere else to go
+- Settled the land nobody wanted: the most corrupted, most feared territory after the Death of Magic, full of violet crystal deposits and the lingering trauma of the organism
 - Contains the largest violet crystal deposit (the Original's prison) - though it remains undiscovered
-- Industrial violet crystal extraction caused the corruption
-- Currently in chaos - refugees fleeing
-- Was the first to fall to the spreading corruption
+- Currently in chaos - refugees fleeing in all directions, social order breaking down
+- Crime was historically very high - a frontier society built from desperate people
+- Known cultural fact: accepts anyone within its borders. The *why* has been largely forgotten over the centuries; it was simply born of necessity
+- The breakthrough in violet crystal processing (~20-30 years ago) was their first real prosperity as a nation - a people who had always been the unwanted suddenly thriving
+- Visual identity: steampunk-ish - violet crystal energy powering an industrial infrastructure unlike anything else in the world
+- From their perspective, the political crisis feels like the old established nations attacking them again, as they always have
 
 **Why Blue Crystals Aren't an Alternative:**
 - The nation has very few blue crystal deposits
 - This is because the Original's presence meant most magic in that region was already corrupted before the Death of Magic
 - When magic crystallized, the ratio was skewed: mostly violet crystals, very little blue
-- Before discovering how to process violet crystals, they were a poor nation
-- They survived on their few blue crystal quarries and conventional energy sources (coal, etc.)
-- The breakthrough in violet crystal processing transformed them - the nation grew, and its people enjoyed a quality of life like never before
-- Now they cannot easily go back to their pre-violet poverty
-
-### Third Nation (Name TBD)
-
-- Exists
-- Declared war on the neighboring nation due to spreading corruption affecting their cities
-- Further details TBD
+- Before discovering how to process violet crystals, they were a poor and marginalized nation
+- The breakthrough transformed them - the nation grew, and its people enjoyed prosperity for the first time
+- Now they cannot easily go back
 
 ---
 

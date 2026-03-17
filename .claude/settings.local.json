@@ -17,7 +17,14 @@
       "Bash(findstr:*)",
       "Bash(cat:*)",
       "Bash(del \"c:\\\\Users\\\\wilhe\\\\OneDrive\\\\Desktop\\\\Projets Unit\\\\StepQuest\\\\Assets\\\\Scripts\\\\Editor\\\\MapGraph\\\\MapGraphStyles.uss\")",
-      "Bash(del /f \"c:\\\\Users\\\\wilhe\\\\OneDrive\\\\Desktop\\\\Projets Unit\\\\StepQuest\\\\Assets\\\\Scripts\\\\Editor\\\\MapGraph\\\\MapGraphStyles.uss\")"
+      "Bash(del /f \"c:\\\\Users\\\\wilhe\\\\OneDrive\\\\Desktop\\\\Projets Unit\\\\StepQuest\\\\Assets\\\\Scripts\\\\Editor\\\\MapGraph\\\\MapGraphStyles.uss\")",
+      "WebSearch",
+      "WebFetch(domain:www.arsturn.com)",
+      "WebFetch(domain:www.datastudios.org)",
+      "WebFetch(domain:www.aifreeapi.com)",
+      "WebFetch(domain:docs.x.ai)",
+      "Bash(py --version)",
+      "Bash(python -c \"import httpx; print\\(''httpx ok''\\)\")"
     ],
     "deny": [],
     "ask": []
