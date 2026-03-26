@@ -8,6 +8,7 @@
 > - **Mar 8, 2026**: War → Verge of War, Violet Nation origin (outcast nation, not pact), Pact Nations history (6+ nations, most dissolved), nation count clarification
 > - **Mar 14, 2026**: Teleportation Hub history, continental geography and nation positions, corruption visibility clarification, renamed Violet Nation to Spera, added Spera naming origin story
 > - **Mar 17, 2026**: Merged all sessions into unified document
+> - **Mar 26, 2026**: Pact Nation Roles (6 roles, 10-year festival), Underground Creature Threat, The Keepers reassigned to small nation, summoning grants broader language ability, magic at ~50% of ancient levels, player countdown mechanic, prototype summoning device clarification, northern island otherworlders destroyed devices, archive accessibility updates
 
 ---
 
@@ -242,9 +243,32 @@
 
 **The Choice**: They knew sealing all magic would cause catastrophe - collapse of their civilization, mass death, a dark age. But there was no other option. The more time passed, the more magic became corrupted and the more civilization suffered. If left to spread further, no one would have survived.
 
-**Multi-Nation Agreement**: The decision was made in agreement with most nations of that era - at least 6 nations signed the post-Death of Magic pact. Possibly not all nations agreed. The pact nations also divided roles among themselves for the rebuilding of civilization that would follow.
+**Multi-Nation Agreement**: The decision was made in agreement with most nations of that era — 6 nations signed the post-Death of Magic pact. Possibly not all nations agreed. The pact nations divided specialized roles among themselves for the rebuilding of civilization that would follow (see Pact Nation Roles below).
 
 **The Fate of the Pact Nations**: Most of the original pact nations no longer exist as such. Over the millennia following the Death of Magic, wars, plagues, famine, and the general brutality of the dark age dissolved or transformed most of them. The pact nations were not naive about war - warfare existed in the ancient era - but they did not anticipate that the catastrophe itself would generate the conditions for it. The trauma, hunger, and desperation of the dark age produced conflicts of a scale and ferocity they had no framework to prepare for. Today only a handful of successor states remain, and smaller nations have formed since, some descended from pact fragments, others arising independently.
+
+### Pact Nation Roles
+
+**The Logic of Specialization**: The ancients knew that after the Death of Magic, communication and travel between nations would be extremely difficult — no teleportation, weakened animals, collapsed infrastructure. No single nation could master everything needed to rebuild civilization. Each nation was assigned a specialized role based on the geographic advantages of the territory they would inhabit. Each would develop deep expertise in one domain and share it with the others.
+
+**The 10-Year Festival**: To share knowledge between nations, the pact established a gathering every 10 years — a massive festival where each nation presented the advancements they had made in their assigned domain. This was not just celebration; it was load-bearing infrastructure for civilization's survival. Techniques, discoveries, and innovations developed by one nation were disseminated to all. When the festivals eventually stopped — due to wars, collapsed nations, and broken trust — knowledge transfer stopped with them. Each surviving nation kept only what they had specialized in, losing access to the rest.
+
+**The Six Roles**:
+
+| Role | Specialization | Geographic Basis |
+|------|---------------|-----------------|
+| **The Sowers** | Agriculture, food production, animal husbandry | Most fertile plains and valleys |
+| **The Menders** | Medicine, healing, managing magic withdrawal | Region rich in medicinal flora and resources |
+| **The Shapers** | Construction, tools, metallurgy, engineering | Mineral-rich, mountainous terrain |
+| **The Shields** | Underground creature containment, fortification, combat techniques | Densest concentration of underground cave exits |
+| **The Keepers** | Knowledge preservation, archiving history and ancient records | Custodians of the most important ancient archives |
+| **The Mariners** | Shipbuilding, navigation, fishing, sea transport | Forested coastline with natural harbors |
+
+**Why These Roles**: Each maps to a critical survival need that could be geographically concentrated. The Sowers needed the best farmland. The Shapers needed mineral deposits. The Shields needed to be where the underground exits were densest. The Mariners needed coastline and timber. The Menders needed access to medicinal resources. The Keepers were entrusted with the most important surviving archives and records.
+
+**The Mariners' Critical Function**: With overland travel crippled (weakened animals, no magical transport), sea and river routes became the primary means of moving large quantities of goods between nations. The Mariners' ships carried the Shapers' metal, the Sowers' grain, and the delegates to each festival. They were arguably the connective tissue of the pact.
+
+**Role Survival in the Modern Era**: Most pact roles have been forgotten or corrupted beyond recognition over the millennia. Some nations retain cultural echoes of their original purpose without understanding the origin. The mapping of ancient roles to modern nations is still being determined (see Nations section).
 
 ### The Teleportation Hub
 
@@ -271,6 +295,8 @@
 - This made long-distance travel difficult, which is why even a central location was better than building devices at the edges of the known world
 
 **The Casting of the Seal**: After populations were evacuated to their designated nations, the Death of Magic spell was cast at the hub. Approximately 100 of the most competent mages remained to perform the spell. A few hundred otherworlders stayed with them - not to help cast, but to help the mages survive the immediate aftermath, as the mages would be struck by magic withdrawal the moment the spell took effect. After the spell was cast, the otherworlders helped the weakened mages descend by river through the mountains to the northern island.
+
+**The Northern Island Group**: The mages and otherworlders who retreated to the northern island were unique — they were the only group that had not been teleported to their designated nation. They traveled on foot and by river, which meant they were the only people who knew the physical route to the hub and the locations of the summoning devices. This group's otherworlders were the ones who, 5-10 years later, found and destroyed the summoning devices (see The Summoning Devices below). Their knowledge of the hub's location was exclusive, and their descendants will be important later in the story.
 
 **Current State**: The hub is now ancient ruins at the center of the mountain range, overgrown and partially collapsed after millennia. Remains of the teleportation devices can still be found — broken in many parts, covered by vegetation. The site was completely abandoned after the devices were destroyed. Over the centuries, some people came and dismantled pieces for various reasons. Modern people have a vague idea what it was — possibly remembered as "devices used to summon an army against the Ancient Devil" or similar distorted accounts. It is not recognized for what it truly was. This site is distinct from the player's summoning device, which was a prototype built separately.
 
@@ -327,11 +353,11 @@ These people were unwillingly summoned to another world. They could not return h
 
 Since many natives were weakened by magic withdrawal, otherworlders became some of the most important and influential people of their time. Over generations, the true Ancient language was modified beyond recognition and eventually lost — competing with multiple otherworlder languages, and lacking practical use (the archives were inaccessible anyway).
 
-**The Dark Centuries**: In the centuries immediately following the Death of Magic, archives were completely inaccessible - even if someone could somehow read the language, no one could use magic to open them.
+**The Dark Centuries**: In the centuries immediately following the Death of Magic, archives were completely inaccessible — there was literally no magic to work with. Even if someone could somehow read the language, no one could use magic to open the sealed archives. This period lasted centuries, possibly a millennium.
 
-**Modern Attempts**: As magic returned, some mages managed to open minor archives over the centuries. Scholars have been studying the Ancient language, and some words or context can now be understood at a surface level. However, this understanding remains too fragmentary to extract meaningful knowledge from complex texts.
+**Modern Attempts**: As magic gradually returned, some mages managed to open archives over the centuries. However, many archives have been damaged or lost to time — millennia of neglect, wars, natural decay, and deliberate destruction during the dark age took their toll. Scholars have been studying the Ancient language, and some words or context can now be understood at a surface level. However, this understanding remains too fragmentary to extract meaningful knowledge from complex texts.
 
-**Current Understanding**: People know a great civilization existed and fell. They do not know how or why. Various theories exist, but nothing is certain. The truth has been sealed away for millennia.
+**Current Understanding**: People know a great civilization existed and fell. They do not know how or why. Various theories exist, but nothing is certain. The truth — scattered across surviving archives that can now be physically opened but not read — awaits someone who can understand the Ancient language.
 
 ### Knowledge Degradation Over Time
 
@@ -365,6 +391,20 @@ Despite the loss of written knowledge, some memories survived through oral tradi
 - When early violet crystal processing experiments showed no immediate harm, scholars dismissed the old warnings as baseless superstition
 - The gradual accumulation of harm let people rationalize: "If it were truly dangerous, we'd have seen it immediately"
 - By the time the warnings proved true, the neighboring nation was already dependent on violet crystal energy
+
+### The Underground Threat
+
+**Nature**: Beneath the continent lies an extensive network of deep cave systems harboring an entire subterranean ecosystem. Magic density increases with depth — the closer to the planet's core, the denser the ambient magic. As a result, creatures dwelling deeper underground are more magical and more dangerous, while those near the surface are largely non-magical and less threatening. The underground is a gradient from mundane to extraordinarily dangerous.
+
+**Ancient Management**: In ancient times, mages sealed all dangerous exits from the underground — the deep access points where powerful, magical creatures could surface. However, some entrances remained open and regulated, used for hunting and gathering rare materials from the creatures within. Venturing into the upper levels of the caves was a known, managed activity — dangerous but profitable.
+
+**Post-Death of Magic**: When magic vanished, the magical wards on sealed exits broke. The deeper, magical creatures were weakened or killed by the loss of magic — those most dependent on ambient magic could not survive without it. However, the non-magical and less magic-dependent creatures of the upper and mid levels were unaffected. With the wards gone, these creatures began surfacing freely through exits across the continent.
+
+**Why They Cannot Be Eradicated**: The cave systems extend deeper than anyone can explore. The subterranean ecosystem is vast and self-sustaining. Humans can only manage the surface exits — they cannot invade the underground world and eliminate the source population. The creatures surface for food, territory, and breeding cycles. It is persistent animal behavior — endless, like tides.
+
+**Distribution**: Every nation has some cave exits to manage, but one region sits atop the densest concentration — essentially the roof of the largest underground network. This became the basis for the Shield nation's pact role (see Pact Nation Roles).
+
+**Modern Era**: As magic has slowly returned (~50% of ancient levels), the underground ecosystem is shifting again. Deeper creatures that were dormant or weakened are regaining strength. Some mages have helped re-seal certain exits, but the threat remains very much present. The underground gradient of magical density means that as ambient magic continues to rise, increasingly dangerous creatures may begin surfacing again.
 
 ---
 
@@ -473,7 +513,7 @@ Despite the planning and cooperation, the situation was catastrophic.
 - Guilds and structured trades
 - Steel weapons and armor
 
-**Magic's Return**: The planet has been producing magic again over millennia. Ambient levels are slowly rising. Magic users have reappeared, though still rare. However, ambient magic levels today are still below the levels present during ancient times.
+**Magic's Return**: The planet has been producing magic again over millennia. Ambient levels are slowly rising. Magic users have reappeared, though still rare. Current ambient magic levels are roughly 50% of what existed during ancient times — significant enough for mages to practice and crystals to function, but far below the saturation of the old era.
 
 **Ancient Artifacts**:
 - Ancient artifacts originally did not work with crystals at all - they drew power from ambient magic
@@ -603,7 +643,8 @@ Despite the planning and cooperation, the situation was catastrophic.
 - Hope led to despair. Their people could not move on while clinging to impossible hope
 - A small group of otherworlders (a minority, but determined) made the choice to find and destroy the devices, so their people could finally accept this world as home
 - The majority probably wanted to keep the devices safe and secured, but this group acted anyway after seeing the depressed state of close relatives clinging to false hope
-- This device survived because it was likely a prototype — built to test the technology, located separately from the main summoning sites
+- These otherworlders were from the northern island group — the ones who had stayed with the mages to cast the seal. They were the only people who knew the physical locations of the devices, since every other group had been teleported away and never traveled the route on foot
+- This device survived because it was a prototype — a proof of concept built during the initial research phase, before the hub was even operational. It was built wherever the research happened to succeed first, far from the hub. There was no reason or ability to build near the hub during the research stage
 - It is one of the last remaining, possibly the last
 - After the Death of Magic, it sat dormant (no magic to accumulate)
 - As magic slowly returned to the world, the device accumulated energy - incredibly slowly
@@ -641,7 +682,9 @@ Despite the planning and cooperation, the situation was catastrophic.
 
 ### Otherworlder Abilities
 
-**Ancient Language Comprehension**: The player can naturally read and understand the Ancient language. This ability was part of the summoning process - otherworlders in ancient times needed to read instructions, operate devices, and help with rebuilding. The summoning imbued them with this knowledge automatically.
+**Broad Language Comprehension**: The summoning process grants the ability to understand and speak all languages. This was an imperative — otherworlders were summoned from multiple different worlds and spoke entirely different languages from each other, not just from the natives. Without universal comprehension, otherworlders could not communicate with natives, with each other, or coordinate the survival effort. The summoning imbued this ability automatically.
+
+**Ancient Language — The Unique Gift**: This broad comprehension includes the Ancient language, which is now extinct. Modern inhabitants cannot read it — the language was lost over millennia as otherworlder languages competed with and eventually replaced it. The player is one of the only people alive who can read Ancient texts, a direct and unique consequence of the summoning process.
 
 **Magic Affinity**: Like all otherworlders, the player has natural sensitivity to magic due to coming from a non-magical world (see Magic System > Otherworlders and Magic).
 
@@ -695,6 +738,15 @@ At some point in the story, an important figure from the violet crystal nation w
 - Placed in the care of a local caretaker — someone who helps people in need (lost travelers, the displaced, those who fall through the cracks)
 - The caretaker serves as tutorial, helping the player learn how things work
 - Player must earn their keep
+
+### The Countdown
+
+- The player has a visible countdown displayed in-game, starting at approximately 3 years (subject to tuning)
+- At the start, the player does not know what the countdown represents or what happens when it reaches zero
+- The countdown is tied to the Original's awakening — when it reaches zero, the Original breaks free, produces new spores, and the world ends. Modern mages are not capable enough to replicate the Death of Magic spell or neutralize the Original
+- The player discovers what the countdown means gradually through the story
+- The countdown is NOT fixed — it changes based on the player's choices and actions within the story. Player decisions can accelerate or delay the countdown
+- This is the core tension mechanic: visible, urgent stakes whose meaning unfolds over time
 
 ### Visual Transition
 
@@ -777,6 +829,7 @@ At some point in the story, an important figure from the violet crystal nation w
 - Located in the north-center of the continent, north of the mountain range
 - Formed by outcasts, exiles, the too-poor, the banned - people with nowhere else to go
 - Settled the land nobody wanted: the most corrupted, most feared territory after the Death of Magic, full of violet crystal deposits and the lingering trauma of the organism
+- The territory was genuinely abandoned and empty — no pact nation claimed it, and it was not the remnant of a fallen pact nation. It was reclaimed over thousands of years by people fleeing their own countries for any reason
 - Contains the largest violet crystal deposit (the Original's prison) - though it remains undiscovered
 - Industrial violet crystal processing caused the corruption
 - Experiencing growing internal tensions and health issues, though most citizens are not yet alarmed
@@ -808,15 +861,11 @@ At some point in the story, an important figure from the violet crystal nation w
 - Located in the northeast of the continent
 - In tense conflict with Spera due to spreading corruption affecting their cities
 - War has not yet been officially declared at the story's start
+- Pact role: TBD
 
 **Geography:**
 - Population centers are located in the west of the nation (their western border)
 - This places them closer to the corruption spreading from Spera's eastern cities
-
-**Founding — "Those Who Remember":**
-- The nation was founded with the purpose of preserving knowledge — to be "Those who remember" (or a similar title)
-- Over millennia, this founding mission evolved into a religion
-- The history between the Ancient Era and today requires further development
 
 **Religious Beliefs — "Tears of the Ancient Devil"**:
 - This nation has a religious tradition tied to their oral heritage
@@ -841,6 +890,27 @@ At some point in the story, an important figure from the violet crystal nation w
 
 Further details TBD
 
+### The Keepers Nation (Name TBD)
+
+- A pact nation descendant — the smallest and most fragile surviving pact nation
+- Barely surviving as a culture in the modern era
+- Their original pact role was knowledge preservation: they were entrusted with the most important ancient archives and records
+- The actual meaning of their role has been lost to time — they do not fully understand what they are preserving or why
+
+**What They Have**:
+- Ancient archives written in the Ancient language, unreadable by anyone alive
+- Fragments of truth about the ancient era — not complete knowledge, but pieces that survived in distorted form
+- A cultural tradition of preservation, even if the reason behind it has faded
+
+**What They Lost**:
+- The full understanding of what happened and why
+- Wars may have destroyed other forms of written archives or killed people who possessed more detailed knowledge
+- Over millennia, the "why" behind their preservation duty degraded while the duty itself persisted as cultural habit
+
+**Narrative Role**: This is where the player could eventually learn the truth of the world — or most of it — after having gathered glimpses and fragments elsewhere. The player's ability to read the Ancient language makes these archives accessible for the first time in millennia. The Keepers have been guarding answers they could not read.
+
+Further details TBD (location, size, culture, how the player reaches them)
+
 ---
 
 ## Notes & Plot Hooks
@@ -862,10 +932,14 @@ These are ideas mentioned but not fully developed:
 ## Open Questions
 
 ### World & Lore
-- Nation names (Player's Nation and Third Nation still TBD)
+- Nation names (Player's Nation, Third Nation, and Keepers Nation still TBD)
 - Cultural/language flavor (currently French-inspired)
 - How does one become able to use magic?
 - Did any ancient knowledge/organizations survive the dark age?
+- Mapping pact roles to modern nations: which role did the Player's Nation and Third Nation each hold?
+- The northern island group: what happened to the descendants of the mages and otherworlders? Their role in the modern story?
+- Underground creature details: what do they look like, how dangerous, what materials can be gathered from them?
+- The Keepers Nation: where are they located, how does the player reach them?
 
 ### The Threat
 - How exactly will the Original be contained or neutralized? (Specific method TBD)
