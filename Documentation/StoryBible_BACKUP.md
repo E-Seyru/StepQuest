@@ -2,12 +2,7 @@
 
 > **Purpose**: Authoritative reference for all established lore and narrative elements. Contains ONLY what has been discussed and agreed upon.
 >
-> **Update Log**:
-> - **Jan 12, 2026**: Original's Prison Discovery, Violet Nation Economics, Summoning Mechanics, Geographic Clarifications
-> - **Jan 14, 2026**: The Dark Age section (immediate aftermath, otherworlder-native relations, central summoning site, the collapse), Corrupted Magic Accumulation, Mage Sensitivity, Knowledge Degradation, Summoning Device backstory
-> - **Mar 8, 2026**: War → Verge of War, Violet Nation origin (outcast nation, not pact), Pact Nations history (6+ nations, most dissolved), nation count clarification
-> - **Mar 14, 2026**: Teleportation Hub history, continental geography and nation positions, corruption visibility clarification, renamed Violet Nation to Spera, added Spera naming origin story
-> - **Mar 17, 2026**: Merged all sessions into unified document
+> **Last Updated**: January 14, 2026 (Added: The Dark Age section - immediate aftermath, otherworlder-native relations, central summoning site, the collapse)
 
 ---
 
@@ -90,8 +85,7 @@
 - Makes humans sick (physical illness)
 - Makes animals sick, which causes them to become violent and aggressive (pain response, not mind control)
 - Causes crops to fail
-
-**Visibility**: Corrupted magic affects ambient mana, not the physical landscape. The terrain itself is not visibly damaged or discolored. The effects are biological - sickness in living beings, crop failure - not environmental destruction. There is no visible atmospheric pollution or magical fog.
+- Poisons and destroys the land
 
 **Important**: Corrupted magic does NOT affect minds directly - not humans, not animals. It does not control thoughts or alter personalities. Animals become aggressive because they are in pain and discomfort from the physical sickness. Psychological effects in humans (paranoia, violence, cruelty) come from human reactions to the physical crisis - sickness, hunger, fear.
 
@@ -242,37 +236,7 @@
 
 **The Choice**: They knew sealing all magic would cause catastrophe - collapse of their civilization, mass death, a dark age. But there was no other option. The more time passed, the more magic became corrupted and the more civilization suffered. If left to spread further, no one would have survived.
 
-**Multi-Nation Agreement**: The decision was made in agreement with most nations of that era - at least 6 nations signed the post-Death of Magic pact. Possibly not all nations agreed. The pact nations also divided roles among themselves for the rebuilding of civilization that would follow.
-
-**The Fate of the Pact Nations**: Most of the original pact nations no longer exist as such. Over the millennia following the Death of Magic, wars, plagues, famine, and the general brutality of the dark age dissolved or transformed most of them. The pact nations were not naive about war - warfare existed in the ancient era - but they did not anticipate that the catastrophe itself would generate the conditions for it. The trauma, hunger, and desperation of the dark age produced conflicts of a scale and ferocity they had no framework to prepare for. Today only a handful of successor states remain, and smaller nations have formed since, some descended from pact fragments, others arising independently.
-
-### The Teleportation Hub
-
-**Original Purpose**: A central facility in the mountains, built for inter-nation teleportation. Located in a remote mountain pass, isolated from cities - this isolation meant all available ambient magic in the area could be dedicated to teleportation, which would not have been possible in populated areas where magic was used for many purposes. This made it the natural hub for all inter-nation travel.
-
-**Conversion for the Pact**: When the decision to seal was made, most teleportation devices at the hub were converted into otherworlder summoning portals, to bring as many otherworlders as possible before the seal. Some teleportation devices were kept operational for the evacuation - moving populations to their assigned pact nations.
-
-**Why Centralization Was Essential**:
-- **Skill distribution**: All otherworlders arrived at the same place, allowing the ancients to assess their skills and compose balanced groups
-- Although same-planet groups were kept together, distribution to nations was done with utility in mind
-- Each group sent to a nation was carefully composed to ensure they had enough of each type of knowledge (farmers, healers, builders, etc.)
-- If each nation had summoned separately, they would have received random skill distributions — potentially disastrous for survival
-
-**Creating a Safe Zone**:
-- The site required a coordinated effort by all nations to make it safe for mages to work
-- All spores in the area were successfully eradicated
-- The zone was closely monitored throughout the summoning operation
-- This allowed mages to build and operate the devices without the lethal corruption exposure they would face elsewhere
-
-**Why Proximity Still Mattered**:
-- All living things experienced drawbacks from the lack of magic — not just humans
-- Animals bred faster than humans, so new generations without withdrawal effects emerged more quickly
-- However, during the immediate aftermath, horses and other beasts of burden were affected and could not carry loads as they would have in the past
-- This made long-distance travel difficult, which is why even a central location was better than building devices at the edges of the known world
-
-**The Casting of the Seal**: After populations were evacuated to their designated nations, the Death of Magic spell was cast at the hub. Approximately 100 of the most competent mages remained to perform the spell. A few hundred otherworlders stayed with them - not to help cast, but to help the mages survive the immediate aftermath, as the mages would be struck by magic withdrawal the moment the spell took effect. After the spell was cast, the otherworlders helped the weakened mages descend by river through the mountains to the northern island.
-
-**Current State**: The hub is now ancient ruins at the center of the mountain range, overgrown and partially collapsed after millennia. Remains of the teleportation devices can still be found — broken in many parts, covered by vegetation. The site was completely abandoned after the devices were destroyed. Over the centuries, some people came and dismantled pieces for various reasons. Modern people have a vague idea what it was — possibly remembered as "devices used to summon an army against the Ancient Devil" or similar distorted accounts. It is not recognized for what it truly was. This site is distinct from the player's summoning device, which was a prototype built separately.
+**Multi-Nation Agreement**: The decision was made in agreement with most nations of that era. Possibly not all agreed.
 
 ### The Death of Magic
 
@@ -407,6 +371,39 @@ The period immediately following the Death of Magic — characterized by collaps
 - Each nation was assigned a specific role in the rebuilding
 - The Third Nation (the neighboring nation in our story) was assigned the role of "Those Who Remember" — their duty was to preserve knowledge and prevent future catastrophes of this scale
 
+### The Central Summoning Site
+
+**Location and Purpose**:
+- Most summoning devices were built on the same site, located between the borders of most nations — "the center"
+- This was done for practicality: there was no time to build devices in each country, and the organization would have been too complex
+- The central location allowed otherworlders and their accompanying mages to travel back to their respective nations — though even with the central location, travel to distant nations took up to months
+
+**Why Centralization Was Essential**:
+- **Skill distribution**: All otherworlders arrived at the same place, allowing the ancients to assess their skills and compose balanced groups
+- Although same-planet groups were kept together, distribution to nations was done with utility in mind
+- Each group sent to a nation was carefully composed to ensure they had enough of each type of knowledge (farmers, healers, builders, etc.)
+- If each nation had summoned separately, they would have received random skill distributions — potentially disastrous for survival
+
+**Creating a Safe Zone**:
+- The site required a coordinated effort by all nations to make it safe for mages to work
+- All spores in the area were successfully eradicated
+- The zone was closely monitored throughout the summoning operation
+- This allowed mages to build and operate the devices without the lethal corruption exposure they would face elsewhere
+
+**Why Proximity Still Mattered**:
+- All living things experienced drawbacks from the lack of magic — not just humans
+- Animals bred faster than humans, so new generations without withdrawal effects emerged more quickly
+- However, during the immediate aftermath, horses and other beasts of burden were affected and could not carry loads as they would have in the past
+- This made long-distance travel difficult, which is why even a central location was better than building devices at the edges of the known world
+
+**Current State**:
+- The site is now in ruins
+- Remains of the teleportation devices can still be found — broken in many parts, covered by vegetation
+- The site was completely abandoned after the devices were destroyed
+- Over the centuries, some people came and dismantled pieces for various reasons
+- Modern people have a vague idea what it was — possibly remembered as "devices used to summon an army against the Ancient Devil" or similar distorted accounts
+- This site is distinct from the player's summoning device, which was a prototype built separately
+
 ### The Collapse
 
 Despite the planning and cooperation, the situation was catastrophic.
@@ -537,7 +534,7 @@ Despite the planning and cooperation, the situation was catastrophic.
 - This was not immediate knowledge followed by greed - it was slow realization followed by economic and infrastructural inertia
 - The corruption is insidious: ordinary citizens using violet energy to heat their homes or light their streets all contribute to the problem
 
-**Current State of Spera**:
+**Current State of Neighboring Nation**:
 - Health issues appearing in the population, especially among active mages
 - Growing internal debate about whether violet crystals are the cause
 - Researchers being called in to investigate
@@ -550,11 +547,11 @@ Despite the planning and cooperation, the situation was catastrophic.
 - After 25 years of accumulation, neighboring nations are beginning to experience effects
 
 **The Conflict**:
-- A third nation is in tense conflict with Spera because they believe the spreading corruption is affecting their cities
+- A third nation is in tense conflict with the violet nation because they believe the spreading corruption is affecting their cities
 - War has not yet been officially declared at the story's start - the situation is at the tension/negotiation phase
 - War may be officially declared during the game
 - The third nation's religious beliefs (violet crystals as "Tears of the Ancient Devil") add a moral/religious dimension to their objections
-- Spera dismisses these concerns as superstition and unproven accusations
+- The violet nation dismisses these concerns as superstition and unproven accusations
 - Extraction continues
 
 **Why They Won't Stop**:
@@ -567,7 +564,7 @@ Despite the planning and cooperation, the situation was catastrophic.
 
 - Currently stable
 - Not yet directly affected by corruption - the violet crystal processing sites are in the neighboring nation
-- Aware of tensions between Spera and the third nation, but not directly involved
+- Aware of tensions between the violet nation and the third nation, but not directly involved
 
 ---
 
@@ -699,7 +696,7 @@ At some point in the story, an important figure from the violet crystal nation w
 ### Visual Transition
 
 - The player arrives in modern clothing from their world
-- The caretaker provides the player with local clothing
+- The Refugee Caretaker provides the player with local clothing
 - This serves as the player's first "equipment" upgrade
 - Marks the visual transition into the world - the player now looks like they belong
 
@@ -744,74 +741,51 @@ At some point in the story, an important figure from the violet crystal nation w
 
 ## Nations
 
-### Continental Geography
-
-**Reference Map (Modern Era sketch):** See `Documentation/Maps/Modern_Era_Sketch.jpg`
-
-- Single main continent with an irregular, roughly compact shape
-- A major east-west mountain range divides the continent into northern and southern halves
-- The ancient teleportation hub ruins sit at the center of this mountain range
-- A river flows northward through the mountains from the hub area to the northern coast
-- Additional rivers flow south from the mountains
-- Several islands off the coasts, including one to the north (where the mages and otherworlders retreated after the seal)
-- Small nations or zones exist at the western edge, eastern coast, and southern area - their exact nature (independent nations, absorbed remnants, or autonomous zones) is TBD
-
 ### The Player's Nation (Name TBD)
 
-- A pact nation descendant
-- Located in the southwest, south of the mountain range
 - Where the player arrives and starts
 - Currently stable
 - Not yet directly affected by corruption - the violet crystal processing sites are in the neighboring nation
-- Aware of tensions between Spera and the third nation, but not directly involved
 - Contains: Village, Forest, Mine, Fisherman's Cabin (current locations)
 
 **Geography:**
-- A mountain range separates the player's nation from Spera, acting as a natural border
+- Located south of the Violet Nation
+- A mountain range separates the two nations, acting as a natural border
 - This geographic barrier helps explain why corruption has not spread significantly into the player's nation
 
-### Spera (The Violet Nation)
+### The Neighboring Nation / Violet Nation (Name TBD)
 
-- **Not a pact nation** - a completely separate origin
-- **Name origin**: "Spera" means hope. Named only a few hundred years ago - the first nation name of its kind, not derived from ancient pact-era naming conventions. The name was chosen by the first great groups who attempted to unite the scattered people hiding within this land - refugees from wars, exiles, outcasts with nowhere else to go. Before this effort, the territory was a no-man's land with no shared identity or unity. The act of naming gave these disparate people a sense of belonging and a collective identity for the first time.
-- Located in the north-center of the continent, north of the mountain range
-- Formed by outcasts, exiles, the too-poor, the banned - people with nowhere else to go
-- Settled the land nobody wanted: the most corrupted, most feared territory after the Death of Magic, full of violet crystal deposits and the lingering trauma of the organism
+- Origin of the crisis
 - Contains the largest violet crystal deposit (the Original's prison) - though it remains undiscovered
 - Industrial violet crystal processing caused the corruption
 - Experiencing growing internal tensions and health issues, though most citizens are not yet alarmed
 - A rare few have left the country over the years for various reasons
-- Crime was historically very high - a frontier society built from desperate people
-- Known cultural fact: accepts anyone within its borders. The *why* has been largely forgotten over the centuries; it was simply born of necessity
-- The breakthrough in violet crystal processing (25 years ago) was their first real prosperity as a nation - a people who had always been the unwanted suddenly thriving
-- Visual identity: steampunk-ish - violet crystal energy powering an industrial infrastructure unlike anything else in the world
-- From their perspective, the political crisis feels like the old established nations attacking them again, as they always have
 
 **Geography:**
 - The capital and major cities are located in the far north-east of the nation
 - This is where most violet crystal processing occurs, making the north-east the primary source of corruption
 - The player's nation lies to the south, separated by mountains
-- The Third Nation lies to the east; their western population centers sit close to Spera's eastern cities, placing them nearest to the corruption's source
+- The Third Nation lies to the east; their western population centers sit close to the Violet Nation's eastern cities, placing them nearest to the corruption's source
 
 **Why Blue Crystals Aren't an Alternative:**
 - The nation has very few blue crystal deposits
 - This is because the Original's presence meant most magic in that region was already corrupted before the Death of Magic
 - When magic crystallized, the ratio was skewed: mostly violet crystals, very little blue
-- Before discovering how to process violet crystals, they were a poor and marginalized nation
+- Before discovering how to process violet crystals, they were a poor nation
 - They survived on their few blue crystal quarries and conventional energy sources (coal, etc.)
-- The breakthrough in violet crystal processing transformed them - the nation grew, and its people enjoyed prosperity for the first time
-- Now they cannot easily go back
+- The breakthrough in violet crystal processing transformed them - the nation grew, and its people enjoyed a quality of life like never before
+- Now they cannot easily go back to their pre-violet poverty
 
 ### Third Nation (Name TBD)
 
-- A pact nation descendant
-- Located in the northeast of the continent
-- In tense conflict with Spera due to spreading corruption affecting their cities
+- Exists
+- In tense conflict with the violet nation due to spreading corruption affecting their cities
 - War has not yet been officially declared at the story's start
 
 **Geography:**
+- Located to the east of the Violet Nation
 - Population centers are located in the west of the nation (their western border)
-- This places them closer to the corruption spreading from Spera's eastern cities
+- This places them closer to the corruption spreading from the Violet Nation's eastern cities
 
 **Founding — "Those Who Remember":**
 - The nation was founded with the purpose of preserving knowledge — to be "Those who remember" (or a similar title)
@@ -833,9 +807,9 @@ At some point in the story, an important figure from the violet crystal nation w
 - The myth is wrong in details but correct in essence: violet crystals ARE dangerous, they ARE connected to something evil, and messing with them IS a bad idea
 
 **Historical Dismissal**:
-- Spera never accepted these beliefs
+- The violet nation never accepted these beliefs
 - They lived on their land for thousands of years without consequence from the unprocessed crystals
-- Violet crystals were even used as jewelry in Spera — unprocessed crystals are harmless
+- Violet crystals were even used as jewelry in the violet nation — unprocessed crystals are harmless
 - The religious warnings were dismissed as superstition
 - Now that effects are appearing, the third nation feels vindicated
 
@@ -862,7 +836,7 @@ These are ideas mentioned but not fully developed:
 ## Open Questions
 
 ### World & Lore
-- Nation names (Player's Nation and Third Nation still TBD)
+- Nation names
 - Cultural/language flavor (currently French-inspired)
 - How does one become able to use magic?
 - Did any ancient knowledge/organizations survive the dark age?
@@ -892,7 +866,8 @@ These are ideas mentioned but not fully developed:
 - What specific factors led those in power to continue extraction as evidence of harm accumulated?
 
 ### The Summoning
-- How do otherworlder descendants fit into the modern world? (Established: they exist and know their heritage)
+- Are there legends/records of the ancient summoned people who helped during the dark age?
+- Are there descendants of those summoned people?
 - What exactly does the player need to make the portal work again? (Power source, knowledge, components?)
 
 ### Gameplay

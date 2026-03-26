@@ -17,7 +17,14 @@
       "Bash(findstr:*)",
       "Bash(cat:*)",
       "Bash(del \"c:\\\\Users\\\\wilhe\\\\OneDrive\\\\Desktop\\\\Projets Unit\\\\StepQuest\\\\Assets\\\\Scripts\\\\Editor\\\\MapGraph\\\\MapGraphStyles.uss\")",
-      "Bash(del /f \"c:\\\\Users\\\\wilhe\\\\OneDrive\\\\Desktop\\\\Projets Unit\\\\StepQuest\\\\Assets\\\\Scripts\\\\Editor\\\\MapGraph\\\\MapGraphStyles.uss\")"
+      "Bash(del /f \"c:\\\\Users\\\\wilhe\\\\OneDrive\\\\Desktop\\\\Projets Unit\\\\StepQuest\\\\Assets\\\\Scripts\\\\Editor\\\\MapGraph\\\\MapGraphStyles.uss\")",
+      "Bash(ls \"c:\\\\Users\\\\wilhe\\\\OneDrive\\\\Desktop\\\\Projets Unit\\\\StepQuest\\\\Assets\\\\ScriptableObjects\\\\MapLocation\"\" | grep -v \".meta \")",
+      "Bash(ls \"c:\\\\Users\\\\wilhe\\\\OneDrive\\\\Desktop\\\\Projets Unit\\\\StepQuest\\\\Assets\\\\ScriptableObjects\\\\NPCs\"\" | grep -v \".meta \")",
+      "Bash(for dir in Assets/Scripts/*/)",
+      "Bash(do basename \"$dir\")",
+      "Bash(xargs -I {} sh -c 'count=$\\(find \"\"'$dir'\"\" -name \"\"*.cs\"\" -type f 2>/dev/null | wc -l\\); echo \"\"{}: $count\"\"')",
+      "Bash(sort:*)",
+      "Bash(git fetch origin)"
     ],
     "deny": [],
     "ask": []
