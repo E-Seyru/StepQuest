@@ -10,6 +10,11 @@ StepQuest is a Unity mobile RPG (Android) that uses real-world step counting as 
 **Target Platform**: Android (uses Health Connect API for step counting)
 **Language**: C# with .NET Standard 2.1
 
+## Documentation Files
+
+- **`Documentation/StoryBible.md`** — Authoritative reference for all established lore and narrative elements. Only contains what has been discussed and agreed upon. Update when new lore is established.
+- **`Documentation/Quotes.md`** — Collection of quotes AND references (real-world places, indirect nods, etc.) to be woven into the game as easter eggs or flavor text. Has two sections: "Quotes" for verbatim external quotes, "References" for indirect nods. When the user provides a new quote or reference for the game, append it to the appropriate section — do NOT add it to the Story Bible. Do not propose placement ideas unless the user asks.
+
 ## Architecture
 
 ### Core Managers (Singleton Pattern)
@@ -455,6 +460,7 @@ Central UI for tracking game knowledge and statistics.
 - **NPC Relationships**: Affinity levels, gift history, unlocked dialogue
 - **Achievements**: Milestones and accomplishments (if implemented)
 - **World Lore**: Discovered secrets, location histories, story fragments
+- **Newspaper Archive**: All received weekly newspapers, re-readable. Each nation has its own paper; content varies by nation and player choices. See `Documentation/StoryBible.md` "The Weekly Newspaper" section for details.
 
 **Design Notes:**
 - Single entry point in main navigation or accessible from multiple places

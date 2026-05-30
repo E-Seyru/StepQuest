@@ -24,7 +24,8 @@
       "Bash(do basename \"$dir\")",
       "Bash(xargs -I {} sh -c 'count=$\\(find \"\"'$dir'\"\" -name \"\"*.cs\"\" -type f 2>/dev/null | wc -l\\); echo \"\"{}: $count\"\"')",
       "Bash(sort:*)",
-      "Bash(git fetch origin)"
+      "Bash(git fetch origin)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
