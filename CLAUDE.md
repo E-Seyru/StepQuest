@@ -361,7 +361,7 @@ Long-distance step-based activity with tiered goals and rewards. Concept notes:
 Step-based time system affecting gameplay.
 
 **Core Mechanics:**
-- Cycle toggles between Day and Night every ~5000 steps (tunable)
+- A full in-game day is ~6,000 steps: Day phase ~4,000 steps, Night phase ~2,000 steps (tunable; the split may vary by season). Matches the Story Bible's Calendar System
 - Tracked in PlayerData, persists across sessions
 - Triggers `DayNightChangedEvent` when cycle changes
 
