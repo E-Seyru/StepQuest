@@ -19,13 +19,15 @@
 9. [The Player Character](#the-player-character)
 10. [The Opening Sequence](#the-opening-sequence)
 11. [Act 1 — Find a Way Back Home](#act-1--find-a-way-back-home)
-12. [Established Characters](#established-characters)
-13. [Nations](#nations)
-14. [Notes & Plot Hooks](#notes--plot-hooks)
-15. [Taverns](#taverns)
-16. [The Weekly Newspaper](#the-weekly-newspaper)
-17. [Archive Fragments](#archive-fragments)
-18. [Open Questions](#open-questions)
+12. [Act 2 — Vaeren and the Teleportation Experts](#act-2--vaeren-and-the-teleportation-experts)
+13. [Established Endgame Direction](#established-endgame-direction)
+14. [Established Characters](#established-characters)
+15. [Nations](#nations)
+16. [Notes & Plot Hooks](#notes--plot-hooks)
+17. [Taverns](#taverns)
+18. [The Weekly Newspaper](#the-weekly-newspaper)
+19. [Archive Fragments](#archive-fragments)
+20. [Open Questions](#open-questions)
 
 ---
 
@@ -290,9 +292,21 @@
 
 **Role Survival in the Modern Era**: Most pact roles have been forgotten or corrupted beyond recognition over the millennia. Some nations retain cultural echoes of their original purpose without understanding the origin. The mapping of ancient roles to modern nations is still being determined (see Nations section).
 
+### The Ancient Teleportation Network
+
+**City Terminals**: The Ancients built large teleportation structures in their greatest and most important cities. They were major pieces of infrastructure rather than something found in every settlement, so even when restored they do not make ordinary travel obsolete.
+
+**Hub-Routed Travel**: Every terminal routed its travelers through the central mountain hub. A traveler entered a city terminal, arrived at the hub, then selected an onward destination. In the modern restoration of the network, activated destinations can be selected while inactive ones remain visible but greyed out. The player therefore revisits the hub whenever using an Ancient teleporter.
+
+**The Outbound Principle**: The network contains the smaller-scale conceptual basis for sending something away from its point of origin. Its spatial and directional principles will eventually become the foundation of modern research into outbound dimensional travel, although travel between worlds requires vastly greater scale, precision, and power than travel between cities.
+
+**Modern Restoration**: Not all surviving terminals have been restored. Vaeren's researchers have successfully reactivated some within their own country, likely because their work around the Hollows led them toward expertise in exits, thresholds, spatial boundaries, anchoring, and related forms of dimensional magic.
+
+**Player Progression**: By working with Vaeren's researchers, the player can learn how to reactivate compatible terminals encountered across Aldemar and the rest of the world. This is a potential side-quest line that gradually expands the fast-travel network. Exact restoration requirements remain TBD.
+
 ### The Teleportation Hub
 
-**Original Purpose**: A central facility in the mountains, built for inter-nation teleportation. Located in a remote mountain pass, isolated from cities - this isolation meant all available ambient magic in the area could be dedicated to teleportation, which would not have been possible in populated areas where magic was used for many purposes. This made it the natural hub for all inter-nation travel.
+**Original Purpose**: A central facility in the mountains, built as the routing heart of inter-city teleportation. Its remote isolation allowed the extraordinary magical demands of the shared hub to draw on the area's ambient magic without competing with a city's countless other uses. Individual terminals could therefore stand in the greatest Ancient cities while the network's central burden remained concentrated here.
 
 **Conversion for the Pact**: When the decision to seal was made, most teleportation devices at the hub were converted into otherworlder summoning portals, to bring as many otherworlders as possible before the seal. The conversion was possible because summoning is a derivative of teleportation — an adaptation of the same mature discipline, not a new technology invented from nothing in the crisis window. Some teleportation devices were kept operational for the evacuation - moving populations to their assigned pact nations.
 
@@ -317,7 +331,9 @@
 
 **The Northern Island Group**: The mages and otherworlders who retreated to the northern island were unique — they were the only group that had not been teleported to their designated nation. They traveled on foot and by river, which meant they were the only people who knew the physical route to the hub and the locations of the summoning devices. This group's otherworlders were the ones who, 5-10 years later, found and destroyed the summoning devices (see The Summoning Devices below). Their knowledge of the hub's location was exclusive, and their descendants form modern Iyenor (the Keepers Nation — see Iyenor under Nations).
 
-**Current State**: The hub is now ancient ruins at the center of the mountain range, overgrown and partially collapsed after millennia. Remains of the teleportation devices can still be found — broken in many parts, covered by vegetation. The site was completely abandoned after the devices were destroyed. Over the centuries, some people came and dismantled pieces for various reasons. Modern people have a vague idea what it was — possibly remembered as "devices used to summon an army against the Ancient Devil" or similar distorted accounts. It is not recognized for what it truly was. This site is distinct from the player's summoning device, which was a prototype built separately.
+**Current State**: Most of the hub is now an overgrown, partially collapsed ruin at the center of the mountain range. Its transit chamber and routing function nevertheless remain usable wherever a restored city terminal reconnects to them: a traveler arrives at the hub and chooses among the currently activated destinations, while most remain inactive. Exactly how the central routing system survived, was reactivated, and is powered remains TBD.
+
+**The Graveyard of Summoning Devices**: The player first sees the remains of the Ancients' mass-converted teleporters here: a graveyard of destroyed devices resembling the surviving Caelvenor prototype. These are the devices the northern-island otherworlders destroyed after the Death of Magic. Many are broken, vegetation-covered, or partly dismantled by later visitors. Their resemblance reveals that the Caelvenor machine belonged to a much larger technological family and is an exceptional survivor.
 
 ### The Death of Magic
 
@@ -826,9 +842,10 @@ The Ancient Calendar still needs a proper in-world name. For the Modern Calendar
 - Ancient ruins are everywhere in the world - remnants of the old civilization
 - This device was treated as just one more old ruin among many
 - The research site was abandoned at the Death of Magic and never resettled. The village the player starts in did not yet exist at the time — the surrounding region was empty for thousands of years before settlers eventually arrived, by which point the device was already overgrown and indistinguishable from countless other ancient ruins
-- Over the millennia, people likely tried injecting magic into it without success
-- They concluded that whatever it was, it no longer worked - not understanding it needed far more energy than any modern mage could provide
-- A summoning requires massive amounts of power; casual experimentation would yield nothing
+- Over the millennia, individuals likely tried injecting small amounts of magic into it without seeing any result and concluded that it no longer worked
+- A summoning requires substantial power, so casual experimentation would yield nothing. That requirement is achievable by modern standards, however: a few appropriately skilled experts actively pouring mana into the prototype could recharge it relatively quickly
+- The machine took millennia to charge only because it was abandoned and relying on passive ambient accumulation. Ancient mages actively supplied their devices and were able to summon thousands upon thousands of people
+- As an early proof of concept, the surviving prototype may be less efficient than the later mass-converted devices, but raw energy is not the greatest hurdle in understanding or using it
 
 **Why Only One Person:**
 - Barely enough accumulated energy for a single summon
@@ -879,11 +896,22 @@ Any one trait is odd. All three together points to one conclusion.
 
 **The Portal**: The summoning device/portal that brought the player is located in the forest. After millennia, it is covered by roots, trees, and vegetation - almost not visible anymore. It does not currently function. The villagers know there is *some kind of* old ruin out in the forest — generations have passed it on hunts and gathering trips, and at some distant point in history people likely tried to make it do something and failed — but no one alive in the village understands what it is or pays it any particular attention. It is just one more weathered remnant of the lost civilization, unremarkable in a world full of them.
 
-**The Path**: The exact method to return home is not yet known to the player. Possibilities may involve reverse-engineering the portal, discovering new magic, or finding Ancient knowledge about the summoning process.
+**The Head Start**: The player begins their search after magic has returned and knows the location of one surviving dimensional device already proven to work: the Caelvenor prototype that brought them here. With access to a few highly specialized experts, the machine can be recharged without an age-long wait. Finding those experts and persuading them to study the device becomes the player's first plausible route home.
 
-### The Temptation
+**The Directional Problem**: The prototype only knows how to pull someone *into* this world. Recharging it is therefore not enough: if its automatic cycle were allowed to complete unchanged, it would simply perform another inbound summon. The experts must study and safely control or interrupt that cycle while developing a different dimensional mechanism capable of pushing a target out of the world's dimensional space and directing that passage toward the correct destination.
 
-At some point in the story, an important figure from Spera will approach the player. They will offer to help the player find a way home. This creates moral conflict - potentially accepting help from those causing the world's crisis in exchange for achieving a personal goal.
+**Outbound Dimensional Technology**: The solution will be a modern invention derived from three bodies of knowledge: the outbound spatial principles recovered from Vaeren's restored Ancient teleportation network, Ancient dimensional theory preserved in Iyenor, and Spera's expertise in modern magic-fueled technology, crystal engineering, and extreme energy concentration. The Ancients wrote the surviving archives; they did not need to rediscover them. They possessed immense magical power in general, but not the post-Death-of-Magic crystals and modern concentration technology needed to package enough energy into this kind of outbound dimensional artifact, nor the time to develop it during the crisis. The artifact's exact crystal type and power interface remain TBD.
+
+**Remaining Unknowns**: The exact construction, calibration, preservation of the player's connection to their home dimension, and limits on how many people can travel remain TBD.
+
+### The Speran Figure (Direction TBD)
+
+At some point in the story, an important figure from Spera will offer to help the player return home. The figure may first be encountered in Vaeren while conducting business or technical work there, with no offer made during that initial meeting. Their identity and motive are not yet established. Two alternative directions remain under consideration:
+
+- **Compromised insider or business figure**: they can connect the player to Speran expertise, but may demand silence, protection, or cooperation concerning corruption, pollution, or other Speran interests
+- **Anti-violet radical**: they oppose Spera's use of violet crystals and may demand the player's help with sabotage or terrorist acts intended to stop that use
+
+Neither direction is canon yet. In both, the eventual offer forces the player to weigh their chance of returning home against the methods or interests enabling it.
 
 ### Arrival Circumstances
 
@@ -919,7 +947,7 @@ At some point in the story, an important figure from Spera will approach the pla
 - **Visible to the player, not to the character**: The countdown exists only in the interface. The player character does not see it, sense it, or know it exists. This creates deliberate dramatic irony — the player feels the dread of an impending deadline while the character lives in ignorance until the story reveals what is at stake
 - Because one in-game day is roughly 6,000 steps, a three-year countdown represents long-term pressure rather than an immediate time attack
 - At the start, the player does not know what the countdown represents or what happens when it reaches zero
-- The countdown is tied to the Original's awakening and breakout — when it reaches zero, the Original is awake and breaks out of its prison (growth is the door; see The Alien Organism → Awakening Conditions), produces new spores, and the world ends. Modern mages are not capable enough to replicate the Death of Magic spell or neutralize the Original
+- The countdown is tied to the Original's awakening and breakout - when it reaches zero, the Original is awake and breaks out of its prison (growth is the door; see The Alien Organism → Awakening Conditions) and produces new spores. At the story's beginning, existing modern methods cannot replicate the Death of Magic spell or neutralize it, so an unopposed breakout ends the world. The newly invented outbound dimensional artifact is the potential exception the player can help create before the endgame
 - The player discovers what the countdown means gradually through the story
 - **Baseline tick**: The countdown ticks down passively at a baseline rate driven by Spera's ongoing violet crystal processing and mining operations — these continue regardless of the player. Doing nothing does not freeze the timer; the world's existing trajectory is already pushing toward the awakening
 - **Player modulation**: Player choices and actions can accelerate or decelerate that baseline. The countdown is NOT fixed
@@ -983,7 +1011,62 @@ At some point in the story, an important figure from Spera will approach the pla
 
 **Containment and aftermath**: with the surge repelled, the Break is **contained** and its most dangerous creatures killed — but, per the standing rule, never *fully* eradicated. The routine leak resumes, so manageable monsters keep roaming the nation afterward, handled by ordinary soldiers — which is what keeps everyday combat present across the world (see Modern Hollow Breaks).
 
-**Transition to Act 2**: a convergence opens the borders of the world to the player. By now the player has likely found and read most of the surviving **Iyenor Monoliths** accessible within Aldemar — Ancient inscriptions only they can read — and is hungry for the rest, scattered across the world (curiosity about the ancient past and the way home both run through their unique literacy). Add their **recognized actions** in the defense, their bond with the surviving **Vaeren mercenary**, and a **dawning question** (why are the Breaks worsening, and can it be solved?). The player leaves Aldemar to seek answers abroad, unknowingly walking toward the real threat. *(Act 2's first destination and precise purpose remain open — see Open Questions.)*
+**Transition to Act 2**: a convergence opens the borders of the world to the player. By now the player has likely found and read most of the surviving **Iyenor Monoliths** accessible within Aldemar - Ancient inscriptions only they can read - and is hungry for the rest, scattered across the world. Their actions in Holwyn's defense have earned recognition, their surviving **Vaeren mercenary** friend offers a human bridge across the border, and their search for a way home now has a concrete lead: Vaeren's researchers have restored Ancient teleporters and may be the first modern experts capable of understanding the Caelvenor device. The player leaves for Vaeren while also carrying a dawning question: why are the Breaks worsening, and can they be stopped?
+
+---
+
+## Act 2 — Vaeren and the Teleportation Experts
+
+### Primary Direction
+
+Act 2 takes place mostly in **Vaeren**. The player's immediate personal goal is not yet to solve the planetary crisis, but to find the specialists who can study the Caelvenor prototype and determine whether a route home is possible. Vaeren's success in restoring part of the Ancient teleportation network makes it the strongest available lead.
+
+### Earning Access
+
+The relevant knowledge is not handed to the player on arrival. They must explore Vaeren, earn the respect and trust of its inhabitants, and meet - potentially befriend - the researchers whose cooperation they need. The surviving Vaeren mercenary from Holwyn provides an introduction, not an automatic solution. The specific institutions, researchers, locations, and sequence of trust-building remain TBD.
+
+### Why Vaeren Has the Experts
+
+Vaeren inherited the Shields' long engagement with the Hollows. The working explanation is that research around underground exits, threshold wards, spatial boundaries, and anchoring led Vaereni specialists toward dimensional magic and helped them reactivate some Ancient city terminals. The exact historical and technical bridge between these disciplines remains to be developed. Their restored-teleporter expertise nevertheless makes them the strongest first interpreters of the player's summoning device and establishes the technological foundation for later outbound-dimensional research.
+
+### Restoring the Network
+
+Working with these researchers can unlock the player's ability to identify and reactivate compatible Ancient terminals elsewhere in the world. Each restored city terminal connects through the mountain hub and adds another selectable destination. This can form an Act 2 side-quest line and a gradually expanding fast-travel system; its exact objectives and costs remain TBD.
+
+### The Wider Pressure
+
+While the player pursues this personal goal, the threat around Vaeren continues to grow. Hollow activity worsens day by day, and rumors or evidence of Spera's strange pollution become increasingly common. These pressures draw the way-home story into the larger crisis without requiring the player to begin the act already committed to saving the world.
+
+### Toward Act 3
+
+Vaeren can recover the outbound principle, but cannot complete an interdimensional solution alone. The research points onward toward **Iyenor's** preserved Ancient theory and **Spera's** modern expertise in magic-fueled technology, crystal engineering, and energy concentration. Which crystal system can safely be used, and how it interfaces with the artifact, remain TBD. Act 2 may also introduce the important Speran figure while they are conducting business or technical work in Vaeren, before any offer is made. Their identity, role, motive, and precise timing remain TBD (see Notes & Plot Hooks).
+
+---
+
+## Established Endgame Direction
+
+### The Dimensional Artifacts
+
+Returning home and containing the Original ultimately depend on newly produced **outbound dimensional artifacts**. These are not recovered Ancient devices: they are modern achievements combining Vaeren's restored teleportation principles, Iyenor's Ancient records, and Spera's crystal-engineering and energy-concentration expertise. They provide the outward force needed to push a target out of this world's dimensional space. Current ending structure assumes that each artifact enables one such outward displacement. Whether an artifact operates independently, through a modified Caelvenor prototype, or as part of another apparatus remains TBD, as do its exact mechanism, crystal system, and limits.
+
+### Containing the Original
+
+The Original remains indestructible. The intended containment is to exile it into a closed, isolated dimensional space rather than kill it or use the player's portal as a seal. Constructing and targeting that exile still requires strong dimensional magic, and its exact mechanics remain TBD.
+
+### Production as the Branch Point
+
+If only one artifact is completed before the Speran production site, its experts, or crucial knowledge is lost, the player cannot accomplish both outward displacements. The cause of that loss remains TBD - possibilities include terrorism, monsters, war, or another consequence of the player's earlier choices - and rebuilding the capability would take decades in the damaged region.
+
+If at least two artifacts are completed or preserved, it becomes possible to exile the Original and still retain another means of sending the player home. The number produced is therefore the central endgame resource, while the choices that protect or destroy production remain to be designed.
+
+### Ending Structure
+
+- **Two or more artifacts**: the Original is exiled, and the player can choose freely whether to remain or return home. Bringing companions may also be possible, subject to capacity rules and magic-withdrawal consequences still TBD
+- **One artifact, containment chosen**: the artifact is used to exile the Original, so the player must remain in this world unless or until the lost capability can someday be rebuilt
+- **One artifact, return chosen**: the player uses the sole artifact to flee home, potentially trying to bring others, but the Original cannot be contained and the world is lost
+- **No usable artifact**: the player cannot return home and the Original cannot be contained - the game-over branch
+
+In branches with at least one usable artifact, the player's final irreversible choice at the game's climax is whether to go home or remain. Earlier play determines whether that choice must be made against the survival of the world or can be made freely.
 
 ---
 
@@ -1218,7 +1301,7 @@ These are ideas mentioned but not fully developed:
 
 2. **Those Who Continued Despite Doubts**: As evidence of harm accumulated over decades, some people in positions of power chose to continue extraction despite mounting doubts. Economic dependency and institutional inertia drove their decisions. Could be antagonists or tragic figures.
 
-3. **The Temptation**: An important figure from Spera will offer to help the player return home. What do they want in return? The player's translation abilities? Access to Ancient knowledge? Something else? This offer may be genuine or manipulation.
+3. **The Speran Figure (TBD)**: An important Speran figure may first appear in Vaeren through business or technical work, before later offering help with the player's return. Two alternative directions are preserved for development: a compromised insider who wants silence or protection concerning corruption or Speran interests, or an anti-violet radical who demands help with sabotage or terrorism against the violet-crystal system. Identity, motive, timing, sincerity, and final direction remain open.
 
 4. **Ancient Summoned People**: People from other worlds helped humanity survive the dark age. Some descendants preserved the knowledge that their families came from another world — passed down as identity and heritage across millennia. These descendants exist in the modern era.
 
@@ -1301,20 +1384,26 @@ Each fragment should include:
 - **The violet battery ban**: enforcement, the black market, and the conspiracy theories around the ban are established in outline but undeveloped
 
 ### The Threat
-- How exactly will the Original be contained or neutralized? (Specific method TBD)
+- How exactly is the closed dimensional exile constructed, targeted, and kept isolated?
+- What conditions let the player produce and preserve zero, one, or multiple outbound artifacts?
+- Must the Original be exiled before breakout releases new spores, or can the artifact also contain the consequences of a release already in progress?
 - What happens if/when the Original awakens?
 
 **Established Narrative Direction:**
 - The Original remains physically indestructible - this will NOT change
 - There will be no "Chosen One" moment where the player magically finds a way to kill it
-- The resolution will focus on: stalemate, re-sealing, or neutralization of the corrupted byproducts (spores/corruption)
-- The story avoids a physical execution of the Original organism
+- A successful resolution exiles the Original into a closed, isolated dimensional space through an outbound dimensional artifact
+- Without a usable artifact for containment, the Original cannot be neutralized and the world is lost
 
 ### Characters
 
 **Active pending items (Act 1 prep):**
 - **The Homeless Child**: name, exact age, personality details
 - **The important Vaeren mercenary**: name and personality. Established: ~40 years old, Vaereni (the conservative Vaeren naming register), fights beside the player in the last stand and survives while most comrades die, becomes a friend, and is the player's bridge toward Act 2
+
+**Active pending items (Act 2 prep):**
+- **The Vaeren researchers**: names, personalities, disciplines, institutions, and the relationships through which the player earns their trust
+- **The important Speran figure**: identity and final direction - compromised insider/business figure or anti-violet radical - plus the terms and sincerity of their eventual offer
 
 *Resolved this session*: village **Holwyn** + founding story; Aelis's mother **Alira** (fifties, still energetic), father **Soren**; **Aelis was 9** when her father died (~17 years ago); per-nation **naming conventions** (Vaeren ordered/military-rooted, Spera no-convention/new-name custom, Aldemar personal-familial); Aelis's personality; ancient-city name **Caelvenor**.
 
@@ -1326,25 +1415,34 @@ Each fragment should include:
 **Active pending items (Act 1 prep):**
 - **Aelis's first-morning scene** — opening shape locked (player wakes groggy; Aelis appears at the doorframe and checks on them); still to write: her exact dialogue, the first task she gives, what she explains, what the player does/doesn't grasp
 - **Casualty model specifics**: how the ~1-week prep window and the player's strength concretely map to total casualties and to whether **Alira lives or dies**
-- **Act 2's first destination and precise purpose**: the monolith-curiosity + way-home drive + the Vaereni friend all pull the player outward, but the concrete first stop and goal are open (the Vaeren religious-lore breadcrumb has been dropped)
+
+**Active pending items (Act 2 prep):**
+- **Vaeren route and structure**: the first destination within Vaeren, the research institution or group the player seeks, the trust-building sequence, and how the Hollow crisis complicates that search
+- **Teleporter restoration line**: which terminals the player encounters, what restoring each one requires, and how the mountain hub is introduced through play
+- **Speran bridge**: whether the important Speran figure first appears during Act 2 in Vaeren, and which of the two proposed directions they follow
 
 *Resolved this session*: Act 1's overall shape — main-quest spine "Find a Way Back Home", nation-wide scope, the Break as the looming threat, the **last-stand climax at Holwyn** (mercenaries/scouts fall back against an unstoppable wave; ~1-week / ~42,000-step prep window; casualties on a prep-driven spectrum; village stands), and borders open at the end (see Act 1 — Find a Way Back Home).
 
 **Standing questions:**
 - What betrayals and deaths occur?
-- What exact method allows the player to return home?
-- What does the Spera figure want in exchange for helping?
-- What choices does the player face?
-- How does the story end?
+- How is the player's home dimension identified and targeted rather than merely leaving the current dimension?
+- What does the Speran figure ultimately want in exchange for helping, and which proposed version becomes canon?
+- Which player choices determine whether Spera's artifact-production capacity survives long enough to make zero, one, or multiple artifacts?
+- Can companions return home with the player, and what determines the artifact's capacity?
+- Would a native companion suffer magic withdrawal in the player's non-magical home world, and can the outbound process protect or adapt them?
+- Which crystal system powers the outbound artifacts, can Spera's engineering be separated from violet leakage, and does their production or use affect the countdown?
 - What specific factors led those in power to continue extraction as evidence of harm accumulated?
 
 ### The Summoning
 - How do otherworlder descendants fit into the modern world? (Established: they exist and know their heritage)
-- What exactly does the player need to make the portal work again? (Power source, knowledge, components?)
+- How exactly do the experts interface with, calibrate, and safely recharge the Caelvenor prototype? (Raw mana is achievable; the technical procedure remains TBD)
+- What trace or signature of the player's origin survives the inbound journey and permits a route back to the correct world?
 
 ### Gameplay
 - How do story events trigger?
 - Quest system integration
+- What resources, knowledge, or quests are required to reactivate each Ancient city terminal?
+- How did the mountain hub's routing core survive or become operational when Vaeren restored the first terminals, and what now powers it?
 
 **Established Direction for Player Progression:**
 - Player improves at various skills (existing game systems)
